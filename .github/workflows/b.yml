@@ -1,0 +1,91 @@
+name: 🚀 Deploy to cPanel via FTP with Auto-Build
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # Allows manual trigger from GitHub UI
+
+jobs:
+  deploy:
+    name: 📦 Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⬇️ Checkout Repo
+        uses: actions/checkout@v3
+
+      # --- SETUP NODE ---
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # --- BACKEND DEPLOYMENT ---
+      - name: 📂 Upload Backend to cPanel (Node App)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftp
+          port: ${{ secrets.FTP_PORT }}
+          local-dir: ./backend/
+          server-dir: ${{ secrets.FTP_BACKEND_PATH }}  # e.g., /node_apps/tailor-api/
+          exclude: |
+            **/node_modules/**
+            **/.env
+            **/.env.*
+            **/*.log
+            **/tests/**
+            **/__tests__/**
+            **/coverage/**
+            **/.vscode/**
+            **/.git/**
+            **/package-lock.json
+            **/yarn.lock
+
+      # --- FRONTEND BUILD & DEPLOYMENT ---
+      - name: 🏗️ Build React Frontend
+        run: |
+          cd frontend
+          npm install
+          npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}  # Pass API URL from GitHub secrets
+
+      - name: 📂 Upload Frontend to cPanel (public_html)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftp
+          port: ${{ secrets.FTP_PORT }}
+          local-dir: ./frontend/dist/
+          server-dir: ${{ secrets.FTP_FRONTEND_PATH }}  # e.g., /public_html/
+          exclude: |
+            **/*.map
+            **/.git/**
+
+      # --- TRIGGER NODE RESTART (cPanel) ---
+      - name: 🔄 Restart Node.js App
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftp
+          port: ${{ secrets.FTP_PORT }}
+          local-dir: ./.deploy-trigger/  # We'll create this folder
+          server-dir: ${{ secrets.FTP_BACKEND_PATH }}
+
+      # Create the restart trigger file
+      - name: 📝 Create Restart Trigger
+        run: |
+          mkdir -p .deploy-trigger
+          echo "Restart triggered at $(date -u)" > .deploy-trigger/restart.txt
+
+      # Clean up trigger folder
+      - name: 🧹 Clean Up
+        run: |
+          rm -rf .deploy-trigger
