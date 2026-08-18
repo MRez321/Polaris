@@ -12,12 +12,12 @@ jobs:
       - name: ⬇️ Checkout Repo
         uses: actions/checkout@v3
 
-      # Optional: Add steps to build your project (e.g., npm install, npm run build)
-      - name: 📦 Install Dependencies
-        run: npm ci --production
-
-      - name: 🏗️ Build Project (if applicable)
-        run: npm run build # Remove if you don't have a build step
+#      # Optional: Add steps to build your project (e.g., npm install, npm run build)
+#      - name: 📦 Install Dependencies
+#        run: npm ci --production
+#
+#      - name: 🏗️ Build Project (if applicable)
+#        run: npm run build # Remove if you don't have a build step
 
       - name: 📂 Upload via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
@@ -40,5 +40,6 @@ jobs:
             tests/
             __tests__/
             coverage/
+            .idea/
             .vscode/
             .idea/
