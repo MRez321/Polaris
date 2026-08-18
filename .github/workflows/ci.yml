@@ -1,24 +1,18 @@
-name: 🚀 Deploy to cPanel via FTP
+name: 🚀 Deploy to cPanel via FTP with Auto-Restart
 
 on:
   push:
-    branches: [ main ] # Your default branch
+    branches: [ main ]
 
 jobs:
   ftp-deploy:
-    name: 📦 Deploy using FTP
+    name: 📦 Deploy and Restart App
     runs-on: ubuntu-latest
     steps:
       - name: ⬇️ Checkout Repo
         uses: actions/checkout@v3
 
-#      # Optional: Build your project
-#      - name: 📦 Install Dependencies
-#        run: npm ci --production
-#
-#      - name: 🏗️ Build Project (if applicable)
-#        run: npm run build # Remove if you don't have a build step
-
+      # --- Step 1: Upload via FTP ---
       - name: 📂 Upload via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
@@ -27,7 +21,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftp
           port: ${{ secrets.FTP_PORT }}
-          local-dir: ./ # Root of repo
+          local-dir: ./
           server-dir: ${{ secrets.FTP_PATH }} # e.g., /public_html/
           exclude: |
             **/.git*
@@ -54,3 +48,17 @@ jobs:
             **/yarn.lock
             **/tsconfig.json
             **/webpack.config.js
+
+      # --- Step 2: Trigger App Restart ---
+      - name: 🔄 Trigger App Restart
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftp
+          port: ${{ secrets.FTP_PORT }}
+          local-dir: ./ # We'll create a tmp folder with restart.txt
+          server-dir: ${{ secrets.FTP_PATH }} # Your app's root directory
+          # This step will only upload the tmp/restart.txt file to your server.
+          # It will overwrite the existing restart.txt with the same timestamp.
