@@ -1,19 +1,26 @@
-name: 🚀 Deploy to cPanel via FTP with Auto-Restart
+name: 🚀 Deploy Polaris (Frontend + Backend)
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  ftp-deploy:
-    name: 📦 Deploy and Restart App
+  deploy:
+    name: 📦 Deploy to cPanel
     runs-on: ubuntu-latest
     steps:
       - name: ⬇️ Checkout Repo
         uses: actions/checkout@v3
 
-      # --- Step 1: Upload via FTP ---
-      - name: 📂 Upload via FTP
+      # --- Build Frontend First ---
+      - name: 🏗️ Build Frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      # --- Upload Frontend to polaris_root (flattened) ---
+      - name: 📂 Upload Frontend
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_HOST }}
@@ -21,36 +28,15 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftp
           port: ${{ secrets.FTP_PORT }}
-          local-dir: ./
-          server-dir: ${{ secrets.FTP_PATH }} # e.g., /public_html/
+          local-dir: ./frontend/dist/  # Trailing slash flattens contents
+          server-dir: ${{ secrets.FRONTEND_PATH }}
           exclude: |
             **/.git*
-            **/.git*/**
             **/node_modules/**
-            **/.idea/**
-            **/.env
-            **/.env.*
-            **/*.log
-            **/tests/**
-            **/__tests__/**
-            **/coverage/**
-            **/.vscode/**
-            **/.github/**
-            **/dist/**
-            **/build/**
-            **/.next/**
-            **/out/**
-            **/README.md
-            **/.gitignore
-            **/.eslintrc*
-            **/.prettierrc*
-            **/package-lock.json
-            **/yarn.lock
-            **/tsconfig.json
-            **/webpack.config.js
 
-      # --- Step 2: Trigger App Restart ---
-      - name: 🔄 Trigger App Restart
+      # --- Upload Backend to polaris ---
+      - name: 📂 Upload Backend
+        id: backend-upload
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_HOST }}
@@ -58,7 +44,24 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftp
           port: ${{ secrets.FTP_PORT }}
-          local-dir: ./ # We'll create a tmp folder with restart.txt
-          server-dir: ${{ secrets.FTP_PATH }} # Your app's root directory
-          # This step will only upload the tmp/restart.txt file to your server.
-          # It will overwrite the existing restart.txt with the same timestamp.
+          local-dir: ./backend/
+          server-dir: ${{ secrets.BACKEND_PATH }}
+          exclude: |
+            **/.git*
+            **/node_modules/**
+            **/.env
+            **/*.log
+            **/tests/**
+
+      # --- Conditional Restart ---
+      - name: 🔄 Restart Node App
+        if: steps.backend-upload.outputs.changed-files > 0
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftp
+          port: ${{ secrets.FTP_PORT }}
+          local-dir: ./restart-trigger/
+          server-dir: ${{ secrets.RESTART_PATH }}
