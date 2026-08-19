@@ -8,7 +8,7 @@ import app from './src/app.js';
 
 dotenv.config();
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3016;
 
 // Create raw HTTP server so socket.io can attach alongside Express
 const httpServer = http.createServer(app);

@@ -18,10 +18,13 @@ const app = express();
 const allowedOrigins = [
     process.env.CORS_ORIGIN,
     'http://localhost:5173',   // Vite dev
-    'http://localhost:3200',   // if you ever run backend on 3200
+    'http://localhost:3016',   // backend on 3216
     'http://127.0.0.1:5173',
-    'http://127.0.0.1:3200',
-    'https://pixelstar.ir',
+    'http://127.0.0.1:3216',
+    'https://polarisstyle.ir',
+    'http://polarisstyle.ir',
+    'https://api.polarisstyle.ir',
+    'http://api.polarisstyle.ir',
 ].filter(Boolean); // remove undefined/null
 
 app.use(cors({
