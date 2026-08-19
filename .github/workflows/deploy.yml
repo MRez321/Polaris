@@ -20,6 +20,13 @@ jobs:
           npm ci
           npm run build
 
+      # --- Build Backend ---
+      - name: 🏗️ Build Backend
+        run: |
+          cd backend
+          npm ci
+          npm run build
+
       # --- Upload Frontend to polaris_root (flattened) ---
       - name: 📂 Upload Frontend
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
@@ -44,7 +51,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftp
           port: ${{ secrets.FTP_PORT }}
-          local-dir: ./backend/
+          local-dir: ./backend/dist/
           server-dir: ${{ secrets.BACKEND_PATH }}/
           exclude: |
             **/.git*
@@ -52,6 +59,8 @@ jobs:
             **/.env
             **/*.log
             **/tests/**
+            **/*.ts
+            **/tsconfig.json
 
       # --- Create and upload restart trigger ---
       - name: 🔄 Trigger Node App Restart
