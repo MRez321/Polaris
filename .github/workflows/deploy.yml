@@ -2,7 +2,8 @@ name: 🚀 Deploy Polaris (Frontend + Backend)
 
 on:
   push:
-    branches: [ main ]
+    tags:
+      - 'v*'
 
 jobs:
   deploy:
@@ -10,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: ⬇️ Checkout Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # --- Build Frontend First ---
       - name: 🏗️ Build Frontend
@@ -21,23 +22,22 @@ jobs:
 
       # --- Upload Frontend to polaris_root (flattened) ---
       - name: 📂 Upload Frontend
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftp
           port: ${{ secrets.FTP_PORT }}
-          local-dir: ./frontend/dist/  # Trailing slash flattens contents
-          server-dir: ${{ secrets.FRONTEND_PATH }}
+          local-dir: ./frontend/dist/
+          server-dir: ${{ secrets.FRONTEND_PATH }}/
           exclude: |
             **/.git*
             **/node_modules/**
 
       # --- Upload Backend to polaris ---
       - name: 📂 Upload Backend
-        id: backend-upload
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
@@ -45,7 +45,7 @@ jobs:
           protocol: ftp
           port: ${{ secrets.FTP_PORT }}
           local-dir: ./backend/
-          server-dir: ${{ secrets.BACKEND_PATH }}
+          server-dir: ${{ secrets.BACKEND_PATH }}/
           exclude: |
             **/.git*
             **/node_modules/**
@@ -53,15 +53,19 @@ jobs:
             **/*.log
             **/tests/**
 
-      # --- Conditional Restart ---
-      - name: 🔄 Restart Node App
-        if: steps.backend-upload.outputs.changed-files > 0
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      # --- Create and upload restart trigger ---
+      - name: 🔄 Trigger Node App Restart
+        run: |
+          mkdir -p ./temp
+          echo "$(date +%s)" > ./temp/restart.txt
+
+      - name: 📤 Upload Restart Trigger
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftp
+          protocol: ftps
           port: ${{ secrets.FTP_PORT }}
-          local-dir: ./restart-trigger/
-          server-dir: ${{ secrets.RESTART_PATH }}
+          local-dir: ./temp/
+          server-dir: ${{ secrets.RESTART_PATH }}/
