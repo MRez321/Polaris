@@ -1,71 +1,71 @@
-name: 🚀 Deploy Polaris (Frontend + Backend)
-
-on:
-  push:
-    tags:
-      - 'v*'
-
-jobs:
-  deploy:
-    name: 📦 Deploy to cPanel
-    runs-on: ubuntu-latest
-    steps:
-      - name: ⬇️ Checkout Repo
-        uses: actions/checkout@v4
-
-      # --- Build Frontend First ---
-      - name: 🏗️ Build Frontend
-        run: |
-          cd frontend
-          npm ci
-          npm run build
-
-      # --- Upload Frontend to polaris_root (flattened) ---
-      - name: 📂 Upload Frontend
-        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftp
-          port: ${{ secrets.FTP_PORT }}
-          local-dir: ./frontend/dist/
-          server-dir: ${{ secrets.FRONTEND_PATH }}/
-          exclude: |
-            **/.git*
-            **/node_modules/**
-
-      # --- Upload Backend to polaris ---
-      - name: 📂 Upload Backend
-        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftp
-          port: ${{ secrets.FTP_PORT }}
-          local-dir: ./backend/
-          server-dir: ${{ secrets.BACKEND_PATH }}/
-          exclude: |
-            **/.git*
-            **/node_modules/**
-            **/.env
-            **/*.log
-            **/tests/**
-
-      # --- Create and upload restart trigger ---
-      - name: 🔄 Trigger Node App Restart
-        run: |
-          mkdir -p ./temp
-          echo "$(date +%s)" > ./temp/restart.txt
-
-      - name: 📤 Upload Restart Trigger
-        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
-          port: ${{ secrets.FTP_PORT }}
-          local-dir: ./temp/
-          server-dir: ${{ secrets.RESTART_PATH }}/
+#name: 🚀 Deploy Polaris (Frontend + Backend)
+#
+#on:
+#  push:
+#    tags:
+#      - 'v*'
+#
+#jobs:
+#  deploy:
+#    name: 📦 Deploy to cPanel
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: ⬇️ Checkout Repo
+#        uses: actions/checkout@v4
+#
+#      # --- Build Frontend First ---
+#      - name: 🏗️ Build Frontend
+#        run: |
+#          cd frontend
+#          npm ci
+#          npm run build
+#
+#      # --- Upload Frontend to polaris_root (flattened) ---
+#      - name: 📂 Upload Frontend
+#        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+#        with:
+#          server: ${{ secrets.FTP_HOST }}
+#          username: ${{ secrets.FTP_USERNAME }}
+#          password: ${{ secrets.FTP_PASSWORD }}
+#          protocol: ftp
+#          port: ${{ secrets.FTP_PORT }}
+#          local-dir: ./frontend/dist/
+#          server-dir: ${{ secrets.FRONTEND_PATH }}/
+#          exclude: |
+#            **/.git*
+#            **/node_modules/**
+#
+#      # --- Upload Backend to polaris ---
+#      - name: 📂 Upload Backend
+#        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+#        with:
+#          server: ${{ secrets.FTP_HOST }}
+#          username: ${{ secrets.FTP_USERNAME }}
+#          password: ${{ secrets.FTP_PASSWORD }}
+#          protocol: ftp
+#          port: ${{ secrets.FTP_PORT }}
+#          local-dir: ./backend/
+#          server-dir: ${{ secrets.BACKEND_PATH }}/
+#          exclude: |
+#            **/.git*
+#            **/node_modules/**
+#            **/.env
+#            **/*.log
+#            **/tests/**
+#
+#      # --- Create and upload restart trigger ---
+#      - name: 🔄 Trigger Node App Restart
+#        run: |
+#          mkdir -p ./temp
+#          echo "$(date +%s)" > ./temp/restart.txt
+#
+#      - name: 📤 Upload Restart Trigger
+#        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+#        with:
+#          server: ${{ secrets.FTP_HOST }}
+#          username: ${{ secrets.FTP_USERNAME }}
+#          password: ${{ secrets.FTP_PASSWORD }}
+#          protocol: ftps
+#          port: ${{ secrets.FTP_PORT }}
+#          local-dir: ./temp/
+#          server-dir: ${{ secrets.RESTART_PATH }}/
