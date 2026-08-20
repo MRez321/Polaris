@@ -19,14 +19,18 @@ const httpServer = http.createServer(app);
 // Start Server
 httpServer.listen(PORT, async () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`🔌 Socket.io ready`);
+    // console.log(`🔌 Socket.io ready`);
 
     // Test DB connection
     try {
         await dbPool.query('SELECT 1+1 AS solution');
-        console.log('✅ Database connection successful.');
+        console.log('✅ Database connection successful. ✅');
     } catch (err) {
         console.error('❌ Database connection failed:', err);
         process.exit(1);
     }
+
+    console.log(`🚀 Server started on port ${PORT}`);
+    console.log(`📦 Process ID: ${process.pid}`);
+    console.log(`⏰ Started at: ${new Date().toISOString()}`);
 });

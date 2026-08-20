@@ -11,7 +11,7 @@ export const auth = betterAuth({
 
     emailAndPassword: {
         enabled: true,
-        requireEmailVerification: false, // Change to true in production
+        requireEmailVerification: false,
     },
 
     socialProviders: {
@@ -25,7 +25,17 @@ export const auth = betterAuth({
         },
     },
 
-    // Advanced Security & Features
+    // --- ADD THIS SECTION ---
+    trustedOrigins: [
+        "http://localhost:5173",
+        "http://localhost:3016",
+        "https://polarisstyle.ir",
+        "https://api.polarisstyle.ir",
+
+        // Add your production domain here later
+    ],
+    // ------------------------
+
     advanced: {
         defaultCookieAttributes: {
             secure: process.env.NODE_ENV === 'production',

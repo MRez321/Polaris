@@ -39,15 +39,17 @@ export const verification = mysqlTable('verification', {
     identifier: varchar('identifier', { length: 255 }).notNull(),
     value: varchar('value', { length: 500 }).notNull(),
     expiresAt: timestamp('expires_at').notNull(),
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(), // <--- ADDED THIS
 });
 
 // 5. Audit Logs (To track who did what)
 export const auditLog = mysqlTable('audit_log', {
     id: varchar('id', { length: 36 }).primaryKey(),
     userId: varchar('user_id', { length: 36 }).references(() => user.id),
-    action: varchar('action', { length: 100 }).notNull(), // e.g., 'LOGIN', 'UPDATE_ORDER'
-    entity: varchar('entity', { length: 100 }), // e.g., 'ORDER_123'
-    details: text('details'), // JSON string of changes
+    action: varchar('action', { length: 100 }).notNull(),
+    entity: varchar('entity', { length: 100 }),
+    details: text('details'),
     ipAddress: varchar('ip_address', { length: 45 }),
     createdAt: timestamp('created_at').defaultNow(),
 });
