@@ -1,0 +1,38 @@
+import { betterAuth } from 'better-auth';
+import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { db } from './drizzle.js'; // We will create this wrapper next
+import * as schema from '../schema/auth.js';
+
+export const auth = betterAuth({
+    database: drizzleAdapter(db, {
+        provider: 'mysql',
+        schema: schema,
+    }),
+
+    emailAndPassword: {
+        enabled: true,
+        requireEmailVerification: false, // Change to true in production
+    },
+
+    socialProviders: {
+        google: {
+            clientId: process.env.GOOGLE_CLIENT_ID!,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        },
+        github: {
+            clientId: process.env.GITHUB_CLIENT_ID!,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+        },
+    },
+
+    // Advanced Security & Features
+    advanced: {
+        defaultCookieAttributes: {
+            secure: process.env.NODE_ENV === 'production',
+            httpOnly: true,
+            sameSite: 'lax',
+        },
+    },
+});
+
+export type Session = typeof auth.$Infer.Session;
