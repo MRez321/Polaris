@@ -70,34 +70,50 @@ export default function Login() {
                     </div>
 
                     {/* Email Form Placeholder */}
-                    <form className="mt-8 space-y-6" onSubmit={(e) => e.preventDefault()}>
-                        <div className="rounded-md shadow-sm -space-y-px">
-                            <div>
-                                <label htmlFor="email-address" className="sr-only">آدرس ایمیل</label>
-                                <input
-                                    id="email-address"
-                                    name="email"
-                                    type="email"
-                                    required
-                                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm text-right"
-                                    placeholder="آدرس ایمیل"
-                                    dir="ltr"
-                                />
-                            </div>
-                            <div>
-                                <label htmlFor="password" className="sr-only">رمز عبور</label>
-                                <input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    required
-                                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm text-right"
-                                    placeholder="رمز عبور"
-                                    dir="ltr"
-                                />
-                            </div>
+                    <form className="mt-8 space-y-6" onSubmit={async (e) => {
+                        e.preventDefault();
+                        const form = e.target as HTMLFormElement;
+                        const emailInput = form.querySelector('input[type="email"]');
+                        const passwordInput = form.querySelector('input[type="password"]');
+                        if (emailInput && passwordInput) {
+                            const email = emailInput.value;
+                            const password = passwordInput.value;
+                            const { data, error } = await signIn({
+                                email,
+                                password,
+                            });
+                            if (error) {
+                                console.error('Login error:', error);
+                                alert(error.message);
+                            } else if (data) {
+                                console.log('Login successful:', data);
+                            }
+                        }
+                    }}>
+                        <div>
+                            <label htmlFor="email" className="sr-only">آدرس ایمیل</label>
+                            <input
+                                id="email"
+                                name="email"
+                                type="email"
+                                required
+                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm text-right"
+                                placeholder="آدرس ایمیل"
+                                dir="ltr"
+                            />
                         </div>
-
+                        <div>
+                            <label htmlFor="password" className="sr-only">رمز عبور</label>
+                            <input
+                                id="password"
+                                name="password"
+                                type="password"
+                                required
+                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm text-right"
+                                placeholder="رمز عبور"
+                                dir="ltr"
+                            />
+                        </div>
                         <div>
                             <button
                                 type="submit"
