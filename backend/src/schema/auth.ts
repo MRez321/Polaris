@@ -1,19 +1,19 @@
-import { mysqlTable, varchar, boolean, timestamp, int, text } from 'drizzle-orm/mysql-core';
+// backend/src/schema/auth.ts
+import { mysqlTable, varchar, boolean, timestamp, text } from 'drizzle-orm/mysql-core';
 
-// 1. Users Table (Extended with Roles and Soft Delete)
 export const user = mysqlTable('user', {
     id: varchar('id', { length: 36 }).primaryKey(),
     name: varchar('name', { length: 255 }).notNull(),
     email: varchar('email', { length: 255 }).unique().notNull(),
     emailVerified: boolean('email_verified').default(false),
-    image: varchar('image', { length: 500 }), // Profile picture from Google/GitHub
-    role: varchar('role', { length: 50 }).default('user'), // admin, manager, user
+    image: varchar('image', { length: 500 }),
+    role: varchar('role', { length: 50 }).default('user'),
+    password: varchar('password', { length: 255 }),
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
-    deletedAt: timestamp('deleted_at'), // Soft Delete column
+    deletedAt: timestamp('deleted_at'),
 });
 
-// 2. Sessions Table (Required by Better Auth)
 export const session = mysqlTable('session', {
     id: varchar('id', { length: 36 }).primaryKey(),
     userId: varchar('user_id', { length: 36 }).notNull().references(() => user.id),
@@ -22,7 +22,6 @@ export const session = mysqlTable('session', {
     userAgent: varchar('user_agent', { length: 500 }),
 });
 
-// 3. Accounts Table (For Account Linking: Google/GitHub/Email)
 export const account = mysqlTable('account', {
     id: varchar('id', { length: 36 }).primaryKey(),
     userId: varchar('user_id', { length: 36 }).notNull().references(() => user.id),
@@ -31,19 +30,18 @@ export const account = mysqlTable('account', {
     accessToken: varchar('access_token', { length: 500 }),
     refreshToken: varchar('refresh_token', { length: 500 }),
     expiresAt: timestamp('expires_at'),
+    issuer: varchar('issuer', { length: 255 }),
 });
 
-// 4. Verification Table (For email verification tokens)
 export const verification = mysqlTable('verification', {
     id: varchar('id', { length: 36 }).primaryKey(),
     identifier: varchar('identifier', { length: 255 }).notNull(),
     value: varchar('value', { length: 500 }).notNull(),
     expiresAt: timestamp('expires_at').notNull(),
     createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(), // <--- ADDED THIS
+    updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
 });
 
-// 5. Audit Logs (To track who did what)
 export const auditLog = mysqlTable('audit_log', {
     id: varchar('id', { length: 36 }).primaryKey(),
     userId: varchar('user_id', { length: 36 }).references(() => user.id),

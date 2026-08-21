@@ -5,7 +5,7 @@ import path from 'path';
 
 // import { errorHandler } from './middleware/errorHandler.js';
 // import optimizeRoutes from './routes/optimizeRoutes.js';
-import authRoutes from './routes/authRoutes.js';
+// import authRoutes from './routes/authRoutes.js';
 
 
 const app = express();
@@ -45,7 +45,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // app.use(express.static(path.join(process.cwd(), 'public')));
 
-app.use('/', authRoutes);
+// app.use('/api', authRoutes);
 
 // Static Files
 const publicPath = path.join(process.cwd(), 'public');
