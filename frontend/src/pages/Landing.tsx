@@ -1,5 +1,9 @@
 import Navbar from '../components/Navbar';
 
+// import { CardNumberInput } from "../components/ui/bank-input"
+// import { CopyButton } from "@/components/ui/copy-button"
+
+
 export default function Landing() {
     return (
         <div className="min-h-screen bg-gray-50">
@@ -19,6 +23,10 @@ export default function Landing() {
                         [ Main Content Placeholder ]
                     </div>
                 </div>
+
+                {/*<CardNumberInput />*/}
+                {/*<CopyButton text="https://persian-labs.ir" label="Copy link" />*/}
+
             </div>
         </div>
     );

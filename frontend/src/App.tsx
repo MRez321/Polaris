@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Login from './components/Login';
+import AuthMolal from './components/AuthMolal.tsx';
 import Dashboard from './pages/Dashboard';
 import Landing from './pages/Landing';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -19,7 +19,7 @@ function App() {
         <BrowserRouter>
             <Routes>
                 <Route path="/" element={<Landing />} />
-                <Route path="/login" element={<Login />} />
+                <Route path="/login" element={<AuthMolal />} />
 
                 <Route element={<ProtectedRoute />}>
                     <Route path="/*" element={
