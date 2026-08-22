@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import AuthMolal from './components/AuthMolal.tsx';
+import { AuthProvider } from './contexts/AuthContext';
+import AuthModal from './components/AuthModal';
+import LoginModal from './components/LoginModal';
 import Dashboard from './pages/Dashboard';
 import Landing from './pages/Landing';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -16,23 +18,26 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
 function App() {
     return (
-        <BrowserRouter>
-            <Routes>
-                <Route path="/" element={<Landing />} />
-                <Route path="/login" element={<AuthMolal />} />
+        <AuthProvider>
+            <BrowserRouter>
+                <LoginModal />
+                <Routes>
+                    <Route path="/" element={<Landing />} />
+<Route path="/login" element={<AuthModal />} />
 
-                <Route element={<ProtectedRoute />}>
-                    <Route path="/*" element={
-                        <AppLayout>
-                            <Routes>
-                                <Route path="/dashboard" element={<Dashboard />} />
-                                <Route path="/admin" element={<div>Admin Panel</div>} />
-                            </Routes>
-                        </AppLayout>
-                    } />
-                </Route>
-            </Routes>
-        </BrowserRouter>
+                    <Route element={<ProtectedRoute />}>
+                        <Route path="/*" element={
+                            <AppLayout>
+                                <Routes>
+                                    <Route path="/dashboard" element={<Dashboard />} />
+                                    <Route path="/admin" element={<div>Admin Panel</div>} />
+                                </Routes>
+                            </AppLayout>
+                        } />
+                    </Route>
+                </Routes>
+            </BrowserRouter>
+        </AuthProvider>
     );
 }
 
