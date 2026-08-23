@@ -39,7 +39,7 @@ read [STRUCTURE.md](../STRUCTURE.md)
 - **HTTP Client**: Axios
 - **Form Handling**: React Hook Form + Zod validation
 - **Date Handling**: date-fns
-- **realtime data**: socket-io
+- **realtime data**: socket-io-client
 - **Notifications**: Sonner (toast notifications)
 - **PWA**: Vite Plugin PWA (for mobile installability)
 - **Deployment**: Built to static files → uploaded to cPanel `public_html/`
@@ -55,7 +55,7 @@ https://ui.persian-labs.ir/docs/components
 - **Authentication**: better auth + zod validation
 - **Password Hashing**: bcrypt
 - **Deployment**: Separate subdomain (e.g., `api.domain.com`) on cPanel's Node.js selector
-- **realtime data**: socket-io-client
+- **realtime data**: socket-io
 
 ## Architecture Decisions
 
