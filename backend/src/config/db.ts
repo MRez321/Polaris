@@ -11,9 +11,9 @@ const dbConfig: mysql.PoolOptions = {
     database: process.env.DB_NAME,
     waitForConnections: true,
     connectionLimit: 10,
-    queueLimit: 0,
     enableKeepAlive: true, // ← ADD: Prevents stale connections on shared hosting
     keepAliveInitialDelay: 10000, // ← ADD: 10s delay before first keepalive probe
+    timezone: 'Z', // Store/read DATETIME as UTC so ISO round-trips are exact
 };
 
 const pool = mysql.createPool(dbConfig);

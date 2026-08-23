@@ -1,12 +1,11 @@
 import dotenv from 'dotenv';
 import http from 'http';
 
+dotenv.config();
+
 import app from './src/app.js';
 import dbPool from './src/config/db.js';
-// import { initSocket } from './src/services/socketService.js';
-// import './src/services/cleanupService.js';
-
-dotenv.config();
+import { initSocket } from './src/services/socketService.js';
 
 const PORT = process.env.PORT || 3016;
 
@@ -14,12 +13,12 @@ const PORT = process.env.PORT || 3016;
 const httpServer = http.createServer(app);
 
 // Initialize socket.io on the same server
-// initSocket(httpServer);
+initSocket(httpServer);
 
 // Start Server
 httpServer.listen(PORT, async () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
-    // console.log(`🔌 Socket.io ready`);
+    console.log('🔌 Socket.io ready');
 
     // Test DB connection
     try {
@@ -30,7 +29,6 @@ httpServer.listen(PORT, async () => {
         process.exit(1);
     }
 
-    console.log(`🚀 Server started on port ${PORT}`);
     console.log(`📦 Process ID: ${process.pid}`);
     console.log(`⏰ Started at: ${new Date().toISOString()}`);
 });
