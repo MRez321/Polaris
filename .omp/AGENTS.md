@@ -52,7 +52,7 @@ https://ui.persian-labs.ir/docs/components
 - **Runtime**: Node.js
 - **Framework**: Express.js + TypeScript
 - **Database**: MySQL (cPanel's native MySQL) mysql2 + drizzle
-- **Authentication**: JWT (JSON Web Tokens)
+- **Authentication**: better auth + zod validation
 - **Password Hashing**: bcrypt
 - **Deployment**: Separate subdomain (e.g., `api.domain.com`) on cPanel's Node.js selector
 - **realtime data**: socket-io-client
