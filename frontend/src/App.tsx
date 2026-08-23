@@ -1,44 +1,43 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import AuthModal from './components/AuthModal';
-import LoginModal from './components/LoginModal';
-import Dashboard from './pages/Dashboard';
-import Landing from './pages/Landing';
-import ProtectedRoute from './components/ProtectedRoute';
-import Navbar from './components/Navbar'; // We can keep this if you want it on all protected pages
-
-function AppLayout({ children }: { children: React.ReactNode }) {
-    return (
-        <div className="min-h-screen bg-gray-50">
-            <Navbar />
-            <main>{children}</main>
-        </div>
-    );
-}
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from '@/context/ThemeContext';
+import { DataProvider } from '@/context/DataContext';
+import { UIProvider } from '@/context/UIContext';
+import { NetworkProvider } from '@/context/NetworkContext';
+import { AppLayout } from '@/components/layout/AppLayout';
+import DashboardPage from '@/pages/DashboardPage';
+import InventoryPage from '@/pages/InventoryPage';
+import ConsignmentsPage from '@/pages/ConsignmentsPage';
+import PeoplePage from '@/pages/PeoplePage';
+import FinancesPage from '@/pages/FinancesPage';
+import SettingsPage from '@/pages/SettingsPage';
 
 function App() {
-    return (
-        <AuthProvider>
+  return (
+    <ThemeProvider>
+      <NetworkProvider>
+        <DataProvider>
+          <UIProvider>
             <BrowserRouter>
-                <LoginModal />
-                <Routes>
-                    <Route path="/" element={<Landing />} />
-<Route path="/login" element={<AuthModal />} />
-
-                    <Route element={<ProtectedRoute />}>
-                        <Route path="/*" element={
-                            <AppLayout>
-                                <Routes>
-                                    <Route path="/dashboard" element={<Dashboard />} />
-                                    <Route path="/admin" element={<div>Admin Panel</div>} />
-                                </Routes>
-                            </AppLayout>
-                        } />
-                    </Route>
-                </Routes>
+              <Routes>
+                <Route element={<AppLayout />}>
+                  <Route path="/" element={<DashboardPage />} />
+                  <Route path="/inventory" element={<InventoryPage />} />
+                  <Route path="/consignments" element={<ConsignmentsPage />} />
+                  <Route path="/people" element={<PeoplePage />} />
+                  <Route path="/people/staff" element={<PeoplePage />} />
+                  <Route path="/finances" element={<FinancesPage />} />
+                  <Route path="/finances/workshop" element={<FinancesPage />} />
+                  <Route path="/finances/reports" element={<FinancesPage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Route>
+              </Routes>
             </BrowserRouter>
-        </AuthProvider>
-    );
+          </UIProvider>
+        </DataProvider>
+      </NetworkProvider>
+    </ThemeProvider>
+  );
 }
 
 export default App;
