@@ -1,0 +1,8 @@
+{
+  "name": "سامانه مدیریت موجودی و امانت پولاریس استایل",
+  "description": "سامانه جامع مدیریت کارگاه دوزندگی، واگذاری امانی کالا به دست‌فروشان، تخصیص بدهی FIFO و ثبت دریافت‌ها",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

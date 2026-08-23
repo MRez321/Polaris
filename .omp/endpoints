@@ -1,0 +1,33 @@
+ API Endpoints
+Health Check
+text
+GET /api/health
+Response: { status: 'OK', time: 'ISO timestamp', environment: 'production' }
+Inventory
+text
+GET    /api/items              # List all items
+GET    /api/items/:id          # Get single item
+POST   /api/items              # Create new item
+PUT    /api/items/:id          # Update item
+DELETE /api/items/:id          # Delete item
+GET    /api/items/low-stock    # Get items below threshold
+Sellers
+text
+GET    /api/sellers            # List all sellers
+GET    /api/sellers/:id        # Get seller with debt summary
+POST   /api/sellers            # Create new seller
+PUT    /api/sellers/:id        # Update seller
+DELETE /api/sellers/:id        # Delete seller
+GET    /api/sellers/:id/debt   # Get detailed debt breakdown
+Consignments (Handovers)
+text
+POST   /api/consignments/handover    # Give items to seller
+POST   /api/consignments/return      # Return items from seller
+PUT    /api/consignments/:id/sold    # Report items sold
+GET    /api/consignments/active      # Get all active consignments
+GET    /api/consignments/overdue     # Get overdue consignments
+Payments
+text
+POST   /api/payments            # Record payment (auto FIFO allocation)
+GET    /api/payments/seller/:id # Get all payments for a seller
+GET    /api/payments/daily      # Get today's payments summary

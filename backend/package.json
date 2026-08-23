@@ -13,14 +13,12 @@
   "type": "module",
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.7.1",
-    "argon2": "^0.45.1",
     "axios": "^1.19.0",
     "better-auth": "^1.7.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",
-    "express-rate-limit": "^8.6.2",
     "mysql2": "^3.23.4",
     "socket.io": "^4.8.3",
     "uuid": "^14.0.2"
