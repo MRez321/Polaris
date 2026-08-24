@@ -1,1 +1,0 @@
-ALTER TABLE `account` ADD `issuer` varchar(255);
