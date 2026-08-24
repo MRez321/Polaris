@@ -185,6 +185,7 @@ The frontend's connection monitor (`useNetworkStatus`) and the ping test in Sett
 
 ### cPanel notes
 
-- Node.js Selector: app root `/PolarisStyle`, startup file `server.js`
+- Node.js Selector: app URL `polarisstyle.ir` (the **whole domain**, not `/api`), app root `/PolarisStyle`, startup file `server.js`, Node ≥ 18 (20+ recommended)
+- Run "Run NPM Install" in the Node.js Selector after the first deploy — CI does not upload `node_modules`
 - The server `.env` must set `BETTER_AUTH_URL` and `FRONTEND_URL` to `https://polarisstyle.ir`
-- The backend exits at startup if the database is unreachable — check the Node app log if it won't start
+- The backend boots even if MySQL is unreachable — `/api/health` answers `503 {"database":"disconnected"}` until the pool reconnects. If the process itself won't start, the Node app log in cPanel shows the cause (missing `.env`, missing `BETTER_AUTH_SECRET`, or `node_modules` not installed); startup diagnostics print the resolved DB target and any missing env vars
