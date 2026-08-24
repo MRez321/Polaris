@@ -1,0 +1,57 @@
+name: 🚀 Deploy Polaris Backend
+
+on:
+  push:
+    tags:
+      - 'backend-v*'
+    paths:
+      - 'backend/**'
+
+jobs:
+  deploy:
+    name: 📦 Deploy Backend to cPanel
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: 🏗️ Build Backend
+        run: |
+          cd backend
+          npm ci
+          npm run build
+
+      - name: 📂 Upload Backend
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftp
+          port: ${{ secrets.FTP_PORT }}
+          local-dir: ./backend/dist/
+          server-dir: ${{ secrets.BACKEND_PATH }}/
+          exclude: |
+            **/.git*
+            **/node_modules/**
+            **/.env
+            **/*.log
+            **/tests/**
+            **/*.ts
+            **/tsconfig.json
+
+      - name: 🔄 Trigger Node App Restart
+        run: |
+          mkdir -p ./temp
+          echo "$(date +%s)" > ./temp/restart.txt
+
+      - name: 📤 Upload Restart Trigger
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          port: ${{ secrets.FTP_PORT }}
+          local-dir: ./temp/
+          server-dir: ${{ secrets.RESTART_PATH }}/
