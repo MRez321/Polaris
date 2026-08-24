@@ -102,10 +102,10 @@ export function useNetworkStatus(): NetworkStatus {
     // Initial check
     checkConnection();
 
-    // Periodic heartbeat check every 12 seconds
+    // Periodic heartbeat check every 10 seconds (auto-retry while disconnected)
     const interval = setInterval(() => {
       checkConnection();
-    }, 12000);
+    }, 10000);
 
     return () => {
       window.removeEventListener('online', handleOnline);
