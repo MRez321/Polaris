@@ -3,11 +3,10 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { eq } from 'drizzle-orm';
-import { v4 as uuid } from 'uuid';
 
 import { db } from '../src/config/drizzle.js';
+import pool from '../src/config/db.js';
 import { categories, companySettings, user } from '../src/schema/index.js';
-import { categories, companySettings, user, account } from '../src/schema/index.js';
 import { auth } from '../src/config/auth.js';
 
 const DEFAULT_CATEGORIES = [

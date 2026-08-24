@@ -180,7 +180,7 @@ export function toExpenseDto(row: ExpenseRow): WorkshopExpense {
         ...(row.receiptImageUrl ? { receiptImageUrl: row.receiptImageUrl } : {}),
         ...(row.description ? { description: row.description } : {}),
         isRecurring: row.isRecurring,
-        costAllocation: row.costAllocation as WorkshopExpense['costAllocation'],
+        costAllocation: row.costAllocation as NonNullable<WorkshopExpense['costAllocation']>,
         costShares: row.costShares,
         createdAt: iso(row.createdAt),
         isDeleted: row.isDeleted,

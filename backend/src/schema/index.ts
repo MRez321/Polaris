@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import {
   mysqlTable,
   varchar,
@@ -123,8 +124,8 @@ export const user = mysqlTable('user', {
   banned: boolean('banned').notNull().default(false),
   banReason: varchar('ban_reason', { length: 255 }),
   banExpires: datetime('ban_expires'),
-  createdAt: datetime('created_at').notNull().defaultNow(),
-  updatedAt: datetime('updated_at').notNull().defaultNow(),
+  createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const session = mysqlTable(
@@ -136,8 +137,8 @@ export const session = mysqlTable(
     expiresAt: datetime('expires_at').notNull(),
     ipAddress: varchar('ip_address', { length: 64 }),
     userAgent: varchar('user_agent', { length: 512 }),
-    createdAt: datetime('created_at').notNull().defaultNow(),
-    updatedAt: datetime('updated_at').notNull().defaultNow(),
+    createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (t) => [index('session_user_id_idx').on(t.userId)],
 );
@@ -156,8 +157,9 @@ export const account = mysqlTable(
     refreshTokenExpiresAt: datetime('refresh_token_expires_at'),
     scope: varchar('scope', { length: 255 }),
     password: varchar('password', { length: 255 }),
-    createdAt: datetime('created_at').notNull().defaultNow(),
-    updatedAt: datetime('updated_at').notNull().defaultNow(),
+    issuer: varchar('issuer', { length: 255 }),
+    createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (t) => [index('account_user_id_idx').on(t.userId)],
 );
@@ -169,8 +171,8 @@ export const verification = mysqlTable(
     identifier: varchar('identifier', { length: 255 }).notNull(),
     value: text('value').notNull(),
     expiresAt: datetime('expires_at').notNull(),
-    createdAt: datetime('created_at').notNull().defaultNow(),
-    updatedAt: datetime('updated_at').notNull().defaultNow(),
+    createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (t) => [index('verification_identifier_idx').on(t.identifier)],
 );
@@ -182,7 +184,7 @@ export const verification = mysqlTable(
 export const categories = mysqlTable('categories', {
   id: varchar('id', { length: 64 }).primaryKey(),
   label: varchar('label', { length: 128 }).notNull(),
-  createdAt: datetime('created_at').notNull().defaultNow(),
+  createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const items = mysqlTable(
@@ -202,8 +204,8 @@ export const items = mysqlTable(
     fabric: varchar('fabric', { length: 255 }).notNull().default(''),
     imageUrl: varchar('image_url', { length: 512 }),
     images: json('images').$type<string[]>().notNull(),
-    createdAt: datetime('created_at').notNull().defaultNow(),
-    updatedAt: datetime('updated_at').notNull().defaultNow(),
+    createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
     isDeleted: boolean('is_deleted').notNull().default(false),
     deletedAt: datetime('deleted_at'),
   },
@@ -232,8 +234,8 @@ export const sellers = mysqlTable(
     status: varchar('status', { length: 32 }).notNull().default('active'),
     avatarUrl: varchar('avatar_url', { length: 512 }),
     notes: text('notes'),
-    createdAt: datetime('created_at').notNull().defaultNow(),
-    updatedAt: datetime('updated_at').notNull().defaultNow(),
+    createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
     isDeleted: boolean('is_deleted').notNull().default(false),
     deletedAt: datetime('deleted_at'),
   },
@@ -247,7 +249,7 @@ export const consignments = mysqlTable(
     code: varchar('code', { length: 32 }).notNull().unique(),
     sellerId: varchar('seller_id', { length: 36 }).notNull(),
     sellerName: varchar('seller_name', { length: 255 }).notNull(),
-    date: datetime('date').notNull().defaultNow(),
+    date: datetime('date').notNull().default(sql`CURRENT_TIMESTAMP`),
     dueDate: datetime('due_date').notNull(),
     status: varchar('status', { length: 32 }).notNull().default('active'),
     items: json('items').$type<ConsignmentItemLine[]>().notNull(),
@@ -258,8 +260,8 @@ export const consignments = mysqlTable(
     remainingAmount: bigint('remaining_amount', { mode: 'number' }).notNull(),
     notes: text('notes'),
     handedOverBy: varchar('handed_over_by', { length: 255 }).notNull().default(''),
-    createdAt: datetime('created_at').notNull().defaultNow(),
-    updatedAt: datetime('updated_at').notNull().defaultNow(),
+    createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
     isDeleted: boolean('is_deleted').notNull().default(false),
     deletedAt: datetime('deleted_at'),
   },
@@ -278,12 +280,12 @@ export const consignmentReturns = mysqlTable(
     consignmentCode: varchar('consignment_code', { length: 32 }).notNull(),
     sellerId: varchar('seller_id', { length: 36 }).notNull(),
     sellerName: varchar('seller_name', { length: 255 }).notNull(),
-    date: datetime('date').notNull().defaultNow(),
+    date: datetime('date').notNull().default(sql`CURRENT_TIMESTAMP`),
     items: json('items').$type<ReturnItemLine[]>().notNull(),
     totalReturnAmount: bigint('total_return_amount', { mode: 'number' }).notNull(),
     processedBy: varchar('processed_by', { length: 255 }).notNull().default(''),
     notes: text('notes'),
-    createdAt: datetime('created_at').notNull().defaultNow(),
+    createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
     isDeleted: boolean('is_deleted').notNull().default(false),
     deletedAt: datetime('deleted_at'),
   },
@@ -298,14 +300,14 @@ export const payments = mysqlTable(
     sellerId: varchar('seller_id', { length: 36 }).notNull(),
     sellerName: varchar('seller_name', { length: 255 }).notNull(),
     amount: bigint('amount', { mode: 'number' }).notNull(),
-    date: datetime('date').notNull().defaultNow(),
+    date: datetime('date').notNull().default(sql`CURRENT_TIMESTAMP`),
     paymentMethod: varchar('payment_method', { length: 32 }).notNull(),
     trackingNumber: varchar('tracking_number', { length: 128 }),
     allocations: json('allocations').$type<DebtAllocation[]>().notNull(),
     unallocatedAmount: bigint('unallocated_amount', { mode: 'number' }).notNull().default(0),
     recordedBy: varchar('recorded_by', { length: 255 }).notNull().default(''),
     notes: text('notes'),
-    createdAt: datetime('created_at').notNull().defaultNow(),
+    createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
     isDeleted: boolean('is_deleted').notNull().default(false),
     deletedAt: datetime('deleted_at'),
   },
@@ -322,7 +324,7 @@ export const staff = mysqlTable(
     roleTitle: varchar('role_title', { length: 255 }).notNull().default(''),
     phones: json('phones').$type<string[]>().notNull(),
     nationalCode: varchar('national_code', { length: 32 }),
-    hireDate: datetime('hire_date').notNull().defaultNow(),
+    hireDate: datetime('hire_date').notNull().default(sql`CURRENT_TIMESTAMP`),
     salaryType: varchar('salary_type', { length: 32 }).notNull().default('monthly'),
     salaryAmount: bigint('salary_amount', { mode: 'number' }).notNull().default(0),
     bankAccounts: json('bank_accounts').$type<BankAccountInfo[]>().notNull(),
@@ -334,8 +336,8 @@ export const staff = mysqlTable(
     resumeAttachmentData: longtext('resume_attachment_data'),
     tasksCompletedCount: int('tasks_completed_count').notNull().default(0),
     activityHistory: json('activity_history').$type<StaffActivity[]>().notNull(),
-    createdAt: datetime('created_at').notNull().defaultNow(),
-    updatedAt: datetime('updated_at').notNull().defaultNow(),
+    createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
     isDeleted: boolean('is_deleted').notNull().default(false),
     deletedAt: datetime('deleted_at'),
   },
@@ -345,7 +347,7 @@ export const staff = mysqlTable(
 export const owners = mysqlTable('owners', {
   id: varchar('id', { length: 36 }).primaryKey(),
   data: json('data').$type<OwnerRecord[]>().notNull(),
-  updatedAt: datetime('updated_at').notNull().defaultNow(),
+  updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const expenses = mysqlTable(
@@ -356,7 +358,7 @@ export const expenses = mysqlTable(
     title: varchar('title', { length: 255 }).notNull(),
     category: varchar('category', { length: 64 }).notNull(),
     amount: bigint('amount', { mode: 'number' }).notNull(),
-    date: datetime('date').notNull().defaultNow(),
+    date: datetime('date').notNull().default(sql`CURRENT_TIMESTAMP`),
     paidBy: varchar('paid_by', { length: 128 }).notNull().default('صندوق کارگاه'),
     paymentMethod: varchar('payment_method', { length: 32 }).notNull().default('cash'),
     receiptImageUrl: varchar('receipt_image_url', { length: 512 }),
@@ -364,8 +366,8 @@ export const expenses = mysqlTable(
     isRecurring: boolean('is_recurring').notNull().default(false),
     costAllocation: varchar('cost_allocation', { length: 32 }).notNull().default('workshop_fund'),
     costShares: json('cost_shares').$type<CostShare[]>().notNull(),
-    createdAt: datetime('created_at').notNull().defaultNow(),
-    updatedAt: datetime('updated_at').notNull().defaultNow(),
+    createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
     isDeleted: boolean('is_deleted').notNull().default(false),
     deletedAt: datetime('deleted_at'),
   },
@@ -385,9 +387,9 @@ export const profitDistributions = mysqlTable('profit_distributions', {
   totalShareUnits: int('total_share_units').notNull().default(0),
   recipients: json('recipients').$type<ProfitShareRecipient[]>().notNull(),
   status: varchar('status', { length: 16 }).notNull().default('draft'),
-  calculatedAt: datetime('calculated_at').notNull().defaultNow(),
+  calculatedAt: datetime('calculated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   notes: text('notes'),
-  createdAt: datetime('created_at').notNull().defaultNow(),
+  createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const auditLogs = mysqlTable(
@@ -401,7 +403,7 @@ export const auditLogs = mysqlTable(
     entity: varchar('entity', { length: 32 }).notNull(),
     details: text('details').notNull(),
     ipAddress: varchar('ip_address', { length: 64 }),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
+    createdAt: timestamp('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (t) => [index('audit_logs_created_at_idx').on(t.createdAt)],
 );
@@ -409,5 +411,5 @@ export const auditLogs = mysqlTable(
 export const companySettings = mysqlTable('company_settings', {
   id: varchar('id', { length: 36 }).primaryKey(),
   data: json('data').$type<Record<string, unknown>>().notNull(),
-  updatedAt: datetime('updated_at').notNull().defaultNow(),
+  updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });

@@ -15,9 +15,9 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // Dev proxy to the API server (Example mock server on :3000, real backend later)
+      // Dev proxy to the API server (backend runs on :3016)
       '/api': {
-        target: process.env.VITE_PROXY_TARGET || 'http://localhost:3000',
+        target: process.env.VITE_PROXY_TARGET || 'http://localhost:3016',
         changeOrigin: true,
       },
     },

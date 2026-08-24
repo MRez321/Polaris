@@ -4,11 +4,11 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const dbConfig: mysql.PoolOptions = {
-    host: process.env.DB_HOST,
+    host: process.env.DB_HOST ?? '127.0.0.1',
     port: parseInt(process.env.DB_PORT || '3306', 10), // ← ADD: cPanel sometimes uses non-standard ports
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
+    user: process.env.DB_USER ?? 'root',
+    password: process.env.DB_PASSWORD ?? '',
+    database: process.env.DB_NAME ?? 'polaris',
     waitForConnections: true,
     connectionLimit: 10,
     enableKeepAlive: true, // ← ADD: Prevents stale connections on shared hosting

@@ -5,10 +5,11 @@ import { auditLogs } from '../schema/index.js';
 import type { AuditLog } from '../types/index.js';
 
 export interface AuditActor {
-    id: string;
-    name: string;
-    role?: string | null;
-    ip?: string;
+    user: {
+        id: string;
+        name: string;
+        role?: string | null;
+    };
 }
 
 /**
@@ -25,13 +26,12 @@ export function logAudit(
         .insert(auditLogs)
         .values({
             id: uuid(),
-            userId: actor?.id ?? '',
-            userName: actor?.name ?? 'سیستم',
-            ...(actor?.role ? { userRole: actor.role } : {}),
+            userId: actor?.user.id ?? '',
+            userName: actor?.user.name ?? 'سیستم',
+            ...(actor?.user.role ? { userRole: actor.user.role } : {}),
             action,
             entity,
             details,
-            ...(actor?.ip ? { ipAddress: actor.ip } : {}),
         })
         .catch((err: unknown) => {
             console.error('⚠️ Failed to write audit log:', err);
