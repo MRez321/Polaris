@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Scissors,
@@ -7,10 +7,8 @@ import {
   Sun,
   Bell,
   Receipt,
-  Calendar,
   Wifi,
   WifiOff,
-  Download,
 } from 'lucide-react';
 import { toPersianDigits } from '@/utils/persian';
 import { useTheme } from '@/context/ThemeContext';
@@ -20,11 +18,9 @@ import { useData } from '@/context/DataContext';
 
 export const Header: React.FC = () => {
   const navigate = useNavigate();  const { isDarkMode, toggleTheme } = useTheme();
-  const { openQuickHandover, openQuickPayment, setPwaModalOpen } = useUI();
+  const { openQuickHandover, openQuickPayment } = useUI();
   const networkStatus = useNetwork();
   const { consignments } = useData();
-
-  const [currentDateTime, setCurrentDateTime] = useState<string>('');
 
   const isFullyConnected = networkStatus.isFullyConnected;
   const latency = networkStatus.latency;
@@ -32,39 +28,6 @@ export const Header: React.FC = () => {
   const overdueCount = consignments.filter(
     (c) => (c.remainingAmount || 0) > 0 && new Date(c.dueDate).getTime() < Date.now()
   ).length;
-
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      const dateOptions: Intl.DateTimeFormatOptions = {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      };
-      const timeOptions: Intl.DateTimeFormatOptions = {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-      };
-
-      try {
-        const persianDate = new Intl.DateTimeFormat('fa-IR', dateOptions).format(now);
-        const persianTime = new Intl.DateTimeFormat('fa-IR', timeOptions).format(now);
-        setCurrentDateTime(`${persianDate} • ساعت ${persianTime}`);
-      } catch {
-        setCurrentDateTime(now.toLocaleTimeString('fa-IR'));
-      }
-    };
-
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
 
   return (
     <header className="sticky top-0 z-40 glass-panel border-b border-stone-200 dark:border-white/5 shadow-sm transition-all">
@@ -78,16 +41,11 @@ export const Header: React.FC = () => {
             <Scissors className="w-5 h-5 -rotate-45 text-black" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base sm:text-lg font-black tracking-tight text-stone-900 dark:text-white">
-                پولاریس استایل
-              </h1>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 dark:bg-[#CEAE80]/20 text-amber-900 dark:text-[#CEAE80] font-black border border-amber-600/30 dark:border-[#CEAE80]/40">
-                سیستم مدیریت کارگاه
-              </span>
-            </div>
+            <h1 className="text-base sm:text-lg font-black tracking-tight text-stone-900 dark:text-white">
+              پولاریس استایل
+            </h1>
             <p className="text-[11px] text-stone-600 dark:text-gray-400 hidden sm:block font-medium">
-              سامانه حسابداری امانی و انبارگردانی راسته بازار پوشاک
+              سیستم مدیریت کارگاه
             </p>
           </div>
         </div>
@@ -127,24 +85,10 @@ export const Header: React.FC = () => {
             )}
           </div>
 
-          {/* Date & Time */}
-          <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-black/40 border border-stone-200 dark:border-white/5 text-xs text-stone-800 dark:text-stone-300 font-medium">
-            <Calendar className="w-3.5 h-3.5 text-[#A67C38] dark:text-[#CEAE80]" />
-            <span>{currentDateTime || 'در حال بارگذاری زمان...'}</span>
-          </div>
         </div>
 
         {/* Quick Actions & Utility controls */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* PWA Install Button */}
-          <button
-            onClick={() => setPwaModalOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl glass-card hover:border-[#CEAE80] text-amber-700 dark:text-[#CEAE80] text-xs font-black transition-all active:scale-95 shadow-sm"
-            title="نصب نسخه وب‌اپلیکیشن (PWA) روی گوشی یا دسکتاپ"
-          >
-            <Download className="w-4 h-4 text-amber-600 dark:text-[#CEAE80]" />
-            <span className="hidden md:inline">نصب اپ</span>
-          </button>
 
           {/* Quick Payment Button */}
           <button
@@ -160,11 +104,11 @@ export const Header: React.FC = () => {
           <button
             onClick={() => openQuickHandover()}
             className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-black text-xs sm:text-sm shadow-md transition-all active:scale-95"
+            title="تحویل بار جدید"
           >
             <Plus className="w-4 h-4 text-black" />
-            <span>تحویل بار جدید</span>
+            <span className="hidden sm:inline">تحویل بار جدید</span>
           </button>
-
           {/* Overdue alert indicator button */}
           {overdueCount > 0 && (
             <button

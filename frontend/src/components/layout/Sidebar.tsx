@@ -19,17 +19,17 @@ export const Sidebar: React.FC = () => {
   ).length;
 
   const navItems = [
-    { to: '/', label: 'پیشخوان و داشبورد', icon: LayoutDashboard, end: true },
-    { to: '/inventory', label: 'انبار و موجودی پوشاک', icon: Package },
+    { to: '/', label: 'داشبورد', icon: LayoutDashboard, end: true },
+    { to: '/inventory', label: 'انبار و موجودی اجناس', icon: Package },
     {
       to: '/consignments',
       label: 'حواله‌ها و تحویل امانی',
       icon: ArrowLeftRight,
       badge: overdueCount > 0 ? overdueCount : undefined,
     },
-    { to: '/people', label: 'فروشندگان و پرسنل کارگاه', icon: Users },
+    { to: '/people', label: 'فروشندگان و پرسنل', icon: Users },
     { to: '/finances', label: 'امور مالی، درآمد و هزینه‌ها', icon: CreditCard },
-    { to: '/settings', label: 'تنظیمات، ممیزی و سامانه', icon: Settings },
+    { to: '/settings', label: 'تنظیمات و مدیریت', icon: Settings },
   ];
 
   return (

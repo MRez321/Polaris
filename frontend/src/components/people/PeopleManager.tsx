@@ -59,7 +59,7 @@ export const PeopleManager: React.FC<PeopleManagerProps> = ({
   const subTabs = [
     {
       id: 'sellers' as const,
-      label: 'فروشندگان بساط‌ها و بازار',
+      label: 'فروشندگان',
       icon: Users,
       badge: sellers.length > 0 ? toPersianDigits(sellers.length) : undefined,
     },

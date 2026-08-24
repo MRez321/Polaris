@@ -59,12 +59,12 @@ export const FinancesManager: React.FC<FinancesManagerProps> = ({
     },
     {
       id: 'workshop' as const,
-      label: 'هزینه‌ها و درآمد کارگاه',
+      label: 'هزینه‌ها و درآمد',
       icon: Wrench,
     },
     {
       id: 'reports' as const,
-      label: 'گزارش‌های مالی و سنی',
+      label: 'گزارش‌های مالی',
       icon: BarChart3,
     },
   ];
