@@ -1,11 +1,8 @@
-import type { Request, Response } from 'express';
 import { z } from 'zod';
-
 import * as svc from '../services/inventoryService.js';
 import { toExpenseDto, toProfitDto } from '../models/mappers.js';
 import { logAudit } from '../services/auditService.js';
 import { badRequest, pathParam } from '../utils/apiError.js';
-
 const costShareSchema = z.object({
     recipientId: z.string(),
     recipientName: z.string(),
@@ -13,7 +10,6 @@ const costShareSchema = z.object({
     requiredAmount: z.number(),
     isPaid: z.boolean(),
 });
-
 const expenseSchema = z.object({
     id: z.string().optional(),
     code: z.string().optional(),
@@ -30,36 +26,30 @@ const expenseSchema = z.object({
     costAllocation: z.enum(['shared_by_equity', 'workshop_fund', 'specific_payer', 'custom_split']).optional(),
     costShares: z.array(costShareSchema).optional(),
 });
-
-export async function listExpenses(_req: Request, res: Response): Promise<void> {
+export async function listExpenses(_req, res) {
     const rows = await svc.listExpenses();
     res.json(rows.map(toExpenseDto));
 }
-
-export async function createExpense(req: Request, res: Response): Promise<void> {
+export async function createExpense(req, res) {
     const data = expenseSchema.parse(req.body);
     const row = await svc.createExpense(data);
     logAudit(req.auth ?? null, 'create', 'cost', `هزینه «${row.title}» به مبلغ ${row.amount} ثبت شد`);
     res.status(201).json(toExpenseDto(row));
 }
-
-export async function updateExpense(req: Request, res: Response): Promise<void> {
+export async function updateExpense(req, res) {
     const id = pathParam(req, 'id', 'شناسه هزینه');
     const data = expenseSchema.partial().parse(req.body);
     const row = await svc.updateExpense(id, data);
     logAudit(req.auth ?? null, 'update', 'cost', `هزینه «${row.title}» ویرایش شد`);
     res.json(toExpenseDto(row));
 }
-
-export async function deleteExpense(req: Request, res: Response): Promise<void> {
+export async function deleteExpense(req, res) {
     const id = pathParam(req, 'id', 'شناسه هزینه');
     await svc.softDeleteExpense(id);
     logAudit(req.auth ?? null, 'delete', 'cost', 'هزینه به سطل بازیافت منتقل شد');
     res.json({ message: 'هزینه به سطل بازیافت منتقل شد' });
 }
-
 // --- Profit distribution ---
-
 const recipientSchema = z.object({
     id: z.string(),
     name: z.string(),
@@ -77,7 +67,6 @@ const recipientSchema = z.object({
     isSettled: z.boolean().optional(),
     isCustomRecipient: z.boolean().optional(),
 });
-
 const profitSchema = z.object({
     id: z.string().optional(),
     periodName: z.string().min(1),
@@ -92,15 +81,14 @@ const profitSchema = z.object({
     notes: z.string().optional(),
     calculatedAt: z.coerce.date().optional(),
 });
-
-export async function listProfitDistributions(_req: Request, res: Response): Promise<void> {
+export async function listProfitDistributions(_req, res) {
     const rows = await svc.listProfitDistributions();
     res.json(rows.map(toProfitDto));
 }
-
-export async function createProfitDistribution(req: Request, res: Response): Promise<void> {
+export async function createProfitDistribution(req, res) {
     const data = profitSchema.parse(req.body);
     const row = await svc.createProfitDistribution(data);
     logAudit(req.auth ?? null, 'create', 'profit', `توزیع سود «${row.periodName}» ثبت شد`);
     res.status(201).json(toProfitDto(row));
 }
+//# sourceMappingURL=expensesController.js.map

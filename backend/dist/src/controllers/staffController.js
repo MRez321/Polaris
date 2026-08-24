@@ -1,12 +1,9 @@
-import type { Request, Response } from 'express';
 import { z } from 'zod';
-
 import * as svc from '../services/inventoryService.js';
 import { getOwners, setOwners } from '../services/settingsService.js';
 import { toStaffDto } from '../models/mappers.js';
 import { logAudit } from '../services/auditService.js';
 import { badRequest, pathParam } from '../utils/apiError.js';
-
 const bankAccountSchema = z.object({
     id: z.string().optional(),
     bankName: z.string(),
@@ -16,7 +13,6 @@ const bankAccountSchema = z.object({
     payaNumber: z.string().optional(),
     accountHolder: z.string().optional(),
 });
-
 const activitySchema = z.object({
     id: z.string(),
     date: z.string(),
@@ -24,7 +20,6 @@ const activitySchema = z.object({
     type: z.enum(['task', 'handover', 'payment', 'attendance', 'note']),
     description: z.string(),
 });
-
 const staffSchema = z.object({
     id: z.string().optional(),
     code: z.string().optional(),
@@ -46,36 +41,30 @@ const staffSchema = z.object({
     tasksCompletedCount: z.number().int().min(0).optional(),
     activityHistory: z.array(activitySchema).optional(),
 });
-
-export async function listStaff(_req: Request, res: Response): Promise<void> {
+export async function listStaff(_req, res) {
     const rows = await svc.listStaff();
     res.json(rows.map(toStaffDto));
 }
-
-export async function createStaff(req: Request, res: Response): Promise<void> {
+export async function createStaff(req, res) {
     const data = staffSchema.parse(req.body);
     const row = await svc.createStaff(data);
     logAudit(req.auth ?? null, 'create', 'staff', `پرسنل «${row.name}» با کد ${row.code} اضافه شد`);
     res.status(201).json(toStaffDto(row));
 }
-
-export async function updateStaff(req: Request, res: Response): Promise<void> {
+export async function updateStaff(req, res) {
     const id = pathParam(req, 'id', 'شناسه پرسنل');
     const data = staffSchema.partial().parse(req.body);
     const row = await svc.updateStaff(id, data);
     logAudit(req.auth ?? null, 'update', 'staff', `پرسنل «${row.name}» ویرایش شد`);
     res.json(toStaffDto(row));
 }
-
-export async function deleteStaff(req: Request, res: Response): Promise<void> {
+export async function deleteStaff(req, res) {
     const id = pathParam(req, 'id', 'شناسه پرسنل');
     await svc.softDeleteStaff(id);
     logAudit(req.auth ?? null, 'delete', 'staff', 'پرسنل به سطل بازیافت منتقل شد');
     res.json({ message: 'پرسنل به سطل بازیافت منتقل شد' });
 }
-
 // --- Owners ---
-
 const ownerSchema = z.object({
     id: z.string(),
     name: z.string(),
@@ -91,15 +80,14 @@ const ownerSchema = z.object({
     isDeleted: z.boolean().optional(),
     deletedAt: z.string().optional(),
 });
-
-export async function listOwners(_req: Request, res: Response): Promise<void> {
+export async function listOwners(_req, res) {
     const rows = await getOwners();
     res.json(rows.filter((o) => !o.isDeleted));
 }
-
-export async function updateOwners(req: Request, res: Response): Promise<void> {
+export async function updateOwners(req, res) {
     const body = z.object({ owners: z.array(ownerSchema) }).parse(req.body);
     const saved = await setOwners(body.owners);
     logAudit(req.auth ?? null, 'update', 'settings', `لیست شرکا به‌روزرسانی شد (${saved.length} نفر)`);
     res.json({ message: 'لیست شرکا ذخیره شد' });
 }
+//# sourceMappingURL=staffController.js.map
