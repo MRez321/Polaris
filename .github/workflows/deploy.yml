@@ -78,3 +78,31 @@ jobs:
           port: ${{ secrets.FTP_PORT }}
           local-dir: ./temp/
           server-dir: ${{ secrets.RESTART_PATH }}/
+
+      # --- 6. Create Release Artifact ---
+      - name: 📦 Prepare Release Package
+        run: |
+          # Create release directory structure
+          mkdir -p release-package/backend/public
+          
+          # Copy built backend files
+          cp -r backend/dist/* release-package/backend/
+          
+          # Copy built frontend files into backend/public
+          cp -r frontend/dist/* release-package/backend/public/
+          
+          # Create zip archive
+          cd release-package
+          zip -r "../Polaris-${{ github.ref_name }}.zip" .
+          cd ..
+
+      # --- 7. Create GitHub Release ---
+      - name: 🚀 Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          files: "Polaris-${{ github.ref_name }}.zip"
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
