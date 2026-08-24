@@ -112,7 +112,7 @@ export const HandoverManager: React.FC<HandoverManagerProps> = ({
           />
         </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+        <div className="flex flex-wrap items-center gap-1.5">
           <button
             onClick={() => setTabFilter('all')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
@@ -159,7 +159,7 @@ export const HandoverManager: React.FC<HandoverManagerProps> = ({
       {/* Consignments List Table */}
       <div className="glass-panel rounded-2xl border border-stone-200 dark:border-white/5 overflow-hidden shadow-md">
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-xs">
+          <table className="w-full text-right text-xs table-stacked">
             <thead className="bg-stone-100 dark:bg-[#1A1A1E] text-stone-700 dark:text-gray-300 font-bold border-b border-stone-200 dark:border-white/10">
               <tr>
                 <th className="p-3.5">شماره فاکتور</th>
@@ -184,22 +184,22 @@ export const HandoverManager: React.FC<HandoverManagerProps> = ({
                     key={c.id}
                     className="hover:bg-stone-50 dark:hover:bg-white/[0.02] transition-colors"
                   >
-                    <td className="p-3.5 font-mono font-black text-amber-800 dark:text-[#CEAE80]">
+                    <td data-label="شماره فاکتور" className="p-3.5 font-mono font-black text-amber-800 dark:text-[#CEAE80]">
                       {c.code}
                     </td>
-                    <td className="p-3.5">
+                    <td data-label="فروشنده" className="p-3.5">
                       <span className="font-bold text-stone-900 dark:text-white block">
                         {c.sellerName}
                       </span>
                     </td>
-                    <td className="p-3.5">
+                    <td data-label="اقلام و تعداد" className="p-3.5">
                       <span className="font-mono font-bold text-stone-800 dark:text-gray-300">{toPersianDigits(totalItemsCount)} قلم لباس</span>
                       <span className="text-[10px] text-stone-500 dark:text-gray-400 block truncate max-w-[150px]">
                         {c.items.map((i) => i.itemName).join('، ')}
                       </span>
                     </td>
-                    <td className="p-3.5 text-stone-500 dark:text-gray-400">{toJalaliDate(c.date)}</td>
-                    <td className="p-3.5">
+                    <td data-label="تاریخ واگذاری" className="p-3.5 text-stone-500 dark:text-gray-400">{toJalaliDate(c.date)}</td>
+                    <td data-label="موعد تسویه" className="p-3.5">
                       <span
                         className={`font-bold ${
                           isOverdue
@@ -215,15 +215,15 @@ export const HandoverManager: React.FC<HandoverManagerProps> = ({
                         </span>
                       )}
                     </td>
-                    <td className="p-3.5 font-mono text-stone-700 dark:text-gray-300">{formatToman(c.totalAmount)}</td>
-                    <td className="p-3.5 font-bold font-mono text-stone-900 dark:text-white">
+                    <td data-label="مبلغ کل" className="p-3.5 font-mono text-stone-700 dark:text-gray-300">{formatToman(c.totalAmount)}</td>
+                    <td data-label="مانده بدهی" className="p-3.5 font-bold font-mono text-stone-900 dark:text-white">
                       {c.remainingAmount === 0 ? (
                         <span className="text-emerald-600 dark:text-green-400 font-bold">۰ (تسویه)</span>
                       ) : (
                         <span className="text-amber-800 dark:text-[#CEAE80] font-black">{formatToman(c.remainingAmount)}</span>
                       )}
                     </td>
-                    <td className="p-3.5">
+                    <td data-label="وضعیت" className="p-3.5">
                       <Badge
                         variant={
                           c.remainingAmount === 0

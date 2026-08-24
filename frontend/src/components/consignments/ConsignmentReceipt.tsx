@@ -91,7 +91,7 @@ export const ConsignmentReceipt: React.FC<ConsignmentReceiptProps> = ({
 
           {/* Items Table */}
           <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs">
+            <table className="w-full text-right text-xs table-stacked">
               <thead className="border-b border-stone-200 dark:border-white/10 bg-stone-100 dark:bg-[#1A1A1E] text-stone-700 dark:text-gray-300 font-bold">
                 <tr>
                   <th className="p-2">ردیف</th>
@@ -107,20 +107,20 @@ export const ConsignmentReceipt: React.FC<ConsignmentReceiptProps> = ({
               <tbody className="divide-y divide-stone-200 dark:divide-white/5">
                 {consignment.items.map((line, index) => (
                   <tr key={index} className="hover:bg-stone-50 dark:hover:bg-white/5 transition-colors">
-                    <td className="p-2 font-mono text-stone-500 dark:text-gray-400">{toPersianDigits(index + 1)}</td>
-                    <td className="p-2 font-mono text-stone-500 dark:text-gray-400">{line.itemCode}</td>
-                    <td className="p-2 font-bold text-stone-900 dark:text-white">{line.itemName}</td>
-                    <td className="p-2 text-center font-mono font-black text-stone-900 dark:text-white">
+                    <td data-label="ردیف" className="p-2 font-mono text-stone-500 dark:text-gray-400">{toPersianDigits(index + 1)}</td>
+                    <td data-label="کد" className="p-2 font-mono text-stone-500 dark:text-gray-400">{line.itemCode}</td>
+                    <td data-label="شرح کالا" className="p-2 font-bold text-stone-900 dark:text-white">{line.itemName}</td>
+                    <td data-label="تعداد تحویلی" className="p-2 text-center font-mono font-black text-stone-900 dark:text-white">
                       {toPersianDigits(line.quantity)}
                     </td>
-                    <td className="p-2 text-center font-mono text-stone-500 dark:text-gray-400">
+                    <td data-label="مرجوعی" className="p-2 text-center font-mono text-stone-500 dark:text-gray-400">
                       {toPersianDigits(line.returnedQuantity || 0)}
                     </td>
-                    <td className="p-2 text-center font-mono text-emerald-600 dark:text-green-400 font-black">
+                    <td data-label="فروش رفته" className="p-2 text-center font-mono text-emerald-600 dark:text-green-400 font-black">
                       {toPersianDigits(line.soldQuantity || 0)}
                     </td>
-                    <td className="p-2 font-mono text-stone-700 dark:text-gray-300">{formatToman(line.unitPrice)}</td>
-                    <td className="p-2 font-mono font-black text-stone-900 dark:text-white">
+                    <td data-label="قیمت واحد" className="p-2 font-mono text-stone-700 dark:text-gray-300">{formatToman(line.unitPrice)}</td>
+                    <td data-label="مبلغ کل" className="p-2 font-mono font-black text-stone-900 dark:text-white">
                       {formatToman(line.totalPrice)}
                     </td>
                   </tr>

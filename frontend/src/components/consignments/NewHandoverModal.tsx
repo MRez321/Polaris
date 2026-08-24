@@ -448,7 +448,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-right text-xs">
+                <table className="w-full text-right text-xs table-stacked">
                   <thead className="text-stone-500 dark:text-gray-400 border-b border-black/5 dark:border-white/5 pb-2">
                     <tr>
                       <th className="py-2 px-2">نام کالا</th>
@@ -464,20 +464,20 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
                       const item = items.find((i) => i.id === line.itemId);
                       return (
                         <tr key={idx} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                          <td className="py-2 px-2 font-bold text-stone-900 dark:text-white">
+                          <td data-label="نام کالا" className="py-2 px-2 font-bold text-stone-900 dark:text-white">
                             {item?.name || 'کالا'}
                             <span className="block text-[10px] text-stone-400 font-mono">{item?.code}</span>
                           </td>
-                          <td className="py-2 px-2 text-stone-600 dark:text-gray-300">
+                          <td data-label="سایز / رنگ" className="py-2 px-2 text-stone-600 dark:text-gray-300">
                             {line.selectedSize} / {line.selectedColor}
                           </td>
-                          <td className="py-2 px-2 text-center font-bold font-mono">
+                          <td data-label="تعداد" className="py-2 px-2 text-center font-bold font-mono">
                             {toPersianDigits(line.quantity)}
                           </td>
-                          <td className="py-2 px-2 text-left font-mono" dir="ltr">
+                          <td data-label="قیمت واحد" className="py-2 px-2 text-left font-mono" dir="ltr">
                             {formatToman(line.unitPrice)}
                           </td>
-                          <td className="py-2 px-2 text-left font-bold text-stone-900 dark:text-white font-mono" dir="ltr">
+                          <td data-label="مبلغ کل" className="py-2 px-2 text-left font-bold text-stone-900 dark:text-white font-mono" dir="ltr">
                             {formatToman(line.quantity * line.unitPrice)}
                           </td>
                           <td className="py-2 px-2 text-center">

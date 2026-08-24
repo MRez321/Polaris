@@ -88,7 +88,7 @@ export const FinancesManager: React.FC<FinancesManagerProps> = ({
         </div>
 
         {/* Tab Switcher Pills */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-stone-100/80 dark:bg-black/40 border border-black/5 dark:border-white/5 overflow-x-auto max-w-full">
+        <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-stone-100/80 dark:bg-black/40 border border-black/5 dark:border-white/5">
           {subTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeSubTab === tab.id;

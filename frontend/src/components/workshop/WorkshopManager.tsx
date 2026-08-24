@@ -759,7 +759,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
       </div>
 
       {/* Main Tab Navigation Buttons */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-stone-200 dark:border-white/10 no-scrollbar">
+      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-stone-200 dark:border-white/10">
         <button
           onClick={() => setActiveSubTab('expenses')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap transition-all ${
@@ -827,11 +827,11 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
               />
             </div>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <SelectMenu
                 value={selectedCategoryFilter}
                 onChange={setSelectedCategoryFilter}
-                className="w-full sm:w-auto"
+                className="flex-1 min-w-[9.5rem] sm:w-auto"
                 options={[
                   { value: 'all', label: 'همه دسته‌بندی‌ها' },
                   ...categoryOptions.map((cat) => ({ value: cat.id, label: cat.label })),
@@ -841,7 +841,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
               <SelectMenu
                 value={selectedPayerFilter}
                 onChange={setSelectedPayerFilter}
-                className="w-full sm:w-auto"
+                className="flex-1 min-w-[9.5rem] sm:w-auto"
                 options={[
                   { value: 'all', label: 'همه پرداخت‌کنندگان' },
                   { value: 'fund', label: 'صندوق تنخواه کارگاه' },

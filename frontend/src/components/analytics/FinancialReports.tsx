@@ -490,7 +490,7 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
         </h4>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-xs">
+          <table className="w-full text-right text-xs table-stacked">
             <thead className="border-b border-black/10 dark:border-white/10 text-stone-500 dark:text-gray-400">
               <tr>
                 <th className="p-2.5">فروشنده</th>
@@ -509,21 +509,21 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
                 );
                 return (
                   <tr key={s.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                    <td className="p-2.5 font-bold text-stone-900 dark:text-white">{s.name}</td>
-                    <td className="p-2.5 text-stone-500 dark:text-gray-400">{s.streetLocation}</td>
-                    <td className="p-2.5 font-mono text-left" dir="ltr">
+                    <td data-label="فروشنده" className="p-2.5 font-bold text-stone-900 dark:text-white">{s.name}</td>
+                    <td data-label="راسته بساط" className="p-2.5 text-stone-500 dark:text-gray-400">{s.streetLocation}</td>
+                    <td data-label="کل تحویل امانی" className="p-2.5 font-mono text-left" dir="ltr">
                       {formatToman(s.totalHandoversValue || 0)}
                     </td>
-                    <td className="p-2.5 font-mono font-bold text-emerald-600 dark:text-emerald-400 text-left" dir="ltr">
+                    <td data-label="کل وصولی نقدی" className="p-2.5 font-mono font-bold text-emerald-600 dark:text-emerald-400 text-left" dir="ltr">
                       {formatToman(s.totalPaid || 0)}
                     </td>
-                    <td className="p-2.5 font-mono font-black text-[#CEAE80] text-left" dir="ltr">
+                    <td data-label="مانده بدهی" className="p-2.5 font-mono font-black text-[#CEAE80] text-left" dir="ltr">
                       {formatToman(s.currentDebt || 0)}
                     </td>
-                    <td className="p-2.5 font-mono text-stone-400 text-left" dir="ltr">
+                    <td data-label="سقف اعتبار" className="p-2.5 font-mono text-stone-400 text-left" dir="ltr">
                       {formatToman(s.creditLimit || 0)}
                     </td>
-                    <td className="p-2.5 text-center">
+                    <td data-label="وضعیت وصولی" className="p-2.5 text-center">
                       <span
                         className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
                           ratio > 70

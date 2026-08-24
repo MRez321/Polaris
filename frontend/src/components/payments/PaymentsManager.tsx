@@ -95,7 +95,7 @@ export const PaymentsManager: React.FC<PaymentsManagerProps> = ({
           />
         </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+        <div className="flex flex-wrap items-center gap-1.5">
           <button
             onClick={() => setMethodFilter('all')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
@@ -142,7 +142,7 @@ export const PaymentsManager: React.FC<PaymentsManagerProps> = ({
       {/* Payments List */}
       <div className="glass-panel rounded-2xl border border-stone-200 dark:border-white/5 overflow-hidden shadow-md">
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-xs">
+          <table className="w-full text-right text-xs table-stacked">
             <thead className="bg-stone-100 dark:bg-[#1A1A1E] text-stone-700 dark:text-gray-300 font-bold border-b border-stone-200 dark:border-white/10">
               <tr>
                 <th className="p-3.5">شماره رسید</th>
@@ -161,16 +161,16 @@ export const PaymentsManager: React.FC<PaymentsManagerProps> = ({
                   key={p.id}
                   className="hover:bg-stone-50 dark:hover:bg-white/[0.02] transition-colors"
                 >
-                  <td className="p-3.5 font-mono font-black text-amber-800 dark:text-[#CEAE80]">
+                  <td data-label="شماره رسید" className="p-3.5 font-mono font-black text-amber-800 dark:text-[#CEAE80]">
                     {p.code}
                   </td>
-                  <td className="p-3.5 font-bold text-stone-900 dark:text-white">
+                  <td data-label="فروشنده" className="p-3.5 font-bold text-stone-900 dark:text-white">
                     {p.sellerName}
                   </td>
-                  <td className="p-3.5 font-black text-emerald-600 dark:text-green-400 font-mono text-sm">
+                  <td data-label="مبلغ دریافتی" className="p-3.5 font-black text-emerald-600 dark:text-green-400 font-mono text-sm">
                     +{formatToman(p.amount)}
                   </td>
-                  <td className="p-3.5">
+                  <td data-label="روش پرداخت" className="p-3.5">
                     <span className="px-2 py-0.5 rounded bg-stone-100 dark:bg-[#1A1A1E] text-stone-700 dark:text-gray-300 border border-stone-200 dark:border-white/5 font-medium">
                       {getMethodLabel(p.paymentMethod)}
                     </span>
@@ -180,8 +180,8 @@ export const PaymentsManager: React.FC<PaymentsManagerProps> = ({
                       </span>
                     )}
                   </td>
-                  <td className="p-3.5 text-stone-500 dark:text-gray-400">{toJalaliDate(p.date)}</td>
-                  <td className="p-3.5">
+                  <td data-label="تاریخ ثبت" className="p-3.5 text-stone-500 dark:text-gray-400">{toJalaliDate(p.date)}</td>
+                  <td data-label="تسویه فاکتورها" className="p-3.5">
                     <div className="flex items-center gap-1 flex-wrap">
                       {p.allocations && p.allocations.length > 0 ? (
                         p.allocations.map((a, i) => (
@@ -197,7 +197,7 @@ export const PaymentsManager: React.FC<PaymentsManagerProps> = ({
                       )}
                     </div>
                   </td>
-                  <td className="p-3.5 text-stone-500 dark:text-gray-400 font-medium">{p.recordedBy}</td>
+                  <td data-label="ثبت‌کننده" className="p-3.5 text-stone-500 dark:text-gray-400 font-medium">{p.recordedBy}</td>
                   <td className="p-3.5 text-center">
                     <button
                       onClick={() => setSelectedPaymentDetail(p)}

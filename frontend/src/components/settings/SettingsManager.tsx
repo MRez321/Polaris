@@ -302,7 +302,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
             <span className="text-[#CEAE80]">تنظیمات برندینگ، سطل بازیافت و سامانه برخط پولاریس</span>
           </h3>
           <p className="text-xs text-stone-500 dark:text-gray-400 mt-1">
-            مشخصات کارگاه، اطلاعات مالی هم‌بنیان‌گذاران، بازیابی اطلاعات حذف‌شده (Soft Delete) و وضعیت پایگاه داده
+            مشخصات کارگاه، اطلاعات مالی هم‌بنیان‌گذاران، بازیابی اطلاعات حذف‌شده و وضعیت پایگاه داده
           </p>
         </div>
 
@@ -315,21 +315,21 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
       </div>
 
       {/* Main Settings Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-stone-200 dark:border-white/5 pb-2 overflow-x-auto">
+      <div className="flex flex-wrap items-center gap-2 border-b border-stone-200 dark:border-white/5 pb-2">
         <button
           onClick={() => setActiveTab('branding')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
             activeTab === 'branding'
               ? 'bg-[#CEAE80] text-black shadow-md font-black'
               : 'text-stone-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5'
           }`}
         >
-          مشخصات برند و کارگاه
+          مشخصات برند
         </button>
 
         <button
           onClick={() => setActiveTab('owners')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
             activeTab === 'owners'
               ? 'bg-[#CEAE80] text-black shadow-md font-black'
               : 'text-stone-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5'
@@ -340,14 +340,14 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
 
         <button
           onClick={() => setActiveTab('trash')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
             activeTab === 'trash'
               ? 'bg-[#CEAE80] text-black shadow-md font-black'
               : 'text-stone-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5'
           }`}
         >
           <Trash2 className="w-3.5 h-3.5" />
-          <span>سطل بازیافت و بازگردانی</span>
+          <span>سطل زباله</span>
           {totalTrashCount > 0 && (
             <span className="px-1.5 py-0.2 rounded-full bg-rose-600 text-white text-[10px] font-bold">
               {toPersianDigits(totalTrashCount)}
@@ -364,7 +364,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           }`}
         >
           <Database className="w-3.5 h-3.5" />
-          <span>سامانه برخط و وضعیت سرور</span>
+          <span>وضعیت سرور</span>
         </button>
 
         <button
@@ -376,7 +376,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           }`}
         >
           <HistoryIcon className="w-3.5 h-3.5" />
-          <span>ممیزی و لاگ‌های سیستم</span>
+          <span>لاگ‌های سیستم</span>
           {auditLogs.length > 0 && (
             <span className="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-800 dark:text-[#CEAE80] text-[10px] font-bold">
               {toPersianDigits(auditLogs.length)}
