@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { SellerFormModal } from '../sellers/SellerFormModal';
 import { ItemFormModal } from '../inventory/ItemFormModal';
+import { SelectMenu, SelectBadge, SelectOptionContent, persianColorToCss } from '../ui/select-menu';
 
 interface NewHandoverModalProps {
   isOpen: boolean;
@@ -220,17 +221,36 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
             </div>
 
             {/* Seller Dropdown / Selector */}
-            <select
+            <SelectMenu
               value={selectedSellerId}
-              onChange={(e) => setSelectedSellerId(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl glass-input text-xs sm:text-sm font-medium focus:border-[#CEAE80] outline-none"
-            >
-              {filteredSellers.map((s) => (
-                <option key={s.id} value={s.id} className="bg-white dark:bg-stone-900 text-stone-900 dark:text-white">
-                  {s.name} ({s.code}) | {s.streetLocation} | بدهی فعلی: {formatToman(s.currentDebt || 0)}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedSellerId}
+              options={filteredSellers.map((s) => ({
+                value: s.id,
+                label: (
+                  <SelectOptionContent
+                    primary={s.name}
+                    badges={
+                      <>
+                        <SelectBadge tone="gold">{s.code}</SelectBadge>
+                        <SelectBadge tone="blue">
+                          <MapPin className="w-2.5 h-2.5" />
+                          {s.streetLocation}
+                        </SelectBadge>
+                        <SelectBadge tone={(s.currentDebt || 0) > 0 ? 'red' : 'green'}>
+                          بدهی: {formatToman(s.currentDebt || 0)}
+                        </SelectBadge>
+                      </>
+                    }
+                  />
+                ),
+                triggerLabel: (
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="font-bold">{s.name}</span>
+                    <SelectBadge tone="gold">{s.code}</SelectBadge>
+                  </span>
+                ),
+              }))}
+            />
 
             {/* Selected Seller Summary Card */}
             {selectedSeller && (
@@ -317,58 +337,73 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
                 <label className="block text-[11px] text-stone-600 dark:text-stone-300 mb-1">
                   کالای مورد نظر
                 </label>
-                <select
+                <SelectMenu
                   value={currentSelectedItemId}
-                  onChange={(e) => {
-                    setCurrentSelectedItemId(e.target.value);
-                    const it = items.find((i) => i.id === e.target.value);
+                  onChange={(v) => {
+                    setCurrentSelectedItemId(v);
+                    const it = items.find((i) => i.id === v);
                     if (it) {
                       setCurrentSize(it.sizes?.[0] || 'L');
                       setCurrentColor(it.colors?.[0] || 'مشکی');
                     }
                   }}
-                  className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm outline-none"
-                >
-                  {filteredItems.map((item) => (
-                    <option key={item.id} value={item.id} className="bg-white dark:bg-stone-900 text-stone-900 dark:text-white">
-                      {item.name} ({item.code}) | موجودی: {toPersianDigits(item.stockQuantity)} عدد | قیمت: {formatToman(item.consignmentPrice)}
-                    </option>
-                  ))}
-                </select>
+                  options={filteredItems.map((item) => ({
+                    value: item.id,
+                    label: (
+                      <SelectOptionContent
+                        primary={item.name}
+                        badges={
+                          <>
+                            <SelectBadge tone="gold">{item.code}</SelectBadge>
+                            <SelectBadge tone="blue">
+                              موجودی: {toPersianDigits(item.stockQuantity)} عدد
+                            </SelectBadge>
+                            <SelectBadge tone="green">{formatToman(item.consignmentPrice)}</SelectBadge>
+                          </>
+                        }
+                      />
+                    ),
+                    triggerLabel: (
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="font-bold">{item.name}</span>
+                        <SelectBadge tone="gold">{item.code}</SelectBadge>
+                      </span>
+                    ),
+                  }))}
+                />
               </div>
 
               <div className="sm:col-span-2">
                 <label className="block text-[11px] text-stone-600 dark:text-stone-300 mb-1">
                   سایز
                 </label>
-                <select
+                <SelectMenu
                   value={currentSize}
-                  onChange={(e) => setCurrentSize(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm outline-none"
-                >
-                  {(currentInvItem?.sizes || ['M', 'L', 'XL', '2XL']).map((sz) => (
-                    <option key={sz} value={sz} className="bg-white dark:bg-stone-900 text-stone-900 dark:text-white">
-                      {sz}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setCurrentSize}
+                  options={(currentInvItem?.sizes || ['M', 'L', 'XL', '2XL']).map((sz) => ({
+                    value: sz,
+                    label: <span className="font-bold font-mono">{sz}</span>,
+                  }))}
+                />
               </div>
 
               <div className="sm:col-span-2">
                 <label className="block text-[11px] text-stone-600 dark:text-stone-300 mb-1">
                   رنگ
                 </label>
-                <select
+                <SelectMenu
                   value={currentColor}
-                  onChange={(e) => setCurrentColor(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm outline-none"
-                >
-                  {(currentInvItem?.colors || ['مشکی', 'سرمه‌ای', 'طوسی']).map((clr) => (
-                    <option key={clr} value={clr} className="bg-white dark:bg-stone-900 text-stone-900 dark:text-white">
-                      {clr}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setCurrentColor}
+                  options={(currentInvItem?.colors || ['مشکی', 'سرمه‌ای', 'طوسی']).map((clr) => ({
+                    value: clr,
+                    label: (
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full border border-black/10 dark:border-white/20 shrink-0" style={{ backgroundColor: persianColorToCss(clr) }} />
+                        <span className="font-bold">{clr}</span>
+                      </span>
+                    ),
+                  }))}
+                />
               </div>
 
               <div className="sm:col-span-1">

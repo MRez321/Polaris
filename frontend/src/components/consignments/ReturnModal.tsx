@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
 import type { Consignment } from '../../types';
 import { formatToman, toPersianDigits } from '../../utils/persian';
+import { SelectMenu, SelectBadge, SelectOptionContent } from '../ui/select-menu';
 interface ReturnModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -154,16 +155,32 @@ export const ReturnModal: React.FC<ReturnModalProps> = ({
 
                   <div>
                     <label className="block text-[10px] text-stone-500 dark:text-gray-400 mb-1">وضعیت کالا</label>
-                    <select
+                    <SelectMenu
                       value={returnConditions[item.itemId] || 'healthy'}
-                      onChange={(e) =>
-                        handleConditionChange(item.itemId, e.target.value as any)
-                      }
-                      className="w-full px-2 py-1.5 rounded-lg glass-input text-xs outline-none"
-                    >
-                      <option value="healthy" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-white">سالم (برگشت به انبار)</option>
-                      <option value="damaged" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-white">معیوب / ضایعاتی</option>
-                    </select>
+                      onChange={(v) => handleConditionChange(item.itemId, v as 'healthy' | 'damaged')}
+                      options={[
+                        {
+                          value: 'healthy',
+                          label: (
+                            <SelectOptionContent
+                              primary="سالم"
+                              badges={<SelectBadge tone="green">برگشت به انبار</SelectBadge>}
+                            />
+                          ),
+                          triggerLabel: 'سالم (برگشت به انبار)',
+                        },
+                        {
+                          value: 'damaged',
+                          label: (
+                            <SelectOptionContent
+                              primary="معیوب"
+                              badges={<SelectBadge tone="red">ضایعاتی</SelectBadge>}
+                            />
+                          ),
+                          triggerLabel: 'معیوب / ضایعاتی',
+                        },
+                      ]}
+                    />
                   </div>
 
                   <div>

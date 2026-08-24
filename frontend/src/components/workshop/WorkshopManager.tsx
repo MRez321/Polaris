@@ -30,6 +30,7 @@ import type {
 } from '../../types';
 import { formatToman, toPersianDigits, toJalaliDate, numberToWordsPersian } from '../../utils/persian';
 import { Modal } from '../common/Modal';
+import { SelectMenu, SelectBadge, SelectOptionContent } from '../ui/select-menu';
 
 interface WorkshopManagerProps {
   owners: Owner[];
@@ -827,29 +828,27 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
-              <select
+              <SelectMenu
                 value={selectedCategoryFilter}
-                onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-                className="px-3 py-2 rounded-xl glass-input text-xs outline-none focus:border-[#CEAE80] bg-transparent"
-              >
-                <option value="all" className="bg-stone-900 text-white">همه دسته‌بندی‌ها</option>
-                {categoryOptions.map((cat) => (
-                  <option key={cat.id} value={cat.id} className="bg-stone-900 text-white">
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
+                onChange={setSelectedCategoryFilter}
+                className="w-full sm:w-auto"
+                options={[
+                  { value: 'all', label: 'همه دسته‌بندی‌ها' },
+                  ...categoryOptions.map((cat) => ({ value: cat.id, label: cat.label })),
+                ]}
+              />
 
-              <select
+              <SelectMenu
                 value={selectedPayerFilter}
-                onChange={(e) => setSelectedPayerFilter(e.target.value)}
-                className="px-3 py-2 rounded-xl glass-input text-xs outline-none focus:border-[#CEAE80] bg-transparent"
-              >
-                <option value="all" className="bg-stone-900 text-white">همه پرداخت‌کنندگان</option>
-                <option value="fund" className="bg-stone-900 text-white">صندوق تنخواه کارگاه</option>
-                <option value="mohammad" className="bg-stone-900 text-white">محمد (هم‌بنیان‌گذار)</option>
-                <option value="amin" className="bg-stone-900 text-white">امین (هم‌بنیان‌گذار)</option>
-              </select>
+                onChange={setSelectedPayerFilter}
+                className="w-full sm:w-auto"
+                options={[
+                  { value: 'all', label: 'همه پرداخت‌کنندگان' },
+                  { value: 'fund', label: 'صندوق تنخواه کارگاه' },
+                  { value: 'mohammad', label: 'محمد (هم‌بنیان‌گذار)' },
+                  { value: 'amin', label: 'امین (هم‌بنیان‌گذار)' },
+                ]}
+              />
             </div>
           </div>
 
@@ -1424,22 +1423,16 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                 <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                   دسته‌بندی هزینه *
                 </label>
-                <select
+                <SelectMenu
                   value={category}
-                  onChange={(e) => {
-                    const newCat = e.target.value as WorkshopExpense['category'];
+                  onChange={(v) => {
+                    const newCat = v as WorkshopExpense['category'];
                     setCategory(newCat);
                     const opt = categoryOptions.find((c) => c.id === newCat);
                     if (opt) setCategoryLabel(opt.label);
                   }}
-                  className="w-full px-3 py-2.5 rounded-xl glass-input text-xs outline-none focus:border-[#CEAE80] bg-stone-900 text-white"
-                >
-                  {categoryOptions.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.label}
-                    </option>
-                  ))}
-                </select>
+                  options={categoryOptions.map((cat) => ({ value: cat.id, label: cat.label }))}
+                />
               </div>
 
               <div>
@@ -1467,34 +1460,60 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                 <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                   پرداخت‌کننده
                 </label>
-                <select
+                <SelectMenu
                   value={paidBy}
-                  onChange={(e) => setPaidBy(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl glass-input text-xs outline-none focus:border-[#CEAE80] bg-stone-900 text-white"
-                >
-                  <option value="صندوق تنخواه کارگاه">صندوق تنخواه کارگاه</option>
-                  {owners.map((o) => (
-                    <option key={o.id} value={`${o.name} (هم‌بنیان‌گذار)`}>
-                      {o.name} (از جیب شخصی)
-                    </option>
-                  ))}
-                  <option value="سرمایه‌گذار خارج از کارگاه">سرمایه‌گذار خارج از کارگاه</option>
-                </select>
+                  onChange={setPaidBy}
+                  options={[
+                    {
+                      value: 'صندوق تنخواه کارگاه',
+                      label: (
+                        <SelectOptionContent
+                          primary="صندوق تنخواه کارگاه"
+                          badges={<SelectBadge tone="amber">تنخواه مشترک</SelectBadge>}
+                        />
+                      ),
+                    },
+                    ...owners.map((o) => ({
+                      value: `${o.name} (هم‌بنیان‌گذار)`,
+                      label: (
+                        <SelectOptionContent
+                          primary={o.name}
+                          badges={
+                            <>
+                              <SelectBadge tone="gold">هم‌بنیان‌گذار</SelectBadge>
+                              <SelectBadge tone="blue">از جیب شخصی</SelectBadge>
+                            </>
+                          }
+                        />
+                      ),
+                      triggerLabel: `${o.name} (از جیب شخصی)`,
+                    })),
+                    {
+                      value: 'سرمایه‌گذار خارج از کارگاه',
+                      label: (
+                        <SelectOptionContent
+                          primary="سرمایه‌گذار خارج از کارگاه"
+                          badges={<SelectBadge tone="violet">سرمایه‌گذار</SelectBadge>}
+                        />
+                      ),
+                    },
+                  ]}
+                />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                   نحوه تسهیم این هزینه
                 </label>
-                <select
-                  value={costAllocation}
-                  onChange={(e) => setCostAllocation(e.target.value as any)}
-                  className="w-full px-3 py-2.5 rounded-xl glass-input text-xs outline-none focus:border-[#CEAE80] bg-stone-900 text-white"
-                >
-                  <option value="shared_by_equity">تسهیم ۵۰-۵۰ بین شرکا (سهم‌الشرکه)</option>
-                  <option value="workshop_fund">پرداخت از تنخواه مشترک کارگاه</option>
-                  <option value="specific_payer">بر عهده شخص پرداخت‌کننده</option>
-                </select>
+                <SelectMenu
+                  value={costAllocation || 'shared_by_equity'}
+                  onChange={(v) => setCostAllocation(v as 'shared_by_equity' | 'workshop_fund' | 'specific_payer' | 'custom_split')}
+                  options={[
+                    { value: 'shared_by_equity', label: 'تسهیم ۵۰-۵۰ بین شرکا (سهم‌الشرکه)' },
+                    { value: 'workshop_fund', label: 'پرداخت از تنخواه مشترک کارگاه' },
+                    { value: 'specific_payer', label: 'بر عهده شخص پرداخت‌کننده' },
+                  ]}
+                />
               </div>
 
               <div>

@@ -24,6 +24,7 @@ import { Badge } from '../common/Badge';
 import { BankCardInput, ShebaInput, detectBankByCard, detectBankBySheba } from '../common/BankInput';
 import { OwnerCard } from '../settings/OwnerCard';
 import { OwnerFormModal } from '../settings/OwnerFormModal';
+import { SelectMenu } from '../ui/select-menu';
 
 interface StaffManagerProps {
   owners: Owner[];
@@ -325,17 +326,18 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
               <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-2.5" />
             </div>
 
-            <select
+            <SelectMenu
               value={selectedRoleFilter}
-              onChange={(e) => setSelectedRoleFilter(e.target.value)}
-              className="px-2.5 py-1.5 rounded-xl glass-input text-xs outline-none"
-            >
-              <option value="all" className="bg-stone-900 text-white">همه نقش‌ها</option>
-              <option value="tailor" className="bg-stone-900 text-white">دوزنده / خیاط</option>
-              <option value="cutter" className="bg-stone-900 text-white">برش‌کار</option>
-              <option value="buyer" className="bg-stone-900 text-white">مسئول خرید</option>
-              <option value="accountant" className="bg-stone-900 text-white">حسابداری</option>
-            </select>
+              onChange={setSelectedRoleFilter}
+              className="w-full sm:w-auto"
+              options={[
+                { value: 'all', label: 'همه نقش‌ها' },
+                { value: 'tailor', label: 'دوزنده / خیاط' },
+                { value: 'cutter', label: 'برش‌کار' },
+                { value: 'buyer', label: 'مسئول خرید' },
+                { value: 'accountant', label: 'حسابداری' },
+              ]}
+            />
           </div>
         </div>
 
@@ -574,19 +576,19 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
                 <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
                   دسته‌بندی نقش
                 </label>
-                <select
+                <SelectMenu
                   value={role}
-                  onChange={(e) => setRole(e.target.value as any)}
-                  className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-[#CEAE80] outline-none"
-                >
-                  <option value="tailor" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">دوزنده / خیاط کارگاه</option>
-                  <option value="cutter" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">برش‌کار صنعتی</option>
-                  <option value="buyer" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">مسئول خرید و تامین پارچه</option>
-                  <option value="accountant" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">حسابدار و مدیریت مالی</option>
-                  <option value="quality_control" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">کنترل کیفیت (QC)</option>
-                  <option value="workshop_manager" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">سرپرست سالن دوخت</option>
-                  <option value="driver" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">راننده و تحویل‌دار بار</option>
-                </select>
+                  onChange={setRole}
+                  options={[
+                    { value: 'tailor', label: 'دوزنده / خیاط کارگاه' },
+                    { value: 'cutter', label: 'برش‌کار صنعتی' },
+                    { value: 'buyer', label: 'مسئول خرید و تامین پارچه' },
+                    { value: 'accountant', label: 'حسابدار و مدیریت مالی' },
+                    { value: 'quality_control', label: 'کنترل کیفیت (QC)' },
+                    { value: 'workshop_manager', label: 'سرپرست سالن دوخت' },
+                    { value: 'driver', label: 'راننده و تحویل‌دار بار' },
+                  ]}
+                />
               </div>
 
               <div>
@@ -623,15 +625,15 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
                   نوع محاسبه حقوق و دستمزد
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  <select
+                  <SelectMenu
                     value={salaryType}
-                    onChange={(e) => setSalaryType(e.target.value as any)}
-                    className="px-2 py-2 rounded-xl glass-input text-xs outline-none"
-                  >
-                    <option value="monthly" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">ماهانه ثابت</option>
-                    <option value="piecework" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">کنترات / تکه‌ای</option>
-                    <option value="hourly" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">ساعتی</option>
-                  </select>
+                    onChange={(v) => setSalaryType(v as 'monthly' | 'piecework' | 'hourly')}
+                    options={[
+                      { value: 'monthly', label: 'ماهانه ثابت' },
+                      { value: 'piecework', label: 'کنترات / تکه‌ای' },
+                      { value: 'hourly', label: 'ساعتی' },
+                    ]}
+                  />
                   <input
                     type="number"
                     value={salaryAmount}

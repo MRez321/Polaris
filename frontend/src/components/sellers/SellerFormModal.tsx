@@ -4,6 +4,7 @@ import type { Seller, BankAccountInfo } from '../../types';
 import { Plus, Trash2, Camera, CreditCard, Shield, Phone, MapPin, User, Check, Copy } from 'lucide-react';
 import { toPersianDigits } from '../../utils/persian';
 import { BankCardInput, ShebaInput, detectBankByCard, detectBankBySheba } from '../common/BankInput';
+import { SelectMenu } from '../ui/select-menu';
 
 interface SellerFormModalProps {
   isOpen: boolean;
@@ -481,16 +482,16 @@ export const SellerFormModal: React.FC<SellerFormModalProps> = ({
                 <label className="block text-[11px] text-stone-700 dark:text-stone-300 font-bold mb-1">
                   نوع مدرک ضمانتی
                 </label>
-                <select
-                  value={guaranteeType}
-                  onChange={(e) => setGuaranteeType(e.target.value as any)}
-                  className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm outline-none focus:border-[#CEAE80]"
-                >
-                  <option value="promissory_note" className="bg-stone-900 text-white">سفته معتبر بانکی</option>
-                  <option value="cheque" className="bg-stone-900 text-white">چک صیادی بنفش</option>
-                  <option value="trusted_guarantor" className="bg-stone-900 text-white">ضمانت حضوری کاسب معتمد بازار</option>
-                  <option value="national_card" className="bg-stone-900 text-white">کارت ملی هوشمند / اصل شناسنامه</option>
-                </select>
+              <SelectMenu
+                value={guaranteeType}
+                onChange={(v) => setGuaranteeType(v as Seller['guaranteeType'])}
+                options={[
+                  { value: 'promissory_note', label: 'سفته معتبر بانکی' },
+                  { value: 'cheque', label: 'چک صیادی بنفش' },
+                  { value: 'trusted_guarantor', label: 'ضمانت حضوری کاسب معتمد بازار' },
+                  { value: 'national_card', label: 'کارت ملی هوشمند / اصل شناسنامه' },
+                ]}
+              />
               </div>
 
               <div>

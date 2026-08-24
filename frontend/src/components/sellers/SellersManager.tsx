@@ -18,6 +18,7 @@ import type { Seller, Consignment, PaymentRecord, ConsignmentReturn } from '../.
 import { formatToman, toPersianDigits } from '../../utils/persian';
 import { SellerFormModal } from './SellerFormModal';
 import { SellerProfileDrawer } from './SellerProfileDrawer';
+import { SelectMenu } from '../ui/select-menu';
 
 interface SellersManagerProps {
   sellers: Seller[];
@@ -215,16 +216,17 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
           </div>
 
           {/* Ranking & Sort */}
-          <select
+          <SelectMenu
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
-            className="px-3 py-2 rounded-xl glass-input text-xs font-bold outline-none"
-          >
-            <option value="default" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-white">مرتب‌سازی پیش‌فرض</option>
-            <option value="top_paid" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-white">🏆 رتبه‌بندی: بیشترین تسویه (فروشندگان برتر)</option>
-            <option value="highest_debt" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-white">⚠️ بیشترین مانده بدهی</option>
-            <option value="turnover" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-white">📦 بیشترین گردش بار تحویلی</option>
-          </select>
+            onChange={(v) => setSortBy(v as 'default' | 'top_paid' | 'highest_debt' | 'turnover')}
+            className="w-full sm:w-auto"
+            options={[
+              { value: 'default', label: 'مرتب‌سازی پیش‌فرض' },
+              { value: 'top_paid', label: '🏆 رتبه‌بندی: بیشترین تسویه (فروشندگان برتر)' },
+              { value: 'highest_debt', label: '⚠️ بیشترین مانده بدهی' },
+              { value: 'turnover', label: '📦 بیشترین گردش بار تحویلی' },
+            ]}
+          />
         </div>
       </div>
 

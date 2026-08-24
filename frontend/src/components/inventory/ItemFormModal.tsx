@@ -3,6 +3,7 @@ import { Modal } from '../common/Modal';
 import type { GarmentItem } from '../../types';
 import { toPersianDigits } from '../../utils/persian';
 import { Plus, Image as ImageIcon, Camera, Trash2 } from 'lucide-react';
+import { SelectMenu } from '../ui/select-menu';
 
 interface ItemFormModalProps {
   isOpen: boolean;
@@ -295,17 +296,11 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 </button>
               </div>
             ) : (
-              <select
+              <SelectMenu
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-[#CEAE80] outline-none"
-              >
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id} className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
+                onChange={setCategory}
+                options={categories.map((cat) => ({ value: cat.id, label: cat.label }))}
+              />
             )}
           </div>
 

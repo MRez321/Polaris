@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import type { AuditLog } from '../../types';
 import { toJalaliDate, toPersianDigits } from '../../utils/persian';
+import { SelectMenu } from '../ui/select-menu';
 interface AuditLogsManagerProps {
   logs: AuditLog[];
 }
@@ -107,21 +108,22 @@ export const AuditLogsManager: React.FC<AuditLogsManagerProps> = ({ logs = [] })
           <Search className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
         </div>
 
-        <select
+        <SelectMenu
           value={selectedEntity}
-          onChange={(e) => setSelectedEntity(e.target.value)}
-          className="px-3 py-2 rounded-xl glass-input text-xs sm:text-sm font-medium outline-none"
-        >
-          <option value="all" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">همه بخش‌ها و ماژول‌ها</option>
-          <option value="consignment" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">واگذاری و تحویل بار</option>
-          <option value="payment" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">دریافت وجه و تسویه</option>
-          <option value="item" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">انبار و کالا</option>
-          <option value="seller" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">پرونده فروشندگان</option>
-          <option value="staff" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">پرسنل و کادر کارگاه</option>
-          <option value="return" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">مرجوعی کالا</option>
-          <option value="settings" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">تنظیمات و برندینگ</option>
-          <option value="auth" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">ورود و امنیت</option>
-        </select>
+          onChange={setSelectedEntity}
+          className="w-full sm:w-auto"
+          options={[
+            { value: 'all', label: 'همه بخش‌ها و ماژول‌ها' },
+            { value: 'consignment', label: 'واگذاری و تحویل بار' },
+            { value: 'payment', label: 'دریافت وجه و تسویه' },
+            { value: 'item', label: 'انبار و کالا' },
+            { value: 'seller', label: 'پرونده فروشندگان' },
+            { value: 'staff', label: 'پرسنل و کادر کارگاه' },
+            { value: 'return', label: 'مرجوعی کالا' },
+            { value: 'settings', label: 'تنظیمات و برندینگ' },
+            { value: 'auth', label: 'ورود و امنیت' },
+          ]}
+        />
       </div>
 
       {/* Logs Timeline List */}

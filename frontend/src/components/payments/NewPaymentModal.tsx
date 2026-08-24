@@ -5,6 +5,7 @@ import { formatToman, toPersianDigits, toJalaliDate } from '../../utils/persian'
 import { calculateFIFOAllocation } from '../../utils/fifo';
 import { CheckCircle, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { SelectMenu, SelectBadge, SelectOptionContent } from '../ui/select-menu';
 
 interface NewPaymentModalProps {
   isOpen: boolean;
@@ -100,17 +101,32 @@ export const NewPaymentModal: React.FC<NewPaymentModalProps> = ({
             <label className="block text-xs font-bold text-stone-700 dark:text-gray-300 mb-1">
               فروشنده / پرداخت‌کننده *
             </label>
-            <select
+            <SelectMenu
               value={selectedSellerId}
-              onChange={(e) => setSelectedSellerId(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm focus:border-[#CEAE80] outline-none font-medium"
-            >
-              {sellers.map((s) => (
-                <option key={s.id} value={s.id} className="bg-white dark:bg-stone-900 text-stone-900 dark:text-white">
-                  {s.name} — کل مانده بدهی: {formatToman(s.currentDebt)}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedSellerId}
+              options={sellers.map((s) => ({
+                value: s.id,
+                label: (
+                  <SelectOptionContent
+                    primary={s.name}
+                    badges={
+                      <>
+                        <SelectBadge tone="gold">{s.code}</SelectBadge>
+                        <SelectBadge tone={(s.currentDebt || 0) > 0 ? 'red' : 'green'}>
+                          بدهی: {formatToman(s.currentDebt || 0)}
+                        </SelectBadge>
+                      </>
+                    }
+                  />
+                ),
+                triggerLabel: (
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="font-bold">{s.name}</span>
+                    <SelectBadge tone="gold">{s.code}</SelectBadge>
+                  </span>
+                ),
+              }))}
+            />
           </div>
 
           <div>
@@ -141,16 +157,16 @@ export const NewPaymentModal: React.FC<NewPaymentModalProps> = ({
             <label className="block text-xs font-bold text-stone-700 dark:text-gray-300 mb-1">
               روش دریافت وجه
             </label>
-            <select
+            <SelectMenu
               value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value as any)}
-              className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm outline-none focus:border-[#CEAE80]"
-            >
-              <option value="cash" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-white">وجه نقد (دریافت حضوری سر بساط)</option>
-              <option value="pos" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-white">دستگاه کارت‌خوان سیار (POS)</option>
-              <option value="bank_transfer" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-white">انتقال بانکی / پایا / کارت به کارت</option>
-              <option value="card" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-white">کارت بانکی</option>
-            </select>
+              onChange={(v) => setPaymentMethod(v as 'cash' | 'card' | 'bank_transfer' | 'pos')}
+              options={[
+                { value: 'cash', label: 'وجه نقد (دریافت حضوری سر بساط)' },
+                { value: 'pos', label: 'دستگاه کارت‌خوان سیار (POS)' },
+                { value: 'bank_transfer', label: 'انتقال بانکی / پایا / کارت به کارت' },
+                { value: 'card', label: 'کارت بانکی' },
+              ]}
+            />
           </div>
 
           <div>

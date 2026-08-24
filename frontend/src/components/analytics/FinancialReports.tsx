@@ -21,6 +21,7 @@ import {
   CartesianGrid,
 } from 'recharts';
 import type { DashboardStats, Seller, Consignment, PaymentRecord, GarmentItem } from '../../types';
+import { SelectMenu } from '../ui/select-menu';
 import { formatToman, toPersianDigits } from '../../utils/persian';
 interface FinancialReportsProps {
   stats: DashboardStats;
@@ -238,17 +239,18 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
         {period === 'specific_month' && (
           <div className="pt-2 border-t border-black/5 dark:border-white/5 flex items-center gap-3">
             <span className="text-xs text-stone-500">انتخاب ماه:</span>
-            <select
+            <SelectMenu
               value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="px-3 py-1.5 rounded-xl glass-input text-xs outline-none"
-            >
-              <option value="بهمن ۱۴۰۳" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">بهمن ۱۴۰۳</option>
-              <option value="دی ۱۴۰۳" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">دی ۱۴۰۳</option>
-              <option value="آذر ۱۴۰۳" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">آذر ۱۴۰۳</option>
-              <option value="آبان ۱۴۰۳" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">آبان ۱۴۰۳</option>
-              <option value="مهر ۱۴۰۳" className="bg-white dark:bg-[#1A1A1E] text-stone-900 dark:text-white">مهر ۱۴۰۳</option>
-            </select>
+              onChange={setSelectedMonth}
+              className="w-auto"
+              options={[
+                { value: 'بهمن ۱۴۰۳', label: 'بهمن ۱۴۰۳' },
+                { value: 'دی ۱۴۰۳', label: 'دی ۱۴۰۳' },
+                { value: 'آذر ۱۴۰۳', label: 'آذر ۱۴۰۳' },
+                { value: 'آبان ۱۴۰۳', label: 'آبان ۱۴۰۳' },
+                { value: 'مهر ۱۴۰۳', label: 'مهر ۱۴۰۳' },
+              ]}
+            />
           </div>
         )}
 
