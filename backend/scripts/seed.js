@@ -40,7 +40,7 @@ const DEFAULT_COMPANY = {
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@polarisstyle.ir';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'PolarisAdmin123!';
 
-async function seedCategories(): Promise<void> {
+async function seedCategories() {
     for (const cat of DEFAULT_CATEGORIES) {
         const existing = await db.select({ id: categories.id }).from(categories).where(eq(categories.id, cat.id));
         if (existing.length === 0) {
@@ -50,18 +50,18 @@ async function seedCategories(): Promise<void> {
     }
 }
 
-async function seedCompany(): Promise<void> {
+async function seedCompany() {
     const existing = await db.select({ id: companySettings.id }).from(companySettings).where(eq(companySettings.id, 'company'));
     if (existing.length === 0) {
         await db.insert(companySettings).values({
             id: 'company',
-            data: DEFAULT_COMPANY as unknown as Record<string, unknown>,
+            data: DEFAULT_COMPANY,
         });
         console.log('  + اطلاعات پیش‌فرض برند و کارگاه');
     }
 }
 
-async function seedAdmin(): Promise<void> {
+async function seedAdmin() {
     const existing = await db.select({ id: user.id }).from(user).where(eq(user.email, ADMIN_EMAIL));
     if (existing.length > 0) {
         console.log(`  = کاربر مدیر قبلا ساخته شده: ${ADMIN_EMAIL}`);
@@ -83,7 +83,7 @@ async function seedAdmin(): Promise<void> {
     }
 }
 
-async function main(): Promise<void> {
+async function main() {
     console.log('🌱 Seeding database...');
     await seedCategories();
     await seedCompany();

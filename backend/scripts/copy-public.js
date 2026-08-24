@@ -16,6 +16,15 @@ if (existsSync(publicSrc)) {
     console.warn('⚠️  No public/ folder found at project root');
 }
 
+// Copy scripts/ folder
+const scriptsSrc = join(root, 'scripts');
+if (existsSync(scriptsSrc)) {
+    cpSync(scriptsSrc, join(dist, 'scripts'), { recursive: true });
+    console.log('✅ Copied scripts/ → dist/scripts/');
+} else {
+    console.warn('⚠️  No scripts/ folder found at project root');
+}
+
 // Copy package.json
 const pkgSrc = join(root, 'package.json');
 if (existsSync(pkgSrc)) {
@@ -24,4 +33,11 @@ if (existsSync(pkgSrc)) {
 } else {
     console.error('❌ package.json not found!');
     process.exit(1);
+}
+
+// Copy .env.example if it exists (for reference during deployment)
+const envExampleSrc = join(root, '.env.example');
+if (existsSync(envExampleSrc)) {
+    copyFileSync(envExampleSrc, join(dist, '.env.example'));
+    console.log('✅ Copied .env.example → dist/.env.example');
 }
