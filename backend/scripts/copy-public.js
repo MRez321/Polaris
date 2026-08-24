@@ -25,6 +25,15 @@ if (existsSync(scriptsSrc)) {
     console.warn('⚠️  No scripts/ folder found at project root');
 }
 
+// Copy drizzle/ folder
+const drizzleSrc = join(root, 'drizzle');
+if (existsSync(drizzleSrc)) {
+    cpSync(drizzleSrc, join(dist, 'drizzle'), { recursive: true });
+    console.log('✅ Copied drizzle/ → dist/drizzle/');
+} else {
+    console.warn('⚠️  No drizzle/ folder found at project root');
+}
+
 // Copy package.json
 const pkgSrc = join(root, 'package.json');
 if (existsSync(pkgSrc)) {
