@@ -13,36 +13,14 @@ jobs:
       - name: ⬇️ Checkout Repo
         uses: actions/checkout@v4
 
-      # --- Build Frontend First ---
-      - name: 🏗️ Build Frontend
-        run: |
-          cd frontend
-          npm ci
-          npm run build
-
-      # --- Build Backend ---
+      # --- 1. Build Backend ---
       - name: 🏗️ Build Backend
         run: |
           cd backend
           npm ci
           npm run build
 
-      # --- Upload Frontend to polaris_root (flattened) ---
-      - name: 📂 Upload Frontend
-        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftp
-          port: ${{ secrets.FTP_PORT }}
-          local-dir: ./frontend/dist/
-          server-dir: ${{ secrets.FRONTEND_PATH }}/
-          exclude: |
-            **/.git*
-            **/node_modules/**
-
-      # --- Upload Backend to polaris ---
+      # --- 2. Upload Backend to polaris ---
       - name: 📂 Upload Backend
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
@@ -62,7 +40,29 @@ jobs:
             **/*.ts
             **/tsconfig.json
 
-      # --- Create and upload restart trigger ---
+      # --- 3. Build Frontend ---
+      - name: 🏗️ Build Frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      # --- 4. Upload Frontend to polaris_root (flattened) ---
+      - name: 📂 Upload Frontend
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftp
+          port: ${{ secrets.FTP_PORT }}
+          local-dir: ./frontend/dist/
+          server-dir: ${{ secrets.FRONTEND_PATH }}/
+          exclude: |
+            **/.git*
+            **/node_modules/**
+
+      # --- 5. Create and upload restart trigger ---
       - name: 🔄 Trigger Node App Restart
         run: |
           mkdir -p ./temp
