@@ -10,10 +10,12 @@ let io: Server | null = null;
 export function initSocket(httpServer: HttpServer): Server {
     io = new Server(httpServer, {
         cors: {
+            // Same-origin in production (backend serves the frontend); dev uses Vite.
             origin: [
                 process.env.FRONTEND_URL || 'http://localhost:5173',
                 'http://localhost:5173',
                 'https://polarisstyle.ir',
+                'https://www.polarisstyle.ir',
             ],
             credentials: true,
         },

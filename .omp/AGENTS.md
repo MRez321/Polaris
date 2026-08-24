@@ -42,7 +42,7 @@ read [STRUCTURE.md](../STRUCTURE.md)
 - **realtime data**: socket-io-client
 - **Notifications**: Sonner (toast notifications)
 - **PWA**: Vite Plugin PWA (for mobile installability)
-- **Deployment**: Built to static files → uploaded to cPanel `public_html/`
+- **Deployment**: Built to static files → uploaded into the backend's `public/` folder; served by Express on the same origin
 
 make sure to use ui elements from persian labs in this address
 https://ui.persian-labs.ir/llms.txt
@@ -54,18 +54,19 @@ https://ui.persian-labs.ir/docs/components
 - **Database**: MySQL (cPanel's native MySQL) mysql2 + drizzle
 - **Authentication**: better auth + zod validation
 - **Password Hashing**: bcrypt
-- **Deployment**: Separate subdomain (e.g., `api.domain.com`) on cPanel's Node.js selector
+- **Deployment**: cPanel Node.js selector at `/PolarisStyle/`; Express serves the API under `/api` and the built frontend from `public/` (single domain, no API subdomain)
 - **realtime data**: socket-io
 
 ## Architecture Decisions
 
-### Deployment Strategy (Path 2 - Separate Subdomain)
-- **Frontend**: `https://polarisstyle.ir` → Apache serves static files from `public_html/`
-- **Backend**: `https://api.polarisstyle.ir` → Node.js app running on cPanel
+### Deployment Strategy (Single Domain — Backend Serves Frontend)
+- **Domain**: `https://polarisstyle.ir` only — no API subdomain
+- **Backend**: Node.js app root `/PolarisStyle/` (cPanel Node.js selector); serves `/api` routes and the built frontend from `/PolarisStyle/public/` with an SPA fallback to `index.html`
+- **Frontend**: Vite build uploaded into the backend's `public/` folder (CI: backend first, then frontend, then restart trigger)
+- **Restart trigger**: CI uploads a file to `/PolarisStyle/tmp/` so cPanel restarts the Node app
+- **Health check**: `/api/health` verifies the MySQL database connection (data can be saved), not just the Node process
 - **Why**:
-    - Frontend updates are instant (no Node restart needed)
-    - Backend restarts only when API changes
-    - Better security through CORS isolation
-    - Marketing team can update website without touching inventory logic
+    - Same origin: no CORS/subdomain setup, simpler sessions and cookies
+    - One deploy target; frontend and API versions cannot drift apart
 
 

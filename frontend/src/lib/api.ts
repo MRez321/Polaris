@@ -16,11 +16,13 @@ import type {
 
 /**
  * Central HTTP client.
- * In dev, `/api` is proxied by Vite to the API server (see vite.config.ts).
- * In production, point VITE_API_URL at https://api.polarisstyle.ir.
+ * In dev, `/api` is proxied by Vite to the backend (see vite.config.ts).
+ * In production, the backend serves the built frontend on the same origin
+ * (single domain, no API subdomain), so the relative base works as-is.
+ * VITE_API_URL can still override for split-origin setups.
  */
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://api.polarisstyle.ir/',
+  baseURL: import.meta.env.VITE_API_URL || '/',
   headers: { 'Content-Type': 'application/json' },
 });
 

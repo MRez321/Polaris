@@ -74,7 +74,7 @@ jobs:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
+          protocol: ftp
           port: ${{ secrets.FTP_PORT }}
           local-dir: ./temp/
           server-dir: ${{ secrets.RESTART_PATH }}/

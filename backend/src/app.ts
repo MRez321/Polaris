@@ -23,8 +23,6 @@ const allowedOrigins = [
     'https://polarisstyle.ir',
     'http://polarisstyle.ir',
     'https://www.polarisstyle.ir',
-    'https://api.polarisstyle.ir',
-    'http://api.polarisstyle.ir',
 ].filter((o): o is string => Boolean(o));
 
 app.use(
@@ -45,7 +43,8 @@ app.use(
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Static files (cPanel public assets if served from Node)
+// Frontend build: CI uploads the Vite build into ./public (cPanel
+// FRONTEND_PATH). Express serves it on the same origin as the API.
 const publicPath = path.join(process.cwd(), 'public');
 app.use(express.static(publicPath));
 
@@ -58,6 +57,20 @@ app.use('/api', attachSession);
 
 // Business API
 app.use('/api', apiRoutes);
+
+// Unknown API routes → JSON 404 (never fall through to the SPA)
+app.use('/api', (_req, res) => {
+    res.status(404).json({ error: 'مسیر API یافت نشد' });
+});
+
+// SPA fallback: client-side routes (React Router) deep-link to paths the
+// backend doesn't own; serve index.html so the frontend handles routing.
+app.get('{*splat}', (req, res, next) => {
+    if (!req.accepts('html')) return next();
+    res.sendFile(path.join(publicPath, 'index.html'), (err) => {
+        if (err) next(err);
+    });
+});
 
 // Global Error Handler
 app.use(errorHandler);

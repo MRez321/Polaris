@@ -269,11 +269,11 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
     }
   };
 
-  // Manual Ping Test
+  // Manual Ping Test — hits /api/health, which verifies the database link
   const handlePingTest = async () => {
     const start = performance.now();
     try {
-      const res = await fetch('/api/dashboard/stats');
+      const res = await fetch('/api/health');
       const latency = Math.round(performance.now() - start);
       setPingLatency(latency);
       setIsServerOnline(res.ok);
