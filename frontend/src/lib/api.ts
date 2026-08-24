@@ -20,7 +20,7 @@ import type {
  * In production, point VITE_API_URL at https://api.polarisstyle.ir.
  */
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '',
+  baseURL: import.meta.env.VITE_API_URL || 'https://api.polarisstyle.ir/',
   headers: { 'Content-Type': 'application/json' },
 });
 
