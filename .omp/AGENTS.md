@@ -59,6 +59,9 @@ https://ui.persian-labs.ir/docs/components
 
 ## Architecture Decisions
 
+## 📁 Deployment Structure
+read the action that deploys the app [deploy.yml](../.github/workflows/deploy.yml)
+
 ### Deployment Strategy (Single Domain — Backend Serves Frontend)
 - **Domain**: `https://polarisstyle.ir` only — no API subdomain
 - **Backend**: Node.js app root `/PolarisStyle/` (cPanel Node.js selector); serves `/api` routes and the built frontend from `/PolarisStyle/public/` with an SPA fallback to `index.html`

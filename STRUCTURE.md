@@ -1,24 +1,18 @@
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml
+├── .omp/
+│   └── AGENTS.md
 ├── backend/
-│   ├── drizzle/
+│   ├── drizzle
 │   ├── public/
-│   │   ├── index.html
 │   ├── scripts/
-│   │   └── copy-public.js
 │   ├── src/
 │   │   ├── config/
-│   │   │   ├── db.ts
-│   │   │   └── drizzle.ts
 │   │   ├── controllers/
-│   │   │   └── authController.ts
 │   │   ├── middleware/
-│   │   │   └── authMiddleware.ts
 │   │   ├── models/
-│   │   │   └── authModel.ts
 │   │   ├── routes/
-│   │   │   └── authRoutes.ts
 │   │   ├── schema/
 │   │   ├── services/
 │   │   ├── types/
@@ -32,33 +26,42 @@
 │   └── tsconfig.json
 ├── frontend/
 │   ├── public/
+│   │   ├── icons/
+│   │   ├── favicon.svg
+│   │   ├── icons.svg
+│   │   ├── manifest.json
+│   │   └── site.webmanifest
 │   ├── src/
 │   │   ├── assets/
 │   │   ├── components/
+│   │   │   ├── analytics/
+│   │   │   ├── audit/
+│   │   │   ├── common/
+│   │   │   ├── consignments/
+│   │   │   ├── dashboard/
+│   │   │   ├── finances/
+│   │   │   ├── inventory/
 │   │   │   ├── layout/
+│   │   │   ├── payments/
+│   │   │   ├── people/
+│   │   │   ├── pwa/
+│   │   │   ├── sellers/
+│   │   │   ├── settings/
+│   │   │   ├── staff/
 │   │   │   ├── ui/
-│   │   │   └── analytics/
-│   │   │   └── audit/
-│   │   │   └── consignments/
-│   │   │   └── dashboard/
-│   │   │   └── inventory/
-│   │   │   └── payments/
-│   │   │   └── sellers/
-│   │   │   └── settings/
-│   │   │   └── staff/
 │   │   │   └── workshop/
-│   │   │   └── 
+│   │   ├── context/
+│   │   ├── hooks/
 │   │   ├── lib/
 │   │   ├── pages/
-│   │   ├── utils/
-│   │   ├── hooks/
-│   │   ├── context/
 │   │   ├── types/
+│   │   ├── utils/
 │   │   ├── App.css
 │   │   ├── App.tsx
 │   │   ├── index.css
 │   │   └── main.tsx
 │   ├── .gitignore
+│   ├── components.json
 │   ├── eslint.config.js
 │   ├── index.html
 │   ├── package-lock.json
@@ -73,4 +76,5 @@
 ├── docker-compose.yml
 ├── LICENSE
 ├── package.json
-└── README.md
+├── README.md
+└── STRUCTURE.md
