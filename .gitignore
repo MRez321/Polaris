@@ -1,6 +1,6 @@
 .idea
 .env
-temp
+#temp
 a
 
 node_modules
