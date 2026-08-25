@@ -1,0 +1,20 @@
+# .omp/config.yml — PROJECT SCOPE (committable)
+skills:
+  includeSkills:
+    - to-spec
+    - implement
+    - code-review
+    - diagnosing-bugs
+    - domain-modeling
+    - tdd
+    - handoff
+    - grill-me
+  ignoredSkills:
+    - supabase-*
+    - vercel-*
+    - frontend-design
+    - ui-ux-pro-max
+    - migrate-to-shoehorn
+    - scaffold-exercises
+    - setup-*
+    - writing-*
