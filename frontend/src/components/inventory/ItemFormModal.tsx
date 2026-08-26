@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import type { GarmentItem } from '../../types';
 import { toPersianDigits } from '../../utils/persian';
-import { Plus, Image as ImageIcon, Camera, Trash2 } from 'lucide-react';
+import { Plus, Image as ImageIcon } from 'lucide-react';
 import { SelectMenu } from '../ui/select-menu';
 import { FormattedNumberInput } from '../common/FormattedNumberInput';
-
+import { ImagePicker } from '../common/ImagePicker';
 interface ItemFormModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -45,7 +45,6 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
   const [colors, setColors] = useState('');
   const [fabric, setFabric] = useState('');
   const [imagesList, setImagesList] = useState<string[]>([]);
-  const [imageUrlInput, setImageUrlInput] = useState('');
 
   useEffect(() => {
     if (editItem) {
@@ -84,31 +83,6 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
     setNewCategoryName('');
   }, [editItem, isOpen]);
 
-  const handleAddImageFromUrl = () => {
-    if (!imageUrlInput.trim()) return;
-    setImagesList([...imagesList, imageUrlInput.trim()]);
-    setImageUrlInput('');
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    // Convert each uploaded file to base64 or object URL
-    Array.from(files).forEach((file: File) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setImagesList((prev) => [...prev, event.target!.result as string]);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const handleRemoveImage = (index: number) => {
-    setImagesList(imagesList.filter((_, i) => i !== index));
-  };
 
   const handleAddNewCategorySubmit = () => {
     if (!newCategoryName.trim()) return;
@@ -163,65 +137,17 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
               <ImageIcon className="w-4 h-4" />
               تصاویر کالا و مدل‌ها ({toPersianDigits(imagesList.length)} تصویر)
             </label>
-            <span className="text-[11px] text-stone-400">یک یا چند تصویر از گالری یا دوربین</span>
+            <span className="text-[11px] text-stone-400">از گالری سایت، دستگاه یا دوربین</span>
           </div>
 
-          {/* Thumbnails grid */}
-          <div className="flex flex-wrap items-center gap-3">
-            {imagesList.map((imgUrl, idx) => (
-              <div key={idx} className="relative group w-20 h-20 rounded-xl overflow-hidden border border-[#CEAE80]/30 shadow-sm bg-black/20">
-                <img
-                  src={imgUrl}
-                  alt={`مدل ${idx + 1}`}
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover"
-                />
-                {idx === 0 && (
-                  <span className="absolute bottom-0 inset-x-0 bg-[#CEAE80] text-black text-[9px] font-black text-center py-0.5">
-                    عکس اصلی
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => handleRemoveImage(idx)}
-                  className="absolute top-1 left-1 p-1 rounded-full bg-rose-600 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
-
-            {/* Upload Button */}
-            <label className="w-20 h-20 rounded-xl border-2 border-dashed border-[#CEAE80]/40 hover:border-[#CEAE80] hover:bg-[#CEAE80]/10 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all">
-              <Camera className="w-5 h-5 text-[#CEAE80]" />
-              <span className="text-[10px] font-bold text-stone-600 dark:text-stone-300">آپلود عکس</span>
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-            </label>
-          </div>
-
-          {/* Or enter direct URL */}
-          <div className="flex gap-2 pt-1">
-            <input
-              type="url"
-              placeholder="یا لینک اینترنتی تصویر را وارد کنید..."
-              value={imageUrlInput}
-              onChange={(e) => setImageUrlInput(e.target.value)}
-              className="flex-1 px-3 py-1.5 rounded-lg glass-input text-xs outline-none"
-            />
-            <button
-              type="button"
-              onClick={handleAddImageFromUrl}
-              className="px-3 py-1.5 rounded-lg bg-stone-200 dark:bg-[#252525] hover:bg-[#CEAE80] hover:text-black text-xs font-bold transition-colors"
-            >
-              افزودن لینک
-            </button>
-          </div>
+          <ImagePicker
+            values={imagesList}
+            onChange={setImagesList}
+            category="item"
+            multiple
+            addLabel="افزودن عکس"
+            primaryLabel="عکس اصلی"
+          />
         </div>
 
         {/* Basic Info */}

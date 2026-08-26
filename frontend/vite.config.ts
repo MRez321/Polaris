@@ -20,6 +20,11 @@ export default defineConfig({
         target: process.env.VITE_PROXY_TARGET || 'http://localhost:3016',
         changeOrigin: true,
       },
+      // Uploaded image files are served by the backend
+      '/uploads': {
+        target: process.env.VITE_PROXY_TARGET || 'http://localhost:3016',
+        changeOrigin: true,
+      },
     },
   },
 })

@@ -1,7 +1,15 @@
 <!doctype html>
 <html lang="fa" dir="rtl" class="dark">
   <head>
-    <meta charset="UTF-8" />
+    <script>
+      // Pre-paint theme resolution: prevents flash of the wrong palette (FOUC).
+      try {
+        if (localStorage.getItem('polaris_theme') === 'light') {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('light');
+        }
+      } catch (e) {}
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#CEAE80" />
     <meta name="msapplication-TileColor" content="#CEAE80" />
@@ -19,7 +27,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&display=swap" rel="stylesheet" />
   </head>
-  <body class="bg-[#0A0A0A] text-stone-100 antialiased selection:bg-[#CEAE80]/30 selection:text-white">
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

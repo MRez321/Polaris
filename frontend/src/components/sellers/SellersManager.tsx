@@ -20,6 +20,7 @@ import { formatToman, toPersianDigits } from '../../utils/persian';
 import { SellerFormModal } from './SellerFormModal';
 import { SellerProfileDrawer } from './SellerProfileDrawer';
 import { SelectMenu } from '../ui/select-menu';
+import { SafeImage } from '../common/SafeImage';
 
 interface SellersManagerProps {
   sellers: Seller[];
@@ -262,18 +263,11 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
                       </div>
                     )}
 
-                    {seller.avatarUrl ? (
-                      <img
-                        src={seller.avatarUrl}
-                        alt={seller.name}
-                        referrerPolicy="no-referrer"
-                        className="w-11 h-11 rounded-xl object-cover border border-[#CEAE80]/40 shrink-0"
-                      />
-                    ) : (
-                      <div className="w-11 h-11 rounded-xl bg-[#CEAE80]/20 text-[#CEAE80] flex items-center justify-center font-black text-sm border border-[#CEAE80]/40 shrink-0">
-                        {seller.name.slice(0, 1)}
-                      </div>
-                    )}
+                    <SafeImage
+                      src={seller.avatarUrl}
+                      alt={seller.name}
+                      className="w-11 h-11 rounded-xl object-cover border border-[#CEAE80]/40 shrink-0"
+                    />
 
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">

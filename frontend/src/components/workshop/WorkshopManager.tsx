@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   Trash2,
   Edit2,
-  Camera,
   Check,
   AlertCircle,
   Users,
@@ -32,6 +31,7 @@ import { formatToman, toPersianDigits, toJalaliDate, numberToWordsPersian } from
 import { Modal } from '../common/Modal';
 import { SelectMenu, SelectBadge, SelectOptionContent } from '../ui/select-menu';
 import { FormattedNumberInput } from '../common/FormattedNumberInput';
+import { ImagePicker } from '../common/ImagePicker';
 
 interface WorkshopManagerProps {
   owners: Owner[];
@@ -268,17 +268,6 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
     }
   };
 
-  const handleReceiptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setReceiptImage(event.target.result as string);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
 
   // ----------------------------------------------------
   // Distribution Presets & Logic
@@ -1490,21 +1479,24 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
 
             {/* Recurring toggle & receipt attachment */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-              <label className="flex items-center gap-2 cursor-pointer select-none text-xs">
-                <input
-                  type="checkbox"
-                  checked={isRecurring}
-                  onChange={(e) => setIsRecurring(e.target.checked)}
-                  className="w-4 h-4 rounded text-[#CEAE80] focus:ring-[#CEAE80]"
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 cursor-pointer select-none text-xs">
+                  <input
+                    type="checkbox"
+                    checked={isRecurring}
+                    onChange={(e) => setIsRecurring(e.target.checked)}
+                    className="w-4 h-4 rounded text-[#CEAE80] focus:ring-[#CEAE80]"
+                  />
+                  <span>این هزینه به صورت ماهانه تکرار می‌شود (مانند اجاره یا قبوض)</span>
+                </label>
+                <ImagePicker
+                  values={receiptImage ? [receiptImage] : []}
+                  onChange={(urls) => setReceiptImage(urls[0] ?? '')}
+                  category="receipt"
+                  tileClassName="w-12 h-12"
+                  addLabel="پیوست فاکتور"
                 />
-                <span>این هزینه به صورت ماهانه تکرار می‌شود (مانند اجاره یا قبوض)</span>
-              </label>
-
-              <label className="px-3 py-1.5 rounded-xl bg-stone-200 dark:bg-white/10 hover:bg-stone-300 dark:hover:bg-white/20 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-colors">
-                <Camera className="w-3.5 h-3.5" />
-                <span>{receiptImage ? 'تغییر تصویر فاکتور' : 'پیوست تصویر رسید / فاکتور'}</span>
-                <input type="file" accept="image/*" onChange={handleReceiptUpload} className="hidden" />
-              </label>
+              </div>
             </div>
 
             {receiptImage && (

@@ -2,6 +2,7 @@ import React from 'react';
 import { MapPin, TrendingUp } from 'lucide-react';
 import type { Seller } from '../../types';
 import { formatToman, toPersianDigits } from '../../utils/persian';
+import { SafeImage } from '../common/SafeImage';
 interface TopSellersCardProps {
   sellers: Seller[];
   onSelectSeller: (seller: Seller) => void;
@@ -66,18 +67,11 @@ export const TopSellersCard: React.FC<TopSellersCardProps> = ({
                   </div>
 
                   {/* Avatar thumbnail */}
-                  {seller.avatarUrl ? (
-                    <img
-                      src={seller.avatarUrl}
-                      alt={seller.name}
-                      referrerPolicy="no-referrer"
-                      className="w-9 h-9 rounded-full object-cover border border-[#CEAE80]/40 shrink-0"
-                    />
-                  ) : (
-                    <div className="w-9 h-9 rounded-full bg-[#CEAE80]/15 text-[#CEAE80] flex items-center justify-center font-bold text-xs shrink-0">
-                      {seller.name.charAt(0)}
-                    </div>
-                  )}
+                  <SafeImage
+                    src={seller.avatarUrl}
+                    alt={seller.name}
+                    className="w-9 h-9 rounded-full object-cover border border-[#CEAE80]/40 shrink-0"
+                  />
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap">

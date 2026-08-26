@@ -25,6 +25,7 @@ import {
 } from '@/utils/persian';
 import { useData } from '@/context/DataContext';
 import { Badge } from '@/components/common/Badge';
+import { SafeImage } from '@/components/common/SafeImage';
 import type {
   AuditLog,
   ConsignmentItemLine,
@@ -140,21 +141,13 @@ const Chip: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </span>
 );
 
-const Avatar: React.FC<{ name: string; url?: string; sizeCls?: string }> = ({ name, url, sizeCls = 'w-12 h-12 sm:w-14 sm:h-14' }) =>
-  url ? (
-    <img
-      src={url}
-      alt={name}
-      referrerPolicy="no-referrer"
-      className={`${sizeCls} rounded-2xl object-cover border border-[#CEAE80]/50 shrink-0`}
-    />
-  ) : (
-    <div
-      className={`${sizeCls} rounded-2xl bg-[#CEAE80]/20 border border-[#CEAE80]/40 text-[#CEAE80] flex items-center justify-center font-black text-xl shrink-0`}
-    >
-      {name ? name.slice(0, 1) : '؟'}
-    </div>
-  );
+const Avatar: React.FC<{ name: string; url?: string; sizeCls?: string }> = ({ name, url, sizeCls = 'w-12 h-12 sm:w-14 sm:h-14' }) => (
+  <SafeImage
+    src={url}
+    alt={name}
+    className={`${sizeCls} rounded-2xl object-cover border border-[#CEAE80]/50 shrink-0`}
+  />
+);
 
 const ContactRow: React.FC<{ icon: React.ReactNode; children: React.ReactNode }> = ({ icon, children }) => (
   <div className="flex items-start gap-2 text-xs text-stone-600 dark:text-gray-300">

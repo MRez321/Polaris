@@ -7,6 +7,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { attachSession } from './middleware/authMiddleware.js';
 import { authHandler } from './routes/authRoutes.js';
 import apiRoutes from './routes/apiRoutes.js';
+import { ensureUploadsDir, uploadsDir } from './services/galleryService.js';
 
 dotenv.config();
 
@@ -46,7 +47,9 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Frontend build: CI uploads the Vite build into ./public (cPanel
 // FRONTEND_PATH). Express serves it on the same origin as the API.
 const publicPath = path.join(process.cwd(), 'public');
+ensureUploadsDir();
 app.use(express.static(publicPath));
+app.use('/uploads', express.static(uploadsDir, { maxAge: '30d', immutable: true }));
 
 // better-auth owns /api/auth/* — mounted before JSON-parsed API routes.
 // app.all preserves req.url so the handler sees the full path.

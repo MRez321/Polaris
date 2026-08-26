@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
+import { SafeImage } from '../common/SafeImage';
 import type { GarmentItem, Seller } from '../../types';
 import { formatToman, toPersianDigits, toJalaliDate } from '../../utils/persian';
 import {
@@ -389,18 +390,11 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
             {selectedSeller && (
               <div className="p-3 rounded-xl bg-stone-100 dark:bg-black/30 border border-black/5 dark:border-white/5 flex flex-wrap items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-3">
-                  {selectedSeller.avatarUrl ? (
-                    <img
-                      src={selectedSeller.avatarUrl}
-                      alt={selectedSeller.name}
-                      referrerPolicy="no-referrer"
-                      className="w-10 h-10 rounded-full object-cover border border-[#CEAE80]"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-[#CEAE80]/20 text-[#CEAE80] flex items-center justify-center font-bold">
-                      {selectedSeller.name.charAt(0)}
-                    </div>
-                  )}
+                  <SafeImage
+                    src={selectedSeller.avatarUrl}
+                    alt={selectedSeller.name}
+                    className="w-10 h-10 rounded-full object-cover border border-[#CEAE80]"
+                  />
                   <div>
                     <div className="font-bold text-stone-900 dark:text-white flex items-center gap-2">
                       <span>{selectedSeller.name}</span>

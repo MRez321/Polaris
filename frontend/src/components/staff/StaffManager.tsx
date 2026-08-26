@@ -27,6 +27,8 @@ import { BankCardInput, ShebaInput, detectBankByCard, detectBankBySheba } from '
 import { OwnerCard } from '../settings/OwnerCard';
 import { OwnerFormModal } from '../settings/OwnerFormModal';
 import { SelectMenu } from '../ui/select-menu';
+import { ImagePicker } from '../common/ImagePicker';
+import { SafeImage } from '../common/SafeImage';
 
 interface StaffManagerProps {
   owners: Owner[];
@@ -114,6 +116,7 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
   const [resumeUrl, setResumeUrl] = useState('');
   const [resumeAttachmentName, setResumeAttachmentName] = useState('');
   const [resumeAttachmentData, setResumeAttachmentData] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
 
   // 1-Click Copy Handler
   const handleCopy = (text: string, id: string) => {
@@ -141,6 +144,7 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
     setResumeUrl('');
     setResumeAttachmentName('');
     setResumeAttachmentData('');
+    setAvatarUrl('');
     setIsStaffModalOpen(true);
   };
 
@@ -162,6 +166,7 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
     setResumeUrl(stf.resumeUrl || '');
     setResumeAttachmentName(stf.resumeAttachmentName || '');
     setResumeAttachmentData(stf.resumeAttachmentData || '');
+    setAvatarUrl(stf.avatarUrl || '');
     setIsStaffModalOpen(true);
   };
 
@@ -205,9 +210,9 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
       salaryAmount: Number(salaryAmount) || 0,
       status,
       bankAccounts: finalBankAccounts,
-      resumeUrl: resumeUrl.trim(),
-      resumeAttachmentName: resumeAttachmentName.trim(),
       resumeAttachmentData,
+      avatarUrl: avatarUrl.trim(),
+      resumeAttachmentName: resumeAttachmentName.trim(),
       notes: notes.trim(),
     };
 
@@ -361,18 +366,11 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
                 <div>
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3">
-                      {stf.avatarUrl ? (
-                        <img
-                          src={stf.avatarUrl}
-                          alt={stf.name}
-                          referrerPolicy="no-referrer"
-                          className="w-12 h-12 rounded-xl object-cover border border-[#CEAE80]"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-xl bg-[#CEAE80]/15 text-[#CEAE80] flex items-center justify-center font-bold text-lg">
-                          {stf.name.charAt(0)}
-                        </div>
-                      )}
+                      <SafeImage
+                        src={stf.avatarUrl}
+                        alt={stf.name}
+                        className="w-12 h-12 rounded-xl object-cover border border-[#CEAE80]"
+                      />
                       <div>
                         <h5 className="font-bold text-xs sm:text-sm text-stone-900 dark:text-white flex items-center gap-1.5">
                           <span>{stf.name}</span>
@@ -568,6 +566,19 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
           maxWidth="3xl"
         >
           <form onSubmit={handleSaveStaffSubmit} className="space-y-4 text-stone-900 dark:text-white">
+
+            {/* Avatar */}
+            <div className="p-3.5 rounded-xl glass-card space-y-2">
+              <label className="text-xs font-bold text-[#CEAE80] flex items-center gap-1.5">
+                <span>تصویر پرسنل</span>
+              </label>
+              <ImagePicker
+                values={avatarUrl ? [avatarUrl] : []}
+                onChange={(urls) => setAvatarUrl(urls[0] ?? '')}
+                category="avatar"
+                tileClassName="w-16 h-16"
+              />
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">

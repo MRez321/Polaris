@@ -7,10 +7,10 @@ import {
   CreditCard,
   Plus,
   Trash2,
-  Upload,
   Check,
   Mail,
 } from 'lucide-react';
+import { ImagePicker } from '../common/ImagePicker';
 import { BankCardInput, ShebaInput, detectBankByCard, detectBankBySheba } from '../common/BankInput';
 import { toPersianDigits } from '../../utils/persian';
 
@@ -154,17 +154,6 @@ export const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
     setShowAddBank(false);
   };
 
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setAvatarUrl(event.target.result as string);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -300,39 +289,12 @@ export const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
             <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
               تصویر پروفایل / چهره
             </label>
-            <div className="flex items-center gap-3">
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt={name}
-                  className="w-14 h-14 rounded-2xl object-cover border-2 border-[#CEAE80] shadow-sm shrink-0"
-                />
-              ) : (
-                <div className="w-14 h-14 rounded-2xl bg-amber-500/10 dark:bg-stone-800 border-2 border-[#CEAE80] flex items-center justify-center text-[#CEAE80] font-black text-xl shrink-0">
-                  {name ? name.charAt(0) : '؟'}
-                </div>
-              )}
-              <div className="flex-1 space-y-1">
-                <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-white/10 hover:bg-stone-200 dark:hover:bg-white/20 text-[11px] font-bold text-stone-800 dark:text-stone-200 transition-colors">
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>انتخاب فایل</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarUpload}
-                    className="hidden"
-                  />
-                </label>
-                <input
-                  type="url"
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                  placeholder="یا لینک تصویر..."
-                  className="w-full px-2 py-1 rounded-lg glass-input text-[10px] font-mono text-left outline-none"
-                  dir="ltr"
-                />
-              </div>
-            </div>
+            <ImagePicker
+              values={avatarUrl ? [avatarUrl] : []}
+              onChange={(urls) => setAvatarUrl(urls[0] ?? '')}
+              category="avatar"
+              tileClassName="w-14 h-14"
+            />
           </div>
 
           <div className="sm:col-span-2">

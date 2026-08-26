@@ -21,7 +21,7 @@ import {
   RotateCcw,
   CheckCircle2,
   Image as ImageIcon,
-  Upload,
+  Images,
   X,
   Hash,
   History as HistoryIcon,
@@ -31,6 +31,8 @@ import { toPersianDigits, formatToman } from '../../utils/persian';
 import { Modal } from '../common/Modal';
 import type { NetworkStatus } from '../../hooks/useNetworkStatus';
 import { AuditLogsManager } from '../audit/AuditLogsManager';
+import { ImagePicker } from '../common/ImagePicker';
+import { GalleryManager } from './GalleryManager';
 
 interface SettingsManagerProps {
   workshopInfo: WorkshopInfo;
@@ -57,7 +59,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
   onOpenPwaInstall,
   auditLogs = [],
 }) => {
-  const [activeTab, setActiveTab] = useState<'branding' | 'trash' | 'system' | 'audit'>('branding');
+  const [activeTab, setActiveTab] = useState<'branding' | 'gallery' | 'trash' | 'system' | 'audit'>('branding');
   const [isSavedAlert, setIsSavedAlert] = useState(false);
 
   // Form State for Workshop Info
@@ -114,17 +116,6 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
       fetchTrash();
     }
   }, [activeTab]);
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setLogoUrl(event.target.result as string);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
 
   const handleSaveCompanyData = (e: React.FormEvent) => {
     e.preventDefault();
@@ -266,6 +257,18 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
         </button>
 
         <button
+          onClick={() => setActiveTab('gallery')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'gallery'
+              ? 'bg-[#CEAE80] text-black shadow-md font-black'
+              : 'text-stone-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5'
+          }`}
+        >
+          <Images className="w-3.5 h-3.5" />
+          <span>گالری تصاویر</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('trash')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
             activeTab === 'trash'
@@ -357,41 +360,12 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                         <span className="text-[9px] text-stone-400">لوگو</span>
                       </div>
                     )}
-                    <div className="space-y-1.5">
-                      <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-white/10 hover:bg-stone-200 dark:hover:bg-white/20 text-xs font-bold text-stone-800 dark:text-stone-200 transition-colors">
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>آپلود تصویر لوگو</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleLogoUpload}
-                          className="hidden"
-                        />
-                      </label>
-                      {logoUrl && (
-                        <button
-                          type="button"
-                          onClick={() => setLogoUrl('')}
-                          className="block text-[11px] text-rose-500 hover:underline"
-                        >
-                          حذف تصویر لوگو
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Logo URL Input */}
-                  <div className="sm:col-span-1">
-                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
-                      آدرس اینترنتی فایل لوگو (اختیاری)
-                    </label>
-                    <input
-                      type="url"
-                      value={logoUrl}
-                      onChange={(e) => setLogoUrl(e.target.value)}
-                      placeholder="https://.../logo.png"
-                      className="w-full px-3 py-2 rounded-xl glass-input text-xs font-mono text-left outline-none"
-                      dir="ltr"
+                    <ImagePicker
+                      values={logoUrl ? [logoUrl] : []}
+                      onChange={(urls) => setLogoUrl(urls[0] ?? '')}
+                      category="logo"
+                      tileClassName="w-16 h-16"
+                      addLabel="تغییر لوگو"
                     />
                   </div>
 
@@ -762,6 +736,14 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* TAB: IMAGE GALLERY */}
+      {activeTab === 'gallery' && (
+        <div className="animate-in fade-in duration-200">
+          <GalleryManager />
         </div>
       )}
 

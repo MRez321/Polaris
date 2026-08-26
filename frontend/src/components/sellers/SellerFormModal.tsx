@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import type { Seller, BankAccountInfo } from '../../types';
-import { Plus, Trash2, Camera, CreditCard, Shield, Phone, MapPin, User, Check, Copy } from 'lucide-react';
+import { Plus, Trash2, CreditCard, Shield, Phone, MapPin, Check, Copy } from 'lucide-react';
 import { toPersianDigits } from '../../utils/persian';
 import { BankCardInput, ShebaInput, detectBankByCard, detectBankBySheba } from '../common/BankInput';
 import { SelectMenu } from '../ui/select-menu';
 import { FormattedNumberInput } from '../common/FormattedNumberInput';
+import { ImagePicker } from '../common/ImagePicker';
 
 interface SellerFormModalProps {
   isOpen: boolean;
@@ -125,17 +126,6 @@ export const SellerFormModal: React.FC<SellerFormModalProps> = ({
     setBankAccounts(bankAccounts.filter((_, i) => i !== index));
   };
 
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      if (ev.target?.result) {
-        setAvatarUrl(ev.target.result as string);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -184,24 +174,13 @@ export const SellerFormModal: React.FC<SellerFormModalProps> = ({
       <form onSubmit={handleSubmit} className="space-y-4 text-stone-900 dark:text-white">
         {/* Profile Avatar & Primary Identity */}
         <div className="p-4 rounded-2xl glass-card flex flex-col sm:flex-row items-center gap-4">
-          <div className="relative group">
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt={name || 'فروشنده'}
-                referrerPolicy="no-referrer"
-                className="w-16 h-16 rounded-2xl object-cover border-2 border-[#CEAE80] shadow-md"
-              />
-            ) : (
-              <div className="w-16 h-16 rounded-2xl bg-[#CEAE80]/20 border-2 border-[#CEAE80] flex items-center justify-center text-[#CEAE80] text-xl font-bold">
-                {name ? name.charAt(0) : <User className="w-8 h-8" />}
-              </div>
-            )}
-            <label className="absolute -bottom-1 -right-1 p-1.5 bg-[#CEAE80] hover:bg-[#B59363] text-black rounded-xl shadow-md cursor-pointer transition-all active:scale-95">
-              <Camera className="w-3.5 h-3.5" />
-              <input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
-            </label>
-          </div>
+          <ImagePicker
+            values={avatarUrl ? [avatarUrl] : []}
+            onChange={(urls) => setAvatarUrl(urls[0] ?? '')}
+            category="avatar"
+            tileClassName="w-16 h-16"
+            addLabel="تصویر"
+          />
 
           <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>

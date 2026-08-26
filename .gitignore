@@ -6,3 +6,5 @@ a
 node_modules
 dist
 A
+# Uploaded image files
+backend/uploads/

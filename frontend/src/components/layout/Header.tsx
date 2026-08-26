@@ -125,7 +125,7 @@ export const Header: React.FC = () => {
 
           {/* Day / Night Theme Switcher */}
           <button
-            onClick={toggleTheme}
+            onClick={(e) => toggleTheme({ x: e.clientX, y: e.clientY })}
             className="p-2.5 rounded-xl glass-card hover:border-[#CEAE80] transition-all text-stone-800 dark:text-gray-200 shadow-sm"
             title={isDarkMode ? 'تغییر به حالت روز (روشن)' : 'تغییر به حالت شب (تاریک)'}
           >

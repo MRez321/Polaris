@@ -10,6 +10,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { toPersianDigits } from '../../utils/persian';
+import { SafeImage } from '../common/SafeImage';
 
 interface OwnerCardProps {
   owner: Owner;
@@ -45,18 +46,11 @@ export const OwnerCard: React.FC<OwnerCardProps> = ({
       {/* Top Banner & Actions */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3.5">
-          {owner.avatarUrl ? (
-            <img
-              src={owner.avatarUrl}
-              alt={owner.name}
-              referrerPolicy="no-referrer"
-              className="w-14 h-14 rounded-2xl object-cover border-2 border-[#CEAE80] shadow-md shrink-0"
-            />
-          ) : (
-            <div className="w-14 h-14 rounded-2xl bg-amber-500/15 dark:bg-[#CEAE80]/20 border-2 border-[#CEAE80] flex items-center justify-center text-amber-900 dark:text-[#CEAE80] font-black text-xl shrink-0">
-              {owner.name ? owner.name.charAt(0) : '؟'}
-            </div>
-          )}
+          <SafeImage
+            src={owner.avatarUrl}
+            alt={owner.name}
+            className="w-14 h-14 rounded-2xl object-cover border-2 border-[#CEAE80] shadow-md shrink-0"
+          />
           <div>
             <div className="flex items-center gap-2">
               <h5 className="font-black text-base text-stone-900 dark:text-white">{owner.name}</h5>

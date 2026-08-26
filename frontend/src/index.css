@@ -9,7 +9,23 @@
 
   body {
     direction: rtl;
-    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Palette follows the html.dark/.light tokens — theme flips require no JS class juggling */
+    background-color: var(--background);
+    color: var(--foreground);
+    min-height: 100vh;
+    min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: rgba(206, 174, 128, 0.3);
+  }
+  .dark ::selection {
+    color: #fff;
+  }
+  .light ::selection {
+    color: #000;
   }
 
   /* Custom refined scrollbars */
@@ -27,6 +43,25 @@
   ::-webkit-scrollbar-thumb:hover {
     background: rgba(206, 174, 128, 0.6);
   }
+}
+
+/* ========================================================================= */
+/* THEME SWITCHING — instant swap, optional circular reveal                  */
+/* ========================================================================= */
+/* While the .dark/.light class flips, freeze every per-element transition   */
+/* so buttons/cards/borders snap instead of tweening out of sync.            */
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition: none !important;
+}
+
+/* View Transitions API: disable the default cross-fade so the new palette   */
+/* is revealed solely by the clip-path circle animated from the toggle.     */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }
 
 :root {

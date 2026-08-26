@@ -9,7 +9,7 @@ import * as expenses from '../controllers/expensesController.js';
 import * as trash from '../controllers/trashController.js';
 import * as company from '../controllers/companyController.js';
 import * as dashboard from '../controllers/dashboardController.js';
-
+import * as gallery from '../controllers/galleryController.js';
 const router = Router();
 
 // Health & dashboard
@@ -67,7 +67,11 @@ router.delete('/trash/permanent/:type/:id', trash.permanentDelete);
 // Company branding
 router.get('/company', company.getCompanyBranding);
 router.put('/company', company.updateCompanyBranding);
-
+// Image uploads & central gallery
+router.post('/uploads', gallery.uploadMiddleware, gallery.uploadImages);
+router.get('/gallery', gallery.listImages);
+router.patch('/gallery/:id', gallery.updateImage);
+router.delete('/gallery/:id', gallery.deleteImage);
 // Audit logs
 router.get('/audit-logs', dashboard.listAuditLogs);
 

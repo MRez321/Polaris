@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+import { MulterError } from 'multer';
 import { ApiError } from '../utils/apiError.js';
 import { ZodError } from 'zod';
 
@@ -23,6 +24,15 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     // CORS errors and other known HTTP failures
     if (err instanceof Error && err.message === 'Not allowed by CORS') {
         res.status(403).json({ error: 'مبدأ درخواست مجاز نیست' });
+        return;
+    }
+
+    if (err instanceof MulterError) {
+        const message =
+            err.code === 'LIMIT_FILE_SIZE'
+                ? 'حجم تصویر بیش از حد مجاز است (حداکثر ۸ مگابایت)'
+                : 'بارگذاری فایل ناموفق بود';
+        res.status(400).json({ error: message });
         return;
     }
 
