@@ -7,6 +7,7 @@ import {
   Edit2,
   Trash2,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import type { GarmentItem } from '../../types';
 import { formatToman, toPersianDigits } from '../../utils/persian';
 import { Badge } from '../common/Badge';
@@ -40,6 +41,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
 }) => {
   const safeItems = items || [];
   const [search, setSearch] = useState('');
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -161,9 +163,10 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
           return (
             <div
               key={item.id}
-              className={`p-4 rounded-2xl glass-card border transition-all hover:border-[#CEAE80]/50 shadow-md flex flex-col justify-between ${
+              className={`p-4 rounded-2xl glass-card border transition-all hover:border-[#CEAE80]/50 shadow-md flex flex-col justify-between cursor-pointer ${
                 isLowStock ? 'border-amber-400/50 bg-amber-500/[0.05]' : 'border-stone-200 dark:border-white/5'
               }`}
+              onClick={() => navigate(`/profile/items/${item.id}`)}
             >
               <div>
                 <div className="flex items-start justify-between gap-2">
@@ -185,14 +188,18 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
 
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => handleEdit(item)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(item);
+                      }}
                       className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/10 transition-colors"
                       title="ویرایش"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         if (confirm(`آیا از حذف "${item.name}" مطمئن هستید؟`)) {
                           onDeleteItem(item.id);
                         }
@@ -255,7 +262,10 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
 
                 {onQuickHandoverItem && (
                   <button
-                    onClick={() => onQuickHandoverItem(item)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onQuickHandoverItem(item);
+                    }}
                     className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-[#CEAE80] text-amber-800 dark:text-[#CEAE80] hover:text-black border border-amber-500/30 text-xs font-black transition-colors"
                   >
                     تحویل امانی

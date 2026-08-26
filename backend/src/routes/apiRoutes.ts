@@ -35,6 +35,7 @@ router.delete('/sellers/:id', sellers.deleteSeller);
 router.get('/consignments', consignments.listConsignments);
 router.post('/consignments', consignments.createConsignment);
 router.post('/consignments/return', consignments.submitReturn);
+router.get('/consignments/returns', consignments.listReturns);
 router.delete('/consignments/:id', consignments.deleteConsignment);
 
 // Payments

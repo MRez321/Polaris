@@ -84,14 +84,22 @@ export interface HandoverPayload {
   }[];
 }
 
+/**
+ * One return line. Matches a consignment line by itemId + optional size/color
+ * variant, so two lines of the same item with different sizes stay distinct.
+ */
+export interface ReturnLinePayload {
+  itemId: string;
+  quantity: number; // must be > 0
+  condition: 'healthy' | 'damaged';
+  reason?: string;
+  selectedSize?: string;
+  selectedColor?: string;
+}
+
 export interface ReturnPayload {
   consignmentId: string;
-  returnItems: {
-    itemId: string;
-    quantity: number;
-    condition: 'healthy' | 'damaged';
-    reason?: string;
-  }[];
+  returnItems: ReturnLinePayload[];
   notes?: string;
 }
 
@@ -108,9 +116,15 @@ export const consignmentsApi = {
       .then((r) => r.data),
 };
 
+// --- Returns ---
+export const returnsApi = {
+  list: () => api.get<ConsignmentReturn[]>('/api/consignments/returns').then((r) => r.data),
+};
+
 // --- Payments ---
 export interface PaymentPayload {
   sellerId: string;
+
   amount: number;
   paymentMethod: string;
   trackingNumber?: string;

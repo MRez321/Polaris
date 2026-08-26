@@ -29,23 +29,23 @@ export const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
   editOwner,
   onDelete,
 }) => {
+  const [ownerId, setOwnerId] = useState('');
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
-  const [sharePercentage, setSharePercentage] = useState('50');
+  const [sharePercentage, setSharePercentage] = useState<number | null>(null);
   const [nationalCode, setNationalCode] = useState('');
   const [email, setEmail] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [bio, setBio] = useState('');
 
   // Phones
-  const [phones, setPhones] = useState<string[]>(['']);
+  const [phones, setPhones] = useState<string[]>([]);
   const [newPhone, setNewPhone] = useState('');
 
   // Bank Accounts
   const [bankAccounts, setBankAccounts] = useState<BankAccountInfo[]>([
-    { bankName: 'بانک ملت', cardNumber: '', shebaNumber: '', accountHolder: '' },
+    { bankName: '', cardNumber: '', shebaNumber: '', accountHolder: '' },
   ]);
-
   // Form for adding a new bank account
   const [showAddBank, setShowAddBank] = useState(false);
   const [newBankName, setNewBankName] = useState('');
@@ -55,30 +55,32 @@ export const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
 
   useEffect(() => {
     if (editOwner) {
+      setOwnerId(editOwner.id);
       setName(editOwner.name || '');
       setRole(editOwner.role || '');
-      setSharePercentage(String(editOwner.sharePercentage ?? 50));
+      setSharePercentage(editOwner.sharePercentage ?? null);
       setNationalCode(editOwner.nationalCode || '');
       setEmail(editOwner.email || '');
       setAvatarUrl(editOwner.avatarUrl || '');
       setBio(editOwner.bio || '');
-      setPhones(editOwner.phones?.length ? [...editOwner.phones] : ['']);
+      setPhones(editOwner.phones ? [...editOwner.phones] : []);
       setBankAccounts(
         editOwner.bankAccounts?.length
           ? [...editOwner.bankAccounts]
-          : [{ bankName: 'بانک ملت', cardNumber: '', shebaNumber: '', accountHolder: editOwner.name || '' }]
+          : [{ bankName: '', cardNumber: '', shebaNumber: '', accountHolder: '' }]
       );
       setShowAddBank(false);
     } else {
+      setOwnerId(crypto.randomUUID());
       setName('');
-      setRole('هم‌بنیان‌گذار و مدیر کارگاه');
-      setSharePercentage('50');
+      setRole('');
+      setSharePercentage(null);
       setNationalCode('');
       setEmail('');
       setAvatarUrl('');
       setBio('');
-      setPhones(['0912']);
-      setBankAccounts([{ bankName: 'بانک ملت', cardNumber: '', shebaNumber: '', accountHolder: '' }]);
+      setPhones([]);
+      setBankAccounts([{ bankName: '', cardNumber: '', shebaNumber: '', accountHolder: '' }]);
       setShowAddBank(false);
     }
   }, [editOwner, isOpen]);
@@ -125,7 +127,7 @@ export const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
 
   const handleRemoveAccount = (index: number) => {
     if (bankAccounts.length <= 1) {
-      setBankAccounts([{ bankName: 'بانک', cardNumber: '', shebaNumber: '', accountHolder: name }]);
+      setBankAccounts([{ bankName: '', cardNumber: '', shebaNumber: '', accountHolder: '' }]);
       return;
     }
     setBankAccounts(bankAccounts.filter((_, i) => i !== index));
@@ -174,15 +176,16 @@ export const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
     );
 
     const payload: Partial<Owner> = {
+      id: ownerId,
       name: name.trim(),
       role: role.trim() || 'مالک و هم‌بنیان‌گذار',
-      sharePercentage: Number(sharePercentage) || 50,
+      sharePercentage: sharePercentage || 50,
       nationalCode: nationalCode.trim(),
       email: email.trim(),
       avatarUrl: avatarUrl.trim(),
       bio: bio.trim(),
-      phones: cleanedPhones.length > 0 ? cleanedPhones : ['09120000000'],
-      bankAccounts: cleanedAccounts.length > 0 ? cleanedAccounts : bankAccounts,
+      phones: cleanedPhones,
+      bankAccounts: cleanedAccounts,
     };
 
     onSave(payload);
@@ -259,6 +262,36 @@ export const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
               />
             </div>
           </div>
+          <div>
+            <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+              درصد سهام در کارگاه
+            </label>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={sharePercentage ?? ''}
+              onChange={(e) => setSharePercentage(e.target.value === '' ? null : Number(e.target.value))}
+              placeholder="مثلاً: ۵۰"
+              className="w-full px-3 py-2.5 rounded-xl glass-input outline-none font-mono text-left text-xs sm:text-sm"
+              dir="ltr"
+            />
+          </div>
+        </div>
+
+        {/* Unique Auto-generated ID */}
+        <div>
+          <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+            شناسه یکتا <span className="text-stone-400 font-normal">(خودکار — غیرقابل تغییر)</span>
+          </label>
+          <input
+            type="text"
+            dir="ltr"
+            value={ownerId}
+            readOnly
+            disabled
+            className="w-full px-3 py-2.5 rounded-xl glass-input outline-none font-mono text-left text-xs sm:text-sm opacity-70 cursor-not-allowed"
+          />
         </div>
 
         {/* Avatar and Bio */}

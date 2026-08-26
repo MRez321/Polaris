@@ -10,6 +10,7 @@ import ConsignmentsPage from '@/pages/ConsignmentsPage';
 import PeoplePage from '@/pages/PeoplePage';
 import FinancesPage from '@/pages/FinancesPage';
 import SettingsPage from '@/pages/SettingsPage';
+import EntityProfilePage from '@/pages/EntityProfilePage';
 
 function App() {
   return (
@@ -29,6 +30,8 @@ function App() {
                   <Route path="/finances/workshop" element={<FinancesPage />} />
                   <Route path="/finances/reports" element={<FinancesPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
+                  {/* /profile/{items|sellers|staff|owners}/:id */}
+                  <Route path="/profile/:type/:id" element={<EntityProfilePage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Route>
               </Routes>

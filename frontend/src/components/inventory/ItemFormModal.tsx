@@ -4,6 +4,7 @@ import type { GarmentItem } from '../../types';
 import { toPersianDigits } from '../../utils/persian';
 import { Plus, Image as ImageIcon, Camera, Trash2 } from 'lucide-react';
 import { SelectMenu } from '../ui/select-menu';
+import { FormattedNumberInput } from '../common/FormattedNumberInput';
 
 interface ItemFormModalProps {
   isOpen: boolean;
@@ -31,31 +32,31 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
   onCreateCategory,
 }) => {
   const [name, setName] = useState('');
-  const [code, setCode] = useState('');
+  const [itemId, setItemId] = useState('');
   const [category, setCategory] = useState<string>('coats_jackets');
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [costPrice, setCostPrice] = useState('');
-  const [consignmentPrice, setConsignmentPrice] = useState('');
-  const [retailPrice, setRetailPrice] = useState('');
-  const [stockQuantity, setStockQuantity] = useState('');
-  const [minStockThreshold, setMinStockThreshold] = useState('10');
-  const [sizes, setSizes] = useState('M, L, XL, 2XL');
-  const [colors, setColors] = useState('مشکی, سرمه‌ای, طوسی');
-  const [fabric, setFabric] = useState('کتان ترک ۳۸۰ گرم');
+  const [costPrice, setCostPrice] = useState<number | null>(null);
+  const [consignmentPrice, setConsignmentPrice] = useState<number | null>(null);
+  const [retailPrice, setRetailPrice] = useState<number | null>(null);
+  const [stockQuantity, setStockQuantity] = useState<number | null>(null);
+  const [minStockThreshold, setMinStockThreshold] = useState<number | null>(null);
+  const [sizes, setSizes] = useState('');
+  const [colors, setColors] = useState('');
+  const [fabric, setFabric] = useState('');
   const [imagesList, setImagesList] = useState<string[]>([]);
   const [imageUrlInput, setImageUrlInput] = useState('');
 
   useEffect(() => {
     if (editItem) {
       setName(editItem.name || '');
-      setCode(editItem.code || '');
+      setItemId(editItem.id);
       setCategory(editItem.category || 'coats_jackets');
-      setCostPrice(String(editItem.costPrice || 0));
-      setConsignmentPrice(String(editItem.consignmentPrice || 0));
-      setRetailPrice(String(editItem.retailPrice || 0));
-      setStockQuantity(String(editItem.stockQuantity || 0));
-      setMinStockThreshold(String(editItem.minStockThreshold || 10));
+      setCostPrice(editItem.costPrice ?? null);
+      setConsignmentPrice(editItem.consignmentPrice ?? null);
+      setRetailPrice(editItem.retailPrice ?? null);
+      setStockQuantity(editItem.stockQuantity ?? null);
+      setMinStockThreshold(editItem.minStockThreshold ?? null);
       setSizes((editItem.sizes || []).join(', '));
       setColors((editItem.colors || []).join(', '));
       setFabric(editItem.fabric || '');
@@ -67,19 +68,17 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
       setImagesList(existingImages);
     } else {
       setName('');
-      setCode(`PLR-${Math.floor(100 + Math.random() * 900)}`);
+      setItemId(crypto.randomUUID());
       setCategory('coats_jackets');
-      setCostPrice('450000');
-      setConsignmentPrice('680000');
-      setRetailPrice('1100000');
-      setStockQuantity('20');
-      setMinStockThreshold('8');
-      setSizes('M, L, XL');
-      setColors('مشکی, سرمه‌ای');
-      setFabric('پارچه کتان با کیفیت');
-      setImagesList([
-        'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=500&auto=format&fit=crop&q=80',
-      ]);
+      setCostPrice(null);
+      setConsignmentPrice(null);
+      setRetailPrice(null);
+      setStockQuantity(null);
+      setMinStockThreshold(null);
+      setSizes('');
+      setColors('');
+      setFabric('');
+      setImagesList([]);
     }
     setIsCreatingCategory(false);
     setNewCategoryName('');
@@ -125,19 +124,20 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+    if (consignmentPrice === null) return;
 
     const matchedCat = categories.find((c) => c.id === category || c.label === category);
 
     onSave({
+      id: itemId,
       name: name.trim(),
-      code: code.trim(),
       category,
       categoryLabel: matchedCat ? matchedCat.label : category,
-      costPrice: Number(costPrice) || 0,
-      consignmentPrice: Number(consignmentPrice) || 0,
-      retailPrice: Number(retailPrice) || 0,
-      stockQuantity: Number(stockQuantity) || 0,
-      minStockThreshold: Number(minStockThreshold) || 10,
+      costPrice: costPrice || 0,
+      consignmentPrice: consignmentPrice || 0,
+      retailPrice: retailPrice || 0,
+      stockQuantity: stockQuantity || 0,
+      minStockThreshold: minStockThreshold || 10,
       sizes: sizes.split(',').map((s) => s.trim()).filter(Boolean),
       colors: colors.split(',').map((c) => c.trim()).filter(Boolean),
       fabric: fabric.trim(),
@@ -242,13 +242,15 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
 
           <div>
             <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-              کد کالا (SKU)
+              شناسه یکتا <span className="text-stone-400 font-normal">(خودکار — غیرقابل تغییر)</span>
             </label>
             <input
               type="text"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-[#CEAE80] outline-none font-mono"
+              dir="ltr"
+              value={itemId}
+              readOnly
+              disabled
+              className="w-full px-3 py-2 rounded-xl glass-input text-sm outline-none font-mono text-left opacity-70 cursor-not-allowed"
             />
           </div>
 
@@ -328,11 +330,10 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
               <label className="block text-[11px] text-stone-600 dark:text-stone-400 mb-1">
                 قیمت تمام شده دوخت (کارگاه)
               </label>
-              <input
-                type="number"
+              <FormattedNumberInput
                 value={costPrice}
-                onChange={(e) => setCostPrice(e.target.value)}
-                placeholder="تومان"
+                onChange={setCostPrice}
+                placeholder="مثلاً: ۴۵۰,۰۰۰ تومان"
                 className="w-full px-3 py-2 rounded-lg glass-input text-xs sm:text-sm font-mono outline-none focus:border-[#CEAE80]"
               />
             </div>
@@ -341,12 +342,10 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
               <label className="block text-[11px] text-stone-900 dark:text-stone-200 font-bold mb-1">
                 قیمت امانی به دست‌فروش *
               </label>
-              <input
-                type="number"
-                required
+              <FormattedNumberInput
                 value={consignmentPrice}
-                onChange={(e) => setConsignmentPrice(e.target.value)}
-                placeholder="تومان"
+                onChange={setConsignmentPrice}
+                placeholder="مثلاً: ۶۸۰,۰۰۰ تومان"
                 className="w-full px-3 py-2 rounded-lg bg-white dark:bg-[#141414] border border-[#CEAE80] text-[#CEAE80] text-xs sm:text-sm font-bold font-mono outline-none"
               />
             </div>
@@ -355,11 +354,10 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
               <label className="block text-[11px] text-stone-600 dark:text-stone-400 mb-1">
                 قیمت مصرف‌کننده نهایی
               </label>
-              <input
-                type="number"
+              <FormattedNumberInput
                 value={retailPrice}
-                onChange={(e) => setRetailPrice(e.target.value)}
-                placeholder="تومان"
+                onChange={setRetailPrice}
+                placeholder="مثلاً: ۱,۲۰۰,۰۰۰ تومان"
                 className="w-full px-3 py-2 rounded-lg glass-input text-xs sm:text-sm font-mono outline-none focus:border-[#CEAE80]"
               />
             </div>
@@ -372,24 +370,24 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
             <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
               موجودی اولیه انبار (عدد)
             </label>
-            <input
-              type="number"
-              value={stockQuantity}
-              onChange={(e) => setStockQuantity(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-[#CEAE80] outline-none font-mono"
-            />
+              <FormattedNumberInput
+                value={stockQuantity}
+                onChange={setStockQuantity}
+                placeholder="مثلاً: ۲۵ عدد"
+                className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-[#CEAE80] outline-none font-mono"
+              />
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
               حداقل آستانه هشدار کسری
             </label>
-            <input
-              type="number"
-              value={minStockThreshold}
-              onChange={(e) => setMinStockThreshold(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-[#CEAE80] outline-none font-mono"
-            />
+              <FormattedNumberInput
+                value={minStockThreshold}
+                onChange={setMinStockThreshold}
+                placeholder="مثلاً: ۸ عدد"
+                className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-[#CEAE80] outline-none font-mono"
+              />
           </div>
 
           <div>

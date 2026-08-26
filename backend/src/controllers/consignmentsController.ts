@@ -32,6 +32,8 @@ const returnSchema = z.object({
                 quantity: z.number().int().positive(),
                 condition: z.enum(['healthy', 'damaged']),
                 reason: z.string().optional(),
+                selectedSize: z.string().optional(),
+                selectedColor: z.string().optional(),
             }),
         )
         .min(1),
@@ -41,6 +43,11 @@ const returnSchema = z.object({
 export async function listConsignments(_req: Request, res: Response): Promise<void> {
     const rows = await svc.listConsignments();
     res.json(rows.map(toConsignmentDto));
+}
+
+export async function listReturns(_req: Request, res: Response): Promise<void> {
+    const rows = await svc.listReturns();
+    res.json(rows.map(toReturnDto));
 }
 
 export async function createConsignment(req: Request, res: Response): Promise<void> {

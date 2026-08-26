@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Download,
   X,
@@ -31,6 +31,13 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({
   const [, setShowIOSGuide] = useState<boolean>(false);
 
   const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
+
+  // Track delayed-open timer ids so a pending auto-open can always be cancelled
+  const delayedOpenTimersRef = useRef<number[]>([]);
+  const clearDelayedOpenTimers = () => {
+    delayedOpenTimersRef.current.forEach((id) => window.clearTimeout(id));
+    delayedOpenTimersRef.current = [];
+  };
 
   useEffect(() => {
     // 1. Check if running in standalone mode (already installed & opened from home screen)
@@ -73,9 +80,9 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({
       if (!neverShow) {
         if (!dismissedUntil || Date.now() > Number(dismissedUntil)) {
           // Delay popup slightly for smooth initial app loading
-          setTimeout(() => {
-            setIsOpen(true);
-          }, 2500);
+          delayedOpenTimersRef.current.push(
+            window.setTimeout(() => setIsOpen(true), 2500)
+          );
         }
       }
     };
@@ -85,7 +92,13 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({
       console.log('[PWA] Application was successfully installed.');
       setIsInstalled(true);
       setIsOpen(false);
-      localStorage.setItem('pwa_is_installed', 'true');
+      delayedOpenTimersRef.current.forEach((id) => window.clearTimeout(id));
+      delayedOpenTimersRef.current = [];
+      try {
+        localStorage.setItem('pwa_is_installed', 'true');
+      } catch {
+        /* storage unavailable */
+      }
       setDeferredPrompt(null);
     };
 
@@ -97,15 +110,17 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({
       const neverShow = localStorage.getItem('pwa_never_show') === 'true';
       const dismissedUntil = localStorage.getItem('pwa_dismissed_until');
       if (!neverShow && (!dismissedUntil || Date.now() > Number(dismissedUntil))) {
-        setTimeout(() => {
-          setIsOpen(true);
-        }, 3500);
+        delayedOpenTimersRef.current.push(
+          window.setTimeout(() => setIsOpen(true), 3500)
+        );
       }
     }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
+      delayedOpenTimersRef.current.forEach((id) => window.clearTimeout(id));
+      delayedOpenTimersRef.current = [];
     };
   }, []);
 
@@ -135,8 +150,12 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({
       if (choiceResult.outcome === 'accepted') {
         console.log('[PWA] User accepted the install prompt');
         setIsInstalled(true);
-        localStorage.setItem('pwa_is_installed', 'true');
         setIsOpen(false);
+        try {
+          localStorage.setItem('pwa_is_installed', 'true');
+        } catch {
+          /* storage unavailable */
+        }
       } else {
         console.log('[PWA] User dismissed the install prompt');
       }
@@ -147,17 +166,27 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({
   };
 
   const handleDismissLater = () => {
-    // Postpone for 2 days
-    const twoDaysFromNow = Date.now() + 2 * 24 * 60 * 60 * 1000;
-    localStorage.setItem('pwa_dismissed_until', String(twoDaysFromNow));
+    // Close first so a storage failure can never leave the banner stuck open
     setIsOpen(false);
-    if (onCloseForceOpen) onCloseForceOpen();
+    onCloseForceOpen?.();
+    clearDelayedOpenTimers();
+    // Postpone for 2 days
+    try {
+      localStorage.setItem('pwa_dismissed_until', String(Date.now() + 2 * 24 * 60 * 60 * 1000));
+    } catch {
+      /* storage unavailable — banner simply stays closed for this session */
+    }
   };
 
   const handleNeverShowAgain = () => {
-    localStorage.setItem('pwa_never_show', 'true');
     setIsOpen(false);
-    if (onCloseForceOpen) onCloseForceOpen();
+    onCloseForceOpen?.();
+    clearDelayedOpenTimers();
+    try {
+      localStorage.setItem('pwa_never_show', 'true');
+    } catch {
+      /* storage unavailable — banner simply stays closed for this session */
+    }
   };
 
   // If already installed or not open, don't render popup

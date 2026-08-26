@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, sql } from 'drizzle-orm';
 import { v4 as uuid } from 'uuid';
 
 import { db } from '../config/drizzle.js';
@@ -14,6 +14,7 @@ import {
     categories,
 } from '../schema/index.js';
 import type { ConsignmentItemLine, DebtAllocation, ReturnItemLine } from '../schema/index.js';
+import { isClientId } from '../schema/clientId.js';
 import { badRequest, notFound } from '../utils/apiError.js';
 import { nextCode } from '../utils/code.js';
 import { emitDataChanged } from './socketService.js';
@@ -32,7 +33,7 @@ export async function listItems(includeDeleted = false) {
 export async function createItem(data: Partial<typeof items.$inferInsert>) {
     if (!data.name || !data.category) throw badRequest('نام و دسته‌بندی کالا الزامی است');
     const codes = await db.select({ code: items.code }).from(items);
-    const id = uuid();
+    const id = isClientId(data.id) ? data.id : uuid();
     await db
         .insert(items)
         .values({
@@ -110,7 +111,7 @@ export async function getSeller(id: string) {
 export async function createSeller(data: Partial<typeof sellers.$inferInsert>) {
     if (!data.name || !data.phone) throw badRequest('نام و شماره تماس دست‌فروش الزامی است');
     const codes = await db.select({ code: sellers.code }).from(sellers);
-    const id = uuid();
+    const id = isClientId(data.id) ? data.id : uuid();
     await db.insert(sellers).values({
         id,
         code: data.code || nextCode('SLR', codes.map((c) => c.code)),
@@ -308,6 +309,8 @@ export interface ReturnInput {
         quantity: number;
         condition: 'healthy' | 'damaged';
         reason?: string;
+        selectedSize?: string;
+        selectedColor?: string;
     }[];
     notes?: string;
 }
@@ -339,7 +342,18 @@ export async function submitReturn(input: ReturnInput, actorName: string) {
             if (!Number.isFinite(ret.quantity) || ret.quantity <= 0) {
                 throw badRequest('تعداد کالای مرجوعی باید بزرگ‌تر از صفر باشد');
             }
-            const line = updatedLines.find((l) => l.itemId === ret.itemId);
+            // Prefer the line whose variant matches the request; an omitted size/color
+            // on the incoming item acts as a wildcard. Legacy requests omitting both
+            // fall back to a bare itemId match.
+            let line = updatedLines.find(
+                (l) =>
+                    l.itemId === ret.itemId &&
+                    (ret.selectedSize === undefined || l.selectedSize === ret.selectedSize) &&
+                    (ret.selectedColor === undefined || l.selectedColor === ret.selectedColor),
+            );
+            if (!line && ret.selectedSize === undefined && ret.selectedColor === undefined) {
+                line = updatedLines.find((l) => l.itemId === ret.itemId);
+            }
             if (!line) throw badRequest('این کالا در واگذاری موردنظر وجود ندارد');
             const available = line.quantity - line.returnedQuantity;
             if (ret.quantity > available) {
@@ -422,6 +436,14 @@ export async function submitReturn(input: ReturnInput, actorName: string) {
         emitDataChanged('return', 'create');
         return { returnRecord: returnRecord!, updatedConsignment: updatedConsignment! };
     });
+}
+
+export async function listReturns() {
+    return db
+        .select()
+        .from(consignmentReturns)
+        .where(eq(consignmentReturns.isDeleted, false))
+        .orderBy(desc(consignmentReturns.date));
 }
 
 // ---------------------------------------------------------------------------
@@ -548,7 +570,7 @@ export async function listStaff(includeDeleted = false) {
 export async function createStaff(data: Partial<typeof staff.$inferInsert>) {
     if (!data.name || !data.role) throw badRequest('نام و نقش پرسنل الزامی است');
     const codes = await db.select({ code: staff.code }).from(staff);
-    const id = uuid();
+    const id = isClientId(data.id) ? data.id : uuid();
     await db.insert(staff).values({
         id,
         code: data.code || nextCode('STF', codes.map((c) => c.code)),
@@ -606,7 +628,7 @@ export async function listExpenses(includeDeleted = false) {
 export async function createExpense(data: Partial<typeof expenses.$inferInsert>) {
     if (!data.title || data.amount === undefined) throw badRequest('عنوان و مبلغ هزینه الزامی است');
     const codes = await db.select({ code: expenses.code }).from(expenses);
-    const id = uuid();
+    const id = isClientId(data.id) ? data.id : uuid();
     await db.insert(expenses).values({
         id,
         code: data.code || nextCode('CST', codes.map((c) => c.code)),
@@ -765,7 +787,10 @@ export async function permanentDeleteEntity(type: TrashEntityType, id: string): 
 
 export async function getDashboardStats() {
     const now = new Date();
-    const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    // Start of today in Asia/Tehran (fixed UTC+03:30, no DST): take Tehran's
+    // calendar date (YYYY-MM-DD), then back off 3.5h from its UTC midnight.
+    const tehranToday = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Tehran' });
+    const startOfToday = new Date(Date.parse(`${tehranToday}T00:00:00Z`) - 3.5 * 3600 * 1000);
 
     const [activeSellers, activeItems, activeConsignments, todayPaymentRows, allExpenses, allPayments] =
         await Promise.all([

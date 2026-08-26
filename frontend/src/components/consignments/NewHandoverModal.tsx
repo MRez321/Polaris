@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
 import type { GarmentItem, Seller } from '../../types';
-import { formatToman, toPersianDigits } from '../../utils/persian';
+import { formatToman, toPersianDigits, toJalaliDate } from '../../utils/persian';
 import {
   Plus,
   Trash2,
@@ -72,13 +72,12 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
     }[]
   >([]);
 
-  // Current line item being selected
+  // Currently selected inventory item + its size×color quantity matrix
   const [currentSelectedItemId, setCurrentSelectedItemId] = useState(
     items.length > 0 ? items[0].id : ''
   );
-  const [currentQty, setCurrentQty] = useState(5);
-  const [currentSize, setCurrentSize] = useState('');
-  const [currentColor, setCurrentColor] = useState('');
+  const [matrixQty, setMatrixQty] = useState<Record<string, string>>({});
+  const [stockError, setStockError] = useState('');
 
   // Filter sellers by search query
   const filteredSellers = (sellers || []).filter(
@@ -99,41 +98,65 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
   const selectedSeller = (sellers || []).find((s) => s.id === selectedSellerId);
   const currentInvItem = (items || []).find((i) => i.id === currentSelectedItemId);
 
+  // Merge every non-zero cell of the size×color matrix into invoice lines
   const handleAddLine = () => {
     if (!currentInvItem) return;
-    if (currentQty <= 0) return;
-    if (currentInvItem.stockQuantity < currentQty) {
-      alert(`موجودی انبار کافی نیست (موجودی فعلی در انبار: ${currentInvItem.stockQuantity} عدد)`);
+
+    const entries = Object.entries(matrixQty)
+      .map(([key, raw]) => ({ key, qty: Math.floor(Number(raw)) }))
+      .filter((entry) => Number.isFinite(entry.qty) && entry.qty > 0);
+
+    if (entries.length === 0) {
+      setStockError('لطفاً حداقل تعداد یکی از خانه‌های جدول سایز × رنگ را وارد نمایید.');
       return;
     }
 
-    const sizeToAdd = currentSize || (currentInvItem.sizes && currentInvItem.sizes[0]) || 'L';
-    const colorToAdd = currentColor || (currentInvItem.colors && currentInvItem.colors[0]) || 'مشکی';
+    // Per-item stock guard: total across new cells + existing lines must not exceed warehouse stock
+    const alreadyInInvoice = (lines || [])
+      .filter((l) => l.itemId === currentInvItem.id)
+      .reduce((sum, l) => sum + l.quantity, 0);
+    const requestedTotal = entries.reduce((sum, entry) => sum + entry.qty, 0);
 
-    // Check if item already exists in lines
-    const existingIndex = lines.findIndex(
-      (l) =>
-        l.itemId === currentInvItem.id &&
-        l.selectedSize === sizeToAdd &&
-        l.selectedColor === colorToAdd
-    );
+    if (alreadyInInvoice + requestedTotal > currentInvItem.stockQuantity) {
+      setStockError(
+        `موجودی «${currentInvItem.name}» کافی نیست: مجموع درخواستی ${toPersianDigits(
+          alreadyInInvoice + requestedTotal
+        )} عدد است، اما تنها ${toPersianDigits(currentInvItem.stockQuantity)} عدد در انبار موجود است.`
+      );
+      return;
+    }
 
-    if (existingIndex !== -1) {
-      const updated = [...lines];
-      updated[existingIndex].quantity += currentQty;
-      setLines(updated);
-    } else {
-      setLines([
-        ...lines,
-        {
+    setStockError('');
+    const updated = [...lines];
+    for (const entry of entries) {
+      const separatorIndex = entry.key.indexOf('||');
+      const sizeRaw = entry.key.slice(0, separatorIndex);
+      const colorRaw = entry.key.slice(separatorIndex + 2);
+      const sizeToAdd = sizeRaw || 'L';
+      const colorToAdd = colorRaw || 'مشکی';
+      const existingIndex = updated.findIndex(
+        (l) =>
+          l.itemId === currentInvItem.id &&
+          l.selectedSize === sizeToAdd &&
+          l.selectedColor === colorToAdd
+      );
+      if (existingIndex !== -1) {
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          quantity: updated[existingIndex].quantity + entry.qty,
+        };
+      } else {
+        updated.push({
           itemId: currentInvItem.id,
-          quantity: currentQty,
+          quantity: entry.qty,
           unitPrice: currentInvItem.consignmentPrice,
           selectedSize: sizeToAdd,
           selectedColor: colorToAdd,
-        },
-      ]);
+        });
+      }
     }
+    setLines(updated);
+    setMatrixQty({});
   };
 
   const handleRemoveLine = (index: number) => {
@@ -145,11 +168,105 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
     0
   );
   const totalItemsCount = (lines || []).reduce((sum, line) => sum + (line.quantity || 0), 0);
+  const effectiveDueDays = Number(dueDays) > 0 ? Number(dueDays) : 10;
 
   const remainingCredit = selectedSeller
     ? Math.max(0, (selectedSeller.creditLimit || 0) - (selectedSeller.currentDebt || 0))
     : 0;
   const isOverCreditLimit = selectedSeller && totalHandoverValue > remainingCredit;
+
+  // Matrix axes: fall back to a single unlabeled axis when the item has no sizes/colors
+  const effSizes = currentInvItem?.sizes?.length ? currentInvItem.sizes : [''];
+  const effColors = currentInvItem?.colors?.length ? currentInvItem.colors : [''];
+
+  const renderQtyCell = (size: string, color: string) => {
+    const key = `${size}||${color}`;
+    return (
+      <input
+        type="number"
+        min={0}
+        step={1}
+        inputMode="numeric"
+        placeholder="۰"
+        aria-label={`تعداد سایز ${size || 'تک‌سایز'} رنگ ${color || 'بدون رنگ'}`}
+        value={matrixQty[key] ?? ''}
+        onChange={(e) => {
+          const val = e.target.value;
+          setMatrixQty((prev) => ({ ...prev, [key]: val }));
+          if (stockError) setStockError('');
+        }}
+        className="w-full min-w-[44px] min-h-[40px] px-1 py-2 rounded-lg glass-input text-xs sm:text-sm font-mono text-center outline-none focus:border-[#CEAE80]"
+      />
+    );
+  };
+
+  const renderMatrix = () => (
+    <>
+      {/* Desktop grid: rows = sizes, columns = colors */}
+      <div className="hidden sm:block overflow-x-auto rounded-xl border border-black/5 dark:border-white/5 p-2 bg-black/[0.02] dark:bg-white/[0.02]">
+        <table className="w-full text-right text-xs">
+          <thead>
+            <tr className="text-[11px] text-stone-500 dark:text-gray-400">
+              <th className="p-1.5 font-bold">سایز</th>
+              {effColors.map((clr) => (
+                <th key={clr} className="p-1.5 font-bold whitespace-nowrap">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full border border-black/10 dark:border-white/20 shrink-0"
+                      style={{ backgroundColor: persianColorToCss(clr || 'مشکی') }}
+                    />
+                    <span>{clr || 'بدون رنگ'}</span>
+                  </span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-black/5 dark:divide-white/5">
+            {effSizes.map((sz) => (
+              <tr key={sz}>
+                <td className="p-1.5 font-mono font-bold text-stone-700 dark:text-gray-200 whitespace-nowrap">
+                  {sz || 'تک‌سایز'}
+                </td>
+                {effColors.map((clr) => (
+                  <td key={clr} className="p-1">
+                    {renderQtyCell(sz, clr)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile stacked: one section per size listing its color cells */}
+      <div className="sm:hidden space-y-2">
+        {effSizes.map((sz) => (
+          <div
+            key={sz}
+            className="p-2.5 rounded-xl bg-stone-100 dark:bg-[#1A1A1E] border border-black/5 dark:border-white/5 space-y-2"
+          >
+            <div className="text-[11px] font-bold text-stone-700 dark:text-gray-200">
+              سایز: <span className="font-mono">{sz || 'تک‌سایز'}</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+                {effColors.map((clr) => (
+                  <label key={clr} className="flex flex-col gap-1 w-[76px]">
+                    <span className="inline-flex items-center gap-1 text-[10px] text-stone-500 dark:text-gray-400">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full border border-black/10 dark:border-white/20 shrink-0"
+                        style={{ backgroundColor: persianColorToCss(clr || 'مشکی') }}
+                      />
+                      <span className="truncate">{clr || 'بدون رنگ'}</span>
+                    </span>
+                    {renderQtyCell(sz, clr)}
+                  </label>
+                ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,9 +278,25 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
       alert('لطفاً حداقل یک قلم کالا به لیست واگذاری اضافه نمایید');
       return;
     }
+    // Final client-side per-item stock guard (variants of one item can collectively exceed stock)
+    for (const line of lines) {
+      const invItem = (items || []).find((i) => i.id === line.itemId);
+      if (!invItem) continue;
+      const itemTotal = lines
+        .filter((l) => l.itemId === line.itemId)
+        .reduce((sum, l) => sum + l.quantity, 0);
+      if (itemTotal > invItem.stockQuantity) {
+        setStockError(
+          `موجودی «${invItem.name}» کافی نیست: مجموع ${toPersianDigits(itemTotal)} عدد درخواستی از ${toPersianDigits(
+            invItem.stockQuantity
+          )} عدد موجودی انبار بیشتر است.`
+        );
+        return;
+      }
+    }
 
     const calculatedDueDate = new Date(
-      Date.now() + (Number(dueDays) || 10) * 24 * 60 * 60 * 1000
+      Date.now() + effectiveDueDays * 24 * 60 * 60 * 1000
     ).toISOString();
 
     onSubmitHandover({
@@ -331,106 +464,79 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
               <Search className="w-4 h-4 text-stone-400 absolute left-3 top-2.5" />
             </div>
 
-            {/* Line Selection Controls */}
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end pt-1">
-              <div className="sm:col-span-5">
-                <label className="block text-[11px] text-stone-600 dark:text-stone-300 mb-1">
-                  کالای مورد نظر
-                </label>
-                <SelectMenu
-                  value={currentSelectedItemId}
-                  onChange={(v) => {
-                    setCurrentSelectedItemId(v);
-                    const it = items.find((i) => i.id === v);
-                    if (it) {
-                      setCurrentSize(it.sizes?.[0] || 'L');
-                      setCurrentColor(it.colors?.[0] || 'مشکی');
-                    }
-                  }}
-                  options={filteredItems.map((item) => ({
-                    value: item.id,
-                    label: (
-                      <SelectOptionContent
-                        primary={item.name}
-                        badges={
-                          <>
-                            <SelectBadge tone="gold">{item.code}</SelectBadge>
-                            <SelectBadge tone="blue">
-                              موجودی: {toPersianDigits(item.stockQuantity)} عدد
-                            </SelectBadge>
-                            <SelectBadge tone="green">{formatToman(item.consignmentPrice)}</SelectBadge>
-                          </>
-                        }
-                      />
-                    ),
-                    triggerLabel: (
-                      <span className="inline-flex items-center gap-1.5">
-                        <span className="font-bold">{item.name}</span>
-                        <SelectBadge tone="gold">{item.code}</SelectBadge>
-                      </span>
-                    ),
-                  }))}
-                />
-              </div>
+            {/* Item Selection */}
+            <div>
+              <label className="block text-[11px] text-stone-600 dark:text-stone-300 mb-1">
+                کالای مورد نظر
+              </label>
+              <SelectMenu
+                value={currentSelectedItemId}
+                onChange={(v) => {
+                  setCurrentSelectedItemId(v);
+                  setMatrixQty({});
+                  setStockError('');
+                }}
+                options={filteredItems.map((item) => ({
+                  value: item.id,
+                  label: (
+                    <SelectOptionContent
+                      primary={item.name}
+                      badges={
+                        <>
+                          <SelectBadge tone="gold">{item.code}</SelectBadge>
+                          <SelectBadge tone="blue">
+                            موجودی: {toPersianDigits(item.stockQuantity)} عدد
+                          </SelectBadge>
+                          <SelectBadge tone="green">{formatToman(item.consignmentPrice)}</SelectBadge>
+                        </>
+                      }
+                    />
+                  ),
+                  triggerLabel: (
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="font-bold">{item.name}</span>
+                      <SelectBadge tone="gold">{item.code}</SelectBadge>
+                    </span>
+                  ),
+                }))}
+              />
+            </div>
 
-              <div className="sm:col-span-2">
-                <label className="block text-[11px] text-stone-600 dark:text-stone-300 mb-1">
-                  سایز
-                </label>
-                <SelectMenu
-                  value={currentSize}
-                  onChange={setCurrentSize}
-                  options={(currentInvItem?.sizes || ['M', 'L', 'XL', '2XL']).map((sz) => ({
-                    value: sz,
-                    label: <span className="font-bold font-mono">{sz}</span>,
-                  }))}
-                />
-              </div>
+            {/* Size × Color Quantity Matrix */}
+            {currentInvItem && (
+              <div className="pt-1 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] text-stone-500 dark:text-gray-400">
+                  <span className="font-bold">جدول تعداد تحویلی (سایز × رنگ):</span>
+                  <span>
+                    موجودی انبار این کالا:{' '}
+                    <span className="font-bold font-mono text-stone-700 dark:text-gray-200">
+                      {toPersianDigits(currentInvItem.stockQuantity)} عدد
+                    </span>
+                  </span>
+                </div>
 
-              <div className="sm:col-span-2">
-                <label className="block text-[11px] text-stone-600 dark:text-stone-300 mb-1">
-                  رنگ
-                </label>
-                <SelectMenu
-                  value={currentColor}
-                  onChange={setCurrentColor}
-                  options={(currentInvItem?.colors || ['مشکی', 'سرمه‌ای', 'طوسی']).map((clr) => ({
-                    value: clr,
-                    label: (
-                      <span className="inline-flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full border border-black/10 dark:border-white/20 shrink-0" style={{ backgroundColor: persianColorToCss(clr) }} />
-                        <span className="font-bold">{clr}</span>
-                      </span>
-                    ),
-                  }))}
-                />
-              </div>
+                {renderMatrix()}
 
-              <div className="sm:col-span-1">
-                <label className="block text-[11px] text-stone-600 dark:text-stone-300 mb-1">
-                  تعداد
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max={currentInvItem ? currentInvItem.stockQuantity : 100}
-                  value={currentQty}
-                  onChange={(e) => setCurrentQty(Math.max(1, Number(e.target.value)))}
-                  className="w-full px-2 py-2 rounded-xl glass-input text-xs sm:text-sm font-mono text-center outline-none"
-                />
-              </div>
-
-              <div className="sm:col-span-2">
                 <button
                   type="button"
                   onClick={handleAddLine}
-                  className="w-full py-2.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-bold text-xs flex items-center justify-center gap-1 transition-all active:scale-95 shadow-md"
+                  className="w-full sm:w-auto min-h-[40px] px-4 py-2 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-bold text-xs flex items-center justify-center gap-1 transition-all active:scale-95 shadow-md"
                 >
                   <Plus className="w-4 h-4" />
                   افزودن به فاکتور
                 </button>
+
+                {stockError && (
+                  <div
+                    role="alert"
+                    className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/40 text-rose-600 dark:text-red-300 text-[11px] flex items-start gap-1.5"
+                  >
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>{stockError}</span>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
           </div>
 
           {/* SECTION 3: ADDED ITEMS TABLE */}
@@ -520,6 +626,19 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
                       {toPersianDigits(d)} روزه
                     </button>
                   ))}
+                </div>
+                {/* Live Jalali date preview reacting to chip / custom-day selection */}
+                <div className="p-2.5 mb-2 rounded-xl bg-stone-100 dark:bg-black/30 border border-black/5 dark:border-white/5 text-[11px] space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-stone-500 dark:text-gray-400">امروز:</span>
+                    <span className="font-bold text-stone-800 dark:text-gray-100">{toJalaliDate(new Date())}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-stone-500 dark:text-gray-400">موعد تسویه:</span>
+                    <span className="font-bold text-amber-800 dark:text-[#CEAE80]">
+                      {toJalaliDate(new Date(Date.now() + effectiveDueDays * 24 * 60 * 60 * 1000))}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Custom Day Number Input */}

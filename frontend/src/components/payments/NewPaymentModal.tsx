@@ -6,6 +6,7 @@ import { calculateFIFOAllocation } from '../../utils/fifo';
 import { CheckCircle, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { SelectMenu, SelectBadge, SelectOptionContent } from '../ui/select-menu';
+import { FormattedNumberInput } from '../common/FormattedNumberInput';
 
 interface NewPaymentModalProps {
   isOpen: boolean;
@@ -33,7 +34,7 @@ export const NewPaymentModal: React.FC<NewPaymentModalProps> = ({
   const [selectedSellerId, setSelectedSellerId] = useState(
     preSelectedSellerId || (sellers.length > 0 ? sellers[0].id : '')
   );
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState<number | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'bank_transfer' | 'pos'>('cash');
   const [trackingNumber, setTrackingNumber] = useState('');
   const [notes, setNotes] = useState('');
@@ -48,7 +49,7 @@ export const NewPaymentModal: React.FC<NewPaymentModalProps> = ({
   const sellerConsignments = consignments.filter((c) => c.sellerId === selectedSellerId);
 
   // Real-time FIFO simulation preview
-  const numAmount = Number(amount) || 0;
+  const numAmount = amount || 0;
   const fifoPreview = calculateFIFOAllocation(sellerConsignments, numAmount);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -83,7 +84,7 @@ export const NewPaymentModal: React.FC<NewPaymentModalProps> = ({
     }
 
     onClose();
-    setAmount('');
+    setAmount(null);
   };
 
   return (
@@ -135,19 +136,18 @@ export const NewPaymentModal: React.FC<NewPaymentModalProps> = ({
               {selectedSeller && selectedSeller.currentDebt > 0 && (
                 <button
                   type="button"
-                  onClick={() => setAmount(String(selectedSeller.currentDebt))}
+                  onClick={() => setAmount(selectedSeller.currentDebt)}
                   className="text-[11px] text-amber-800 dark:text-[#CEAE80] font-bold hover:underline"
                 >
                   تسویه کل مانده ({formatToman(selectedSeller.currentDebt)})
                 </button>
               )}
             </label>
-            <input
-              type="number"
-              required
-              min="1000"
+            <FormattedNumberInput
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={setAmount}
+              min={1000}
+              suffix="تومان"
               placeholder="مثلاً: ۵,۰۰۰,۰۰۰"
               className="w-full px-3 py-2 rounded-xl glass-input border-2 border-[#CEAE80] text-sm font-bold font-mono outline-none text-stone-900 dark:text-white"
             />

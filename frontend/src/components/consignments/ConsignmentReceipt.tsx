@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal } from '../common/Modal';
 import type { Consignment, Seller } from '../../types';
-import { formatToman, toJalaliDate, toPersianDigits } from '../../utils/persian';
+import { formatToman, toJalaliDate, toJalaliDateTime, toPersianDigits } from '../../utils/persian';
 import { Scissors, Printer } from 'lucide-react';
 interface ConsignmentReceiptProps {
   isOpen: boolean;
@@ -63,6 +63,10 @@ export const ConsignmentReceipt: React.FC<ConsignmentReceiptProps> = ({
               <div>
                 <span className="text-stone-500 dark:text-gray-400">تاریخ صدور: </span>
                 <span className="font-bold text-stone-700 dark:text-gray-200">{toJalaliDate(consignment.date)}</span>
+              </div>
+              <div>
+                <span className="text-stone-500 dark:text-gray-400">زمان ثبت: </span>
+                <span className="font-bold text-stone-700 dark:text-gray-200">{toJalaliDateTime(consignment.date)}</span>
               </div>
               <div>
                 <span className="text-stone-500 dark:text-gray-400">مهلت تسویه: </span>

@@ -10,7 +10,6 @@ import {
   Check,
   Shield,
   Save,
-  Users,
   ExternalLink,
   Sparkles,
   Trash2,
@@ -21,26 +20,21 @@ import {
   Activity,
   RotateCcw,
   CheckCircle2,
-  Plus,
   Image as ImageIcon,
   Upload,
   X,
   Hash,
   History as HistoryIcon,
 } from 'lucide-react';
-import type { WorkshopInfo, Owner, GarmentItem, Seller, StaffMember, WorkshopExpense, Consignment, AuditLog } from '../../types';
+import type { WorkshopInfo, GarmentItem, Seller, StaffMember, WorkshopExpense, Consignment, AuditLog } from '../../types';
 import { toPersianDigits, formatToman } from '../../utils/persian';
 import { Modal } from '../common/Modal';
 import type { NetworkStatus } from '../../hooks/useNetworkStatus';
-import { OwnerCard } from './OwnerCard';
-import { OwnerFormModal } from './OwnerFormModal';
 import { AuditLogsManager } from '../audit/AuditLogsManager';
 
 interface SettingsManagerProps {
   workshopInfo: WorkshopInfo;
-  owners: Owner[];
   onSaveWorkshopInfo: (info: WorkshopInfo) => void;
-  onSaveOwners: (owners: Owner[]) => void;
   onRefreshData?: () => void;
   networkStatus?: NetworkStatus;
   onOpenPwaInstall?: () => void;
@@ -57,35 +51,29 @@ interface TrashData {
 
 export const SettingsManager: React.FC<SettingsManagerProps> = ({
   workshopInfo,
-  owners = [],
   onSaveWorkshopInfo,
-  onSaveOwners,
   onRefreshData,
   networkStatus,
   onOpenPwaInstall,
   auditLogs = [],
 }) => {
-  const [activeTab, setActiveTab] = useState<'branding' | 'owners' | 'trash' | 'system' | 'audit'>('branding');
+  const [activeTab, setActiveTab] = useState<'branding' | 'trash' | 'system' | 'audit'>('branding');
   const [isSavedAlert, setIsSavedAlert] = useState(false);
 
   // Form State for Workshop Info
-  const [name, setName] = useState(workshopInfo.name || 'کارگاه دوزندگی و تولیدی پولاریس استایل');
-  const [slogan, setSlogan] = useState(workshopInfo.slogan || 'تولیدکننده تخصصی پوشاک زمستانه، پالتو و کاپشن‌های راسته بازار');
-  const [website, setWebsite] = useState(workshopInfo.website || 'https://polaris-style.ir');
-  const [instagram, setInstagram] = useState(workshopInfo.instagram || '@polaris_style_clothing');
-  const [telegram, setTelegram] = useState(workshopInfo.telegram || 't.me/polaris_style');
-  const [address, setAddress] = useState(workshopInfo.address || 'تهران، بازار بزرگ، خیابان خیام، گذر لوطی صالح، کوچه کارگاه، پلاک ۱۸');
-  const [postalCode, setPostalCode] = useState(workshopInfo.postalCode || '۱۱۹۳۶۴۸۲۹۱');
-  const [phone, setPhone] = useState(workshopInfo.phone || '021-55667788');
-  const [emergencyPhone, setEmergencyPhone] = useState(workshopInfo.emergencyPhone || '09121112233');
-  const [registrationNumber, setRegistrationNumber] = useState(workshopInfo.registrationNumber || '۵۸۹۴۲۱');
+  const [name, setName] = useState(workshopInfo.name);
+  const [slogan, setSlogan] = useState(workshopInfo.slogan);
+  const [website, setWebsite] = useState(workshopInfo.website);
+  const [instagram, setInstagram] = useState(workshopInfo.instagram);
+  const [telegram, setTelegram] = useState(workshopInfo.telegram);
+  const [address, setAddress] = useState(workshopInfo.address);
+  const [postalCode, setPostalCode] = useState(workshopInfo.postalCode);
+  const [phone, setPhone] = useState(workshopInfo.phone);
+  const [emergencyPhone, setEmergencyPhone] = useState(workshopInfo.emergencyPhone);
+  const [registrationNumber, setRegistrationNumber] = useState(workshopInfo.registrationNumber);
   const [logoUrl, setLogoUrl] = useState(workshopInfo.logoUrl || '');
-  const [logoText, setLogoText] = useState(workshopInfo.logoText || 'POLARIS');
+  const [logoText, setLogoText] = useState(workshopInfo.logoText || '');
   const [isEditingBranding, setIsEditingBranding] = useState(false);
-
-  // Owner Form Modal State
-  const [isOwnerModalOpen, setIsOwnerModalOpen] = useState(false);
-  const [editingOwner, setEditingOwner] = useState<Owner | null>(null);
 
   // Trash & Recycle Bin State
   const [trashData, setTrashData] = useState<TrashData>({
@@ -105,11 +93,6 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
   } | null>(null);
   const [editRestoreName, setEditRestoreName] = useState('');
   const [editRestorePriceOrPhone, setEditRestorePriceOrPhone] = useState('');
-
-  // Online System & Diagnostics
-  const [pingLatency, setPingLatency] = useState<number>(24);
-  const [isServerOnline, setIsServerOnline] = useState<boolean>(true);
-  const [lastSyncTime, setLastSyncTime] = useState<string>(new Date().toLocaleTimeString('fa-IR'));
 
   const fetchTrash = async () => {
     try {
@@ -163,44 +146,6 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
     setIsEditingBranding(false);
     setIsSavedAlert(true);
     setTimeout(() => setIsSavedAlert(false), 3000);
-  };
-
-  const handleOpenAddOwner = () => {
-    setEditingOwner(null);
-    setIsOwnerModalOpen(true);
-  };
-
-  const handleOpenEditOwner = (owner: Owner) => {
-    setEditingOwner(owner);
-    setIsOwnerModalOpen(true);
-  };
-
-  const handleSaveOwner = (ownerData: Partial<Owner>) => {
-    if (editingOwner) {
-      const updated = owners.map((o) =>
-        o.id === editingOwner.id ? { ...o, ...ownerData } : o
-      );
-      onSaveOwners(updated);
-    } else {
-      const newOwner: Owner = {
-        id: `own-${Date.now()}`,
-        name: ownerData.name || '',
-        role: ownerData.role || 'مالک و هم‌بنیان‌گذار',
-        sharePercentage: ownerData.sharePercentage ?? 50,
-        nationalCode: ownerData.nationalCode || '',
-        email: ownerData.email || '',
-        avatarUrl: ownerData.avatarUrl || '',
-        bio: ownerData.bio || '',
-        phones: ownerData.phones?.length ? ownerData.phones : ['09120000000'],
-        bankAccounts: ownerData.bankAccounts || [],
-      };
-      onSaveOwners([...owners, newOwner]);
-    }
-  };
-
-  const handleDeleteOwner = (id: string) => {
-    const updated = owners.filter((o) => o.id !== id);
-    onSaveOwners(updated);
   };
 
   // Restore Action
@@ -269,26 +214,19 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
     }
   };
 
-  // Manual Ping Test — hits /api/health, which verifies the database link
-  const handlePingTest = async () => {
-    const start = performance.now();
-    try {
-      const res = await fetch('/api/health');
-      const latency = Math.round(performance.now() - start);
-      setPingLatency(latency);
-      setIsServerOnline(res.ok);
-      setLastSyncTime(new Date().toLocaleTimeString('fa-IR'));
-    } catch {
-      setIsServerOnline(false);
-    }
-  };
-
   const totalTrashCount =
     trashData.items.length +
     trashData.sellers.length +
     trashData.staff.length +
     trashData.expenses.length +
     trashData.consignments.length;
+
+  // Live server health derived from useNetworkStatus (auto-polls /api/health every 10s)
+  const isCheckingNow = networkStatus?.isChecking ?? false;
+  const isServerConnectedLive = networkStatus?.isServerConnected ?? true;
+  const lastSyncLabel = networkStatus?.lastSuccessfulConnection
+    ? networkStatus.lastSuccessfulConnection.toLocaleTimeString('fa-IR')
+    : '—';
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto text-stone-900 dark:text-white">
@@ -302,7 +240,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
             <span className="text-[#CEAE80]">تنظیمات برندینگ، سطل بازیافت و سامانه برخط پولاریس</span>
           </h3>
           <p className="text-xs text-stone-500 dark:text-gray-400 mt-1">
-            مشخصات کارگاه، اطلاعات مالی هم‌بنیان‌گذاران، بازیابی اطلاعات حذف‌شده و وضعیت پایگاه داده
+            مشخصات کارگاه، بازیابی اطلاعات حذف‌شده و وضعیت پایگاه داده
           </p>
         </div>
 
@@ -325,17 +263,6 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           }`}
         >
           مشخصات برند
-        </button>
-
-        <button
-          onClick={() => setActiveTab('owners')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === 'owners'
-              ? 'bg-[#CEAE80] text-black shadow-md font-black'
-              : 'text-stone-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5'
-          }`}
-        >
-          حساب‌های مالی صاحبان کارگاه
         </button>
 
         <button
@@ -426,7 +353,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                       />
                     ) : (
                       <div className="w-16 h-16 rounded-2xl bg-amber-500/10 dark:bg-[#1E1E22] border-2 border-dashed border-[#CEAE80] flex flex-col items-center justify-center text-[#CEAE80] shrink-0">
-                        <span className="font-black text-sm tracking-wider">{logoText || 'POLARIS'}</span>
+                        <span className="font-black text-sm tracking-wider">{logoText}</span>
                         <span className="text-[9px] text-stone-400">لوگو</span>
                       </div>
                     )}
@@ -495,6 +422,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    placeholder="نام رسمی کارگاه خود را وارد کنید"
                     className="w-full px-3 py-2.5 rounded-xl glass-input text-xs sm:text-sm focus:border-[#CEAE80] outline-none font-bold"
                   />
                 </div>
@@ -507,6 +435,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                     type="text"
                     value={slogan}
                     onChange={(e) => setSlogan(e.target.value)}
+                    placeholder="شعار یا حوزه فعالیت تخصصی کارگاه"
                     className="w-full px-3 py-2.5 rounded-xl glass-input text-xs sm:text-sm focus:border-[#CEAE80] outline-none"
                   />
                 </div>
@@ -536,6 +465,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                     type="url"
                     value={website}
                     onChange={(e) => setWebsite(e.target.value)}
+                    placeholder="https://example.ir"
                     className="w-full px-3 py-2.5 rounded-xl glass-input text-xs sm:text-sm font-mono text-left outline-none"
                     dir="ltr"
                   />
@@ -550,6 +480,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                     type="text"
                     value={instagram}
                     onChange={(e) => setInstagram(e.target.value)}
+                    placeholder="@username"
                     className="w-full px-3 py-2.5 rounded-xl glass-input text-xs sm:text-sm font-mono text-left outline-none"
                     dir="ltr"
                   />
@@ -564,6 +495,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                     type="text"
                     value={telegram}
                     onChange={(e) => setTelegram(e.target.value)}
+                    placeholder="t.me/username"
                     className="w-full px-3 py-2.5 rounded-xl glass-input text-xs sm:text-sm font-mono text-left outline-none"
                     dir="ltr"
                   />
@@ -578,6 +510,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
+                    placeholder="021XXXXXXXX"
                     className="w-full px-3 py-2.5 rounded-xl glass-input text-xs sm:text-sm font-mono text-left outline-none"
                     dir="ltr"
                   />
@@ -592,6 +525,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                     type="tel"
                     value={emergencyPhone}
                     onChange={(e) => setEmergencyPhone(e.target.value)}
+                    placeholder="0912XXX XXXX"
                     className="w-full px-3 py-2.5 rounded-xl glass-input text-xs sm:text-sm font-mono text-left outline-none"
                     dir="ltr"
                   />
@@ -605,6 +539,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                     type="text"
                     value={postalCode}
                     onChange={(e) => setPostalCode(e.target.value)}
+                    placeholder="کد پستی ۱۰ رقمی محل کارگاه"
                     className="w-full px-3 py-2.5 rounded-xl glass-input text-xs sm:text-sm font-mono text-left outline-none"
                     dir="ltr"
                   />
@@ -619,6 +554,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                     type="text"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
+                    placeholder="نشانی کامل سالن دوخت و انبار مرکزی"
                     className="w-full px-3 py-2.5 rounded-xl glass-input text-xs sm:text-sm outline-none"
                   />
                 </div>
@@ -825,61 +761,6 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                 </button>
               </div>
             </div>
-          )}
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* TAB 2: OWNERS ACCOUNTS */}
-      {/* ======================================================== */}
-      {activeTab === 'owners' && (
-        <div className="space-y-5">
-          {/* Header & Add Button */}
-          <div className="glass-panel p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg border border-stone-200 dark:border-white/10">
-            <div>
-              <h4 className="font-black text-sm sm:text-base text-stone-900 dark:text-white flex items-center gap-2">
-                <Users className="w-4 h-4 text-[#CEAE80]" />
-                <span>صاحبان و هم‌بنیان‌گذاران کارگاه پولاریس استایل</span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#CEAE80]/20 text-[#CEAE80] font-bold">
-                  {toPersianDigits(owners.length)} نفر
-                </span>
-              </h4>
-              <p className="text-xs text-stone-500 dark:text-gray-400 mt-1">
-                اطلاعات تماس مستقیم و حساب‌های بانکی شرکا جهت تسویه حساب و واریزی‌ها (با کلیک روی هر شماره کپی می‌شود)
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleOpenAddOwner}
-              className="px-4 py-2.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-black text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all active:scale-95 shrink-0"
-            >
-              <Plus className="w-4 h-4" />
-              <span>افزودن هم‌بنیان‌گذار جدید</span>
-            </button>
-          </div>
-
-          {/* Owners Cards Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {owners.map((owner) => (
-              <OwnerCard
-                key={owner.id}
-                owner={owner}
-                onEdit={handleOpenEditOwner}
-                showEditButton={true}
-              />
-            ))}
-          </div>
-
-          {/* Owner Form Modal */}
-          {isOwnerModalOpen && (
-            <OwnerFormModal
-              isOpen={isOwnerModalOpen}
-              onClose={() => setIsOwnerModalOpen(false)}
-              onSave={handleSaveOwner}
-              editOwner={editingOwner}
-              onDelete={handleDeleteOwner}
-            />
           )}
         </div>
       )}
@@ -1226,11 +1107,13 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               </h4>
 
               <button
-                onClick={handlePingTest}
-                className="px-3.5 py-1.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-black text-xs flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+                type="button"
+                onClick={() => { void networkStatus?.checkConnection(); }}
+                disabled={isCheckingNow}
+                className="px-3.5 py-1.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-black text-xs flex items-center gap-1.5 transition-all shadow-sm active:scale-95 disabled:opacity-60 disabled:cursor-wait"
               >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>تست پینگ و برقراری ارتباط</span>
+                <RefreshCw className={`w-3.5 h-3.5 ${isCheckingNow ? 'animate-spin' : ''}`} />
+                <span>{isCheckingNow ? 'در حال بررسی…' : 'تست پینگ و برقراری ارتباط'}</span>
               </button>
             </div>
 
@@ -1238,9 +1121,9 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               <div className="p-4 rounded-xl glass-card space-y-1">
                 <span className="text-xs text-stone-500 dark:text-gray-400 block">وضعیت سرور کارگاه:</span>
                 <div className="flex items-center gap-2">
-                  <span className={`w-2.5 h-2.5 rounded-full ${isServerOnline ? 'bg-emerald-500 animate-ping' : 'bg-rose-500'}`} />
+                  <span className={`w-2.5 h-2.5 rounded-full ${isServerConnectedLive ? 'bg-emerald-500 animate-ping' : 'bg-rose-500'}`} />
                   <span className="font-bold text-sm text-stone-900 dark:text-white">
-                    {isServerOnline ? 'برخط و فعال (Online)' : 'قطع ارتباط'}
+                    {isCheckingNow ? 'در حال بررسی اتصال…' : isServerConnectedLive ? 'برخط و فعال (Online)' : 'قطع ارتباط'}
                   </span>
                 </div>
                 <span className="text-[11px] text-stone-400 block">پاسخ‌دهی آنی بدون قطعی</span>
@@ -1249,7 +1132,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               <div className="p-4 rounded-xl glass-card space-y-1">
                 <span className="text-xs text-stone-500 dark:text-gray-400 block">زمان تاخیر سرور (Latency):</span>
                 <div className="font-mono text-base font-black text-[#CEAE80]">
-                  {toPersianDigits(networkStatus?.latency ?? pingLatency)} ms
+                  {networkStatus?.latency != null ? `${toPersianDigits(networkStatus.latency)} ms` : '—'}
                 </div>
                 <span className="text-[11px] text-emerald-500 font-bold">بسیار عالی و پرسرعت</span>
               </div>
@@ -1257,7 +1140,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               <div className="p-4 rounded-xl glass-card space-y-1">
                 <span className="text-xs text-stone-500 dark:text-gray-400 block">آخرین زمان همگام‌سازی:</span>
                 <div className="font-mono text-sm font-bold text-stone-900 dark:text-white">
-                  {lastSyncTime}
+                  {lastSyncLabel}
                 </div>
                 <span className="text-[11px] text-stone-400">ذخیره‌سازی پایدار در حافظه سرور</span>
               </div>

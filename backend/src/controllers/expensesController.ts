@@ -5,6 +5,7 @@ import * as svc from '../services/inventoryService.js';
 import { toExpenseDto, toProfitDto } from '../models/mappers.js';
 import { logAudit } from '../services/auditService.js';
 import { badRequest, pathParam } from '../utils/apiError.js';
+import { clientIdSchema } from '../schema/clientId.js';
 
 const costShareSchema = z.object({
     recipientId: z.string(),
@@ -31,13 +32,15 @@ const expenseSchema = z.object({
     costShares: z.array(costShareSchema).optional(),
 });
 
+const createExpenseSchema = expenseSchema.extend({ id: clientIdSchema.optional() });
+
 export async function listExpenses(_req: Request, res: Response): Promise<void> {
     const rows = await svc.listExpenses();
     res.json(rows.map(toExpenseDto));
 }
 
 export async function createExpense(req: Request, res: Response): Promise<void> {
-    const data = expenseSchema.parse(req.body);
+    const data = createExpenseSchema.parse(req.body);
     const row = await svc.createExpense(data);
     logAudit(req.auth ?? null, 'create', 'cost', `هزینه «${row.title}» به مبلغ ${row.amount} ثبت شد`);
     res.status(201).json(toExpenseDto(row));

@@ -8,7 +8,7 @@ import {
   CreditCard,
 } from 'lucide-react';
 import type { Consignment, Seller, GarmentItem } from '../../types';
-import { formatToman, toPersianDigits, toJalaliDate, getDaysDifference } from '../../utils/persian';
+import { formatToman, toPersianDigits, toJalaliDate, toJalaliDateTime, getDaysDifference } from '../../utils/persian';
 import { Badge } from '../common/Badge';
 import { NewHandoverModal } from './NewHandoverModal';
 import { ReturnModal } from './ReturnModal';
@@ -198,7 +198,7 @@ export const HandoverManager: React.FC<HandoverManagerProps> = ({
                         {c.items.map((i) => i.itemName).join('، ')}
                       </span>
                     </td>
-                    <td data-label="تاریخ واگذاری" className="p-3.5 text-stone-500 dark:text-gray-400">{toJalaliDate(c.date)}</td>
+                    <td data-label="تاریخ واگذاری" className="p-3.5 text-stone-500 dark:text-gray-400">{toJalaliDateTime(c.date)}</td>
                     <td data-label="موعد تسویه" className="p-3.5">
                       <span
                         className={`font-bold ${

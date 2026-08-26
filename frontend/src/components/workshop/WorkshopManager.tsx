@@ -31,6 +31,7 @@ import type {
 import { formatToman, toPersianDigits, toJalaliDate, numberToWordsPersian } from '../../utils/persian';
 import { Modal } from '../common/Modal';
 import { SelectMenu, SelectBadge, SelectOptionContent } from '../ui/select-menu';
+import { FormattedNumberInput } from '../common/FormattedNumberInput';
 
 interface WorkshopManagerProps {
   owners: Owner[];
@@ -59,78 +60,27 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<WorkshopExpense['category']>('machinery_maintenance');
   const [categoryLabel, setCategoryLabel] = useState('تعمیر و استهلاک چرخ‌ها و تجهیزات');
-  const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [amount, setAmount] = useState<number | null>(null);
+  const [date, setDate] = useState('');
   const [paidBy, setPaidBy] = useState('صندوق کارگاه');
   const [paymentMethod, setPaymentMethod] = useState<WorkshopExpense['paymentMethod']>('card');
   const [costAllocation, setCostAllocation] = useState<WorkshopExpense['costAllocation']>('shared_by_equity');
   const [receiptImage, setReceiptImage] = useState('');
   const [description, setDescription] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
+  const [expenseId, setExpenseId] = useState('');
 
   // Distribution Calculator Modal / Work Area
   const [isDistModalOpen, setIsDistModalOpen] = useState(false);
-  const [periodTitle, setPeriodTitle] = useState('دوره تسویه و تسهیم سود جاری کارگاه');
-  const [grossRevenueInput, setGrossRevenueInput] = useState('120000000');
-  const [totalExpensesInput, setTotalExpensesInput] = useState('45000000');
-  const [reinvestmentReserveInput, setReinvestmentReserveInput] = useState('15000000');
+  const [periodTitle, setPeriodTitle] = useState('');
+  const [grossRevenueInput, setGrossRevenueInput] = useState<number | null>(null);
+  const [totalExpensesInput, setTotalExpensesInput] = useState<number | null>(null);
+  const [reinvestmentReserveInput, setReinvestmentReserveInput] = useState<number | null>(null);
   const [distributionMode, setDistributionMode] = useState<'units' | 'percentage'>('units');
   const [distributionNotes, setDistributionNotes] = useState('');
-  
+
   // Custom Recipients in the Distribution Engine
-  const [recipients, setRecipients] = useState<ProfitShareRecipient[]>([
-    {
-      id: 'rec-1',
-      name: 'محمد',
-      role: 'هم‌بنیان‌گذار و مدیر تولید',
-      type: 'owner',
-      shareUnits: 1,
-      percentage: 20,
-      bankCard: '6104-3378-9012-3456',
-      bankSheba: 'IR120120000000006104337890',
-      phone: '09121112233',
-    },
-    {
-      id: 'rec-2',
-      name: 'امین',
-      role: 'هم‌بنیان‌گذار و مدیر مالی و بازار',
-      type: 'owner',
-      shareUnits: 1,
-      percentage: 20,
-      bankCard: '5022-2910-1234-9876',
-      bankSheba: 'IR330570000000005022291012',
-      phone: '09122223344',
-    },
-    {
-      id: 'rec-3',
-      name: 'کادر دوزندگی، برش‌کاران و پاداش پرسنل',
-      role: 'صندوق انگیزش و کارانه تولید',
-      type: 'staff_pool',
-      shareUnits: 1,
-      percentage: 20,
-      bankCard: '6104-3375-1122-3344',
-      phone: '09127778899',
-    },
-    {
-      id: 'rec-4',
-      name: 'صندوق بهسازی، نگهداری و متریال کارگاه',
-      role: 'ذخیره توسعه تجهیزات و سرمایه در گردش',
-      type: 'workshop_fund',
-      shareUnits: 1,
-      percentage: 20,
-    },
-    {
-      id: 'rec-5',
-      name: 'سرمایه‌گذار خارج از کارگاه (تامین پارچه)',
-      role: 'سرمایه‌گذار مالی و بازدهی سرمایه',
-      type: 'investor',
-      shareUnits: 1,
-      percentage: 20,
-      bankCard: '6219-8610-9988-7766',
-      bankSheba: 'IR980560000000006219861099',
-      phone: '09123456780',
-    },
-  ]);
+  const [recipients, setRecipients] = useState<ProfitShareRecipient[]>([]);
   // Category Configuration Mapping
   const categoryOptions = [
     {
@@ -200,7 +150,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
       // Auto populate total expenses in calculator
       const sumExp = expRes.reduce((s: number, e: WorkshopExpense) => s + (e.amount || 0), 0);
       if (sumExp > 0) {
-        setTotalExpensesInput(String(sumExp));
+        setTotalExpensesInput(sumExp);
       }
     } catch (err) {
       console.error('Error fetching workshop data', err);
@@ -225,13 +175,14 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
   // ----------------------------------------------------
   const handleOpenNewExpense = (presetCategory?: WorkshopExpense['category']) => {
     setEditingExpense(null);
+    setExpenseId(crypto.randomUUID());
     setTitle('');
     const targetCat = presetCategory || 'machinery_maintenance';
     setCategory(targetCat);
     const catObj = categoryOptions.find((c) => c.id === targetCat);
     setCategoryLabel(catObj ? catObj.label : 'هزینه کارگاه');
-    setAmount('');
-    setDate(new Date().toISOString().split('T')[0]);
+    setAmount(null);
+    setDate('');
     setPaidBy(owners?.[0]?.name ? `${owners[0].name} (هم‌بنیان‌گذار)` : 'صندوق کارگاه');
     setPaymentMethod('card');
     setCostAllocation('shared_by_equity');
@@ -243,10 +194,11 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
 
   const handleOpenEditExpense = (exp: WorkshopExpense) => {
     setEditingExpense(exp);
+    setExpenseId(exp.id);
     setTitle(exp.title);
     setCategory(exp.category);
     setCategoryLabel(exp.categoryLabel || '');
-    setAmount(String(exp.amount));
+    setAmount(exp.amount);
     setDate(exp.date);
     setPaidBy(exp.paidBy);
     setPaymentMethod(exp.paymentMethod);
@@ -265,7 +217,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
       title: title.trim(),
       category,
       categoryLabel,
-      amount: Number(amount) || 0,
+      amount: amount || 0,
       date,
       paidBy,
       paymentMethod,
@@ -290,7 +242,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
         const res = await fetch('/api/expenses', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ ...payload, id: expenseId }),
         });
         if (res.ok) {
           const created = await res.json();
@@ -337,25 +289,25 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
       setRecipients([
         {
           id: 'rec-1',
-          name: owners[0]?.name || 'محمد',
+          name: owners[0]?.name || 'شریک اول',
           role: 'هم‌بنیان‌گذار و مدیر تولید',
           type: 'owner',
           shareUnits: 1,
           percentage: 20,
-          bankCard: owners[0]?.bankAccounts?.[0]?.cardNumber || '6104-3378-9012-3456',
-          bankSheba: owners[0]?.bankAccounts?.[0]?.shebaNumber || 'IR120120000000006104337890',
-          phone: owners[0]?.phones?.[0] || '09121112233',
+          bankCard: owners[0]?.bankAccounts?.[0]?.cardNumber || '',
+          bankSheba: owners[0]?.bankAccounts?.[0]?.shebaNumber || '',
+          phone: owners[0]?.phones?.[0] || '',
         },
         {
           id: 'rec-2',
-          name: owners[1]?.name || 'امین',
+          name: owners[1]?.name || 'شریک دوم',
           role: 'هم‌بنیان‌گذار و مدیر مالی و بازار',
           type: 'owner',
           shareUnits: 1,
           percentage: 20,
-          bankCard: owners[1]?.bankAccounts?.[0]?.cardNumber || '5022-2910-1234-9876',
-          bankSheba: owners[1]?.bankAccounts?.[0]?.shebaNumber || 'IR330570000000005022291012',
-          phone: owners[1]?.phones?.[0] || '09122223344',
+          bankCard: owners[1]?.bankAccounts?.[0]?.cardNumber || '',
+          bankSheba: owners[1]?.bankAccounts?.[0]?.shebaNumber || '',
+          phone: owners[1]?.phones?.[0] || '',
         },
         {
           id: 'rec-3',
@@ -364,8 +316,6 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
           type: 'staff_pool',
           shareUnits: 1,
           percentage: 20,
-          bankCard: '6104-3375-1122-3344',
-          phone: '09127778899',
         },
         {
           id: 'rec-4',
@@ -382,9 +332,6 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
           type: 'investor',
           shareUnits: 1,
           percentage: 20,
-          bankCard: '6219-8610-9988-7766',
-          bankSheba: 'IR980560000000006219861099',
-          phone: '09123456780',
         },
       ]);
     } else if (presetName === '50_50') {
@@ -392,25 +339,25 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
       setRecipients([
         {
           id: 'rec-1',
-          name: owners[0]?.name || 'محمد',
+          name: owners[0]?.name || 'شریک اول',
           role: 'هم‌بنیان‌گذار و مدیر تولید',
           type: 'owner',
           shareUnits: 1,
           percentage: 50,
-          bankCard: owners[0]?.bankAccounts?.[0]?.cardNumber || '6104-3378-9012-3456',
-          bankSheba: owners[0]?.bankAccounts?.[0]?.shebaNumber || 'IR120120000000006104337890',
-          phone: owners[0]?.phones?.[0] || '09121112233',
+          bankCard: owners[0]?.bankAccounts?.[0]?.cardNumber || '',
+          bankSheba: owners[0]?.bankAccounts?.[0]?.shebaNumber || '',
+          phone: owners[0]?.phones?.[0] || '',
         },
         {
           id: 'rec-2',
-          name: owners[1]?.name || 'امین',
+          name: owners[1]?.name || 'شریک دوم',
           role: 'هم‌بنیان‌گذار و مدیر مالی و بازار',
           type: 'owner',
           shareUnits: 1,
           percentage: 50,
-          bankCard: owners[1]?.bankAccounts?.[0]?.cardNumber || '5022-2910-1234-9876',
-          bankSheba: owners[1]?.bankAccounts?.[0]?.shebaNumber || 'IR330570000000005022291012',
-          phone: owners[1]?.phones?.[0] || '09122223344',
+          bankCard: owners[1]?.bankAccounts?.[0]?.cardNumber || '',
+          bankSheba: owners[1]?.bankAccounts?.[0]?.shebaNumber || '',
+          phone: owners[1]?.phones?.[0] || '',
         },
       ]);
     } else if (presetName === '4_parts') {
@@ -418,7 +365,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
       setRecipients([
         {
           id: 'rec-1',
-          name: owners[0]?.name || 'محمد',
+          name: owners[0]?.name || 'شریک اول',
           role: 'هم‌بنیان‌گذار (سهم ۱ از ۴)',
           type: 'owner',
           shareUnits: 1,
@@ -428,7 +375,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
         },
         {
           id: 'rec-2',
-          name: owners[1]?.name || 'امین',
+          name: owners[1]?.name || 'شریک دوم',
           role: 'هم‌بنیان‌گذار (سهم ۱ از ۴)',
           type: 'owner',
           shareUnits: 1,
@@ -473,7 +420,6 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
   };
 
   const handleRemoveRecipient = (id: string) => {
-    if (recipients.length <= 1) return;
     setRecipients((prev) => prev.filter((r) => r.id !== id));
   };
 
@@ -484,9 +430,9 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
   };
 
   // Calculations for current simulator
-  const numGross = Number(grossRevenueInput) || 0;
-  const numExp = Number(totalExpensesInput) || 0;
-  const numReserve = Number(reinvestmentReserveInput) || 0;
+  const numGross = grossRevenueInput || 0;
+  const numExp = totalExpensesInput || 0;
+  const numReserve = reinvestmentReserveInput || 0;
   const netProfitCalculated = Math.max(0, numGross - numExp - numReserve);
 
   const totalShareUnitsCount = recipients.reduce((sum, r) => sum + (Number(r.shareUnits) || 0), 0);
@@ -570,8 +516,8 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
 
   // Settlement Balance Table for Owners & Beneficiaries
   const settlementBalances = useMemo(() => {
-    const owner1 = owners[0]?.name || 'محمد';
-    const owner2 = owners[1]?.name || 'امین';
+    const owner1 = owners[0]?.name || '';
+    const owner2 = owners[1]?.name || '';
 
     // Amount paid out of pocket by each owner:
     const paidByOwner1 = expenses
@@ -609,9 +555,9 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
       owner1: {
         name: owner1,
         role: 'هم‌بنیان‌گذار و مدیر تولید',
-        bankCard: owners[0]?.bankAccounts?.[0]?.cardNumber || '6104-3378-9012-3456',
-        bankSheba: owners[0]?.bankAccounts?.[0]?.shebaNumber || 'IR120120000000006104337890',
-        phone: owners[0]?.phones?.[0] || '09121112233',
+        bankCard: owners[0]?.bankAccounts?.[0]?.cardNumber || '',
+        bankSheba: owners[0]?.bankAccounts?.[0]?.shebaNumber || '',
+        phone: owners[0]?.phones?.[0] || '',
         paidOutOfPocket: paidByOwner1,
         costObligation: requiredObligationPerOwner,
         profitShare: profitOwner1,
@@ -621,9 +567,9 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
       owner2: {
         name: owner2,
         role: 'هم‌بنیان‌گذار و مدیر مالی و بازار',
-        bankCard: owners[1]?.bankAccounts?.[0]?.cardNumber || '5022-2910-1234-9876',
-        bankSheba: owners[1]?.bankAccounts?.[0]?.shebaNumber || 'IR330570000000005022291012',
-        phone: owners[1]?.phones?.[0] || '09122223344',
+        bankCard: owners[1]?.bankAccounts?.[0]?.cardNumber || '',
+        bankSheba: owners[1]?.bankAccounts?.[0]?.shebaNumber || '',
+        phone: owners[1]?.phones?.[0] || '',
         paidOutOfPocket: paidByOwner2,
         costObligation: requiredObligationPerOwner,
         profitShare: profitOwner2,
@@ -1439,17 +1385,15 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                 <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                   مبلغ هزینه (تومان) *
                 </label>
-                <input
-                  type="number"
-                  required
-                  placeholder="مثال: ۱۵۰۰۰۰۰۰"
+                <FormattedNumberInput
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={setAmount}
+                  placeholder="مثلاً: ۱۵,۰۰۰,۰۰۰ تومان"
                   className="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs sm:text-sm font-mono outline-none focus:border-[#CEAE80]"
                 />
-                {amount && Number(amount) > 0 && (
+                {amount != null && amount > 0 && (
                   <div className="text-[10px] text-[#A67C38] dark:text-[#CEAE80] font-bold mt-1">
-                    معادل: {numberToWordsPersian(Number(amount))} تومان
+                    معادل: {numberToWordsPersian(amount)} تومان
                   </div>
                 )}
               </div>
@@ -1518,10 +1462,12 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
 
               <div>
                 <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
-                  تاریخ فاکتور
+                  تاریخ فاکتور *{' '}
+                  <span className="text-stone-400 font-normal">(الزامی — تاریخ فاکتور را انتخاب کنید)</span>
                 </label>
                 <input
                   type="date"
+                  required
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl glass-input text-xs font-mono outline-none focus:border-[#CEAE80]"
@@ -1650,6 +1596,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                 required
                 value={periodTitle}
                 onChange={(e) => setPeriodTitle(e.target.value)}
+                placeholder="مثلاً: تسویه سود دوره تابستان"
                 className="w-full px-3.5 py-2 rounded-xl glass-input text-xs sm:text-sm outline-none focus:border-[#CEAE80]"
               />
             </div>
@@ -1660,10 +1607,10 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                 <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                   کل وصولی‌های نقدی (تومان)
                 </label>
-                <input
-                  type="number"
+                <FormattedNumberInput
                   value={grossRevenueInput}
-                  onChange={(e) => setGrossRevenueInput(e.target.value)}
+                  onChange={setGrossRevenueInput}
+                  placeholder="مثلاً: ۱۲۰,۰۰۰,۰۰۰ تومان"
                   className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm font-mono outline-none focus:border-[#CEAE80]"
                 />
               </div>
@@ -1672,10 +1619,10 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                 <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                   کل هزینه‌ها و مخارج کسر شده
                 </label>
-                <input
-                  type="number"
+                <FormattedNumberInput
                   value={totalExpensesInput}
-                  onChange={(e) => setTotalExpensesInput(e.target.value)}
+                  onChange={setTotalExpensesInput}
+                  placeholder="مثلاً: ۴۵,۰۰۰,۰۰۰ تومان"
                   className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm font-mono outline-none focus:border-[#CEAE80]"
                 />
               </div>
@@ -1684,10 +1631,10 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                 <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                   کسر ذخیره بهسازی و استهلاک
                 </label>
-                <input
-                  type="number"
+                <FormattedNumberInput
                   value={reinvestmentReserveInput}
-                  onChange={(e) => setReinvestmentReserveInput(e.target.value)}
+                  onChange={setReinvestmentReserveInput}
+                  placeholder="مثلاً: ۱۵,۰۰۰,۰۰۰ تومان"
                   className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm font-mono outline-none focus:border-[#CEAE80]"
                 />
               </div>
@@ -1724,6 +1671,11 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                 </button>
               </div>
 
+              {computedRecipients.length === 0 ? (
+                <div className="p-6 text-center rounded-xl border border-dashed border-stone-300 dark:border-white/10 text-xs text-stone-500 dark:text-gray-400">
+                  هنوز ذی‌نفعی اضافه نشده است. با دکمه «افزودن ذی‌نفع جدید» یا الگوهای آماده بالا، فهرست سهم‌بندی را بسازید.
+                </div>
+              ) : (
               <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                 {computedRecipients.map((rec) => (
                   <div
@@ -1786,6 +1738,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                   </div>
                 ))}
               </div>
+              )}
             </div>
 
             <div>

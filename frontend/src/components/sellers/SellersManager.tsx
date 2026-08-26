@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Users,
   UserPlus,
@@ -47,6 +48,7 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
 }) => {
   const safeSellers = sellers || [];
   const [search, setSearch] = useState('');
+  const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'default' | 'top_paid' | 'highest_debt' | 'turnover'>('default');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -240,8 +242,7 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
 
           return (
             <div
-              key={seller.id}
-              onClick={() => setSelectedProfileSeller(seller)}
+              onClick={() => navigate(`/profile/sellers/${seller.id}`)}
               className="glass-card p-4 sm:p-5 rounded-2xl hover:border-[#CEAE80]/50 shadow-md hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between space-y-3.5 group relative"
             >
               <div>

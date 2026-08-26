@@ -6,6 +6,7 @@ import { getOwners, setOwners } from '../services/settingsService.js';
 import { toStaffDto } from '../models/mappers.js';
 import { logAudit } from '../services/auditService.js';
 import { badRequest, pathParam } from '../utils/apiError.js';
+import { clientIdSchema } from '../schema/clientId.js';
 
 const bankAccountSchema = z.object({
     id: z.string().optional(),
@@ -47,13 +48,15 @@ const staffSchema = z.object({
     activityHistory: z.array(activitySchema).optional(),
 });
 
+const createStaffSchema = staffSchema.extend({ id: clientIdSchema.optional() });
+
 export async function listStaff(_req: Request, res: Response): Promise<void> {
     const rows = await svc.listStaff();
     res.json(rows.map(toStaffDto));
 }
 
 export async function createStaff(req: Request, res: Response): Promise<void> {
-    const data = staffSchema.parse(req.body);
+    const data = createStaffSchema.parse(req.body);
     const row = await svc.createStaff(data);
     logAudit(req.auth ?? null, 'create', 'staff', `پرسنل «${row.name}» با کد ${row.code} اضافه شد`);
     res.status(201).json(toStaffDto(row));

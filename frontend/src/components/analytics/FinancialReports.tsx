@@ -23,6 +23,9 @@ import {
 import type { DashboardStats, Seller, Consignment, PaymentRecord, GarmentItem } from '../../types';
 import { SelectMenu } from '../ui/select-menu';
 import { formatToman, toPersianDigits } from '../../utils/persian';
+
+// JS getDay(): 0=یکشنبه ... 6=شنبه
+const PERSIAN_WEEKDAYS = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
 interface FinancialReportsProps {
   stats: DashboardStats;
   sellers: Seller[];
@@ -102,22 +105,47 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
   const midPct = totalOutstanding ? Math.round((aging7To14Days / totalOutstanding) * 100) : 0;
   const overPct = totalOutstanding ? Math.round((agingOver14Days / totalOutstanding) * 100) : 0;
 
-  // Chart 1: Bar Data (Days / Weeks)
-  const barChartData = [
-    { name: 'شنبه', واگذاری: 12500000, وصولی: 9800000 },
-    { name: 'یکشنبه', واگذاری: 18200000, وصولی: 14500000 },
-    { name: 'دوشنبه', واگذاری: 14000000, وصولی: 16000000 },
-    { name: 'سه‌شنبه', واگذاری: 22000000, وصولی: 19500000 },
-    { name: 'چهارشنبه', واگذاری: 28500000, وصولی: 24000000 },
-    { name: 'پنج‌شنبه', واگذاری: 34000000, وصولی: 31000000 },
-    { name: 'جمعه', واگذاری: 8000000, وصولی: 6500000 },
-  ];
+  const collectionEfficiency =
+    filteredHandoversTotal > 0
+      ? Math.round((filteredPaymentsTotal / filteredHandoversTotal) * 100)
+      : 0;
+  const hasAgingData = totalOutstanding > 0;
 
-  // Chart 2: Aging Pie Data
+  // Chart 1: Bar Data — last 7 calendar days (device-local) from real consignments & payments
+  const barChartData = useMemo(() => {
+    const handoverEvents = (consignments || [])
+      .map((c) => ({ t: new Date(c.date).getTime(), amt: c.totalAmount || 0 }))
+      .filter((e) => !isNaN(e.t));
+    const collectedEvents = (payments || [])
+      .map((p) => ({ t: new Date(p.date).getTime(), amt: p.amount || 0 }))
+      .filter((e) => !isNaN(e.t));
+    if (handoverEvents.length === 0 && collectedEvents.length === 0) return [];
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    return Array.from({ length: 7 }, (_, idx) => {
+      const daysAgo = 6 - idx;
+      const dayStart = new Date(startOfToday);
+      dayStart.setDate(dayStart.getDate() - daysAgo);
+      const dayStartT = dayStart.getTime();
+      const dayEndT = dayStartT + 24 * 60 * 60 * 1000;
+      return {
+        name: PERSIAN_WEEKDAYS[dayStart.getDay()],
+        واگذاری: handoverEvents
+          .filter((e) => e.t >= dayStartT && e.t < dayEndT)
+          .reduce((s, e) => s + e.amt, 0),
+        وصولی: collectedEvents
+          .filter((e) => e.t >= dayStartT && e.t < dayEndT)
+          .reduce((s, e) => s + e.amt, 0),
+      };
+    });
+  }, [consignments, payments]);
+
+  // Chart 2: Aging Pie Data — real outstanding amounts only, no fallbacks
   const pieData = [
-    { name: 'تازه (<۷ روز)', value: agingUnder7Days || 35000000, color: '#10B981' },
-    { name: 'میان‌مدت (۷-۱۴ روز)', value: aging7To14Days || 18000000, color: '#F59E0B' },
-    { name: 'پرریسک (>۱۴ روز)', value: agingOver14Days || 12000000, color: '#EF4444' },
+    { name: 'تازه (<۷ روز)', value: agingUnder7Days, color: '#10B981' },
+    { name: 'میان‌مدت (۷-۱۴ روز)', value: aging7To14Days, color: '#F59E0B' },
+    { name: 'پرریسک (>۱۴ روز)', value: agingOver14Days, color: '#EF4444' },
   ];
 
   const handleExportData = () => {
@@ -287,7 +315,7 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
             کل واگذاری امانی در بازه انتخابی:
           </span>
           <p className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400 font-mono" dir="ltr">
-            {formatToman(filteredHandoversTotal || stats.totalConsignmentValue || 185000000)}
+            {formatToman(filteredHandoversTotal)}
           </p>
         </div>
 
@@ -296,7 +324,7 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
             کل وصولی نقدی در بازه انتخابی:
           </span>
           <p className="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono" dir="ltr">
-            {formatToman(filteredPaymentsTotal || stats.totalCollected || 142000000)}
+            {formatToman(filteredPaymentsTotal)}
           </p>
         </div>
 
@@ -305,13 +333,7 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
             راندمان وصولی بازه:
           </span>
           <p className="text-lg sm:text-xl font-black text-[#CEAE80] font-mono">
-            {toPersianDigits(
-              Math.round(
-                ((filteredPaymentsTotal || 142000000) /
-                  (filteredHandoversTotal || 185000000 || 1)) *
-                  100
-              )
-            )}
+            {toPersianDigits(collectionEfficiency)}
             ٪ وصولی نقد
           </p>
         </div>
@@ -334,6 +356,14 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
           </div>
 
           <div className="h-64 w-full pt-4" dir="ltr">
+            {barChartData.length === 0 ? (
+              <div
+                className="h-full flex items-center justify-center text-xs text-stone-500 dark:text-gray-400"
+                dir="rtl"
+              >
+                داده‌ای برای نمایش وجود ندارد
+              </div>
+            ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={barChartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
@@ -357,6 +387,7 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
                 <Bar dataKey="وصولی" fill="#10B981" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+            )}
           </div>
         </div>
 
@@ -371,7 +402,8 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
           </div>
 
           <div className="h-48 w-full" dir="ltr">
-            <ResponsiveContainer width="100%" height="100%">
+            {hasAgingData ? (
+              <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={pieData}
@@ -398,20 +430,34 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
                 />
               </PieChart>
             </ResponsiveContainer>
+            ) : (
+              <div
+                className="h-full flex items-center justify-center text-xs text-stone-500 dark:text-gray-400"
+                dir="rtl"
+              >
+                داده‌ای برای نمایش وجود ندارد
+              </div>
+            )}
           </div>
 
           <div className="space-y-2 text-xs">
-            {pieData.map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                  <span className="text-stone-600 dark:text-stone-300 text-[11px]">{item.name}</span>
+            {hasAgingData ? (
+              pieData.map((item, idx) => (
+                <div key={idx} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="text-stone-600 dark:text-stone-300 text-[11px]">{item.name}</span>
+                  </div>
+                  <span className="font-mono font-bold text-stone-800 dark:text-stone-200" dir="ltr">
+                    {formatToman(item.value)}
+                  </span>
                 </div>
-                <span className="font-mono font-bold text-stone-800 dark:text-stone-200" dir="ltr">
-                  {formatToman(item.value)}
-                </span>
+              ))
+            ) : (
+              <div className="text-center text-[11px] text-stone-500 dark:text-gray-400 py-2">
+                داده‌ای برای نمایش وجود ندارد
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>

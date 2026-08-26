@@ -5,6 +5,7 @@ import * as svc from '../services/inventoryService.js';
 import { toItemDto } from '../models/mappers.js';
 import { logAudit } from '../services/auditService.js';
 import { badRequest, pathParam } from '../utils/apiError.js';
+import { clientIdSchema } from '../schema/clientId.js';
 
 const itemSchema = z.object({
     id: z.string().optional(),
@@ -24,6 +25,8 @@ const itemSchema = z.object({
     images: z.array(z.string()).optional(),
 });
 
+const createItemSchema = itemSchema.extend({ id: clientIdSchema.optional() });
+
 async function categoryLabelFor(categoryId: string): Promise<string | undefined> {
     const categories = await svc.listCategories();
     return categories.find((c) => c.id === categoryId)?.label;
@@ -36,7 +39,7 @@ export async function listItems(_req: Request, res: Response): Promise<void> {
 }
 
 export async function createItem(req: Request, res: Response): Promise<void> {
-    const data = itemSchema.parse(req.body);
+    const data = createItemSchema.parse(req.body);
     const row = await svc.createItem(data);
     logAudit(req.auth ?? null, 'create', 'item', `کالای «${row.name}» با کد ${row.code} ایجاد شد`);
     res.status(201).json(toItemDto(row, await categoryLabelFor(row.category)));

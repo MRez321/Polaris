@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -9,38 +9,93 @@ import {
   CartesianGrid,
   BarChart,
   Bar,
+  Line,
   Legend,
 } from 'recharts';
 import { formatToman } from '../../utils/persian';
+import { useData } from '../../context/DataContext';
 
 interface ChartProps {
   darkMode?: boolean;
 }
 
+// JS getDay(): 0=یکشنبه ... 6=شنبه
+const PERSIAN_WEEKDAYS = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
+
+const EmptyChartState: React.FC = () => (
+  <div className="h-full w-full flex items-center justify-center text-sm text-stone-500 dark:text-gray-400">
+    داده‌ای برای نمایش وجود ندارد
+  </div>
+);
+
 export const SalesDebtChart: React.FC<ChartProps> = () => {
   const [chartType, setChartType] = useState<'flow' | 'sellers'>('flow');
+  const { consignments = [], payments = [], sellers = [] } = useData();
 
-  // Simulated 7-day consignment vs settlement flow
-  const flowData = [
-    { day: 'شنبه', handover: 14500000, collected: 8200000, debtBalance: 78000000 },
-    { day: 'یکشنبه', handover: 9200000, collected: 11000000, debtBalance: 76200000 },
-    { day: 'دوشنبه', handover: 18400000, collected: 14000000, debtBalance: 80600000 },
-    { day: 'سه‌شنبه', handover: 22000000, collected: 17500000, debtBalance: 85100000 },
-    { day: 'چهارشنبه', handover: 12000000, collected: 19800000, debtBalance: 77300000 },
-    { day: 'پنج‌شنبه', handover: 31000000, collected: 28500000, debtBalance: 79800000 },
-    { day: 'جمعه', handover: 6500000, collected: 15200000, debtBalance: 71100000 },
-  ];
+  const totalCurrentDebt = useMemo(
+    () => sellers.reduce((sum, s) => sum + (s.currentDebt || 0), 0),
+    [sellers]
+  );
 
-  const sellerDistributionData = [
-    { name: 'حسین احمدی', totalDebt: 18450000, totalPaid: 30050000, creditLimit: 35000000 },
-    { name: 'رضا میرزایی', totalDebt: 34200000, totalPaid: 51800000, creditLimit: 50000000 },
-    { name: 'صادق شریفی', totalDebt: 21900000, totalPaid: 10100000, creditLimit: 25000000 },
-    { name: 'بهزاد غلامی', totalDebt: 6500000, totalPaid: 13000000, creditLimit: 20000000 },
-    { name: 'علیرضا کاظمی', totalDebt: 0, totalPaid: 15000000, creditLimit: 15000000 },
-  ];
+  // «روند واگذاری / دریافتی»: last 7 calendar days (device-local) from real records.
+  // Debt balance is reconstructed EXACTLY backwards from current reality:
+  // balance(day d) = Σ(all sellers currentDebt) − Σ(handover amounts after d) + Σ(collected after d)
+  const flowData = useMemo(() => {
+    const handoverEvents = (consignments || [])
+      .map((c) => ({ t: new Date(c.date).getTime(), amt: c.totalAmount || 0 }))
+      .filter((e) => !isNaN(e.t));
+    const collectedEvents = (payments || [])
+      .map((p) => ({ t: new Date(p.date).getTime(), amt: p.amount || 0 }))
+      .filter((e) => !isNaN(e.t));
+
+    if (handoverEvents.length === 0 && collectedEvents.length === 0) return [];
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    return Array.from({ length: 7 }, (_, idx) => {
+      const daysAgo = 6 - idx; // oldest → newest
+      const dayStart = new Date(startOfToday);
+      dayStart.setDate(dayStart.getDate() - daysAgo);
+      const dayStartT = dayStart.getTime();
+      const dayEndT = dayStartT + 24 * 60 * 60 * 1000;
+
+      const inDay = (e: { t: number }) => e.t >= dayStartT && e.t < dayEndT;
+      const afterDay = (e: { t: number }) => e.t >= dayEndT;
+
+      return {
+        day: PERSIAN_WEEKDAYS[dayStart.getDay()],
+        handover: handoverEvents.filter(inDay).reduce((s, e) => s + e.amt, 0),
+        collected: collectedEvents.filter(inDay).reduce((s, e) => s + e.amt, 0),
+        debtBalance:
+          totalCurrentDebt -
+          handoverEvents.filter(afterDay).reduce((s, e) => s + e.amt, 0) +
+          collectedEvents.filter(afterDay).reduce((s, e) => s + e.amt, 0),
+      };
+    });
+  }, [consignments, payments, totalCurrentDebt]);
+
+  // «تفکیک بدهی فروشندگان»: top-5 real sellers by total volume (current debt + settled payments)
+  const sellerDistributionData = useMemo(
+    () =>
+      [...sellers]
+        .sort(
+          (a, b) =>
+            (b.currentDebt || 0) + (b.totalPaid || 0) - ((a.currentDebt || 0) + (a.totalPaid || 0))
+        )
+        .slice(0, 5)
+        .map((s) => ({
+          name: s.name,
+          totalDebt: s.currentDebt || 0,
+          totalPaid: s.totalPaid || 0,
+          creditLimit: s.creditLimit || 0,
+        })),
+    [sellers]
+  );
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
+      const creditLimit = payload[0]?.payload?.creditLimit;
       return (
         <div className="bg-white dark:bg-[#141416] p-3.5 rounded-xl shadow-2xl border border-stone-200 dark:border-[#CEAE80]/30 text-xs text-right text-stone-900 dark:text-white">
           <p className="font-bold text-amber-800 dark:text-[#CEAE80] mb-2">{label}</p>
@@ -55,6 +110,14 @@ export const SalesDebtChart: React.FC<ChartProps> = () => {
               </span>
             </div>
           ))}
+          {typeof creditLimit === 'number' ? (
+            <div className="flex items-center justify-between gap-4 py-1 mt-1 pt-1 border-t border-stone-200 dark:border-white/10">
+              <span className="text-stone-500 dark:text-gray-400">سقف اعتبار:</span>
+              <span className="font-bold text-stone-900 dark:text-white font-mono">
+                {formatToman(creditLimit)}
+              </span>
+            </div>
+          ) : null}
         </div>
       );
     }
@@ -100,50 +163,76 @@ export const SalesDebtChart: React.FC<ChartProps> = () => {
 
       <div className="h-64 sm:h-72 w-full">
         {chartType === 'flow' ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={flowData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="goldGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#CEAE80" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#CEAE80" stopOpacity={0.0} />
-                </linearGradient>
-                <linearGradient id="greenGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                vertical={false}
-                stroke="#222222"
-              />
-              <XAxis dataKey="day" tick={{ fill: '#888888', fontSize: 11 }} />
-              <YAxis
-                tick={{ fill: '#888888', fontSize: 10 }}
-                tickFormatter={(v) => `${(v / 1000000).toLocaleString('fa-IR')} م`}
-                orientation="right"
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Area
-                type="monotone"
-                dataKey="handover"
-                name="ارزش واگذاری امانی"
-                stroke="#CEAE80"
-                strokeWidth={2.5}
-                fillOpacity={1}
-                fill="url(#goldGradient)"
-              />
-              <Area
-                type="monotone"
-                dataKey="collected"
-                name="دریافتی تسویه شده"
-                stroke="#10B981"
-                strokeWidth={2}
-                fillOpacity={1}
-                fill="url(#greenGradient)"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          flowData.length === 0 ? (
+            <EmptyChartState />
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={flowData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="goldGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#CEAE80" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#CEAE80" stopOpacity={0.0} />
+                  </linearGradient>
+                  <linearGradient id="greenGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#222222"
+                />
+                <XAxis dataKey="day" tick={{ fill: '#888888', fontSize: 11 }} />
+                <YAxis
+                  yAxisId="flow"
+                  tick={{ fill: '#888888', fontSize: 10 }}
+                  tickFormatter={(v) => `${(v / 1000000).toLocaleString('fa-IR')} م`}
+                  orientation="right"
+                />
+                <YAxis
+                  yAxisId="debt"
+                  tick={{ fill: '#888888', fontSize: 10 }}
+                  tickFormatter={(v) => `${(v / 1000000).toLocaleString('fa-IR')} م`}
+                  orientation="left"
+                  width={56}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Area
+                  yAxisId="flow"
+                  type="monotone"
+                  dataKey="handover"
+                  name="ارزش واگذاری امانی"
+                  stroke="#CEAE80"
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#goldGradient)"
+                />
+                <Area
+                  yAxisId="flow"
+                  type="monotone"
+                  dataKey="collected"
+                  name="دریافتی تسویه شده"
+                  stroke="#10B981"
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#greenGradient)"
+                />
+                <Line
+                  yAxisId="debt"
+                  type="monotone"
+                  dataKey="debtBalance"
+                  name="مانده کل بدهی"
+                  stroke="#EF4444"
+                  strokeWidth={1.5}
+                  strokeDasharray="5 3"
+                  dot={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          )
+        ) : sellerDistributionData.length === 0 ? (
+          <EmptyChartState />
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={sellerDistributionData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>

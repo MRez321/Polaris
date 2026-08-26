@@ -18,7 +18,7 @@ import { StatsCard } from './StatsCard';
 import { OverdueAlertBanner } from './OverdueAlertBanner';
 import { SalesDebtChart } from './SalesDebtChart';
 import { TopSellersCard } from './TopSellersCard';
-import { formatToman, toJalaliDate, toPersianDigits } from '../../utils/persian';
+import { formatToman, toJalaliDate, toJalaliDateTime, toPersianDigits } from '../../utils/persian';
 import { Badge } from '../common/Badge';
 
 interface DashboardOverviewProps {
@@ -57,6 +57,35 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   );
 
   const totalStockCount = safeItems.reduce((s, i) => s + (i.stockQuantity || 0), 0);
+
+  // Real today-vs-yesterday collection delta for the payments KPI card
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const startOfYesterday = new Date(startOfToday);
+  startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+
+  const todayPaymentsSum = safePayments
+    .filter((p) => new Date(p.date).getTime() >= startOfToday.getTime())
+    .reduce((s, p) => s + (p.amount || 0), 0);
+  const yesterdayPaymentsSum = safePayments
+    .filter((p) => {
+      const t = new Date(p.date).getTime();
+      return t >= startOfYesterday.getTime() && t < startOfToday.getTime();
+    })
+    .reduce((s, p) => s + (p.amount || 0), 0);
+
+  let paymentTrend: { text: string; isPositive: boolean } | undefined;
+  if (yesterdayPaymentsSum > 0) {
+    const deltaPct = Math.round(
+      ((todayPaymentsSum - yesterdayPaymentsSum) / yesterdayPaymentsSum) * 100
+    );
+    paymentTrend = {
+      text: `${deltaPct >= 0 ? '+' : '−'}${toPersianDigits(Math.abs(deltaPct))}٪ نسبت به دیروز`,
+      isPositive: deltaPct >= 0,
+    };
+  } else if (todayPaymentsSum > 0) {
+    paymentTrend = { text: 'اولین دریافت امروز', isPositive: true };
+  }
 
   return (
     <div className="space-y-6">
@@ -110,7 +139,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           value={formatToman(stats?.todayPayments || 0)}
           subtitle="وصول و تسویه فاکتورها"
           icon={CreditCard}
-          trend={{ text: '+۱۴٪ نسبت به دیروز', isPositive: true }}
+          trend={paymentTrend}
           onClick={() => onGoToTab('finances')}
         />
       </div>
@@ -165,8 +194,8 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                       </span>
                     </div>
                     <p className="text-[11px] text-stone-500 dark:text-gray-400 mt-1">
-                      {toPersianDigits(itemCount)} قلم کالا • موعد:{' '}
-                      {toJalaliDate(c.dueDate)}
+                      {toPersianDigits(itemCount)} قلم کالا • واگذاری: {toJalaliDateTime(c.date)} •
+                      موعد: {toJalaliDate(c.dueDate)}
                     </p>
                   </div>
 
@@ -225,7 +254,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                     </Badge>
                   </div>
                   <p className="text-[11px] text-stone-500 dark:text-gray-400 mt-1">
-                    {toJalaliDate(p.date)} • {p.paymentMethod === 'cash' ? 'نقدی حضوری' : p.paymentMethod === 'bank_transfer' ? 'انتقال بانکی/پایا' : 'دستگاه کارتخوان'}
+                    {toJalaliDateTime(p.date)} • {p.paymentMethod === 'cash' ? 'نقدی حضوری' : p.paymentMethod === 'bank_transfer' ? 'انتقال بانکی/پایا' : 'دستگاه کارتخوان'}
                   </p>
                 </div>
 

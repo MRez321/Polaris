@@ -5,6 +5,7 @@ import { Plus, Trash2, Camera, CreditCard, Shield, Phone, MapPin, User, Check, C
 import { toPersianDigits } from '../../utils/persian';
 import { BankCardInput, ShebaInput, detectBankByCard, detectBankBySheba } from '../common/BankInput';
 import { SelectMenu } from '../ui/select-menu';
+import { FormattedNumberInput } from '../common/FormattedNumberInput';
 
 interface SellerFormModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ export const SellerFormModal: React.FC<SellerFormModalProps> = ({
   onSave,
   editSeller,
 }) => {
+  const [sellerId, setSellerId] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [additionalPhones, setAdditionalPhones] = useState<string[]>([]);
@@ -31,9 +33,9 @@ export const SellerFormModal: React.FC<SellerFormModalProps> = ({
   // Toggle for Guarantee & Credit settings - DEFAULT UNCHECKED per requirements
   const [hasGuarantee, setHasGuarantee] = useState(false);
   const [guaranteeType, setGuaranteeType] = useState<Seller['guaranteeType']>('promissory_note');
-  const [guaranteeAmount, setGuaranteeAmount] = useState('50000000');
+  const [guaranteeAmount, setGuaranteeAmount] = useState<number | null>(null);
   const [guaranteeDetails, setGuaranteeDetails] = useState('');
-  const [creditLimit, setCreditLimit] = useState('30000000');
+  const [creditLimit, setCreditLimit] = useState<number | null>(null);
 
   // Bank Accounts / Card & Sheba
   const [bankAccounts, setBankAccounts] = useState<BankAccountInfo[]>([]);
@@ -45,6 +47,7 @@ export const SellerFormModal: React.FC<SellerFormModalProps> = ({
 
   useEffect(() => {
     if (editSeller) {
+      setSellerId(editSeller.id);
       setName(editSeller.name || '');
       setPhone(editSeller.phone || '');
       setAdditionalPhones(editSeller.additionalPhones || []);
@@ -54,24 +57,25 @@ export const SellerFormModal: React.FC<SellerFormModalProps> = ({
       setNotes(editSeller.notes || '');
       setHasGuarantee(Boolean(editSeller.hasGuarantee));
       setGuaranteeType(editSeller.guaranteeType || 'promissory_note');
-      setGuaranteeAmount(String(editSeller.guaranteeAmount || 0));
+      setGuaranteeAmount(editSeller.guaranteeAmount ?? null);
       setGuaranteeDetails(editSeller.guaranteeDetails || '');
-      setCreditLimit(String(editSeller.creditLimit || 30000000));
+      setCreditLimit(editSeller.creditLimit ?? null);
       setBankAccounts(editSeller.bankAccounts || []);
       setShowAddBankForm(false);
     } else {
+      setSellerId(crypto.randomUUID());
       setName('');
       setPhone('');
       setAdditionalPhones([]);
       setNationalCode('');
       setStreetLocation('');
-      setAvatarUrl('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80');
+      setAvatarUrl('');
       setNotes('');
       setHasGuarantee(false); // Default unchecked
       setGuaranteeType('promissory_note');
-      setGuaranteeAmount('50000000');
+      setGuaranteeAmount(null);
       setGuaranteeDetails('');
-      setCreditLimit('30000000');
+      setCreditLimit(null);
       setBankAccounts([]);
       setNewCardNumber('');
       setNewDetectedBank('');
@@ -136,6 +140,7 @@ export const SellerFormModal: React.FC<SellerFormModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !phone.trim()) return;
+    if (hasGuarantee && creditLimit === null) return;
 
     let finalBankAccounts = [...bankAccounts];
     // If user filled in the bank inputs but didn't click "Add", include it automatically
@@ -150,6 +155,7 @@ export const SellerFormModal: React.FC<SellerFormModalProps> = ({
     }
 
     onSave({
+      id: sellerId,
       name: name.trim(),
       phone: phone.trim(),
       additionalPhones,
@@ -158,9 +164,9 @@ export const SellerFormModal: React.FC<SellerFormModalProps> = ({
       avatarUrl,
       hasGuarantee,
       guaranteeType,
-      guaranteeAmount: hasGuarantee ? Number(guaranteeAmount) || 0 : 0,
+      guaranteeAmount: hasGuarantee ? guaranteeAmount || 0 : 0,
       guaranteeDetails: hasGuarantee ? guaranteeDetails.trim() : '',
-      creditLimit: hasGuarantee ? Number(creditLimit) || 0 : 30000000,
+      creditLimit: hasGuarantee ? creditLimit || 0 : 0,
       bankAccounts: finalBankAccounts,
       notes: notes.trim(),
     });
@@ -227,6 +233,21 @@ export const SellerFormModal: React.FC<SellerFormModalProps> = ({
               />
             </div>
           </div>
+        </div>
+
+        {/* Unique auto-generated ID */}
+        <div>
+          <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+            شناسه یکتا <span className="text-stone-400 font-normal">(خودکار — غیرقابل تغییر)</span>
+          </label>
+          <input
+            type="text"
+            dir="ltr"
+            value={sellerId}
+            readOnly
+            disabled
+            className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm outline-none font-mono text-left opacity-70 cursor-not-allowed"
+          />
         </div>
 
         {/* Location & National Code */}
@@ -498,11 +519,11 @@ export const SellerFormModal: React.FC<SellerFormModalProps> = ({
                 <label className="block text-[11px] text-stone-700 dark:text-stone-300 font-bold mb-1">
                   مبلغ ضمانت تودیع شده (تومان)
                 </label>
-                <input
-                  type="number"
+                <FormattedNumberInput
                   value={guaranteeAmount}
-                  onChange={(e) => setGuaranteeAmount(e.target.value)}
-                  placeholder="تومان"
+                  onChange={setGuaranteeAmount}
+                  suffix="تومان"
+                  placeholder="مثلاً: ۵۰,۰۰۰,۰۰۰"
                   className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm font-mono outline-none focus:border-[#CEAE80]"
                 />
               </div>
@@ -524,12 +545,11 @@ export const SellerFormModal: React.FC<SellerFormModalProps> = ({
                 <label className="block text-[11px] text-[#CEAE80] font-bold mb-1">
                   سقف اعتبار امانت مجاز (تومان) *
                 </label>
-                <input
-                  type="number"
-                  required={hasGuarantee}
+                <FormattedNumberInput
                   value={creditLimit}
-                  onChange={(e) => setCreditLimit(e.target.value)}
-                  placeholder="تومان"
+                  onChange={setCreditLimit}
+                  suffix="تومان"
+                  placeholder="مثلاً: ۳۰,۰۰۰,۰۰۰"
                   className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#141414] border border-[#CEAE80] text-[#CEAE80] text-xs sm:text-sm font-bold font-mono outline-none"
                 />
               </div>

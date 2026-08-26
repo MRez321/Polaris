@@ -16,7 +16,9 @@ import {
   Download,
   Paperclip,
   ExternalLink,
+  Eye,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import type { Owner, StaffMember, BankAccountInfo } from '../../types';
 import { formatToman, toPersianDigits, toJalaliDate } from '../../utils/persian';
 import { Modal } from '../common/Modal';
@@ -43,6 +45,7 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
   onUpdateStaff,
   onDeleteStaff,
 }) => {
+  const navigate = useNavigate();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
@@ -288,12 +291,17 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {owners.map((owner) => (
-            <OwnerCard
-              key={owner.id}
-              owner={owner}
-              onEdit={handleOpenEditOwner}
-              showEditButton={true}
-            />
+            <div key={owner.id} className="space-y-2">
+              <OwnerCard owner={owner} onEdit={handleOpenEditOwner} showEditButton={true} />
+              <button
+                type="button"
+                onClick={() => navigate(`/profile/owners/${owner.id}`)}
+                className="w-full py-2 rounded-xl glass-card hover:border-[#CEAE80] text-stone-600 dark:text-gray-300 hover:text-black dark:hover:text-black text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+              >
+                <Eye className="w-4 h-4 text-[#CEAE80]" />
+                <span>مشاهده پرونده و تاریخچه رویدادها</span>
+              </button>
+            </div>
           ))}
         </div>
       </div>
@@ -347,7 +355,8 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
             return (
               <div
                 key={stf.id}
-                className="glass-card p-4 rounded-2xl hover:border-[#CEAE80]/40 transition-all flex flex-col justify-between space-y-3"
+                className="glass-card p-4 rounded-2xl hover:border-[#CEAE80]/40 transition-all cursor-pointer flex flex-col justify-between space-y-3"
+                onClick={() => navigate(`/profile/staff/${stf.id}`)}
               >
                 <div>
                   <div className="flex items-start justify-between gap-2">
@@ -375,14 +384,20 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
 
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => handleOpenEditModal(stf)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenEditModal(stf);
+                        }}
                         className="p-1 rounded-lg text-stone-400 hover:text-white hover:bg-white/10 transition-colors"
                         title="ویرایش پرونده"
                       >
                         <Edit className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => handleDeleteStaffPrompt(stf)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteStaffPrompt(stf);
+                        }}
                         className="p-1 rounded-lg text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
                         title="حذف و انتقال به سطل"
                       >
@@ -408,6 +423,7 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
                             >
                               <a
                                 href={`tel:${ph}`}
+                                onClick={(e) => e.stopPropagation()}
                                 className="text-[#CEAE80] hover:underline flex items-center gap-1"
                                 dir="ltr"
                                 title="برقراری تماس مستقیم"
@@ -417,7 +433,10 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
                               </a>
                               <button
                                 type="button"
-                                onClick={() => handleCopy(ph, copyKey)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCopy(ph, copyKey);
+                                }}
                                 className="p-0.5 rounded text-stone-400 hover:text-stone-700 dark:hover:text-white"
                                 title="کپی شماره"
                               >
@@ -451,6 +470,7 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
                           <a
                             href={stf.resumeAttachmentData}
                             download={stf.resumeAttachmentName || 'resume.pdf'}
+                            onClick={(e) => e.stopPropagation()}
                             className="px-2 py-0.5 rounded bg-[#CEAE80] text-black text-[10px] font-bold flex items-center gap-1"
                           >
                             <Download className="w-3 h-3" />
@@ -461,6 +481,7 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
                             href={stf.resumeUrl}
                             target="_blank"
                             rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()}
                             className="text-[10px] text-[#CEAE80] hover:underline flex items-center gap-1"
                           >
                             <ExternalLink className="w-3 h-3" />
@@ -481,7 +502,10 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
                           return (
                             <div
                               key={aIdx}
-                              onClick={() => handleCopy(targetNum, copyKey)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCopy(targetNum, copyKey);
+                              }}
                               className="p-2 rounded-xl bg-stone-100 dark:bg-black/40 hover:bg-[#CEAE80]/10 dark:hover:bg-[#CEAE80]/10 border border-black/5 dark:border-white/5 cursor-pointer transition-all flex items-center justify-between text-[11px] group"
                               title="کلیک برای کپی شماره کارت/شبا"
                             >
@@ -517,7 +541,8 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
                   </span>
 
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setSelectedStaff(stf);
                       setIsHistoryModalOpen(true);
                     }}

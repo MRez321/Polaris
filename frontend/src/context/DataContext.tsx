@@ -21,6 +21,7 @@ import {
   itemsApi,
   ownersApi,
   paymentsApi,
+  returnsApi,
   sellersApi,
   staffApi,
   type HandoverPayload,
@@ -83,16 +84,16 @@ const DEFAULT_CATEGORIES = [
 ];
 
 const DEFAULT_WORKSHOP_INFO: WorkshopInfo = {
-  name: 'کارگاه دوزندگی و تولیدی پولاریس استایل',
-  slogan: 'تولیدکننده تخصصی پوشاک زمستانه، پالتو و کاپشن‌های راسته بازار',
-  website: 'https://polaris-style.ir',
-  instagram: '@polaris_style_clothing',
-  telegram: 't.me/polaris_style',
-  address: 'تهران، بازار بزرگ، خیابان خیام، گذر لوطی صالح، کوچه کارگاه، پلاک ۱۸',
-  postalCode: '۱۱۹۳۶۴۸۲۹۱',
-  phone: '02155667788',
-  emergencyPhone: '09121112233',
-  registrationNumber: '۵۸۹۴۲۱',
+  name: '',
+  slogan: '',
+  website: '',
+  instagram: '',
+  telegram: '',
+  address: '',
+  postalCode: '',
+  phone: '',
+  emergencyPhone: '',
+  registrationNumber: '',
 };
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -118,6 +119,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         sellersRes,
         consignmentsRes,
         paymentsRes,
+        returnsRes,
         staffRes,
         ownersRes,
         logsRes,
@@ -128,6 +130,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         sellersApi.list().catch(() => []),
         consignmentsApi.list().catch(() => []),
         paymentsApi.list().catch(() => []),
+        returnsApi.list().catch(() => []),
         staffApi.list().catch(() => []),
         ownersApi.list().catch(() => []),
         auditApi.list().catch(() => []),
@@ -139,6 +142,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (sellersRes) setSellers(sellersRes);
       if (consignmentsRes) setConsignments(consignmentsRes);
       if (paymentsRes) setPayments(paymentsRes);
+      if (returnsRes) setReturns(returnsRes);
       if (staffRes) setStaffMembers(staffRes);
       if (ownersRes) setOwners(ownersRes);
       if (logsRes) setAuditLogs(logsRes);

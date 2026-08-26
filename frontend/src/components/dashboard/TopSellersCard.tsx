@@ -32,6 +32,11 @@ export const TopSellersCard: React.FC<TopSellersCardProps> = ({
         </div>
       </div>
 
+        {sellers.length === 0 ? (
+          <div className="py-8 text-center text-xs text-stone-500 dark:text-gray-400">
+            داده‌ای برای نمایش وجود ندارد
+          </div>
+        ) : (
       <div className="space-y-3">
         {sortedSellers.slice(0, 5).map((seller, index) => {
           const debtPercentage = Math.min(
@@ -149,6 +154,7 @@ export const TopSellersCard: React.FC<TopSellersCardProps> = ({
           );
         })}
       </div>
+        )}
     </div>
   );
 };

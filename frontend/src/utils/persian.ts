@@ -1,21 +1,66 @@
 // Persian number and date helpers
 
+const PERSIAN_DIGITS = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+
+// Convert Latin digits in a string/number to Persian digits (۰-۹)
 export function toPersianDigits(num: number | string): string {
   if (num === undefined || num === null) return '';
   const str = String(num);
-  const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-  return str.replace(/[0-9]/g, (w) => persianDigits[+w]);
+  return str.replace(/[0-9]/g, (w) => PERSIAN_DIGITS[+w]);
+}
+
+// Convert Persian (۰-۹) and Arabic-Indic (٠-٩) digits to ASCII digits
+function toAsciiDigits(str: string): string {
+  return str
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660));
+}
+
+// Group a number in threes with ASCII ',' and render Persian digits.
+// Accepts a number or a digit-string (any digit system, separators allowed).
+// Returns '' for null/undefined/''/NaN/non-finite. Negatives get leading '-'.
+export function formatGrouped(value: number | string): string {
+  let raw: string;
+  if (typeof value === 'number') {
+    if (isNaN(value) || !isFinite(value)) return '';
+    // Spell out all digits: no exponent notation (1e21), no locale grouping
+    raw = value.toLocaleString('en-US', { useGrouping: false, maximumFractionDigits: 20 });
+  } else {
+    raw = toAsciiDigits(String(value)).replace(/[،٬,\s]/g, '');
+    if (raw.trim() === '') return '';
+  }
+  const m = /^([+-]?)(\d*)(?:\.(\d*))?$/.exec(raw.trim());
+  if (!m || (m[2] === '' && !m[3])) return '';
+  const sign = m[1] === '-' ? '-' : '';
+  const intPart = m[2] === '' ? '0' : m[2];
+  const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const frac = m[3] ? `.${toPersianDigits(m[3])}` : '';
+  return sign + toPersianDigits(grouped) + frac;
+}
+
+// Parse user-typed input (grouped, Persian or Arabic digits) to a number.
+// Strips ',', '،' (U+060C), '٬' (U+066C) separators and spaces/tabs; converts
+// Persian AND Arabic-Indic digits; treats '٫' (U+066B) as decimal point.
+// Returns 0 for '', invalid or NaN. Preserves sign ('-۲,۰۰۰' → -2000);
+// callers enforce bounds (e.g. stock >= 0) via min/max clamping.
+export function parseGrouped(input: string): number {
+  if (typeof input !== 'string') return 0;
+  const cleaned = toAsciiDigits(input)
+    .replace(/٫/g, '.')
+    .replace(/[،٬,\s]/g, '');
+  if (cleaned === '' || !/^[+-]?(\d+(\.\d+)?|\.\d+)$/.test(cleaned)) return 0;
+  const n = parseFloat(cleaned);
+  return isNaN(n) ? 0 : n;
 }
 
 export function formatToman(amount: number): string {
-  if (isNaN(amount)) return '۰ تومان';
-  const formatted = Math.round(amount).toLocaleString('fa-IR');
-  return `${formatted} تومان`;
+  const formatted = formatGrouped(Math.round(amount));
+  return formatted === '' ? '۰ تومان' : `${formatted} تومان`;
 }
 
 export function formatNumber(num: number): string {
-  if (isNaN(num)) return '۰';
-  return num.toLocaleString('fa-IR');
+  const formatted = formatGrouped(num);
+  return formatted === '' ? '۰' : formatted;
 }
 
 // Convert gregorian date to approximate Jalali representation

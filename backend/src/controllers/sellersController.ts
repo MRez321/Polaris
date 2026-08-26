@@ -5,6 +5,7 @@ import * as svc from '../services/inventoryService.js';
 import { toSellerDto } from '../models/mappers.js';
 import { logAudit } from '../services/auditService.js';
 import { badRequest, pathParam } from '../utils/apiError.js';
+import { clientIdSchema } from '../schema/clientId.js';
 
 const bankAccountSchema = z.object({
     id: z.string().optional(),
@@ -38,6 +39,8 @@ const sellerSchema = z.object({
     notes: z.string().optional(),
 });
 
+const createSellerSchema = sellerSchema.extend({ id: clientIdSchema.optional() });
+
 export async function listSellers(_req: Request, res: Response): Promise<void> {
     const rows = await svc.listSellers();
     res.json(rows.map(toSellerDto));
@@ -50,7 +53,7 @@ export async function getSeller(req: Request, res: Response): Promise<void> {
 }
 
 export async function createSeller(req: Request, res: Response): Promise<void> {
-    const data = sellerSchema.parse(req.body);
+    const data = createSellerSchema.parse(req.body);
     const row = await svc.createSeller(data);
     logAudit(req.auth ?? null, 'create', 'seller', `دست‌فروش «${row.name}» با کد ${row.code} ایجاد شد`);
     res.status(201).json(toSellerDto(row));
