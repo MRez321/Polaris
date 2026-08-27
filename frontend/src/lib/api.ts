@@ -195,5 +195,8 @@ export const companyApi = {
 
 // --- Audit Logs ---
 export const auditApi = {
-  list: () => api.get<AuditLog[]>('/api/audit-logs').then((r) => r.data),
+  list: (limit = 20, offset = 0) =>
+    api
+      .get('/api/audit-logs', { params: { limit, offset } })
+      .then((r) => r.data as { logs: AuditLog[]; total: number }),
 };

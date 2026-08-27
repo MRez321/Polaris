@@ -10,9 +10,11 @@ import {
 } from 'lucide-react';
 import { toPersianDigits } from '@/utils/persian';
 import { useData } from '@/context/DataContext';
+import { useAuth } from '@/context/AuthContext';
 
 export const Sidebar: React.FC = () => {
   const { consignments } = useData();
+  const { isAdmin } = useAuth();
 
   const overdueCount = consignments.filter(
     (c) => (c.remainingAmount || 0) > 0 && new Date(c.dueDate).getTime() < Date.now()
@@ -30,7 +32,7 @@ export const Sidebar: React.FC = () => {
     { to: '/people', label: 'فروشندگان و پرسنل', icon: Users },
     { to: '/finances', label: 'امور مالی، درآمد و هزینه‌ها', icon: CreditCard },
     { to: '/settings', label: 'تنظیمات و مدیریت', icon: Settings },
-  ];
+  ].filter((item) => isAdmin || item.to === '/');
 
   return (
     <aside className="w-64 shrink-0 hidden md:block">

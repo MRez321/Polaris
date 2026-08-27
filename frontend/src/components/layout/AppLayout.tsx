@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileNav } from '@/components/layout/MobileNav';
@@ -11,6 +11,7 @@ import { NewPaymentModal } from '@/components/payments/NewPaymentModal';
 import { useNetwork } from '@/context/NetworkContext';
 import { useUI } from '@/context/UIContext';
 import { useData } from '@/context/DataContext';
+import { useAuth } from '@/context/AuthContext';
 
 export const AppLayout: React.FC = () => {
   const networkStatus = useNetwork();
@@ -26,6 +27,11 @@ export const AppLayout: React.FC = () => {
   } = useUI();
   const { sellers, items, consignments, handleSubmitHandover, handleAddSeller, handleAddItem, handleSubmitPayment } =
     useData();
+  const { user, isLoading } = useAuth();
+
+  // Route protection: once the session has settled, unauthenticated visitors
+  // are bounced to the login page.
+  if (!isLoading && !user) return <Navigate to="/login" replace />;
 
   return (
     <div className="relative min-h-screen flex flex-col font-sans transition-colors duration-200 overflow-x-hidden" dir="rtl">

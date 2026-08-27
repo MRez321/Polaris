@@ -211,7 +211,7 @@ export interface AuditLog {
   action: string;
   entity: 'item' | 'seller' | 'consignment' | 'payment' | 'return' | 'staff' | 'settings' | 'cost' | 'profit' | 'auth';
   details: string;
-  ipAddress?: string;
+  ipAddress?: string | null;
 }
 
 export interface DashboardStats {

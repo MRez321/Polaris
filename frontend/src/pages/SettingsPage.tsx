@@ -5,7 +5,7 @@ import { useUI } from '@/context/UIContext';
 import { useNetwork } from '@/context/NetworkContext';
 
 const SettingsPage: React.FC = () => {
-  const { workshopInfo, setWorkshopInfo, auditLogs, fetchData } = useData();
+  const { workshopInfo, setWorkshopInfo, fetchData } = useData();
   const { setPwaModalOpen } = useUI();
   const networkStatus = useNetwork();
 
@@ -16,7 +16,6 @@ const SettingsPage: React.FC = () => {
       onRefreshData={fetchData}
       networkStatus={networkStatus}
       onOpenPwaInstall={() => setPwaModalOpen(true)}
-      auditLogs={auditLogs}
     />
   );
 };

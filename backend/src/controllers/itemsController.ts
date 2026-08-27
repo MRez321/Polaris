@@ -41,7 +41,7 @@ export async function listItems(_req: Request, res: Response): Promise<void> {
 export async function createItem(req: Request, res: Response): Promise<void> {
     const data = createItemSchema.parse(req.body);
     const row = await svc.createItem(data);
-    logAudit(req.auth ?? null, 'create', 'item', `کالای «${row.name}» با کد ${row.code} ایجاد شد`);
+    logAudit(req.auth ?? null, 'create', 'item', `کالای «${row.name}» با کد ${row.code} ایجاد شد`, req.ip);
     res.status(201).json(toItemDto(row, await categoryLabelFor(row.category)));
 }
 
@@ -49,14 +49,14 @@ export async function updateItem(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه کالا');
     const data = itemSchema.partial().parse(req.body);
     const row = await svc.updateItem(id, data);
-    logAudit(req.auth ?? null, 'update', 'item', `کالای «${row.name}» ویرایش شد`);
+    logAudit(req.auth ?? null, 'update', 'item', `کالای «${row.name}» ویرایش شد`, req.ip);
     res.json(toItemDto(row, await categoryLabelFor(row.category)));
 }
 
 export async function deleteItem(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه کالا');
-    await svc.softDeleteItem(id);
-    logAudit(req.auth ?? null, 'delete', 'item', 'کالا به سطل بازیافت منتقل شد');
+    const row = await svc.softDeleteItem(id);
+    logAudit(req.auth ?? null, 'delete', 'item', `کالای «${row.name}» با کد ${row.code} به سطل بازیافت منتقل شد`, req.ip);
     res.json({ message: 'کالا به سطل بازیافت منتقل شد' });
 }
 
@@ -70,6 +70,6 @@ export async function listCategories(_req: Request, res: Response): Promise<void
 export async function createCategory(req: Request, res: Response): Promise<void> {
     const body = z.object({ label: z.string().min(1) }).parse(req.body);
     const created = await svc.createCategory(body.label);
-    logAudit(req.auth ?? null, 'create', 'settings', `دسته‌بندی «${created.label}» اضافه شد`);
+    logAudit(req.auth ?? null, 'create', 'settings', `دسته‌بندی «${created.label}» اضافه شد`, req.ip);
     res.status(201).json(created);
 }

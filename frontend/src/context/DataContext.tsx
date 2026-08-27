@@ -1,7 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type {
-  AuditLog,
   Consignment,
   ConsignmentReturn,
   DashboardStats,
@@ -13,7 +12,6 @@ import type {
   WorkshopInfo,
 } from '@/types';
 import {
-  auditApi,
   categoriesApi,
   consignmentsApi,
   dashboardApi,
@@ -39,7 +37,6 @@ interface DataContextValue {
   returns: ConsignmentReturn[];
   staffMembers: StaffMember[];
   owners: Owner[];
-  auditLogs: AuditLog[];
   categories: { id: string; label: string }[];
   workshopInfo: WorkshopInfo;
   setWorkshopInfo: (info: WorkshopInfo) => void;
@@ -105,7 +102,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [returns, setReturns] = useState<ConsignmentReturn[]>([]);
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [owners, setOwners] = useState<Owner[]>([]);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [categories, setCategories] = useState<{ id: string; label: string }[]>(DEFAULT_CATEGORIES);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo>(DEFAULT_WORKSHOP_INFO);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -122,7 +118,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         returnsRes,
         staffRes,
         ownersRes,
-        logsRes,
         catRes,
       ] = await Promise.all([
         dashboardApi.stats().catch(() => null),
@@ -133,7 +128,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         returnsApi.list().catch(() => []),
         staffApi.list().catch(() => []),
         ownersApi.list().catch(() => []),
-        auditApi.list().catch(() => []),
         categoriesApi.list().catch(() => []),
       ]);
 
@@ -145,7 +139,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (returnsRes) setReturns(returnsRes);
       if (staffRes) setStaffMembers(staffRes);
       if (ownersRes) setOwners(ownersRes);
-      if (logsRes) setAuditLogs(logsRes);
       if (catRes && catRes.length > 0) setCategories(catRes);
     } catch (err) {
       console.error('Failed to fetch data from server, utilizing state fallback', err);
@@ -354,7 +347,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         returns,
         staffMembers,
         owners,
-        auditLogs,
         categories,
         workshopInfo,
         setWorkshopInfo,

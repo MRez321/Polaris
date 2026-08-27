@@ -70,11 +70,13 @@ export async function updateItem(id: string, data: Partial<typeof items.$inferIn
     return updated[0]!;
 }
 
-export async function softDeleteItem(id: string): Promise<void> {
+export async function softDeleteItem(id: string) {
     const existing = await db.select().from(items).where(eq(items.id, id));
-    if (!existing[0]) throw notFound('کالا یافت نشد');
+    const row = existing[0];
+    if (!row) throw notFound('کالا یافت نشد');
     await db.update(items).set({ isDeleted: true, deletedAt: new Date() }).where(eq(items.id, id));
     emitDataChanged('item', 'delete');
+    return row;
 }
 
 // ---------------------------------------------------------------------------
@@ -149,11 +151,13 @@ export async function updateSeller(id: string, data: Partial<typeof sellers.$inf
     return getSeller(id);
 }
 
-export async function softDeleteSeller(id: string): Promise<void> {
+export async function softDeleteSeller(id: string) {
     const existing = await db.select().from(sellers).where(eq(sellers.id, id));
-    if (!existing[0]) throw notFound('دست‌فروش یافت نشد');
+    const row = existing[0];
+    if (!row) throw notFound('دست‌فروش یافت نشد');
     await db.update(sellers).set({ isDeleted: true, deletedAt: new Date() }).where(eq(sellers.id, id));
     emitDataChanged('seller', 'delete');
+    return row;
 }
 
 // ---------------------------------------------------------------------------
@@ -271,18 +275,18 @@ export async function createHandover(input: HandoverInput, actorName: string) {
     });
 }
 
-export async function softDeleteConsignment(id: string): Promise<void> {
-    await db.transaction(async (tx) => {
+export async function softDeleteConsignment(id: string) {
+    const consignment = await db.transaction(async (tx) => {
         const rows = await tx.select().from(consignments).where(eq(consignments.id, id)).for('update');
-        const consignment = rows[0];
-        if (!consignment) throw notFound('واگذاری یافت نشد');
+        const existing = rows[0];
+        if (!existing) throw notFound('واگذاری یافت نشد');
 
         // Release the outstanding debt back off the seller while in trash.
-        if (consignment.remainingAmount > 0) {
-            const sellerRows = await tx.select().from(sellers).where(eq(sellers.id, consignment.sellerId)).for('update');
+        if (existing.remainingAmount > 0) {
+            const sellerRows = await tx.select().from(sellers).where(eq(sellers.id, existing.sellerId)).for('update');
             const seller = sellerRows[0];
             if (seller) {
-                const newDebt = Math.max(0, seller.currentDebt - consignment.remainingAmount);
+                const newDebt = Math.max(0, seller.currentDebt - existing.remainingAmount);
                 await tx
                     .update(sellers)
                     .set({ currentDebt: newDebt, status: newDebt === 0 ? 'settled' : seller.status, updatedAt: new Date() })
@@ -294,8 +298,10 @@ export async function softDeleteConsignment(id: string): Promise<void> {
             .update(consignments)
             .set({ isDeleted: true, deletedAt: new Date() })
             .where(eq(consignments.id, id));
+        return existing;
     });
     emitDataChanged('consignment', 'delete');
+    return consignment;
 }
 
 // ---------------------------------------------------------------------------
@@ -608,11 +614,13 @@ export async function updateStaff(id: string, data: Partial<typeof staff.$inferI
     return rows[0]!;
 }
 
-export async function softDeleteStaff(id: string): Promise<void> {
+export async function softDeleteStaff(id: string) {
     const existing = await db.select().from(staff).where(eq(staff.id, id));
-    if (!existing[0]) throw notFound('پرسنل یافت نشد');
+    const row = existing[0];
+    if (!row) throw notFound('پرسنل یافت نشد');
     await db.update(staff).set({ isDeleted: true, deletedAt: new Date() }).where(eq(staff.id, id));
     emitDataChanged('staff', 'delete');
+    return row;
 }
 
 // ---------------------------------------------------------------------------
@@ -660,11 +668,13 @@ export async function updateExpense(id: string, data: Partial<typeof expenses.$i
     return rows[0]!;
 }
 
-export async function softDeleteExpense(id: string): Promise<void> {
+export async function softDeleteExpense(id: string) {
     const existing = await db.select().from(expenses).where(eq(expenses.id, id));
-    if (!existing[0]) throw notFound('هزینه یافت نشد');
+    const row = existing[0];
+    if (!row) throw notFound('هزینه یافت نشد');
     await db.update(expenses).set({ isDeleted: true, deletedAt: new Date() }).where(eq(expenses.id, id));
     emitDataChanged('cost', 'delete');
+    return row;
 }
 
 // ---------------------------------------------------------------------------
@@ -771,14 +781,16 @@ export async function restoreEntity(type: TrashEntityType, id: string, patch?: R
     });
 }
 
-export async function permanentDeleteEntity(type: TrashEntityType, id: string): Promise<void> {
+export async function permanentDeleteEntity(type: TrashEntityType, id: string) {
     const table = trashTables[type];
     if (!table) throw badRequest('نوع موجودیت نامعتبر است');
     const rows = await db.select().from(table).where(eq(table.id, id));
-    const row = rows[0] as { isDeleted?: boolean } | undefined;
+    // Row comes from a union of tables; expose it as a generic record for callers.
+    const row = rows[0] as Record<string, unknown> | undefined;
     if (!row) throw notFound('مورد یافت نشد');
     await db.delete(table).where(eq(table.id, id));
     emitDataChanged(type, 'permanent-delete');
+    return row;
 }
 
 // ---------------------------------------------------------------------------

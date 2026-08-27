@@ -28,7 +28,6 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [isInstalled, setIsInstalled] = useState<boolean>(false);
   const [isIOS, setIsIOS] = useState<boolean>(false);
-  const [, setShowIOSGuide] = useState<boolean>(false);
 
   const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
 
@@ -43,9 +42,10 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({
     // 1. Check if running in standalone mode (already installed & opened from home screen)
     let isStandalone = false;
     try {
+      const nav: unknown = window.navigator;
       isStandalone =
         Boolean(window.matchMedia?.('(display-mode: standalone)')?.matches) ||
-        (window.navigator as any)?.standalone === true ||
+        (typeof nav === 'object' && nav !== null && 'standalone' in nav && nav.standalone === true) ||
         Boolean(document.referrer && document.referrer.includes('android-app://'));
     } catch {
       isStandalone = false;
@@ -132,13 +132,9 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({
   }, [forceOpen]);
 
   const handleInstallClick = async () => {
-    if (isIOS) {
-      setShowIOSGuide(true);
-      return;
-    }
-
     if (!deferredPrompt) {
-      // Fallback for browsers without beforeinstallprompt
+      // Fallback for browsers without beforeinstallprompt — iOS Safari never
+      // fires it, but iOS users already see the step-by-step guide inline.
       setNoticeMessage('برای نصب وب‌اپلیکیشن روی این مرورگر، لطفاً از آیکون نصب در نوار آدرس یا منوی سه‌نقطه مرورگر، گزینه «Install App» یا «Add to Home screen» را انتخاب نمایید.');
       return;
     }
@@ -165,12 +161,13 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({
     }
   };
 
-  const handleDismissLater = () => {
-    // Close first so a storage failure can never leave the banner stuck open
+  // Single close path for the X button, backdrop click and «بعداً یادآوری کن».
+  // Closes first so a storage failure can never leave the banner stuck open,
+  // then postpones the next automatic reminder for 2 days.
+  const handleClose = () => {
     setIsOpen(false);
     onCloseForceOpen?.();
     clearDelayedOpenTimers();
-    // Postpone for 2 days
     try {
       localStorage.setItem('pwa_dismissed_until', String(Date.now() + 2 * 24 * 60 * 60 * 1000));
     } catch {
@@ -199,7 +196,13 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200" dir="rtl">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200"
+      dir="rtl"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}
+    >
       <div className="relative w-full max-w-lg glass-modal text-stone-900 dark:text-stone-100 rounded-3xl border border-[#CEAE80]/50 shadow-2xl overflow-hidden p-6 sm:p-7 space-y-5">
         {/* Background ambient glow inside glass modal */}
         <div className="absolute top-0 right-0 w-48 h-48 bg-[#CEAE80]/20 rounded-full blur-3xl pointer-events-none" />
@@ -207,8 +210,8 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({
 
         {/* Close Button */}
         <button
-          onClick={handleDismissLater}
-          className="absolute top-4 left-4 p-2 rounded-full text-stone-400 hover:text-stone-700 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors z-10"
+          onClick={handleClose}
+          className="absolute top-4 left-4 p-2 rounded-full text-stone-400 hover:text-stone-700 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors z-20"
           title="بستن"
         >
           <X className="w-5 h-5" />
@@ -224,44 +227,30 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({
             />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-base sm:text-lg font-black text-stone-900 dark:text-white">
-                نصب نسخه وب‌اپلیکیشن (PWA)
-              </h3>
-              <span className="px-2 py-0.5 rounded-full bg-[#CEAE80]/20 text-amber-800 dark:text-[#CEAE80] text-[10px] font-black border border-[#CEAE80]/40 glass-badge">
-                رایگان و سریع
-              </span>
-            </div>
+            <h3 className="text-base sm:text-lg font-black text-stone-900 dark:text-white">
+              نصب نسخه وب‌اپلیکیشن
+            </h3>
             <p className="text-xs text-amber-800 dark:text-[#CEAE80] font-bold mt-0.5">
-              سامانه جامع کارگاه و امانات پولاریس استایل
+              سامانه جامع کارگاه و امانات پولاریس استایل را مثل یک اپلیکیشن روی دستگاه خود داشته باشید.
             </p>
           </div>
         </div>
 
         {/* Feature Benefits List */}
         <div className="space-y-2.5 pt-1 relative z-10">
-          <div className="p-3 rounded-2xl glass-card flex items-start gap-3 text-xs text-stone-700 dark:text-stone-300">
-            <Zap className="w-4 h-4 text-[#A67C38] dark:text-[#CEAE80] shrink-0 mt-0.5" />
-            <div>
-              <strong className="text-stone-900 dark:text-white font-bold block">دسترسی سریع و تمام‌صفحه:</strong>
-              اجرای مستقیم از صفحه اصلی گوشی یا دسکتاپ بدون نیاز به باز کردن مرورگر و آدرس اینترنتی.
-            </div>
+          <div className="p-3 rounded-2xl glass-card flex items-center gap-3 text-xs text-stone-700 dark:text-stone-300">
+            <Zap className="w-4 h-4 text-[#A67C38] dark:text-[#CEAE80] shrink-0" />
+            <span>دسترسی سریع و تمام‌صفحه بدون باز کردن مرورگر</span>
           </div>
 
-          <div className="p-3 rounded-2xl glass-card flex items-start gap-3 text-xs text-stone-700 dark:text-stone-300">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-            <div>
-              <strong className="text-stone-900 dark:text-white font-bold block">پایش هوشمند اتصال و امنیت اسناد مالی:</strong>
-              بررسی پیوسته ارتباط با سرور کارگاه برای جلوگیری از مفقودی تراکنش‌ها و ثبت امن دریافت‌ها و فاکتورها.
-            </div>
+          <div className="p-3 rounded-2xl glass-card flex items-center gap-3 text-xs text-stone-700 dark:text-stone-300">
+            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span>پایش هوشمند اتصال؛ تراکنش‌ها حتی با قطعی اینترنت گم نمی‌شوند</span>
           </div>
 
-          <div className="p-3 rounded-2xl glass-card flex items-start gap-3 text-xs text-stone-700 dark:text-stone-300">
-            <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-            <div>
-              <strong className="text-stone-900 dark:text-white font-bold block">پایداری عملکرد در محیط بازار:</strong>
-              بارگذاری فوق‌العاده پرسرعت و بهینه‌سازی شده برای کار با گوشی در راسته بازار و کارگاه.
-            </div>
+          <div className="p-3 rounded-2xl glass-card flex items-center gap-3 text-xs text-stone-700 dark:text-stone-300">
+            <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+            <span>سرعت بالا و بهینه برای گوشی در بازار و کارگاه</span>
           </div>
         </div>
 
@@ -306,22 +295,21 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({
             className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-[#CEAE80] to-[#B59363] hover:from-[#DFBF91] hover:to-[#C6A474] text-black font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-[#CEAE80]/20 transition-all active:scale-98"
           >
             <Download className="w-4 h-4 text-black" />
-            <span>{isIOS ? 'مشاهده مجدد راهنمای نصب در آیفون' : 'نصب اپلیکیشن روی دستگاه'}</span>
+            <span>نصب اپلیکیشن روی دستگاه</span>
           </button>
 
           <div className="flex items-center justify-between gap-2 pt-1">
             <button
-              onClick={handleDismissLater}
-              className="flex-1 py-2 text-xs text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white font-medium transition-colors"
+              onClick={handleClose}
+              className="py-2 text-xs text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white font-medium transition-colors"
             >
               بعداً یادآوری کن
             </button>
-            <span className="text-stone-300 dark:text-stone-700">|</span>
             <button
               onClick={handleNeverShowAgain}
-              className="flex-1 py-2 text-xs text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 font-medium transition-colors"
+              className="py-2 text-[10px] text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 font-medium transition-colors"
             >
-              قبلاً نصب کرده‌ام / دیگر نمایش نده
+              دیگر نمایش نده
             </button>
           </div>
         </div>

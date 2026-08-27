@@ -27,6 +27,7 @@ export async function createPayment(req: Request, res: Response): Promise<void> 
         'create',
         'payment',
         `پرداخت ${row.code} به مبلغ ${row.amount} برای ${row.sellerName} ثبت شد`,
+        req.ip,
     );
     res.status(201).json(toPaymentDto(row));
 }

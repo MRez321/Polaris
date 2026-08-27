@@ -10,9 +10,11 @@ import {
 } from 'lucide-react';
 import { toPersianDigits } from '@/utils/persian';
 import { useData } from '@/context/DataContext';
+import { useAuth } from '@/context/AuthContext';
 
 export const MobileNav: React.FC = () => {
   const { consignments } = useData();
+  const { isAdmin } = useAuth();
 
   const overdueCount = consignments.filter(
     (c) => (c.remainingAmount || 0) > 0 && new Date(c.dueDate).getTime() < Date.now()
@@ -30,7 +32,7 @@ export const MobileNav: React.FC = () => {
     { to: '/people', label: 'اشخاص و پرسنل', icon: Users },
     { to: '/finances', label: 'مالی و درآمد', icon: CreditCard },
     { to: '/settings', label: 'تنظیمات', icon: Settings },
-  ];
+  ].filter((item) => isAdmin || item.to === '/');
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-[#141416] border-t border-stone-200 dark:border-white/5 px-2 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] shadow-2xl">

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 
+import { requireAuth, requireRole } from '../middleware/authMiddleware.js';
 import * as items from '../controllers/itemsController.js';
 import * as sellers from '../controllers/sellersController.js';
 import * as consignments from '../controllers/consignmentsController.js';
@@ -12,9 +13,15 @@ import * as dashboard from '../controllers/dashboardController.js';
 import * as gallery from '../controllers/galleryController.js';
 const router = Router();
 
-// Health & dashboard
+// Health stays public (uptime probes); everything else needs a session.
 router.get('/health', dashboard.health);
+router.use(requireAuth);
+
+// Dashboard stats: any authenticated role.
 router.get('/dashboard/stats', dashboard.dashboardStats);
+
+// Everything below is admin-only.
+router.use(requireRole('admin'));
 
 // Items & categories
 router.get('/items', items.listItems);

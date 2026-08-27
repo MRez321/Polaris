@@ -55,7 +55,7 @@ export async function getSeller(req: Request, res: Response): Promise<void> {
 export async function createSeller(req: Request, res: Response): Promise<void> {
     const data = createSellerSchema.parse(req.body);
     const row = await svc.createSeller(data);
-    logAudit(req.auth ?? null, 'create', 'seller', `دست‌فروش «${row.name}» با کد ${row.code} ایجاد شد`);
+    logAudit(req.auth ?? null, 'create', 'seller', `دست‌فروش «${row.name}» با کد ${row.code} ایجاد شد`, req.ip);
     res.status(201).json(toSellerDto(row));
 }
 
@@ -63,13 +63,13 @@ export async function updateSeller(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه دست‌فروش');
     const data = sellerSchema.partial().parse(req.body);
     const row = await svc.updateSeller(id, data);
-    logAudit(req.auth ?? null, 'update', 'seller', `دست‌فروش «${row.name}» ویرایش شد`);
+    logAudit(req.auth ?? null, 'update', 'seller', `دست‌فروش «${row.name}» ویرایش شد`, req.ip);
     res.json(toSellerDto(row));
 }
 
 export async function deleteSeller(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه دست‌فروش');
-    await svc.softDeleteSeller(id);
-    logAudit(req.auth ?? null, 'delete', 'seller', 'دست‌فروش به سطل بازیافت منتقل شد');
+    const row = await svc.softDeleteSeller(id);
+    logAudit(req.auth ?? null, 'delete', 'seller', `دست‌فروش «${row.name}» با کد ${row.code} به سطل بازیافت منتقل شد`, req.ip);
     res.json({ message: 'دست‌فروش به سطل بازیافت منتقل شد' });
 }

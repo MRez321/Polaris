@@ -25,14 +25,18 @@ import {
   X,
   Hash,
   History as HistoryIcon,
+  Users,
 } from 'lucide-react';
-import type { WorkshopInfo, GarmentItem, Seller, StaffMember, WorkshopExpense, Consignment, AuditLog } from '../../types';
-import { toPersianDigits, formatToman } from '../../utils/persian';
+import type { WorkshopInfo, GarmentItem, Seller, StaffMember, WorkshopExpense, Consignment } from '../../types';
+import { toPersianDigits, formatToman, toJalaliDate } from '../../utils/persian';
 import { Modal } from '../common/Modal';
 import type { NetworkStatus } from '../../hooks/useNetworkStatus';
 import { AuditLogsManager } from '../audit/AuditLogsManager';
 import { ImagePicker } from '../common/ImagePicker';
 import { GalleryManager } from './GalleryManager';
+import { UsersManager } from './UsersManager';
+import { toast } from 'sonner';
+import { normalizePhoneInput, isValidIranPhone, PHONE_ERROR } from '../../utils/validation';
 
 interface SettingsManagerProps {
   workshopInfo: WorkshopInfo;
@@ -40,7 +44,6 @@ interface SettingsManagerProps {
   onRefreshData?: () => void;
   networkStatus?: NetworkStatus;
   onOpenPwaInstall?: () => void;
-  auditLogs?: AuditLog[];
 }
 
 interface TrashData {
@@ -57,9 +60,8 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
   onRefreshData,
   networkStatus,
   onOpenPwaInstall,
-  auditLogs = [],
 }) => {
-  const [activeTab, setActiveTab] = useState<'branding' | 'gallery' | 'trash' | 'system' | 'audit'>('branding');
+  const [activeTab, setActiveTab] = useState<'branding' | 'gallery' | 'trash' | 'system' | 'audit' | 'users'>('branding');
   const [isSavedAlert, setIsSavedAlert] = useState(false);
 
   // Form State for Workshop Info
@@ -85,7 +87,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
     expenses: [],
     consignments: [],
   });
-  const [trashCategory, setTrashCategory] = useState<'items' | 'sellers' | 'staff' | 'expenses' | 'consignments'>('items');
+  const [trashCategory, setTrashCategory] = useState<'all' | 'items' | 'sellers' | 'staff' | 'expenses' | 'consignments'>('all');
   const [isLoadingTrash, setIsLoadingTrash] = useState(false);
 
   // Edit and Restore Modal
@@ -119,18 +121,30 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
 
   const handleSaveCompanyData = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const normalizedPhone = normalizePhoneInput(phone);
+    if (normalizedPhone && !isValidIranPhone(normalizedPhone)) {
+      toast.error(PHONE_ERROR);
+      return;
+    }
+    const normalizedEmergencyPhone = normalizePhoneInput(emergencyPhone);
+    if (normalizedEmergencyPhone && !isValidIranPhone(normalizedEmergencyPhone)) {
+      toast.error(PHONE_ERROR);
+      return;
+    }
+
     onSaveWorkshopInfo({
       ...workshopInfo,
-      name,
-      slogan,
-      website,
-      instagram,
-      telegram,
-      address,
-      postalCode,
-      phone,
-      emergencyPhone,
-      registrationNumber,
+      name: name.trim(),
+      slogan: slogan.trim(),
+      website: website.trim(),
+      instagram: instagram.trim(),
+      telegram: telegram.trim(),
+      address: address.trim(),
+      postalCode: postalCode.trim(),
+      phone: normalizedPhone,
+      emergencyPhone: normalizedEmergencyPhone,
+      registrationNumber: registrationNumber.trim(),
       logoUrl,
       logoText,
     });
@@ -153,7 +167,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
   };
 
   // Permanent Delete Action
-  const handlePermanentDelete = async (type: 'item' | 'seller' | 'staff' | 'expense', id: string, label: string) => {
+  const handlePermanentDelete = async (type: 'item' | 'seller' | 'staff' | 'expense' | 'consignment', id: string, label: string) => {
     if (
       confirm(
         `هشدار: آیا از حذف دائمی و غیرقابل بازگشت "${label}" از پایگاه داده اطمینان دارید؟ این عملیات قابل بازگردانی نیست.`
@@ -186,7 +200,12 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
     if (type === 'item') {
       payload.consignmentPrice = Number(editRestorePriceOrPhone) || data.consignmentPrice;
     } else if (type === 'seller') {
-      payload.phone = editRestorePriceOrPhone;
+      const normalizedPhone = normalizePhoneInput(editRestorePriceOrPhone);
+      if (normalizedPhone && !isValidIranPhone(normalizedPhone)) {
+        toast.error(PHONE_ERROR);
+        return;
+      }
+      payload.phone = normalizedPhone;
     }
 
     try {
@@ -211,6 +230,207 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
     trashData.staff.length +
     trashData.expenses.length +
     trashData.consignments.length;
+
+  // Row renderers shared by the per-category trash tabs and the unified «همه» view.
+  const renderItemTrashRow = (item: GarmentItem, withTypeBadge: boolean) => (
+    <div
+      key={`item-${item.id}`}
+      className="p-3.5 rounded-xl glass-card flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+    >
+      <div>
+        <div className="flex items-center gap-2">
+          {withTypeBadge && (
+            <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300 font-bold">کالا</span>
+          )}
+          <span className="font-bold text-sm text-stone-900 dark:text-white">{item.name}</span>
+          <span className="text-[11px] px-2 py-0.5 rounded-md bg-stone-200 dark:bg-black font-mono">{item.code}</span>
+        </div>
+        <div className="text-xs text-stone-400 mt-1 flex gap-3">
+          <span>قیمت امانی: {formatToman(item.consignmentPrice)}</span>
+          <span>موجودی: {toPersianDigits(item.stockQuantity)} عدد</span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => handleOpenEditRestore('item', item)}
+          className="px-3 py-1.5 rounded-lg bg-stone-200 dark:bg-white/10 hover:bg-[#CEAE80] hover:text-black text-xs font-bold flex items-center gap-1 transition-all"
+        >
+          <Edit className="w-3.5 h-3.5" />
+          <span>ویرایش و بازگردانی</span>
+        </button>
+
+        <button
+          onClick={() => handleRestore('item', item.id)}
+          className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black flex items-center gap-1 transition-all"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          <span>بازیابی ۱-کلیک</span>
+        </button>
+
+        <button
+          onClick={() => handlePermanentDelete('item', item.id, item.name)}
+          className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10"
+          title="حذف دائمی"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderSellerTrashRow = (seller: Seller, withTypeBadge: boolean) => (
+    <div
+      key={`seller-${seller.id}`}
+      className="p-3.5 rounded-xl glass-card flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+    >
+      <div>
+        <div className="flex items-center gap-2">
+          {withTypeBadge && (
+            <span className="text-[10px] px-2 py-0.5 rounded-md bg-[#CEAE80]/15 text-[#CEAE80] font-bold">فروشنده</span>
+          )}
+          <span className="font-bold text-sm text-stone-900 dark:text-white">{seller.name}</span>
+          <span className="text-[11px] text-[#CEAE80] font-mono">{seller.phone}</span>
+        </div>
+        <p className="text-xs text-stone-400 mt-0.5">{seller.streetLocation}</p>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => handleOpenEditRestore('seller', seller)}
+          className="px-3 py-1.5 rounded-lg bg-stone-200 dark:bg-white/10 hover:bg-[#CEAE80] hover:text-black text-xs font-bold flex items-center gap-1 transition-all"
+        >
+          <Edit className="w-3.5 h-3.5" />
+          <span>ویرایش و بازگردانی</span>
+        </button>
+
+        <button
+          onClick={() => handleRestore('seller', seller.id)}
+          className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black flex items-center gap-1 transition-all"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          <span>بازیابی ۱-کلیک</span>
+        </button>
+
+        <button
+          onClick={() => handlePermanentDelete('seller', seller.id, seller.name)}
+          className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10"
+          title="حذف دائمی"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderStaffTrashRow = (st: StaffMember, withTypeBadge: boolean) => (
+    <div
+      key={`staff-${st.id}`}
+      className="p-3.5 rounded-xl glass-card flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+    >
+      <div>
+        <div className="flex items-center gap-2">
+          {withTypeBadge && (
+            <span className="text-[10px] px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-600 dark:text-purple-300 font-bold">پرسنل</span>
+          )}
+          <span className="font-bold text-sm text-stone-900 dark:text-white">{st.name}</span>
+          <span className="text-xs text-[#CEAE80]">{st.roleTitle}</span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => handleRestore('staff', st.id)}
+          className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black flex items-center gap-1 transition-all"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          <span>بازیابی پرسنل</span>
+        </button>
+
+        <button
+          onClick={() => handlePermanentDelete('staff', st.id, st.name)}
+          className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10"
+          title="حذف دائمی"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderExpenseTrashRow = (exp: WorkshopExpense, withTypeBadge: boolean) => (
+    <div
+      key={`expense-${exp.id}`}
+      className="p-3.5 rounded-xl glass-card flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+    >
+      <div>
+        <div className="flex items-center gap-2">
+          {withTypeBadge && (
+            <span className="text-[10px] px-2 py-0.5 rounded-md bg-rose-500/15 text-rose-600 dark:text-rose-400 font-bold">هزینه</span>
+          )}
+          <span className="font-bold text-sm text-stone-900 dark:text-white">{exp.title}</span>
+        </div>
+        <div className="text-xs text-rose-400 mt-1 font-mono">{formatToman(exp.amount)}</div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => handleRestore('expense', exp.id)}
+          className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black flex items-center gap-1 transition-all"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          <span>بازیابی هزینه</span>
+        </button>
+
+        <button
+          onClick={() => handlePermanentDelete('expense', exp.id, exp.title)}
+          className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10"
+          title="حذف دائمی"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderConsignmentTrashRow = (c: Consignment, withTypeBadge: boolean) => (
+    <div
+      key={`consignment-${c.id}`}
+      className="p-3.5 rounded-xl glass-card flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+    >
+      <div>
+        <div className="flex items-center gap-2">
+          {withTypeBadge && (
+            <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-600 dark:text-blue-300 font-bold">واگذاری</span>
+          )}
+          <span className="font-bold text-sm text-stone-900 dark:text-white">{c.sellerName}</span>
+          <span className="text-[11px] px-2 py-0.5 rounded-md bg-stone-200 dark:bg-black font-mono">{c.code}</span>
+        </div>
+        <div className="text-xs text-stone-400 mt-1 flex gap-3">
+          <span>مبلغ کل: {formatToman(c.totalAmount)}</span>
+          <span>تاریخ واگذاری: {toJalaliDate(c.date)}</span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => handleRestore('consignment', c.id)}
+          className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black flex items-center gap-1 transition-all"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          <span>بازیابی واگذاری</span>
+        </button>
+
+        <button
+          onClick={() => handlePermanentDelete('consignment', c.id, `${c.code} - ${c.sellerName}`)}
+          className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10"
+          title="حذف دائمی"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
 
   // Live server health derived from useNetworkStatus (auto-polls /api/health every 10s)
   const isCheckingNow = networkStatus?.isChecking ?? false;
@@ -307,11 +527,18 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
         >
           <HistoryIcon className="w-3.5 h-3.5" />
           <span>لاگ‌های سیستم</span>
-          {auditLogs.length > 0 && (
-            <span className="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-800 dark:text-[#CEAE80] text-[10px] font-bold">
-              {toPersianDigits(auditLogs.length)}
-            </span>
-          )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab('users')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'users'
+              ? 'bg-[#CEAE80] text-black shadow-md font-black'
+              : 'text-stone-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5'
+          }`}
+        >
+          <Users className="w-3.5 h-3.5" />
+          <span>مدیریت کاربران</span>
         </button>
       </div>
 
@@ -776,6 +1003,17 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           {/* Sub Categories for Trash */}
           <div className="flex items-center gap-2 border-b border-black/5 dark:border-white/5 pb-2 text-xs">
             <button
+              onClick={() => setTrashCategory('all')}
+              className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
+                trashCategory === 'all'
+                  ? 'bg-[#CEAE80] text-black shadow-sm'
+                  : 'text-stone-500 hover:text-white'
+              }`}
+            >
+              همه ({toPersianDigits(totalTrashCount)})
+            </button>
+
+            <button
               onClick={() => setTrashCategory('items')}
               className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
                 trashCategory === 'items'
@@ -821,6 +1059,24 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           </div>
 
           {/* Content by category */}
+          {trashCategory === 'all' && (
+            <div className="space-y-3">
+              {totalTrashCount === 0 ? (
+                <div className="p-6 text-center text-xs text-stone-400">
+                  سطل بازیافت خالی است؛ هیچ مورد حذف‌شده‌ای وجود ندارد.
+                </div>
+              ) : (
+                <>
+                  {trashData.items.map((item) => renderItemTrashRow(item, true))}
+                  {trashData.sellers.map((seller) => renderSellerTrashRow(seller, true))}
+                  {trashData.staff.map((st) => renderStaffTrashRow(st, true))}
+                  {trashData.expenses.map((exp) => renderExpenseTrashRow(exp, true))}
+                  {trashData.consignments.map((c) => renderConsignmentTrashRow(c, true))}
+                </>
+              )}
+            </div>
+          )}
+
           {trashCategory === 'items' && (
             <div className="space-y-3">
               {trashData.items.length === 0 ? (
@@ -828,51 +1084,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                   هیچ پوشاک یا کالایی در سطل بازیافت وجود ندارد.
                 </div>
               ) : (
-                trashData.items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-3.5 rounded-xl glass-card flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-stone-900 dark:text-white">{item.name}</span>
-                        <span className="text-[11px] px-2 py-0.5 rounded-md bg-stone-200 dark:bg-black font-mono">
-                          {item.code}
-                        </span>
-                      </div>
-                      <div className="text-xs text-stone-400 mt-1 flex gap-3">
-                        <span>قیمت امانی: {formatToman(item.consignmentPrice)}</span>
-                        <span>موجودی: {toPersianDigits(item.stockQuantity)} عدد</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleOpenEditRestore('item', item)}
-                        className="px-3 py-1.5 rounded-lg bg-stone-200 dark:bg-white/10 hover:bg-[#CEAE80] hover:text-black text-xs font-bold flex items-center gap-1 transition-all"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                        <span>ویرایش و بازگردانی</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleRestore('item', item.id)}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black flex items-center gap-1 transition-all"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        <span>بازیابی ۱-کلیک</span>
-                      </button>
-
-                      <button
-                        onClick={() => handlePermanentDelete('item', item.id, item.name)}
-                        className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10"
-                        title="حذف دائمی"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))
+                trashData.items.map((item) => renderItemTrashRow(item, false))
               )}
             </div>
           )}
@@ -884,46 +1096,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                   هیچ فروشنده‌ای در سطل بازیافت وجود ندارد.
                 </div>
               ) : (
-                trashData.sellers.map((seller) => (
-                  <div
-                    key={seller.id}
-                    className="p-3.5 rounded-xl glass-card flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-stone-900 dark:text-white">{seller.name}</span>
-                        <span className="text-[11px] text-[#CEAE80] font-mono">{seller.phone}</span>
-                      </div>
-                      <p className="text-xs text-stone-400 mt-0.5">{seller.streetLocation}</p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleOpenEditRestore('seller', seller)}
-                        className="px-3 py-1.5 rounded-lg bg-stone-200 dark:bg-white/10 hover:bg-[#CEAE80] hover:text-black text-xs font-bold flex items-center gap-1 transition-all"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                        <span>ویرایش و بازگردانی</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleRestore('seller', seller.id)}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black flex items-center gap-1 transition-all"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        <span>بازیابی ۱-کلیک</span>
-                      </button>
-
-                      <button
-                        onClick={() => handlePermanentDelete('seller', seller.id, seller.name)}
-                        className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10"
-                        title="حذف دائمی"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))
+                trashData.sellers.map((seller) => renderSellerTrashRow(seller, false))
               )}
             </div>
           )}
@@ -935,37 +1108,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                   هیچ عضوی از پرسنل در سطل بازیافت وجود ندارد.
                 </div>
               ) : (
-                trashData.staff.map((st) => (
-                  <div
-                    key={st.id}
-                    className="p-3.5 rounded-xl glass-card flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-stone-900 dark:text-white">{st.name}</span>
-                        <span className="text-xs text-[#CEAE80]">{st.roleTitle}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleRestore('staff', st.id)}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black flex items-center gap-1 transition-all"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        <span>بازیابی پرسنل</span>
-                      </button>
-
-                      <button
-                        onClick={() => handlePermanentDelete('staff', st.id, st.name)}
-                        className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10"
-                        title="حذف دائمی"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))
+                trashData.staff.map((st) => renderStaffTrashRow(st, false))
               )}
             </div>
           )}
@@ -977,35 +1120,19 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                   هیچ فاکتور هزینه‌ای در سطل بازیافت وجود ندارد.
                 </div>
               ) : (
-                trashData.expenses.map((exp) => (
-                  <div
-                    key={exp.id}
-                    className="p-3.5 rounded-xl glass-card flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                  >
-                    <div>
-                      <span className="font-bold text-sm text-stone-900 dark:text-white">{exp.title}</span>
-                      <div className="text-xs text-rose-400 mt-1 font-mono">{formatToman(exp.amount)}</div>
-                    </div>
+                trashData.expenses.map((exp) => renderExpenseTrashRow(exp, false))
+              )}
+            </div>
+          )}
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleRestore('expense', exp.id)}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black flex items-center gap-1 transition-all"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        <span>بازیابی هزینه</span>
-                      </button>
-
-                      <button
-                        onClick={() => handlePermanentDelete('expense', exp.id, exp.title)}
-                        className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10"
-                        title="حذف دائمی"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))
+          {trashCategory === 'consignments' && (
+            <div className="space-y-3">
+              {trashData.consignments.length === 0 ? (
+                <div className="p-6 text-center text-xs text-stone-400">
+                  هیچ فاکتور واگذاری در سطل بازیافت وجود ندارد.
+                </div>
+              ) : (
+                trashData.consignments.map((c) => renderConsignmentTrashRow(c, false))
               )}
             </div>
           )}
@@ -1146,7 +1273,16 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
       {/* ======================================================== */}
       {activeTab === 'audit' && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          <AuditLogsManager logs={auditLogs} />
+          <AuditLogsManager />
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* TAB 6: USERS MANAGEMENT (مدیریت کاربران و سطوح دسترسی) */}
+      {/* ======================================================== */}
+      {activeTab === 'users' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <UsersManager />
         </div>
       )}
 

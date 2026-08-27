@@ -24,6 +24,7 @@ import {
   toPersianDigits,
 } from '@/utils/persian';
 import { useData } from '@/context/DataContext';
+import { auditApi } from '@/lib/api';
 import { Badge } from '@/components/common/Badge';
 import { SafeImage } from '@/components/common/SafeImage';
 import type {
@@ -161,7 +162,7 @@ const ContactRow: React.FC<{ icon: React.ReactNode; children: React.ReactNode }>
 export const EntityProfilePage: React.FC = () => {
   const { type, id } = useParams<{ type: string; id: string }>();
   const navigate = useNavigate();
-  const { items, sellers, consignments, payments, returns, staffMembers, owners, auditLogs, categories } = useData();
+  const { items, sellers, consignments, payments, returns, staffMembers, owners, categories } = useData();
 
   // Expenses live outside DataContext (see WorkshopManager); fetched directly for owner profiles.
   const [ownerExpenses, setOwnerExpenses] = useState<WorkshopExpense[] | null>(null);
@@ -177,6 +178,25 @@ export const EntityProfilePage: React.FC = () => {
       })
       .catch(() => {
         if (active) setOwnerExpenses([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [type]);
+
+  // Audit logs live outside DataContext (paginated server-side); fetched directly for staff/owner timelines.
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+
+  useEffect(() => {
+    if (type !== 'staff' && type !== 'owners') return;
+    let active = true;
+    auditApi
+      .list(200, 0)
+      .then((data) => {
+        if (active) setAuditLogs(data.logs);
+      })
+      .catch(() => {
+        if (active) setAuditLogs([]);
       });
     return () => {
       active = false;

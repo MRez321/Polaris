@@ -9,18 +9,27 @@ import {
   Receipt,
   Wifi,
   WifiOff,
+  LogIn,
+  LogOut,
 } from 'lucide-react';
 import { toPersianDigits } from '@/utils/persian';
 import { useTheme } from '@/context/ThemeContext';
 import { useUI } from '@/context/UIContext';
 import { useNetwork } from '@/context/NetworkContext';
 import { useData } from '@/context/DataContext';
+import { useAuth } from '@/context/AuthContext';
 
 export const Header: React.FC = () => {
   const navigate = useNavigate();  const { isDarkMode, toggleTheme } = useTheme();
   const { openQuickHandover, openQuickPayment } = useUI();
   const networkStatus = useNetwork();
   const { consignments } = useData();
+  const { user, isAdmin, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
 
   const isFullyConnected = networkStatus.isFullyConnected;
   const latency = networkStatus.latency;
@@ -135,6 +144,44 @@ export const Header: React.FC = () => {
               <Moon className="w-4 h-4 text-stone-800" />
             )}
           </button>
+
+          {/* Auth: login button when signed out, user chip + logout when signed in */}
+          {user ? (
+            <>
+              <div
+                className="flex items-center gap-2 px-2 py-1.5 rounded-xl glass-card shadow-sm"
+                title={user.email}
+              >
+                <div className="w-7 h-7 rounded-full bg-[#CEAE80] text-black flex items-center justify-center text-xs font-black shrink-0 ring-1 ring-[#CEAE80]/30">
+                  {user.name.trim().charAt(0)}
+                </div>
+                <div className="hidden sm:flex items-center gap-1.5">
+                  <span className="text-xs font-black text-stone-900 dark:text-white max-w-[7rem] truncate">
+                    {user.name}
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded-md bg-[#CEAE80]/15 border border-[#CEAE80]/30 text-[#A67C38] dark:text-[#CEAE80] text-[10px] font-black">
+                    {isAdmin ? 'مدیر' : 'کاربر'}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={handleSignOut}
+                className="p-2.5 rounded-xl glass-card hover:border-rose-400 text-stone-800 dark:text-gray-200 hover:text-rose-500 dark:hover:text-rose-400 transition-all shadow-sm"
+                title="خروج از حساب کاربری"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => navigate('/login')}
+              className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl glass-card hover:border-[#CEAE80] text-stone-900 dark:text-stone-200 text-xs font-bold transition-all active:scale-95 shadow-sm"
+              title="ورود به حساب کاربری"
+            >
+              <LogIn className="w-4 h-4 text-[#A67C38] dark:text-[#CEAE80]" />
+              <span className="hidden sm:inline">ورود</span>
+            </button>
+          )}
         </div>
       </div>
     </header>

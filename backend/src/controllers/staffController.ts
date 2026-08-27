@@ -58,7 +58,7 @@ export async function listStaff(_req: Request, res: Response): Promise<void> {
 export async function createStaff(req: Request, res: Response): Promise<void> {
     const data = createStaffSchema.parse(req.body);
     const row = await svc.createStaff(data);
-    logAudit(req.auth ?? null, 'create', 'staff', `پرسنل «${row.name}» با کد ${row.code} اضافه شد`);
+    logAudit(req.auth ?? null, 'create', 'staff', `پرسنل «${row.name}» با کد ${row.code} اضافه شد`, req.ip);
     res.status(201).json(toStaffDto(row));
 }
 
@@ -66,14 +66,14 @@ export async function updateStaff(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه پرسنل');
     const data = staffSchema.partial().parse(req.body);
     const row = await svc.updateStaff(id, data);
-    logAudit(req.auth ?? null, 'update', 'staff', `پرسنل «${row.name}» ویرایش شد`);
+    logAudit(req.auth ?? null, 'update', 'staff', `پرسنل «${row.name}» ویرایش شد`, req.ip);
     res.json(toStaffDto(row));
 }
 
 export async function deleteStaff(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه پرسنل');
-    await svc.softDeleteStaff(id);
-    logAudit(req.auth ?? null, 'delete', 'staff', 'پرسنل به سطل بازیافت منتقل شد');
+    const row = await svc.softDeleteStaff(id);
+    logAudit(req.auth ?? null, 'delete', 'staff', `پرسنل «${row.name}» با کد ${row.code} به سطل بازیافت منتقل شد`, req.ip);
     res.json({ message: 'پرسنل به سطل بازیافت منتقل شد' });
 }
 
@@ -103,6 +103,6 @@ export async function listOwners(_req: Request, res: Response): Promise<void> {
 export async function updateOwners(req: Request, res: Response): Promise<void> {
     const body = z.object({ owners: z.array(ownerSchema) }).parse(req.body);
     const saved = await setOwners(body.owners);
-    logAudit(req.auth ?? null, 'update', 'settings', `لیست شرکا به‌روزرسانی شد (${saved.length} نفر)`);
+    logAudit(req.auth ?? null, 'update', 'settings', `لیست شرکا به‌روزرسانی شد (${saved.length} نفر)`, req.ip);
     res.json({ message: 'لیست شرکا ذخیره شد' });
 }

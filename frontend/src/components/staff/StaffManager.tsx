@@ -21,6 +21,15 @@ import {
 import { useNavigate } from 'react-router-dom';
 import type { Owner, StaffMember, BankAccountInfo } from '../../types';
 import { formatToman, toPersianDigits, toJalaliDate } from '../../utils/persian';
+import { toast } from 'sonner';
+import {
+  normalizePhoneInput,
+  isValidIranPhone,
+  normalizeDigitsInput,
+  isValidNationalCode,
+  PHONE_ERROR,
+  NATIONAL_CODE_ERROR,
+} from '../../utils/validation';
 import { Modal } from '../common/Modal';
 import { Badge } from '../common/Badge';
 import { BankCardInput, ShebaInput, detectBankByCard, detectBankBySheba } from '../common/BankInput';
@@ -187,7 +196,20 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
     e.preventDefault();
     if (!name.trim()) return;
 
-    const allPhones = [phone.trim(), ...additionalPhones].filter(Boolean);
+    const allPhones = [
+      normalizePhoneInput(phone),
+      ...additionalPhones.map((p) => normalizePhoneInput(p)),
+    ].filter(Boolean);
+    if (!allPhones.every((p) => isValidIranPhone(p))) {
+      toast.error(PHONE_ERROR);
+      return;
+    }
+
+    const normalizedNationalCode = normalizeDigitsInput(nationalCode);
+    if (normalizedNationalCode && !isValidNationalCode(normalizedNationalCode)) {
+      toast.error(NATIONAL_CODE_ERROR);
+      return;
+    }
 
     let finalBankAccounts = [...bankAccounts];
     if (newCardNumber.trim() || newShebaNumber.trim()) {
@@ -205,7 +227,7 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
       role,
       roleTitle: roleTitle.trim() || 'عضو تیم کارگاه',
       phones: allPhones,
-      nationalCode: nationalCode.trim(),
+      nationalCode: normalizedNationalCode,
       salaryType,
       salaryAmount: Number(salaryAmount) || 0,
       status,

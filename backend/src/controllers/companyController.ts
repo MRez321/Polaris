@@ -32,6 +32,6 @@ export async function getCompanyBranding(_req: Request, res: Response): Promise<
 export async function updateCompanyBranding(req: Request, res: Response): Promise<void> {
     const patch = companySchema.parse(req.body);
     const updated = await updateCompany(patch);
-    logAudit(req.auth ?? null, 'update', 'settings', 'اطلاعات برند و کارگاه به‌روزرسانی شد');
+    logAudit(req.auth ?? null, 'update', 'settings', 'اطلاعات برند و کارگاه به‌روزرسانی شد', req.ip);
     res.json(updated);
 }

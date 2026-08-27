@@ -9,8 +9,8 @@
     "build": "tsc && node scripts/copy-public.js",
     "start": "node server.js",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx scripts/migrate.js",
-    "db:seed": "tsx scripts/seed.js"
+    "db:migrate": "node scripts/migrate.js",
+    "db:seed": "node scripts/seed.js"
   },
   "keywords": [],
   "type": "module",

@@ -42,7 +42,7 @@ export async function listExpenses(_req: Request, res: Response): Promise<void> 
 export async function createExpense(req: Request, res: Response): Promise<void> {
     const data = createExpenseSchema.parse(req.body);
     const row = await svc.createExpense(data);
-    logAudit(req.auth ?? null, 'create', 'cost', `هزینه «${row.title}» به مبلغ ${row.amount} ثبت شد`);
+    logAudit(req.auth ?? null, 'create', 'cost', `هزینه «${row.title}» به مبلغ ${row.amount} ثبت شد`, req.ip);
     res.status(201).json(toExpenseDto(row));
 }
 
@@ -50,14 +50,14 @@ export async function updateExpense(req: Request, res: Response): Promise<void> 
     const id = pathParam(req, 'id', 'شناسه هزینه');
     const data = expenseSchema.partial().parse(req.body);
     const row = await svc.updateExpense(id, data);
-    logAudit(req.auth ?? null, 'update', 'cost', `هزینه «${row.title}» ویرایش شد`);
+    logAudit(req.auth ?? null, 'update', 'cost', `هزینه «${row.title}» ویرایش شد`, req.ip);
     res.json(toExpenseDto(row));
 }
 
 export async function deleteExpense(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه هزینه');
-    await svc.softDeleteExpense(id);
-    logAudit(req.auth ?? null, 'delete', 'cost', 'هزینه به سطل بازیافت منتقل شد');
+    const row = await svc.softDeleteExpense(id);
+    logAudit(req.auth ?? null, 'delete', 'cost', `هزینه «${row.title}» به سطل بازیافت منتقل شد`, req.ip);
     res.json({ message: 'هزینه به سطل بازیافت منتقل شد' });
 }
 
@@ -104,6 +104,6 @@ export async function listProfitDistributions(_req: Request, res: Response): Pro
 export async function createProfitDistribution(req: Request, res: Response): Promise<void> {
     const data = profitSchema.parse(req.body);
     const row = await svc.createProfitDistribution(data);
-    logAudit(req.auth ?? null, 'create', 'profit', `توزیع سود «${row.periodName}» ثبت شد`);
+    logAudit(req.auth ?? null, 'create', 'profit', `توزیع سود «${row.periodName}» ثبت شد`, req.ip);
     res.status(201).json(toProfitDto(row));
 }

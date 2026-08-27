@@ -13,6 +13,15 @@ import {
 import { ImagePicker } from '../common/ImagePicker';
 import { BankCardInput, ShebaInput, detectBankByCard, detectBankBySheba } from '../common/BankInput';
 import { toPersianDigits } from '../../utils/persian';
+import { toast } from 'sonner';
+import {
+  normalizePhoneInput,
+  isValidIranPhone,
+  normalizeDigitsInput,
+  isValidNationalCode,
+  PHONE_ERROR,
+  NATIONAL_CODE_ERROR,
+} from '../../utils/validation';
 
 interface OwnerFormModalProps {
   isOpen: boolean;
@@ -159,7 +168,18 @@ export const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
     e.preventDefault();
     if (!name.trim()) return;
 
-    const cleanedPhones = phones.map((p) => p.trim()).filter(Boolean);
+    const cleanedPhones = phones.map((p) => normalizePhoneInput(p)).filter(Boolean);
+    if (!cleanedPhones.every((p) => isValidIranPhone(p))) {
+      toast.error(PHONE_ERROR);
+      return;
+    }
+
+    const normalizedNationalCode = normalizeDigitsInput(nationalCode);
+    if (normalizedNationalCode && !isValidNationalCode(normalizedNationalCode)) {
+      toast.error(NATIONAL_CODE_ERROR);
+      return;
+    }
+
     const cleanedAccounts = bankAccounts.filter(
       (a) => a.cardNumber?.trim() || a.shebaNumber?.trim()
     );
@@ -169,7 +189,7 @@ export const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
       name: name.trim(),
       role: role.trim() || 'مالک و هم‌بنیان‌گذار',
       sharePercentage: sharePercentage || 50,
-      nationalCode: nationalCode.trim(),
+      nationalCode: normalizedNationalCode,
       email: email.trim(),
       avatarUrl: avatarUrl.trim(),
       bio: bio.trim(),

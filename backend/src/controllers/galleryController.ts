@@ -84,7 +84,7 @@ export async function uploadImages(req: Request, res: Response): Promise<void> {
         );
     }
 
-    logAudit(req.auth ?? null, 'create', 'settings', `${rows.length} تصویر به گالری افزوده شد`);
+    logAudit(req.auth ?? null, 'create', 'settings', `${rows.length} تصویر به گالری افزوده شد`, req.ip);
     res.status(201).json(rows);
 }
 
@@ -102,14 +102,14 @@ export async function updateImage(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه تصویر');
     const patch = patchSchema.parse(req.body);
     const row = await updateGalleryImage(id, patch);
-    logAudit(req.auth ?? null, 'update', 'settings', 'اطلاعات یک تصویر گالری ویرایش شد');
+    logAudit(req.auth ?? null, 'update', 'settings', 'اطلاعات یک تصویر گالری ویرایش شد', req.ip);
     res.json(row);
 }
 
 export async function deleteImage(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه تصویر');
     await deleteGalleryImage(id);
-    logAudit(req.auth ?? null, 'delete', 'settings', 'یک تصویر از گالری حذف شد');
+    logAudit(req.auth ?? null, 'delete', 'settings', 'یک تصویر از گالری حذف شد', req.ip);
     res.json({ message: 'تصویر حذف شد' });
 }
 

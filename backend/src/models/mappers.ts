@@ -217,6 +217,6 @@ export function toAuditDto(row: AuditRow): AuditLog {
         action: row.action,
         entity: row.entity as AuditLog['entity'],
         details: row.details,
-        ...(row.ipAddress ? { ipAddress: row.ipAddress } : {}),
+        ipAddress: row.ipAddress ?? null,
     };
 }

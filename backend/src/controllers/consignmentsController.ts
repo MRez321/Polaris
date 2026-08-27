@@ -54,14 +54,20 @@ export async function createConsignment(req: Request, res: Response): Promise<vo
     const data = handoverSchema.parse(req.body);
     const actor = req.auth?.user.name ?? 'سیستم';
     const row = await svc.createHandover(data, actor);
-    logAudit(req.auth ?? null, 'create', 'consignment', `واگذاری ${row.code} برای ${row.sellerName} به مبلغ ${row.totalAmount} ثبت شد`);
+    logAudit(req.auth ?? null, 'create', 'consignment', `واگذاری ${row.code} برای ${row.sellerName} به مبلغ ${row.totalAmount} ثبت شد`, req.ip);
     res.status(201).json(toConsignmentDto(row));
 }
 
 export async function deleteConsignment(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه واگذاری');
-    await svc.softDeleteConsignment(id);
-    logAudit(req.auth ?? null, 'delete', 'consignment', 'واگذاری به سطل بازیافت منتقل شد');
+    const row = await svc.softDeleteConsignment(id);
+    logAudit(
+        req.auth ?? null,
+        'delete',
+        'consignment',
+        `واگذاری ${row.code} برای ${row.sellerName} به مبلغ ${row.totalAmount} به سطل بازیافت منتقل شد`,
+        req.ip,
+    );
     res.json({ message: 'واگذاری به سطل بازیافت منتقل شد' });
 }
 
@@ -74,6 +80,7 @@ export async function submitReturn(req: Request, res: Response): Promise<void> {
         'create',
         'return',
         `مرجوعی واگذاری ${updatedConsignment.code} به ارزش ${returnRecord.totalReturnAmount} ثبت شد`,
+        req.ip,
     );
     res.status(201).json({
         message: 'مرجوعی با موفقیت ثبت شد',

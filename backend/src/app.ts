@@ -12,6 +12,9 @@ import { ensureUploadsDir, uploadsDir } from './services/galleryService.js';
 dotenv.config();
 
 const app = express();
+// cPanel and similar setups put Express behind a reverse proxy: trust
+// X-Forwarded-* so req.ip is the real client IP (used for audit logs).
+app.set('trust proxy', true);
 
 // === CORS CONFIGURATION ===
 const allowedOrigins = [

@@ -1,10 +1,12 @@
 import { betterAuth } from 'better-auth';
 import { admin, bearer } from 'better-auth/plugins';
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
+import { eq } from 'drizzle-orm';
 import dotenv from 'dotenv';
 
 import { db } from './drizzle.js';
 import * as schema from '../schema/index.js';
+import { logAudit } from '../services/auditService.js';
 
 dotenv.config();
 
@@ -26,6 +28,31 @@ export const auth = betterAuth({
     }),
     emailAndPassword: {
         enabled: true,
+    },
+    databaseHooks: {
+        session: {
+            create: {
+                // Audit every new session (sign-in or sign-up). Failures are
+                // swallowed so auditing can never break authentication.
+                after: async (session) => {
+                    try {
+                        const rows = await db.select().from(schema.user).where(eq(schema.user.id, session.userId));
+                        const u = rows[0];
+                        if (u) {
+                            logAudit(
+                                { user: { id: u.id, name: u.name, role: u.role } },
+                                'login',
+                                'auth',
+                                `ورود کاربر ${u.name} (${u.email})`,
+                                typeof session.ipAddress === 'string' ? session.ipAddress : undefined,
+                            );
+                        }
+                    } catch (err) {
+                        console.error('⚠️ Failed to write login audit log:', err);
+                    }
+                },
+            },
+        },
     },
     socialProviders: {
         ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET

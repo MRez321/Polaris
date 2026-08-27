@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import {
   History as HistoryIcon,
   Search,
@@ -8,17 +9,46 @@ import {
   FileText,
   Package,
   CreditCard,
+  ChevronDown,
+  Loader2,
+  Globe,
 } from 'lucide-react';
 import type { AuditLog } from '../../types';
-import { toJalaliDate, toPersianDigits } from '../../utils/persian';
+import { auditApi, getApiErrorMessage } from '../../lib/api';
+import { toJalaliDateTime, toPersianDigits } from '../../utils/persian';
 import { SelectMenu } from '../ui/select-menu';
-interface AuditLogsManagerProps {
-  logs: AuditLog[];
-}
 
-export const AuditLogsManager: React.FC<AuditLogsManagerProps> = ({ logs = [] }) => {
+const PAGE_SIZE = 20;
+
+export const AuditLogsManager: React.FC = () => {
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [total, setTotal] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEntity, setSelectedEntity] = useState<string>('all');
+
+  const fetchLogs = useCallback(async (offset: number, append: boolean) => {
+    if (append) {
+      setIsLoadingMore(true);
+    } else {
+      setIsLoading(true);
+    }
+    try {
+      const res = await auditApi.list(PAGE_SIZE, offset);
+      setTotal(res.total);
+      setLogs((prev) => (append ? [...prev, ...res.logs] : res.logs));
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'خطا در دریافت لاگ‌های سیستم'));
+    } finally {
+      setIsLoading(false);
+      setIsLoadingMore(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLogs(0, false);
+  }, [fetchLogs]);
 
   const filteredLogs = (logs || []).filter((log) => {
     const matchesSearch =
@@ -71,6 +101,25 @@ export const AuditLogsManager: React.FC<AuditLogsManagerProps> = ({ logs = [] })
     }
   };
 
+  const getActionLabel = (action: string) => {
+    switch (action) {
+      case 'create':
+        return 'ایجاد';
+      case 'update':
+        return 'ویرایش';
+      case 'delete':
+        return 'حذف';
+      default:
+        return action;
+    }
+  };
+
+  const getRoleLabel = (role: string | null | undefined) => {
+    if (role === 'admin') return 'مدیر';
+    if (role === 'staff') return 'کاربر';
+    return role || '';
+  };
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto text-stone-900 dark:text-white">
       {/* Header */}
@@ -90,7 +139,7 @@ export const AuditLogsManager: React.FC<AuditLogsManagerProps> = ({ logs = [] })
         <div className="text-left bg-stone-100 dark:bg-black/40 px-3.5 py-2 rounded-xl border border-black/5 dark:border-white/5">
           <span className="text-[10px] text-stone-400 block">کل رویدادهای مانیتور شده:</span>
           <span className="text-sm font-black text-[#CEAE80] font-mono">
-            {toPersianDigits(logs.length)} رویداد
+            {toPersianDigits(total)} رویداد
           </span>
         </div>
       </div>
@@ -128,7 +177,12 @@ export const AuditLogsManager: React.FC<AuditLogsManagerProps> = ({ logs = [] })
 
       {/* Logs Timeline List */}
       <div className="space-y-3">
-        {filteredLogs.length === 0 ? (
+        {isLoading ? (
+          <div className="p-8 text-center glass-panel rounded-2xl text-xs text-stone-400 flex items-center justify-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin text-[#CEAE80]" />
+            <span>در حال دریافت لاگ‌های سیستم...</span>
+          </div>
+        ) : filteredLogs.length === 0 ? (
           <div className="p-8 text-center glass-panel rounded-2xl text-xs text-stone-400">
             هیچ لاگ و رویدادی منطبق با جستجوی شما یافت نشد.
           </div>
@@ -147,16 +201,19 @@ export const AuditLogsManager: React.FC<AuditLogsManagerProps> = ({ logs = [] })
                   <div className="min-w-0 space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-black text-stone-900 dark:text-white text-xs sm:text-sm">
-                        {log.action}
+                        {log.userName}
+                      </span>
+                      {log.userRole && (
+                        <span className="px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-600 dark:text-purple-300 text-[10px] font-bold">
+                          {getRoleLabel(log.userRole)}
+                        </span>
+                      )}
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
+                        {getActionLabel(log.action)}
                       </span>
                       <span className="px-2 py-0.5 rounded-md bg-[#CEAE80]/15 text-[#CEAE80] text-[10px] font-bold">
                         {getEntityLabel(log.entity)}
                       </span>
-                      {log.userRole && (
-                        <span className="text-[10px] text-stone-400">
-                          ({log.userRole})
-                        </span>
-                      )}
                     </div>
 
                     <p className="text-stone-600 dark:text-stone-300 text-[11px] leading-relaxed">
@@ -165,15 +222,39 @@ export const AuditLogsManager: React.FC<AuditLogsManagerProps> = ({ logs = [] })
                   </div>
                 </div>
 
-                <div className="flex sm:flex-col items-end justify-between sm:justify-center shrink-0 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-black/5 dark:border-white/5 text-left text-[11px] font-mono text-stone-400">
-                  <span className="font-bold text-stone-700 dark:text-stone-300 font-sans">{log.userName}</span>
-                  <span className="text-[10px]" dir="ltr">{toJalaliDate(log.timestamp)}</span>
+                <div className="flex sm:flex-col items-end justify-between sm:justify-center shrink-0 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-black/5 dark:border-white/5 text-left text-[11px] font-mono text-stone-400 space-y-1">
+                  <span className="text-[10px]" dir="ltr">{toJalaliDateTime(log.timestamp)}</span>
+                  {log.ipAddress && (
+                    <span className="text-[10px] inline-flex items-center gap-1 text-stone-500 dark:text-stone-400" dir="ltr">
+                      <Globe className="w-3 h-3 shrink-0" />
+                      {log.ipAddress}
+                    </span>
+                  )}
                 </div>
               </div>
             );
           })
         )}
       </div>
+
+      {/* Load More Pagination */}
+      {!isLoading && logs.length < total && (
+        <div className="flex justify-center pt-1">
+          <button
+            type="button"
+            onClick={() => fetchLogs(logs.length, true)}
+            disabled={isLoadingMore}
+            className="px-5 py-2.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-black text-xs flex items-center gap-2 shadow-md transition-all active:scale-95 disabled:opacity-60 disabled:cursor-wait"
+          >
+            {isLoadingMore ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+            <span>بارگذاری بیشتر</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

@@ -17,6 +17,8 @@ import {
 import { SellerFormModal } from '../sellers/SellerFormModal';
 import { ItemFormModal } from '../inventory/ItemFormModal';
 import { SelectMenu, SelectBadge, SelectOptionContent, persianColorToCss } from '../ui/select-menu';
+import { toast } from 'sonner';
+import { isValidIranPhone, PHONE_ERROR } from '../../utils/validation';
 
 interface NewHandoverModalProps {
   isOpen: boolean;
@@ -724,6 +726,10 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
           isOpen={isQuickSellerModalOpen}
           onClose={() => setIsQuickSellerModalOpen(false)}
           onSave={(newSellerData) => {
+            if (newSellerData.phone && !isValidIranPhone(newSellerData.phone)) {
+              toast.error(PHONE_ERROR);
+              return;
+            }
             if (onQuickCreateSeller) {
               onQuickCreateSeller(newSellerData);
             }

@@ -14,6 +14,7 @@ const dbConfig: mysql.PoolOptions = {
     enableKeepAlive: true, // ← ADD: Prevents stale connections on shared hosting
     keepAliveInitialDelay: 10000, // ← ADD: 10s delay before first keepalive probe
     timezone: 'Z', // Store/read DATETIME as UTC so ISO round-trips are exact
+    charset: 'utf8mb4_persian_ci', // Negotiate utf8mb4 with the Persian collation (mysql2 uppercases → UTF8MB4_PERSIAN_CI = 240)
 };
 
 const pool = mysql.createPool(dbConfig);

@@ -3,6 +3,15 @@ import { Modal } from '../common/Modal';
 import type { Seller, BankAccountInfo } from '../../types';
 import { Plus, Trash2, CreditCard, Shield, Phone, MapPin, Check, Copy } from 'lucide-react';
 import { toPersianDigits } from '../../utils/persian';
+import { toast } from 'sonner';
+import {
+  normalizePhoneInput,
+  isValidIranPhone,
+  normalizeDigitsInput,
+  isValidNationalCode,
+  PHONE_ERROR,
+  NATIONAL_CODE_ERROR,
+} from '../../utils/validation';
 import { BankCardInput, ShebaInput, detectBankByCard, detectBankBySheba } from '../common/BankInput';
 import { SelectMenu } from '../ui/select-menu';
 import { FormattedNumberInput } from '../common/FormattedNumberInput';
@@ -94,7 +103,12 @@ export const SellerFormModal: React.FC<SellerFormModalProps> = ({
 
   const handleAddExtraPhone = () => {
     if (!newExtraPhone.trim()) return;
-    setAdditionalPhones([...additionalPhones, newExtraPhone.trim()]);
+    const normalized = normalizePhoneInput(newExtraPhone);
+    if (!isValidIranPhone(normalized)) {
+      toast.error(PHONE_ERROR);
+      return;
+    }
+    setAdditionalPhones([...additionalPhones, normalized]);
     setNewExtraPhone('');
   };
 
@@ -129,7 +143,31 @@ export const SellerFormModal: React.FC<SellerFormModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !phone.trim()) return;
+    if (!name.trim()) return;
+
+    const normalizedPhone = normalizePhoneInput(phone);
+    if (!isValidIranPhone(normalizedPhone)) {
+      toast.error(PHONE_ERROR);
+      return;
+    }
+
+    // Validate every extra phone, including one still typed in the "add" input
+    const normalizedExtraPhones = additionalPhones.map((p) => normalizePhoneInput(p));
+    const pendingExtraPhone = newExtraPhone.trim() ? normalizePhoneInput(newExtraPhone) : '';
+    const allExtraPhones = pendingExtraPhone
+      ? [...normalizedExtraPhones, pendingExtraPhone]
+      : normalizedExtraPhones;
+    if (!allExtraPhones.every((p) => isValidIranPhone(p))) {
+      toast.error(PHONE_ERROR);
+      return;
+    }
+
+    const normalizedNationalCode = normalizeDigitsInput(nationalCode);
+    if (normalizedNationalCode && !isValidNationalCode(normalizedNationalCode)) {
+      toast.error(NATIONAL_CODE_ERROR);
+      return;
+    }
+
     if (hasGuarantee && creditLimit === null) return;
 
     let finalBankAccounts = [...bankAccounts];
@@ -147,9 +185,9 @@ export const SellerFormModal: React.FC<SellerFormModalProps> = ({
     onSave({
       id: sellerId,
       name: name.trim(),
-      phone: phone.trim(),
-      additionalPhones,
-      nationalCode: nationalCode.trim(),
+      phone: normalizedPhone,
+      additionalPhones: allExtraPhones,
+      nationalCode: normalizedNationalCode,
       streetLocation: streetLocation.trim() || 'نامشخص',
       avatarUrl,
       hasGuarantee,

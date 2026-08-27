@@ -21,6 +21,7 @@ export function logAudit(
     action: string,
     entity: AuditLog['entity'],
     details: string,
+    ip?: string,
 ): void {
     void db
         .insert(auditLogs)
@@ -32,6 +33,7 @@ export function logAudit(
             action,
             entity,
             details,
+            ...(ip ? { ipAddress: ip } : {}),
         })
         .catch((err: unknown) => {
             console.error('⚠️ Failed to write audit log:', err);

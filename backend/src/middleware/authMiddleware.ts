@@ -6,8 +6,8 @@ import { auth } from '../config/auth.js';
 /**
  * Attaches the better-auth session (if any) to `req.auth`.
  * Never rejects: anonymous requests continue with `req.auth = null`.
- * The frontend does not enforce auth yet, so business routes stay open;
- * this exists to attribute audit-log actors and for future guards.
+ * Downstream guards (`requireAuth`, `requireRole`) decide whether a route
+ * needs a session; this middleware only attributes the actor for audit logs.
  */
 export async function attachSession(req: Request, _res: Response, next: NextFunction): Promise<void> {
     try {
@@ -28,6 +28,18 @@ export async function attachSession(req: Request, _res: Response, next: NextFunc
             : null;
     } catch {
         req.auth = null;
+    }
+    next();
+}
+
+/**
+ * Hard guard: rejects anonymous requests with a Persian 401. Mount after
+ * attachSession; use for routes any authenticated role may access.
+ */
+export function requireAuth(req: Request, res: Response, next: NextFunction): void {
+    if (!req.auth) {
+        res.status(401).json({ error: 'ابتدا وارد حساب کاربری خود شوید' });
+        return;
     }
     next();
 }
