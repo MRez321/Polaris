@@ -8,7 +8,6 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { PublicLayout } from '@/components/public/PublicLayout';
 import HomePage from '@/pages/public/HomePage';
 import ShopPage from '@/pages/public/ShopPage';
-import ServicesPage from '@/pages/public/ServicesPage';
 import ContactPage from '@/pages/public/ContactPage';
 import DashboardPage from '@/pages/DashboardPage';
 import UserDashboardPage from '@/pages/UserDashboardPage';
@@ -51,7 +50,6 @@ function App() {
                   <Route element={<PublicLayout />}>
                     <Route path="/" element={<HomePage />} />
                     <Route path="/shop" element={<ShopPage />} />
-                    <Route path="/services" element={<ServicesPage />} />
                     <Route path="/contact" element={<ContactPage />} />
                   </Route>
 

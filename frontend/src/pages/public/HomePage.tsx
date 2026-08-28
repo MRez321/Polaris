@@ -1,72 +1,83 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
   ArrowLeft,
   Gem,
-  Hand,
-  Ruler,
-  Scissors,
+  Layers,
+  MapPin,
+  PhoneCall,
   ShieldCheck,
+  Shirt,
   ShoppingBag,
   Sparkles,
-  Timer,
+  Tag,
 } from 'lucide-react';
 import type { PublicCatalogItem } from '@/types';
 import { publicApi } from '@/lib/api';
+import { toPersianDigits } from '@/utils/persian';
 import { Reveal } from '@/components/public/Reveal';
 import { SectionHeading } from '@/components/public/SectionHeading';
 import { ProductCard } from '@/components/public/ProductCard';
-import heroPhoto from '@/assets/p1.png';
-import craftPhoto from '@/assets/p2.png';
+import { SafeImage } from '@/components/common/SafeImage';
+import heroPhoto from '@/assets/hero-shop.jpg';
+import showroomPhoto from '@/assets/racks.jpg';
+import ctaPhoto from '@/assets/mannequin.jpg';
 
-const SERVICE_TEASERS = [
-  {
-    icon: Ruler,
-    title: 'دوخت شخصی',
-    description: 'کت و شلوار، پیراهن و پوشاک سفارشی با اندازه‌گیری دقیق و پرو اختصاصی.',
-  },
-  {
-    icon: Scissors,
-    title: 'تغییر سایز و پرو',
-    description: 'تنگ و گشاد کردن، کوتاه کردن و اصلاح برش لباس‌های آماده و قدیمی.',
-  },
-  {
-    icon: Sparkles,
-    title: 'تعمیرات و رفو',
-    description: 'مرمت پارگی، تعویض زیپ و آستر و زنده‌سازی لباس‌های ارزشمند.',
-  },
+const TRUST_CHIPS = [
+  { icon: Shirt, label: 'تنوع سایز و رنگ' },
+  { icon: Gem, label: 'کیفیت منتخب' },
+  { icon: PhoneCall, label: 'مشاوره خرید رایگان' },
 ];
 
-const CRAFT_FEATURES = [
-  { icon: Gem, title: 'پارچه‌های منتخب', description: 'فاستونی، کتان و کرپ از تأمین‌کنندگان معتبر' },
-  { icon: Hand, title: 'دوخت ظریف', description: 'اتمام دستی جزئیات توسط خیاطان باتجربه' },
-  { icon: Timer, title: 'تحویل به‌موقع', description: 'زمان‌بندی شفاف از اندازه‌گیری تا تحویل' },
-  { icon: ShieldCheck, title: 'ضمانت اصلاح', description: 'پس از تحویل، اصلاح رایگان تا رضایت کامل' },
+const CATEGORY_ICONS = [Shirt, ShoppingBag, Tag, Layers, Sparkles, Gem];
+
+const SHOP_FEATURES = [
+  { icon: Layers, title: 'کالکشن به‌روز', description: 'مدل‌های جدید به‌صورت مداوم به فروشگاه اضافه می‌شوند' },
+  { icon: ShieldCheck, title: 'خرید مطمئن', description: 'تضمین سلامت کالا و شفافیت قیمت برای مصرف‌کننده' },
+  { icon: MapPin, title: 'خرید حضوری', description: 'در فروشگاه پولاریس، جنس را از نزدیک ببینید و انتخاب کنید' },
+  { icon: Tag, title: 'قیمت منصفانه', description: 'قیمت‌گذاری مستقیم، بدون واسطه و مناسب بازار' },
 ];
 
 export const HomePage: React.FC = () => {
-  const [featured, setFeatured] = useState<PublicCatalogItem[]>([]);
+  const [items, setItems] = useState<PublicCatalogItem[]>([]);
+  const [categories, setCategories] = useState<{ id: string; label: string }[]>([]);
 
   useEffect(() => {
     let cancelled = false;
-    publicApi
-      .items()
-      .then((items) => {
+    Promise.all([publicApi.items(), publicApi.categories()])
+      .then(([itemsRes, categoriesRes]) => {
         if (cancelled) return;
-        // Prefer in-stock items with a photo for the showcase strip.
-        const showcase = items
-          .filter((i) => i.inStock && (i.imageUrl || (i.images && i.images.length > 0)))
-          .slice(0, 4);
-        setFeatured(showcase.length > 0 ? showcase : items.slice(0, 4));
+        setItems(itemsRes);
+        setCategories(categoriesRes);
       })
       .catch(() => {
-        /* Showcase is progressive enhancement; hero works without the API. */
+        /* Landing works without the API; catalog sections simply stay hidden. */
       });
     return () => {
       cancelled = true;
     };
   }, []);
+
+  // In-stock items with a photo, reused by the marquee and the showcase grid.
+  const visualItems = useMemo(
+    () => items.filter((i) => i.inStock && (i.imageUrl || (i.images && i.images.length > 0))),
+    [items]
+  );
+  const featured = useMemo(
+    () => (visualItems.length > 0 ? visualItems.slice(0, 8) : items.slice(0, 8)),
+    [visualItems, items]
+  );
+  const marqueeItems = useMemo(() => visualItems.slice(0, 12), [visualItems]);
+
+  const categoryCount = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const item of items) {
+      if (!item.inStock) continue;
+      counts.set(item.category, (counts.get(item.category) || 0) + 1);
+    }
+    return counts;
+  }, [items]);
 
   return (
     <div>
@@ -93,8 +104,8 @@ export const HomePage: React.FC = () => {
                 transition={{ duration: 0.6, ease: [0.21, 0.47, 0.32, 0.98] }}
               >
                 <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#CEAE80]/40 bg-[#CEAE80]/10 text-[#A67C38] dark:text-[#CEAE80] text-xs font-black tracking-wide">
-                  <Scissors className="w-3.5 h-3.5 -rotate-45" />
-                  کارگاه دوزندگی و پوشاک پولاریس
+                  <ShoppingBag className="w-3.5 h-3.5" />
+                  فروشگاه پوشاک پولاریس
                 </span>
               </motion.div>
 
@@ -104,10 +115,10 @@ export const HomePage: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.65, delay: 0.1, ease: [0.21, 0.47, 0.32, 0.98] }}
               >
-                از اندازه‌گیری تا تحویل،
+                از انتخاب تا تحویل،
                 <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-l from-[#CEAE80] via-[#b99a6c] to-[#A67C38]">
-                  دوخته‌شده برای شما
+                  پوشاکی که اندازهٔ شماست
                 </span>
               </motion.h1>
 
@@ -117,12 +128,12 @@ export const HomePage: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.65, delay: 0.2, ease: [0.21, 0.47, 0.32, 0.98] }}
               >
-                پولاریس استایل دو روی یک سکه دارد: <strong className="text-stone-800 dark:text-stone-200">دوخت شخصی</strong> با
-                دقت خیاطی سنتی، و <strong className="text-stone-800 dark:text-stone-200">فروشگاه پوشاک آماده</strong> با کیفیت
-                همان کارگاه. هر کدام را که بخواهید، با یک استاندارد تحویل می‌گیرید.
+                پولاریس استایل فروشگاه <strong className="text-stone-800 dark:text-stone-200">پوشاک آماده</strong> است:
+                کت، پیراهن، شلوار و پوشاک منتخب با سایزها و رنگ‌های متنوع. حضوری انتخاب کنید یا قبل از خرید،
+                تلفنی مشاوره بگیرید.
               </motion.p>
 
-              {/* Dual CTAs: tailoring + retail */}
+              {/* CTAs: shop first, categories second */}
               <motion.div
                 className="mt-8 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3"
                 initial={{ opacity: 0, y: 28 }}
@@ -130,38 +141,41 @@ export const HomePage: React.FC = () => {
                 transition={{ duration: 0.65, delay: 0.3, ease: [0.21, 0.47, 0.32, 0.98] }}
               >
                 <Link
-                  to="/services"
+                  to="/shop"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 px-7 rounded-2xl bg-[#CEAE80] hover:bg-[#c2a06e] text-black text-sm font-black shadow-lg shadow-[#CEAE80]/30 transition-all hover:-translate-y-0.5 active:scale-95"
                 >
-                  <Ruler className="w-4.5 h-4.5" />
-                  سفارش دوخت شخصی
+                  <ShoppingBag className="w-4.5 h-4.5" />
+                  خرید از فروشگاه
                 </Link>
-                <Link
-                  to="/shop"
+                <a
+                  href="#categories"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 px-7 rounded-2xl border-2 border-[#CEAE80]/50 hover:border-[#CEAE80] bg-white/50 dark:bg-white/5 text-stone-800 dark:text-stone-100 text-sm font-black transition-all hover:-translate-y-0.5 active:scale-95"
                 >
-                  <ShoppingBag className="w-4.5 h-4.5 text-[#A67C38] dark:text-[#CEAE80]" />
-                  مشاهده فروشگاه
-                </Link>
+                  <Layers className="w-4.5 h-4.5 text-[#A67C38] dark:text-[#CEAE80]" />
+                  دسته‌بندی محصولات
+                </a>
               </motion.div>
 
-              {/* Trust strip */}
+              {/* Trust chips */}
               <motion.div
-                className="mt-10 grid grid-cols-3 gap-4 max-w-md mx-auto lg:mx-0"
+                className="mt-10 flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-3 max-w-md mx-auto lg:mx-0"
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.45, ease: [0.21, 0.47, 0.32, 0.98] }}
               >
-                {[
-                  { value: '+۱۰', label: 'سال تجربه دوخت' },
-                  { value: '+۲۰۰۰', label: 'سفارش تحویل‌شده' },
-                  { value: '۹۸٪', label: 'رضایت مشتری' },
-                ].map((stat) => (
-                  <div key={stat.label} className="text-center lg:text-right">
-                    <p className="text-xl sm:text-2xl font-black text-[#A67C38] dark:text-[#CEAE80]">{stat.value}</p>
-                    <p className="mt-1 text-[10px] sm:text-[11px] font-bold text-stone-500 dark:text-stone-400">{stat.label}</p>
-                  </div>
-                ))}
+                {TRUST_CHIPS.map((chip) => {
+                  const Icon = chip.icon;
+                  return (
+                    <span key={chip.label} className="inline-flex items-center gap-2">
+                      <span className="w-8 h-8 rounded-xl bg-[#CEAE80]/15 border border-[#CEAE80]/25 flex items-center justify-center shrink-0">
+                        <Icon className="w-4 h-4 text-[#A67C38] dark:text-[#CEAE80]" />
+                      </span>
+                      <span className="text-[11px] sm:text-xs font-black text-stone-600 dark:text-stone-300">
+                        {chip.label}
+                      </span>
+                    </span>
+                  );
+                })}
               </motion.div>
             </div>
 
@@ -175,12 +189,12 @@ export const HomePage: React.FC = () => {
               <div className="relative rounded-[2rem] overflow-hidden border border-[#CEAE80]/30 shadow-2xl shadow-[#CEAE80]/15">
                 <img
                   src={heroPhoto}
-                  alt="نمونه دوخت پولاریس استایل"
+                  alt="فروشگاه پوشاک پولاریس"
                   className="w-full h-72 sm:h-96 lg:h-[30rem] object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
                 <div className="absolute bottom-4 right-4 left-4 flex items-center justify-between gap-3">
-                  <p className="text-white text-xs sm:text-sm font-black drop-shadow">ظرافت در هر بخیه</p>
+                  <p className="text-white text-xs sm:text-sm font-black drop-shadow">استایل روز، انتخاب آسان</p>
                   <span className="px-3 py-1 rounded-full bg-[#CEAE80] text-black text-[10px] font-black">کالکشن جدید</span>
                 </div>
               </div>
@@ -192,11 +206,11 @@ export const HomePage: React.FC = () => {
                 transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
               >
                 <span className="w-10 h-10 rounded-xl bg-[#CEAE80]/15 flex items-center justify-center">
-                  <Scissors className="w-5 h-5 text-[#A67C38] dark:text-[#CEAE80] -rotate-45" />
+                  <ShieldCheck className="w-5 h-5 text-[#A67C38] dark:text-[#CEAE80]" />
                 </span>
                 <div className="leading-tight">
-                  <p className="text-xs font-black text-stone-900 dark:text-white">دوخت اختصاصی</p>
-                  <p className="text-[10px] font-bold text-stone-500 dark:text-stone-400">با پرو و اصلاح رایگان</p>
+                  <p className="text-xs font-black text-stone-900 dark:text-white">خرید مطمئن</p>
+                  <p className="text-[10px] font-bold text-stone-500 dark:text-stone-400">مشاوره رایگان قبل از خرید</p>
                 </div>
               </motion.div>
             </motion.div>
@@ -204,29 +218,58 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* ===================== TAILORING / RETAIL SPLIT ===================== */}
+      {/* ====================== PRODUCT MARQUEE STRIP ====================== */}
+      {marqueeItems.length >= 4 && (
+        <section className="relative border-y border-[#CEAE80]/20 bg-white/60 dark:bg-white/[0.02] py-6 overflow-hidden" dir="ltr">
+          <div
+            className="flex w-max gap-4 px-4 animate-[marquee_45s_linear_infinite] hover:[animation-play-state:paused] motion-reduce:animate-none"
+          >
+            {[...marqueeItems, ...marqueeItems].map((item, i) => (
+              <Link
+                key={`${item.id}-${i}`}
+                to="/shop"
+                tabIndex={i >= marqueeItems.length ? -1 : undefined}
+                aria-hidden={i >= marqueeItems.length ? true : undefined}
+                className="group relative shrink-0 w-32 h-40 sm:w-36 sm:h-44 rounded-2xl overflow-hidden border border-[#CEAE80]/25 shadow-sm hover:border-[#CEAE80]/60 transition-colors"
+              >
+                <SafeImage
+                  src={item.imageUrl || item.images?.[0]}
+                  alt={item.name}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  fallbackClassName="text-4xl"
+                />
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-2.5 pb-2 pt-6">
+                  <p className="text-white text-[10px] font-black leading-4 truncate">{item.name}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ======================= IN-PERSON / ONLINE SPLIT ======================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
         <div className="grid md:grid-cols-2 gap-5 sm:gap-6">
           <Reveal>
             <Link
-              to="/services"
+              to="/contact"
               className="group relative block h-64 sm:h-72 rounded-3xl overflow-hidden border border-[#CEAE80]/25 shadow-lg"
             >
               <img
-                src={craftPhoto}
-                alt="دوخت شخصی در کارگاه پولاریس"
+                src={showroomPhoto}
+                alt="رگال‌های پوشاک در فروشگاه پولاریس"
                 loading="lazy"
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-l from-black/75 via-black/45 to-black/15" />
               <div className="absolute inset-0 p-6 sm:p-8 flex flex-col justify-end">
-                <span className="text-[#CEAE80] text-xs font-black tracking-widest mb-2">خدمات کارگاه</span>
-                <h3 className="text-xl sm:text-2xl font-black text-white">دوخت شخصی و سفارشی</h3>
+                <span className="text-[#CEAE80] text-xs font-black tracking-widest mb-2">خرید حضوری</span>
+                <h3 className="text-xl sm:text-2xl font-black text-white">از نزدیک ببینید و انتخاب کنید</h3>
                 <p className="mt-2 text-xs sm:text-sm text-white/80 leading-6 max-w-sm">
-                  از مشاوره و اندازه‌گیری تا پرو نهایی؛ لباسی که دقیقاً برای تن شما دوخته شده است.
+                  در فروشگاه پولاریس جنس را از نزدیک ببینید، مقایسه کنید و همان روز با خود ببرید.
                 </p>
                 <span className="mt-4 inline-flex items-center gap-1.5 text-[#CEAE80] text-xs font-black group-hover:gap-3 transition-all">
-                  مشاهده خدمات
+                  مسیر و شماره تماس
                   <ArrowLeft className="w-4 h-4" />
                 </span>
               </div>
@@ -244,9 +287,9 @@ export const HomePage: React.FC = () => {
                   <ShoppingBag className="w-7 h-7 text-black" />
                 </span>
                 <span className="text-[#A67C38] dark:text-[#CEAE80] text-xs font-black tracking-widest mb-2">فروشگاه پولاریس</span>
-                <h3 className="text-xl sm:text-2xl font-black text-stone-900 dark:text-white">خرید از کالکشن آماده</h3>
+                <h3 className="text-xl sm:text-2xl font-black text-stone-900 dark:text-white">مشاهده کالکشن آماده</h3>
                 <p className="mt-2 text-xs sm:text-sm text-stone-600 dark:text-stone-300 leading-6 max-w-sm">
-                  کت، پیراهن، شلوار و پوشاک منتخب با کیفیت دوخت کارگاه، آماده ارسال و تحویل فوری.
+                  فهرست کامل محصولات با قیمت، سایز و رنگ‌بندی؛ همیشه به‌روز و آماده تحویل.
                 </p>
                 <span className="mt-4 inline-flex items-center gap-1.5 text-[#A67C38] dark:text-[#CEAE80] text-xs font-black group-hover:gap-3 transition-all">
                   رفتن به فروشگاه
@@ -258,38 +301,43 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* ========================= SERVICES TEASER ========================= */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
-        <SectionHeading
-          eyebrow="خدمات دوخت"
-          title="هنر خیاطی، در سه پرده"
-          subtitle="هر سفارش از مشاوره شروع می‌شود و با رضایت کامل شما تمام می‌شود."
-        />
+      {/* =========================== CATEGORIES =========================== */}
+      {categories.length > 0 && (
+        <section id="categories" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 scroll-mt-24">
+          <SectionHeading
+            eyebrow="دسته‌بندی‌ها"
+            title="بر اساس سلیقه‌تان بگردید"
+            subtitle="هر دسته را باز کنید تا محصولات آماده تحویل همان بخش را ببینید."
+          />
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {SERVICE_TEASERS.map((service, i) => {
-            const Icon = service.icon;
-            return (
-              <Reveal key={service.title} delay={i * 0.1}>
-                <Link
-                  to="/services"
-                  className="group block h-full p-6 sm:p-7 rounded-3xl bg-white dark:bg-[#16161a] border border-stone-200/80 dark:border-white/8 shadow-sm hover:shadow-xl hover:shadow-[#CEAE80]/10 hover:border-[#CEAE80]/45 hover:-translate-y-1 transition-all duration-300"
-                >
-                  <span className="w-12 h-12 rounded-2xl bg-[#CEAE80]/15 border border-[#CEAE80]/25 flex items-center justify-center group-hover:bg-[#CEAE80] transition-colors">
-                    <Icon className="w-6 h-6 text-[#A67C38] dark:text-[#CEAE80] group-hover:text-black transition-colors" />
-                  </span>
-                  <h3 className="mt-5 text-base sm:text-lg font-black text-stone-900 dark:text-white">{service.title}</h3>
-                  <p className="mt-2.5 text-xs sm:text-sm leading-7 text-stone-600 dark:text-stone-400">{service.description}</p>
-                  <span className="mt-4 inline-flex items-center gap-1.5 text-[11px] font-black text-[#A67C38] dark:text-[#CEAE80] group-hover:gap-3 transition-all">
-                    جزئیات بیشتر
-                    <ArrowLeft className="w-3.5 h-3.5" />
-                  </span>
-                </Link>
-              </Reveal>
-            );
-          })}
-        </div>
-      </section>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+            {categories.slice(0, 8).map((cat, i) => {
+              const Icon = CATEGORY_ICONS[i % CATEGORY_ICONS.length];
+              const count = categoryCount.get(cat.id) || 0;
+              return (
+                <Reveal key={cat.id} delay={i * 0.06}>
+                  <Link
+                    to={`/shop?category=${encodeURIComponent(cat.id)}`}
+                    className="group flex items-center gap-3.5 p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#16161a] border border-stone-200/80 dark:border-white/8 shadow-sm hover:shadow-xl hover:shadow-[#CEAE80]/10 hover:border-[#CEAE80]/45 hover:-translate-y-1 transition-all duration-300"
+                  >
+                    <span className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-[#CEAE80]/15 border border-[#CEAE80]/25 flex items-center justify-center shrink-0 group-hover:bg-[#CEAE80] transition-colors">
+                      <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-[#A67C38] dark:text-[#CEAE80] group-hover:text-black transition-colors" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm sm:text-base font-black text-stone-900 dark:text-white truncate">
+                        {cat.label}
+                      </span>
+                      <span className="block mt-0.5 text-[10px] sm:text-[11px] font-bold text-stone-500 dark:text-stone-400">
+                        {count > 0 ? `${toPersianDigits(count)} محصول آماده` : 'مشاهده محصولات'}
+                      </span>
+                    </span>
+                  </Link>
+                </Reveal>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* ======================= FEATURED PRODUCTS ======================= */}
       {featured.length > 0 && (
@@ -297,8 +345,8 @@ export const HomePage: React.FC = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
             <SectionHeading
               eyebrow="فروشگاه"
-              title="منتخب کالکشن پولاریس"
-              subtitle="چند نمونه از محصولات آماده تحویل؛ بقیه را در فروشگاه ببینید."
+              title="منتخب محصولات پولاریس"
+              subtitle="چند نمونه از محصولات آماده تحویل؛ فهرست کامل را در فروشگاه ببینید."
             />
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
@@ -322,15 +370,15 @@ export const HomePage: React.FC = () => {
         </section>
       )}
 
-      {/* ========================== CRAFT / WHY US ========================== */}
+      {/* ========================== WHY POLARIS ========================== */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
         <SectionHeading
           eyebrow="چرا پولاریس؟"
-          title="کیفیت، اتفاقی نیست"
-          subtitle="از انتخاب پارچه تا پس از تحویل، همه‌چیز حول یک اصل می‌چرخد: لباس باید اندازه و بادوام باشد."
+          title="خریدی راحت و مطمئن"
+          subtitle="از تنوع محصولات تا مشاوره قبل از خرید، همه‌چیز برای یک انتخاب درست."
         />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-          {CRAFT_FEATURES.map((feature, i) => {
+          {SHOP_FEATURES.map((feature, i) => {
             const Icon = feature.icon;
             return (
               <Reveal key={feature.title} delay={i * 0.08}>
@@ -350,26 +398,34 @@ export const HomePage: React.FC = () => {
       {/* ============================ CTA BAND ============================ */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 sm:pb-24">
         <Reveal>
-          <div className="relative overflow-hidden rounded-[2rem] border border-[#CEAE80]/35 bg-gradient-to-l from-[#CEAE80]/25 via-[#CEAE80]/12 to-transparent px-6 py-12 sm:px-12 sm:py-16 text-center">
+          <div className="relative overflow-hidden rounded-[2rem] border border-[#CEAE80]/35 px-6 py-12 sm:px-12 sm:py-16 text-center">
+            <img
+              src={ctaPhoto}
+              alt="ویترین فروشگاه پولاریس"
+              loading="lazy"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/60" />
             <div className="absolute -top-24 right-1/3 w-72 h-72 bg-[#CEAE80]/25 rounded-full blur-3xl" aria-hidden />
-            <h2 className="relative text-xl sm:text-3xl font-black text-stone-900 dark:text-white leading-snug">
-              برای مشاوره رایگان اندازه‌گیری و انتخاب پارچه، همین امروز با ما صحبت کنید
+            <h2 className="relative text-xl sm:text-3xl font-black text-white leading-snug">
+              کالکشن جدید پولاریس رسید؛ مدل بعدی کمدتان این‌جاست
             </h2>
-            <p className="relative mt-4 text-xs sm:text-sm text-stone-600 dark:text-stone-400">
+            <p className="relative mt-4 text-xs sm:text-sm text-white/75">
               پاسخ‌گویی شنبه تا پنجشنبه، ۹ صبح تا ۹ شب
             </p>
             <div className="relative mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
-                to="/contact"
+                to="/shop"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 px-8 rounded-2xl bg-[#CEAE80] hover:bg-[#c2a06e] text-black text-sm font-black shadow-lg shadow-[#CEAE80]/30 transition-all hover:-translate-y-0.5 active:scale-95"
               >
-                تماس با ما
+                <ShoppingBag className="w-4.5 h-4.5" />
+                خرید از فروشگاه
               </Link>
               <Link
-                to="/shop"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 px-8 rounded-2xl border-2 border-[#CEAE80]/50 hover:border-[#CEAE80] text-stone-800 dark:text-stone-100 text-sm font-black transition-all hover:-translate-y-0.5 active:scale-95"
+                to="/contact"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 px-8 rounded-2xl border-2 border-white/40 hover:border-white text-white text-sm font-black transition-all hover:-translate-y-0.5 active:scale-95"
               >
-                اول فروشگاه را ببینم
+                تماس با ما
               </Link>
             </div>
           </div>

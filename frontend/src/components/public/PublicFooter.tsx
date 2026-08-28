@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Camera, MapPin, Phone, Scissors, Send, ShieldCheck } from 'lucide-react';
+import { Camera, Clock, MapPin, Phone, Send, ShieldCheck } from 'lucide-react';
 import type { PublicCompanyInfo } from '@/types';
 import { publicApi } from '@/lib/api';
 import { toPersianDigits } from '@/utils/persian';
@@ -9,16 +9,11 @@ import logoUrl from '@/assets/logo.png';
 const QUICK_LINKS = [
   { to: '/', label: 'خانه' },
   { to: '/shop', label: 'فروشگاه پوشاک' },
-  { to: '/services', label: 'خدمات دوخت' },
   { to: '/contact', label: 'تماس با ما' },
 ];
 
-const SERVICE_LINKS = [
-  'دوخت شخصی کت و شلوار',
-  'تغییر سایز و پرو',
-  'تعمیرات و رفو لباس',
-  'مشاوره انتخاب پارچه',
-];
+/** Fallback shop links shown until the public categories endpoint answers. */
+const FALLBACK_SHOP_LINKS: { to: string; label: string }[] = [];
 
 /** Current Jalali year, e.g. «۱۴۰۵» — used in the copyright line. */
 const jalaliYear = toPersianDigits(
@@ -32,13 +27,15 @@ const jalaliYear = toPersianDigits(
  */
 export const PublicFooter: React.FC = () => {
   const [company, setCompany] = useState<PublicCompanyInfo | null>(null);
+  const [categories, setCategories] = useState<{ id: string; label: string }[]>([]);
 
   useEffect(() => {
     let cancelled = false;
-    publicApi
-      .company()
-      .then((data) => {
-        if (!cancelled) setCompany(data);
+    Promise.all([publicApi.company(), publicApi.categories()])
+      .then(([companyData, categoriesData]) => {
+        if (cancelled) return;
+        setCompany(companyData);
+        setCategories(categoriesData);
       })
       .catch(() => {
         /* Footer falls back to brand defaults when the API is unreachable. */
@@ -71,13 +68,13 @@ export const PublicFooter: React.FC = () => {
                   پولاریس <span className="text-[#A67C38] dark:text-[#CEAE80]">استایل</span>
                 </p>
                 <p className="text-[10px] font-bold text-stone-500 dark:text-stone-400">
-                  {company?.slogan?.trim() || 'دوخت شخصی و پوشاک آماده'}
+                  {company?.slogan?.trim() || 'فروشگاه پوشاک آماده'}
                 </p>
               </div>
             </div>
             <p className="text-xs leading-6 text-stone-600 dark:text-stone-400">
               {company?.tagline?.trim() ||
-                'ترکیب هنر خیاطی سنتی با سلیقه روز؛ از دوخت شخصی کت و شلوار تا عرضه پوشاک آماده با کیفیت کارگاه.'}
+                'پوشاک آماده با کیفیت منتخب؛ سایزها و رنگ‌های متنوع برای هر سلیقه، آماده تحویل.'}
             </p>
             <div className="flex items-center gap-2 pt-1">
               {instagram && (
@@ -142,20 +139,34 @@ export const PublicFooter: React.FC = () => {
             </ul>
           </div>
 
-          {/* Services */}
+          {/* Shop categories */}
           <div>
             <h3 className="text-sm font-black text-stone-900 dark:text-white mb-4 flex items-center gap-2">
               <span className="w-1.5 h-4 rounded-full bg-[#CEAE80]" />
-              خدمات کارگاه
+              فروشگاه
             </h3>
             <ul className="space-y-2.5">
-              {SERVICE_LINKS.map((label) => (
-                <li key={label}>
+              <li>
+                <Link
+                  to="/shop"
+                  className="text-xs font-bold text-stone-600 dark:text-stone-400 hover:text-[#A67C38] dark:hover:text-[#CEAE80] transition-colors"
+                >
+                  همه محصولات
+                </Link>
+              </li>
+              {(categories.length > 0
+                ? categories.slice(0, 5).map((cat) => ({
+                    to: `/shop?category=${encodeURIComponent(cat.id)}`,
+                    label: cat.label,
+                  }))
+                : FALLBACK_SHOP_LINKS
+              ).map((link) => (
+                <li key={link.to}>
                   <Link
-                    to="/services"
+                    to={link.to}
                     className="text-xs font-bold text-stone-600 dark:text-stone-400 hover:text-[#A67C38] dark:hover:text-[#CEAE80] transition-colors"
                   >
-                    {label}
+                    {link.label}
                   </Link>
                 </li>
               ))}
@@ -172,7 +183,7 @@ export const PublicFooter: React.FC = () => {
               <li className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 mt-0.5 shrink-0 text-[#A67C38] dark:text-[#CEAE80]" />
                 <span className="leading-6">
-                  {address || 'آدرس کارگاه در صفحه تماس با ما'}
+                  {address || 'آدرس فروشگاه در صفحه تماس با ما'}
                 </span>
               </li>
               {phone && (
@@ -184,7 +195,7 @@ export const PublicFooter: React.FC = () => {
                 </li>
               )}
               <li className="flex items-start gap-2.5">
-                <Scissors className="w-4 h-4 mt-0.5 shrink-0 text-[#A67C38] dark:text-[#CEAE80]" />
+                <Clock className="w-4 h-4 mt-0.5 shrink-0 text-[#A67C38] dark:text-[#CEAE80]" />
                 <span className="leading-6">شنبه تا پنجشنبه، ۹ صبح تا ۹ شب</span>
               </li>
             </ul>
@@ -200,7 +211,7 @@ export const PublicFooter: React.FC = () => {
           </p>
           <p className="flex items-center gap-1.5 text-[11px] font-bold text-stone-500 dark:text-stone-500">
             <ShieldCheck className="w-3.5 h-3.5 text-[#A67C38] dark:text-[#CEAE80]" />
-            دوخت با کیفیت، تحویل به‌موقع
+            کیفیت منتخب، تحویل به‌موقع
           </p>
         </div>
       </div>

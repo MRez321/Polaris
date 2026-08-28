@@ -9,7 +9,6 @@ import logoUrl from '@/assets/logo.png';
 const NAV_LINKS = [
   { to: '/', label: 'خانه', end: true },
   { to: '/shop', label: 'فروشگاه' },
-  { to: '/services', label: 'خدمات دوخت' },
   { to: '/contact', label: 'تماس با ما' },
 ];
 
@@ -59,7 +58,7 @@ export const PublicHeader: React.FC = () => {
                 پولاریس <span className="text-[#A67C38] dark:text-[#CEAE80]">استایل</span>
               </span>
               <span className="text-[10px] font-bold text-stone-500 dark:text-stone-400 tracking-wide">
-                دوخت شخصی و پوشاک آماده
+                فروشگاه پوشاک
               </span>
             </span>
           </Link>

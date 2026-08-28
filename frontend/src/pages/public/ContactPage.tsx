@@ -100,7 +100,7 @@ export const ContactPage: React.FC = () => {
           صحبت با ما، <span className="text-[#A67C38] dark:text-[#CEAE80]">شروع هر سفارش</span>
         </h1>
         <p className="mt-4 text-sm leading-7 text-stone-600 dark:text-stone-400 max-w-xl mx-auto">
-          برای مشاوره دوخت، استعلام قیمت یا هر پرسش دیگری، فرم را پر کنید یا مستقیم تماس بگیرید.
+          برای مشاوره خرید، استعلام قیمت یا هر پرسش دیگری، فرم را پر کنید یا مستقیم تماس بگیرید.
         </p>
       </Reveal>
 
@@ -188,7 +188,7 @@ export const ContactPage: React.FC = () => {
                     id="contact-message"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="مثلاً: برای دوخت یک کت و شلوار فاستونی مشکی، اواخر هفته وقت پرو می‌خواهم…"
+                    placeholder="مثلاً: موجودی و سایزهای یک کت سرمه‌ای را می‌خواهم بدانم…"
                     rows={5}
                     className={cn('rounded-xl text-sm leading-7', errors.message && 'border-rose-500 focus-visible:ring-rose-500/30')}
                     aria-invalid={!!errors.message}
@@ -226,7 +226,7 @@ export const ContactPage: React.FC = () => {
                         <Phone className="w-4.5 h-4.5 text-[#A67C38] dark:text-[#CEAE80]" />
                       </span>
                       <span className="leading-tight">
-                        <span className="block text-[10px] font-bold text-stone-500 dark:text-stone-400">تلفن کارگاه</span>
+                        <span className="block text-[10px] font-bold text-stone-500 dark:text-stone-400">تلفن فروشگاه</span>
                         <span dir="ltr" className="block text-sm font-black text-stone-800 dark:text-stone-100 group-hover:text-[#A67C38] dark:group-hover:text-[#CEAE80] transition-colors">
                           {toPersianDigits(companyPhone)}
                         </span>
@@ -255,7 +255,7 @@ export const ContactPage: React.FC = () => {
                       <MapPin className="w-4.5 h-4.5 text-[#A67C38] dark:text-[#CEAE80]" />
                     </span>
                     <span className="leading-tight">
-                      <span className="block text-[10px] font-bold text-stone-500 dark:text-stone-400 mb-1">آدرس کارگاه</span>
+                      <span className="block text-[10px] font-bold text-stone-500 dark:text-stone-400 mb-1">آدرس فروشگاه</span>
                       <span className="block text-xs font-bold leading-6 text-stone-800 dark:text-stone-100">{companyAddress}</span>
                     </span>
                   </li>
@@ -328,10 +328,10 @@ export const ContactPage: React.FC = () => {
               <div className="absolute -top-10 -left-10 w-40 h-40 bg-[#CEAE80]/25 rounded-full blur-3xl" aria-hidden />
               <p className="relative text-xs font-black text-[#A67C38] dark:text-[#CEAE80] mb-2">مراجعه حضوری</p>
               <p className="relative text-sm font-black leading-7 text-stone-800 dark:text-stone-100">
-                {companyAddress || 'برای دریافت آدرس کارگاه با ما تماس بگیرید.'}
+                {companyAddress || 'برای دریافت آدرس فروشگاه با ما تماس بگیرید.'}
               </p>
               <p className="relative mt-3 text-[11px] font-bold leading-6 text-stone-600 dark:text-stone-400">
-                برای جلسه اندازه‌گیری و پرو، هماهنگی قبلی تلفنی کافی است.
+                برای بازدید حضوری فروشگاه، هماهنگی قبلی تلفنی کافی است.
               </p>
             </div>
           </Reveal>

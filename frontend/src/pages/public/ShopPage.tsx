@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { PackageSearch, RefreshCw, Search, SlidersHorizontal, X } from 'lucide-react';
 import type { PublicCatalogItem } from '@/types';
 import { getApiErrorMessage, publicApi } from '@/lib/api';
@@ -32,6 +33,7 @@ export const ShopPage: React.FC = () => {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [sort, setSort] = useState<SortOrder>('default');
+  const [searchParams] = useSearchParams();
 
   const load = useCallback(() => {
     setLoading(true);
@@ -48,6 +50,12 @@ export const ShopPage: React.FC = () => {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Deep-link support: /shop?category=<id> preselects a category chip.
+  useEffect(() => {
+    const cat = searchParams.get('category');
+    if (cat) setActiveCategory(cat);
+  }, [searchParams]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -84,7 +92,7 @@ export const ShopPage: React.FC = () => {
           کالکشن پوشاک <span className="text-[#A67C38] dark:text-[#CEAE80]">آماده تحویل</span>
         </h1>
         <p className="mt-4 text-sm leading-7 text-stone-600 dark:text-stone-400 max-w-xl mx-auto">
-          همه محصولات با استاندارد کیفی کارگاه پولاریس دوخته شده‌اند؛ قیمت‌ها مصرف‌کننده نهایی است.
+          همه محصولات آماده تحویل‌اند؛ قیمت‌ها برای مصرف‌کننده نهایی است.
         </p>
       </Reveal>
 

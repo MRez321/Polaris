@@ -491,3 +491,16 @@ html:not(.dark) .glass-btn:hover {
 .light .ambient-glow-gold {
   opacity: 0.12;
 }
+
+/* ========================================================================= */
+/* PRODUCT MARQUEE — infinite horizontal strip on the public landing page    */
+/* Track is duplicated once and shifted by -50% for a seamless loop.         */
+/* ========================================================================= */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
