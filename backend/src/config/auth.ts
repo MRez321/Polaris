@@ -29,6 +29,18 @@ export const auth = betterAuth({
     emailAndPassword: {
         enabled: true,
     },
+    // Link a social sign-in to the existing credential user when the emails
+    // match, so both methods point to a single unique user. The app has no
+    // e-mail verification flow (credential users are emailVerified=false),
+    // and Google proves ownership of the e-mail address, so requiring a
+    // verified local e-mail would make linking impossible for no gain.
+    account: {
+        accountLinking: {
+            enabled: true,
+            trustedProviders: ['google'],
+            requireLocalEmailVerified: false,
+        },
+    },
     databaseHooks: {
         session: {
             create: {

@@ -21,18 +21,18 @@ export const MobileNav: React.FC = () => {
   ).length;
 
   const items = [
-    { to: '/', label: 'داشبورد', icon: LayoutDashboard, end: true },
-    { to: '/inventory', label: 'انبار', icon: Package },
+    { to: '/app', label: 'داشبورد', icon: LayoutDashboard, end: true },
+    { to: '/app/inventory', label: 'انبار', icon: Package },
     {
-      to: '/consignments',
+      to: '/app/consignments',
       label: 'امانات',
       icon: ArrowLeftRight,
       badge: overdueCount > 0 ? overdueCount : undefined,
     },
-    { to: '/people', label: 'اشخاص و پرسنل', icon: Users },
-    { to: '/finances', label: 'مالی و درآمد', icon: CreditCard },
-    { to: '/settings', label: 'تنظیمات', icon: Settings },
-  ].filter((item) => isAdmin || item.to === '/');
+    { to: '/app/people', label: 'اشخاص و پرسنل', icon: Users },
+    { to: '/app/finances', label: 'مالی و درآمد', icon: CreditCard },
+    { to: '/app/settings', label: 'تنظیمات', icon: Settings },
+  ].filter((item) => isAdmin || item.to === '/app');
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-[#141416] border-t border-stone-200 dark:border-white/5 px-2 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] shadow-2xl">

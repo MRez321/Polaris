@@ -166,7 +166,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
               className={`p-4 rounded-2xl glass-card border transition-all hover:border-[#CEAE80]/50 shadow-md flex flex-col justify-between cursor-pointer ${
                 isLowStock ? 'border-amber-400/50 bg-amber-500/[0.05]' : 'border-stone-200 dark:border-white/5'
               }`}
-              onClick={() => navigate(`/profile/items/${item.id}`)}
+              onClick={() => navigate(`/app/profile/items/${item.id}`)}
             >
               <div>
                 <div className="flex items-start justify-between gap-2">

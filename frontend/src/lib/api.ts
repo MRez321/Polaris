@@ -9,9 +9,12 @@ import type {
   Owner,
   PaymentRecord,
   ProfitShareDistribution,
+  PublicCatalogItem,
+  PublicCompanyInfo,
   Seller,
   StaffMember,
   WorkshopExpense,
+  WebsiteSettings,
 } from '@/types';
 
 /**
@@ -193,10 +196,27 @@ export const companyApi = {
   update: (data: Partial<CompanyBranding>) => api.put<CompanyBranding>('/api/company', data).then((r) => r.data),
 };
 
+// --- Public Website Settings ---
+export const websiteApi = {
+  get: () => api.get<WebsiteSettings>('/api/website/settings').then((r) => r.data),
+  update: (data: Partial<WebsiteSettings>) =>
+    api.put<WebsiteSettings>('/api/website/settings', data).then((r) => r.data),
+};
+
 // --- Audit Logs ---
 export const auditApi = {
   list: (limit = 20, offset = 0) =>
     api
       .get('/api/audit-logs', { params: { limit, offset } })
       .then((r) => r.data as { logs: AuditLog[]; total: number }),
+};
+
+// --- Public Storefront ---
+// Anonymous-readable catalog + brand info for the marketing site.
+// The backend filters these responses to marketing-safe fields only.
+export const publicApi = {
+  items: () => api.get<PublicCatalogItem[]>('/api/public/items').then((r) => r.data),
+  categories: () =>
+    api.get<{ id: string; label: string }[]>('/api/public/categories').then((r) => r.data),
+  company: () => api.get<PublicCompanyInfo>('/api/public/company').then((r) => r.data),
 };

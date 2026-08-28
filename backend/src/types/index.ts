@@ -315,6 +315,19 @@ export interface CompanyBranding extends WorkshopInfo {
     owners: Owner[];
 }
 
+/**
+ * Public website (marketing site) settings. Scaffolding for the future
+ * storefront: visibility toggles + basic metadata. Products/blog content
+ * management will extend this later.
+ */
+export interface WebsiteSettings {
+    enabled: boolean;
+    siteTitle: string;
+    description: string;
+    showPrices: boolean;
+    showOutOfStock: boolean;
+}
+
 export interface TrashData {
     items: GarmentItem[];
     sellers: Seller[];

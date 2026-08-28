@@ -22,6 +22,13 @@
       "when": 1787728401144,
       "tag": "0002_ancient_peter_quill",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1787900489403,
+      "tag": "0003_lethal_tombstone",
+      "breakpoints": true
     }
   ]
 }

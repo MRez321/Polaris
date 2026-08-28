@@ -44,7 +44,7 @@ export const Header: React.FC = () => {
         {/* Brand Logo & Name */}
         <div
           className="flex items-center gap-3 cursor-pointer select-none"
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/app')}
         >
           <div className="w-10 h-10 rounded-xl bg-[#CEAE80] text-black flex items-center justify-center shadow-lg font-black shrink-0 ring-2 ring-[#CEAE80]/30 transition-transform active:scale-95">
             <Scissors className="w-5 h-5 -rotate-45 text-black" />
@@ -121,7 +121,7 @@ export const Header: React.FC = () => {
           {/* Overdue alert indicator button */}
           {overdueCount > 0 && (
             <button
-              onClick={() => navigate('/consignments')}
+              onClick={() => navigate('/app/consignments')}
               className="relative p-2 rounded-xl text-rose-500 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 transition-colors"
               title={`${toPersianDigits(overdueCount)} فاکتور سررسید گذشته`}
             >

@@ -9,12 +9,23 @@ import * as staff from '../controllers/staffController.js';
 import * as expenses from '../controllers/expensesController.js';
 import * as trash from '../controllers/trashController.js';
 import * as company from '../controllers/companyController.js';
+import * as website from '../controllers/websiteController.js';
 import * as dashboard from '../controllers/dashboardController.js';
 import * as gallery from '../controllers/galleryController.js';
-const router = Router();
+import * as pub from '../controllers/publicController.js';
 
-// Health stays public (uptime probes); everything else needs a session.
+
+const router = Router();
+// Health stays public (uptime probes).
 router.get('/health', dashboard.health);
+
+// Public storefront: anonymous-readable catalog for the marketing site.
+// Responses are filtered to marketing-safe fields in publicController —
+// cost/consignment prices, stock levels and internal branding stay private.
+router.get('/public/items', pub.listPublicItems);
+router.get('/public/categories', pub.listPublicCategories);
+router.get('/public/company', pub.getPublicCompany);
+
 router.use(requireAuth);
 
 // Dashboard stats: any authenticated role.
@@ -74,6 +85,9 @@ router.delete('/trash/permanent/:type/:id', trash.permanentDelete);
 // Company branding
 router.get('/company', company.getCompanyBranding);
 router.put('/company', company.updateCompanyBranding);
+// Public website (marketing site) settings
+router.get('/website/settings', website.getWebsite);
+router.put('/website/settings', website.updateWebsite);
 // Image uploads & central gallery
 router.post('/uploads', gallery.uploadMiddleware, gallery.uploadImages);
 router.get('/gallery', gallery.listImages);

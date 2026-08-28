@@ -328,4 +328,51 @@ export interface CompanyBranding extends WorkshopInfo {
   owners: Owner[];
 }
 
+/**
+ * Public website (marketing site) settings — scaffolding for the future
+ * storefront. Products/blog content management will extend this later.
+ */
+export interface WebsiteSettings {
+  enabled: boolean;
+  siteTitle: string;
+  description: string;
+  showPrices: boolean;
+  showOutOfStock: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Public storefront (anonymous-readable API surface)
+// Marketing-safe subset of GarmentItem: no cost/consignment prices, no stock
+// counts — those stay admin-only. Mirrors backend/src/controllers/publicController.ts
+// ---------------------------------------------------------------------------
+
+export interface PublicCatalogItem {
+  id: string;
+  code: string;
+  name: string;
+  category: string;
+  categoryLabel?: string;
+  retailPrice: number;
+  sizes: string[];
+  colors: string[];
+  fabric: string;
+  imageUrl?: string;
+  images?: string[];
+  inStock: boolean;
+}
+
+export interface PublicCompanyInfo {
+  name: string;
+  slogan: string;
+  brandName: string;
+  tagline: string;
+  website: string;
+  instagram: string;
+  telegram: string;
+  address: string;
+  phone: string;
+  secondaryPhone?: string;
+  establishedYear?: string;
+}
+
 

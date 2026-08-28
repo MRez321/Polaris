@@ -415,6 +415,17 @@ export const companySettings = mysqlTable('company_settings', {
 });
 
 /**
+ * Public website settings (marketing site): site title/description and
+ * visibility toggles consumed by the public storefront. Products/blog
+ * content management is planned for the future and will extend this blob.
+ */
+export const websiteSettings = mysqlTable('website_settings', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  data: json('data').$type<Record<string, unknown>>().notNull(),
+  updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+/**
  * Central image library. Every uploaded image lives on disk under /uploads
  * (short URL stored in entity columns) and is indexed here for the Settings
  * gallery: category, free-form tags, optional display label.

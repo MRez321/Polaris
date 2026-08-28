@@ -15,6 +15,7 @@ interface AuthContextValue {
   signIn: (email: string, password: string) => Promise<string | null>;
   signUp: (name: string, email: string, password: string) => Promise<string | null>;
   signOut: () => Promise<void>;
+  signInWithGoogle: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -46,6 +47,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await authClient.signOut();
   }, []);
 
+  // Redirects the browser to Google; better-auth's OAuth callback returns to
+  // /api/auth/callback/google, sets the session cookie, then redirects to
+  // callbackURL. Absolute URLs because the round-trip leaves the SPA origin.
+  const signInWithGoogle = useCallback(async (): Promise<string | null> => {
+    try {
+      const { error } = await authClient.signIn.social({
+        provider: 'google',
+        callbackURL: `${window.location.origin}/app`,
+        errorCallbackURL: `${window.location.origin}/login`,
+      });
+      return error?.message ?? null;
+    } catch {
+      return 'خطا در اتصال به سرور؛ اتصال اینترنت را بررسی کنید';
+    }
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -54,8 +71,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signIn,
       signUp,
       signOut,
+      signInWithGoogle,
     }),
-    [user, isPending, signIn, signUp, signOut]
+    [user, isPending, signIn, signUp, signOut, signInWithGoogle]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Scissors, LogIn, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { mapAuthError } from '@/lib/auth';
+import { GoogleSignInButton } from '@/components/common/GoogleSignInButton';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,8 +15,22 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // OAuth round-trip failures land back on /login?error=<code>.
+  useEffect(() => {
+    const oauthError = searchParams.get('error');
+    if (!oauthError) return;
+    setError(
+      oauthError === 'access_denied'
+        ? 'ورود با گوگل لغو شد'
+        : 'ورود با گوگل ناموفق بود؛ دوباره تلاش کنید'
+    );
+    setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams]);
+
   // Already authenticated → straight to the app.
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/app" replace />;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -38,7 +53,7 @@ const LoginPage: React.FC = () => {
         setLoading(false);
         return;
       }
-      navigate('/', { replace: true });
+      navigate('/app', { replace: true });
     } catch {
       const msg = 'خطا در اتصال به سرور؛ اتصال اینترنت را بررسی کنید';
       setError(msg);
@@ -134,6 +149,15 @@ const LoginPage: React.FC = () => {
               <span>{loading ? 'در حال ورود...' : 'ورود به حساب کاربری'}</span>
             </button>
           </form>
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 text-[11px] font-bold text-stone-400 dark:text-gray-500">
+              <span className="h-px flex-1 bg-stone-200 dark:bg-white/10" />
+              یا
+              <span className="h-px flex-1 bg-stone-200 dark:bg-white/10" />
+            </div>
+            <GoogleSignInButton label="ورود با گوگل" />
+          </div>
 
           <p className="text-xs text-center text-stone-600 dark:text-gray-400 font-medium">
             حساب کاربری ندارید؟{' '}

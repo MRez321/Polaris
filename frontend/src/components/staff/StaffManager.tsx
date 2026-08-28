@@ -322,7 +322,7 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
               <OwnerCard owner={owner} onEdit={handleOpenEditOwner} showEditButton={true} />
               <button
                 type="button"
-                onClick={() => navigate(`/profile/owners/${owner.id}`)}
+                onClick={() => navigate(`/app/profile/owners/${owner.id}`)}
                 className="w-full py-2 rounded-xl glass-card hover:border-[#CEAE80] text-stone-600 dark:text-gray-300 hover:text-black dark:hover:text-black text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
               >
                 <Eye className="w-4 h-4 text-[#CEAE80]" />
@@ -383,7 +383,7 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
               <div
                 key={stf.id}
                 className="glass-card p-4 rounded-2xl hover:border-[#CEAE80]/40 transition-all cursor-pointer flex flex-col justify-between space-y-3"
-                onClick={() => navigate(`/profile/staff/${stf.id}`)}
+                onClick={() => navigate(`/app/profile/staff/${stf.id}`)}
               >
                 <div>
                   <div className="flex items-start justify-between gap-2">

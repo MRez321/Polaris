@@ -21,18 +21,18 @@ export const Sidebar: React.FC = () => {
   ).length;
 
   const navItems = [
-    { to: '/', label: 'داشبورد', icon: LayoutDashboard, end: true },
-    { to: '/inventory', label: 'انبار و موجودی اجناس', icon: Package },
+    { to: '/app', label: 'داشبورد', icon: LayoutDashboard, end: true },
+    { to: '/app/inventory', label: 'انبار و موجودی اجناس', icon: Package },
     {
-      to: '/consignments',
+      to: '/app/consignments',
       label: 'حواله‌ها و تحویل امانی',
       icon: ArrowLeftRight,
       badge: overdueCount > 0 ? overdueCount : undefined,
     },
-    { to: '/people', label: 'فروشندگان و پرسنل', icon: Users },
-    { to: '/finances', label: 'امور مالی، درآمد و هزینه‌ها', icon: CreditCard },
-    { to: '/settings', label: 'تنظیمات و مدیریت', icon: Settings },
-  ].filter((item) => isAdmin || item.to === '/');
+    { to: '/app/people', label: 'فروشندگان و پرسنل', icon: Users },
+    { to: '/app/finances', label: 'امور مالی، درآمد و هزینه‌ها', icon: CreditCard },
+    { to: '/app/settings', label: 'تنظیمات و مدیریت', icon: Settings },
+  ].filter((item) => isAdmin || item.to === '/app');
 
   return (
     <aside className="w-64 shrink-0 hidden md:block">

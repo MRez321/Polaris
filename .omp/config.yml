@@ -1,20 +1,33 @@
 # .omp/config.yml — PROJECT SCOPE (committable)
 skills:
   includeSkills:
+    # Core engineering skills
     - to-spec
     - implement
     - code-review
     - diagnosing-bugs
     - domain-modeling
     - tdd
+
+    # Frontend-specific skills
+    - frontend-design        # React/Tailwind UI design patterns
+    - ui-ux-pro-max          # Persian RTL UI/UX best practices
+    - vercel-react-best-practices  # React 19 + TypeScript optimization
+
+    # Architecture & planning
     - handoff
+    - brainstorming
+    - wizard                 # Complex feature implementation
+
+    # Debugging & quality
     - grill-me
+    - wait-what              # Understanding complex issues
+    - wayfinder              # Navigating codebase
+
   ignoredSkills:
-    - supabase-*
-    - vercel-*
-    - frontend-design
-    - ui-ux-pro-max
-    - migrate-to-shoehorn
-    - scaffold-exercises
-    - setup-*
-    - writing-*
+    - supabase-*             # Using MySQL, not Supabase
+    - vercel-composition-patterns  # Not using Vercel deployment
+    - migrate-to-shoehorn    # Not relevant
+    - scaffold-exercises     # Not needed for production
+    - setup-*                # Already configured
+    - writing-*              # Documentation handled separately

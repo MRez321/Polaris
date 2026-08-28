@@ -405,6 +405,28 @@ Workshop identity + embedded `owners` list:
 
 Any subset of the string fields above (owners are managed via `/api/owners`).
 
+
+---
+
+## Website Settings
+
+Settings for the public marketing website (managed under Settings → «وب‌سایت عمومی»). Scaffolding for the future storefront: product/blog content management will extend this surface.
+
+### `GET /api/website/settings` → `WebsiteSettings`
+
+```json
+{
+  "enabled": false,
+  "siteTitle": "…",
+  "description": "…",
+  "showPrices": true,
+  "showOutOfStock": true
+}
+```
+
+### `PUT /api/website/settings` → updated `WebsiteSettings`
+
+Any subset of the fields above.
 ---
 
 ## Audit Logs

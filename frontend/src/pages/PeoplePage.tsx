@@ -39,7 +39,7 @@ const PeoplePage: React.FC = () => {
       onQuickPayment={(s) => openQuickPayment(s)}
       onSelectConsignment={(c) => {
         setSelectedConsignment(c);
-        navigate('/consignments');
+        navigate('/app/consignments');
       }}
       owners={owners}
       staff={staffMembers}

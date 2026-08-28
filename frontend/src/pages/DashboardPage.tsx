@@ -25,20 +25,20 @@ const DashboardPage: React.FC = () => {
       onOpenPayment={() => openQuickPayment()}
       onSelectConsignment={(c) => {
         setSelectedConsignment(c);
-        navigate('/consignments');
+        navigate('/app/consignments');
       }}
       onSelectSeller={() => {
-        navigate('/people');
+        navigate('/app/people');
       }}
       onGoToTab={(tab: string) => {
         if (tab === 'sellers' || tab === 'staff') {
-          navigate('/people');
+          navigate('/app/people');
         } else if (tab === 'payments' || tab === 'workshop' || tab === 'analytics') {
-          navigate('/finances');
+          navigate('/app/finances');
         } else if (tab === 'audit') {
-          navigate('/settings');
+          navigate('/app/settings');
         } else {
-          navigate(`/${tab}`);
+          navigate(`/app/${tab}`);
         }
       }}
     />
