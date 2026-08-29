@@ -2,7 +2,7 @@
 
 Polaris Style is the inventory, consignment, and finance management app for the Polaris Style workshop. It is a **mobile-first Persian web app** built for the business owners: track goods, hand them to sellers, collect money, pay workshop costs, and split the profit — all from a phone.
 
-Full endpoint documentation lives in [API.md](./API.md).
+Full endpoint documentation lives in [API.md](API.md).
 
 ---
 
