@@ -9,6 +9,7 @@ import logoUrl from '@/assets/logo.png';
 const QUICK_LINKS = [
   { to: '/', label: 'خانه' },
   { to: '/shop', label: 'فروشگاه پوشاک' },
+  { to: '/blog', label: 'وبلاگ' },
   { to: '/contact', label: 'تماس با ما' },
 ];
 
@@ -208,6 +209,9 @@ export const PublicFooter: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-[11px] font-bold text-stone-500 dark:text-stone-500 text-center sm:text-right">
             © {jalaliYear} پولاریس استایل — تمامی حقوق محفوظ است.
+          </p>
+          <p className="text-[11px] font-bold text-stone-500 dark:text-stone-500">
+            طراحی و توسعه: <span className="text-[#A67C38] dark:text-[#CEAE80] font-black">MRez</span>
           </p>
           <p className="flex items-center gap-1.5 text-[11px] font-bold text-stone-500 dark:text-stone-500">
             <ShieldCheck className="w-3.5 h-3.5 text-[#A67C38] dark:text-[#CEAE80]" />

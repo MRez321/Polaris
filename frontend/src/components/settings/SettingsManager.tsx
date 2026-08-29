@@ -35,7 +35,6 @@ import { AuditLogsManager } from '../audit/AuditLogsManager';
 import { ImagePicker } from '../common/ImagePicker';
 import { GalleryManager } from './GalleryManager';
 import { UsersManager } from './UsersManager';
-import { WebsiteManager } from './WebsiteManager';
 import { toast } from 'sonner';
 import { normalizePhoneInput, isValidIranPhone, PHONE_ERROR } from '../../utils/validation';
 
@@ -62,7 +61,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
   networkStatus,
   onOpenPwaInstall,
 }) => {
-  const [activeTab, setActiveTab] = useState<'branding' | 'gallery' | 'website' | 'trash' | 'system' | 'audit' | 'users'>('branding');
+  const [activeTab, setActiveTab] = useState<'branding' | 'gallery' | 'trash' | 'system' | 'audit' | 'users'>('branding');
   const [isSavedAlert, setIsSavedAlert] = useState(false);
 
   // Form State for Workshop Info
@@ -487,18 +486,6 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
         >
           <Images className="w-3.5 h-3.5" />
           <span>گالری تصاویر</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('website')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
-            activeTab === 'website'
-              ? 'bg-[#CEAE80] text-black shadow-md font-black'
-              : 'text-stone-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5'
-          }`}
-        >
-          <Globe className="w-3.5 h-3.5" />
-          <span>وب‌سایت عمومی</span>
         </button>
 
         <button
@@ -988,12 +975,6 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
       )}
 
       {/* ======================================================== */}
-      {/* TAB: PUBLIC WEBSITE (سایت عمومی — scaffolding) */}
-      {activeTab === 'website' && (
-        <div className="animate-in fade-in duration-200">
-          <WebsiteManager />
-        </div>
-      )}
 
       {/* ======================================================== */}
       {/* TAB 3: TRASH & RECYCLE BIN (SOFT DELETE RESTORE) */}

@@ -1,7 +1,13 @@
 import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Heart, ShoppingBag } from 'lucide-react';
+import { toast } from 'sonner';
 import type { PublicCatalogItem } from '@/types';
 import { formatToman } from '@/utils/persian';
 import { SafeImage } from '@/components/common/SafeImage';
+import { useCart } from '@/context/CartContext';
+import { useFavorites } from '@/context/FavoritesContext';
+import { cn } from '@/lib/utils';
 
 interface ProductCardProps {
   item: PublicCatalogItem;
@@ -9,16 +15,48 @@ interface ProductCardProps {
 
 /**
  * Marketing product card for the public storefront — image-forward with a
- * gold accent, hover lift/zoom and availability badge. Deliberately unlike
- * the dashboard's dense inventory rows.
+ * gold accent, hover lift/zoom and availability badge. Links to the product
+ * page; items without variants can be added to the cart directly.
  */
 export const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
   const image = item.imageUrl || item.images?.[0];
+  const { add, openCart } = useCart();
+  const { isFavorite, toggle } = useFavorites();
+  const navigate = useNavigate();
+
+  const favorite = isFavorite(item.id);
+  const hasVariants = item.sizes.length > 0 || item.colors.length > 0;
+
+  const handleAdd = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!item.inStock) return;
+    if (hasVariants) {
+      navigate(`/product/${item.id}`);
+      return;
+    }
+    add({
+      itemId: item.id,
+      code: item.code,
+      name: item.name,
+      price: item.retailPrice,
+      quantity: 1,
+      imageUrl: image,
+    });
+    toast.success(`«${item.name}» به سبد خرید اضافه شد`);
+    openCart();
+  };
+
+  const handleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggle(item.id);
+  };
 
   return (
     <article className="group relative rounded-2xl overflow-hidden bg-white dark:bg-[#16161a] border border-stone-200/80 dark:border-white/8 shadow-sm hover:shadow-2xl hover:shadow-[#CEAE80]/10 hover:border-[#CEAE80]/50 hover:-translate-y-1 transition-all duration-300">
       {/* Product image */}
-      <div className="relative aspect-[3/4] overflow-hidden bg-stone-100 dark:bg-white/5">
+      <Link to={`/product/${item.id}`} className="block relative aspect-[3/4] overflow-hidden bg-stone-100 dark:bg-white/5">
         <SafeImage
           src={image}
           alt={item.name}
@@ -39,7 +77,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
             {item.colors.length} رنگ
           </span>
         )}
-      </div>
+      </Link>
+
+      {/* Favorite toggle */}
+      <button
+        type="button"
+        onClick={handleFavorite}
+        className={cn(
+          'absolute top-3 left-3 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all active:scale-90',
+          favorite
+            ? 'bg-[#CEAE80] text-black shadow-md shadow-[#CEAE80]/40'
+            : 'bg-black/40 text-white hover:bg-black/60'
+        )}
+        aria-label={favorite ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها'}
+        aria-pressed={favorite}
+      >
+        <Heart className={cn('w-4 h-4', favorite && 'fill-current')} />
+      </button>
 
       {/* Details */}
       <div className="p-4 sm:p-5 space-y-2.5">
@@ -49,9 +103,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
           </p>
         )}
 
-        <h3 className="font-bold text-sm sm:text-base leading-6 text-stone-900 dark:text-white line-clamp-1">
-          {item.name}
-        </h3>
+        <Link to={`/product/${item.id}`} className="block">
+          <h3 className="font-bold text-sm sm:text-base leading-6 text-stone-900 dark:text-white line-clamp-1 group-hover:text-[#A67C38] dark:group-hover:text-[#CEAE80] transition-colors">
+            {item.name}
+          </h3>
+        </Link>
 
         {item.fabric && (
           <p className="text-[11px] sm:text-xs text-stone-500 dark:text-stone-400 line-clamp-1">
@@ -72,16 +128,28 @@ export const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-2 border-t border-dashed border-stone-200 dark:border-white/10">
-          <div className="flex flex-col">
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-dashed border-stone-200 dark:border-white/10">
+          <div className="flex flex-col min-w-0">
             <span className="text-[10px] text-stone-400 dark:text-stone-500 font-medium">قیمت مصرف‌کننده</span>
             <span className="text-sm sm:text-base font-black text-[#A67C38] dark:text-[#CEAE80]">
               {formatToman(item.retailPrice)}
             </span>
           </div>
-          <span className="text-[10px] font-bold text-stone-400 dark:text-stone-500" dir="ltr">
-            {item.code}
-          </span>
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={!item.inStock}
+            className={cn(
+              'shrink-0 flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-black transition-all active:scale-95',
+              item.inStock
+                ? 'bg-[#CEAE80] hover:bg-[#c2a06e] text-black shadow-md shadow-[#CEAE80]/25'
+                : 'bg-stone-100 dark:bg-white/5 text-stone-400 dark:text-stone-500 cursor-not-allowed'
+            )}
+            aria-label={hasVariants ? `مشاهده و انتخاب ${item.name}` : `افزودن ${item.name} به سبد خرید`}
+          >
+            <ShoppingBag className="w-3.5 h-3.5" />
+            {hasVariants ? 'انتخاب' : 'خرید'}
+          </button>
         </div>
       </div>
     </article>

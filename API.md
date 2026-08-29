@@ -11,7 +11,7 @@ REST API for the Polaris Style inventory management system. The backend serves t
 
 ## Authentication
 
-Auth is handled by [better-auth](https://www.better-auth.com/) mounted at `/api/auth/*` (email/password, with admin and bearer plugins).
+Auth is handled by [better-auth](https://www.better-auth.com/) mounted at `/api/auth/*` (email/password + Google OAuth, with admin and bearer plugins).
 
 Session flow:
 
@@ -30,7 +30,52 @@ curl -c cookies.txt -X POST https://polarisstyle.ir/api/auth/sign-in/email \
 
 With the bearer plugin, an `Authorization: Bearer <session-token>` header works instead of cookies.
 
-> **Current state:** business routes below attach the session for **audit-log attribution only** (`attachSession` never rejects). Role guards (`requireRole`) exist and will be applied per-route as the permission model rolls out. Admin endpoints from the better-auth admin plugin are available under `/api/auth/admin/*`.
+### Roles
+
+| Role | Surface | Notes |
+| ---- | ------- | ----- |
+| `admin` | workshop panel `/app` + website management `/controlpanel` | full access; the better-auth admin plugin treats `admin` as its admin role |
+| `author` | `/controlpanel/blog` only | writes blog posts; no workshop data, no website settings |
+| `staff` | — (migrated) | legacy pre-role-model accounts; migration `0005` promotes every remaining `staff` user to `admin` |
+
+Route guards are enforced server-side (`requireAuth`, `requireRole(...)` in `src/routes/apiRoutes.ts`): the public storefront is anonymous-readable, order placement and `/orders/mine` need any authenticated user, blog CMS needs `admin` or `author`, and every other business route needs `admin`. The better-auth admin plugin endpoints live under `/api/auth/admin/*` (user list, create user, `set-role`, ban/unban, remove user) and require the `admin` role.
+
+---
+
+## Public Storefront (anonymous)
+
+Read-only catalog for the marketing website. Responses are filtered to marketing-safe fields — cost/consignment prices, stock levels and internal notes never leave these endpoints.
+
+### `GET /api/public/items` → catalog item list
+
+```json
+[{
+  "id": "…", "code": "PLR-477", "name": "…", "category": "coats_jackets",
+  "categoryLabel": "کت، کاپشن و پالتو", "retailPrice": 1099998,
+  "sizes": ["M", "L"], "colors": ["مشکی"], "fabric": "…",
+  "imageUrl": "…", "images": ["…"], "inStock": true
+}]
+```
+
+### `GET /api/public/categories` → `{ id, label }[]`
+
+### `GET /api/public/company` → public brand info (name, tagline, contact details)
+
+### `GET /api/public/blog` → published posts only (newest first)
+
+### `GET /api/public/blog/:slug` → one published post (`404` for drafts/unknown slugs)
+
+Blog post shape (shared with the CMS below):
+
+```json
+{
+  "id": "…", "slug": "ket-size-guide", "title": "…", "excerpt": "…",
+  "image": "/uploads/….jpg", "imageAlt": "…", "date": "۱۴۰۵/۰۶/۰۳",
+  "readTime": "۵ دقیقه مطالعه", "tags": ["راهنمای خرید"],
+  "body": [{ "heading": "optional h2", "text": "paragraph…" }],
+  "status": "published", "authorName": "مدیر سیستم"
+}
+```
 
 ---
 
@@ -45,9 +90,9 @@ Connection check. Verifies the **MySQL database** is reachable — not just that
 | `200`  | data can be saved  | `{"status":"ok","database":"connected","uptime":123.4,"timestamp":"2026-08-24T07:37:56.432Z"}` |
 | `503`  | DB unreachable     | `{"status":"error","database":"disconnected","uptime":123.4,"timestamp":"…"}` |
 
-### `GET /api/dashboard/stats`
+### `GET /api/dashboard/stats` (admin)
 
-Aggregated numbers for the dashboard.
+Aggregated numbers for the workshop dashboard. Admin-only — workshop data must not leak to website customers.
 
 ```json
 {
@@ -261,6 +306,50 @@ Soft delete → trash.
 
 ---
 
+## Store Orders (فروشگاه)
+
+Orders placed on the public storefront. Customers order their own cart; admins manage every order. Prices are re-computed server-side from the items table inside a transaction — client-side totals are estimates only. Cancelling an order restocks its lines.
+
+### `POST /api/orders` → `201 Order` (any authenticated user)
+
+```json
+{
+  "customerName": "…", "phone": "09121234567",
+  "city": "تهران", "address": "…", "note": "optional",
+  "paymentMethod": "cod",
+  "lines": [{ "itemId": "<item-id>", "quantity": 1, "size": "M", "color": "مشکی" }]
+}
+```
+
+`paymentMethod`: `cod` (پرداخت در محل) | `card_transfer` (کارت به کارت). Phone must match `^0\d{10}$`. Stock is validated and decremented atomically; insufficient stock → `400`.
+
+### `GET /api/orders/mine` → `Order[]` (any authenticated user)
+
+The caller's own orders, newest first — powers the customer profile at `/dashboard`.
+
+### `GET /api/orders` → `Order[]` (admin)
+
+All orders with customer details and line items.
+
+### `PUT /api/orders/:id` → `Order` (admin)
+
+Body: `{ "status": "…" }` with one of `pending` | `confirmed` | `preparing` | `shipped` | `delivered` | `cancelled`. Moving to `cancelled` restocks the lines.
+
+Order shape:
+
+```json
+{
+  "id": "…", "code": "ORD-2", "userId": "…", "customerName": "…",
+  "phone": "0912…", "city": "تهران", "address": "…", "note": null,
+  "paymentMethod": "cod", "status": "pending",
+  "totalPrice": 1099998,
+  "items": [{ "itemId": "…", "name": "…", "quantity": 1, "unitPrice": 1099998, "size": "M", "color": "مشکی" }],
+  "createdAt": "…"
+}
+```
+
+---
+
 ## Staff & Owners
 
 ### `GET /api/staff` → `StaffMember[]`
@@ -410,7 +499,7 @@ Any subset of the string fields above (owners are managed via `/api/owners`).
 
 ## Website Settings
 
-Settings for the public marketing website (managed under Settings → «وب‌سایت عمومی»). Scaffolding for the future storefront: product/blog content management will extend this surface.
+Settings for the public marketing website, managed at `/controlpanel/website` (admin only). The storefront catalog reads items directly; this surface controls the site shell (publication toggle, brand copy, contact info).
 
 ### `GET /api/website/settings` → `WebsiteSettings`
 
@@ -427,6 +516,22 @@ Settings for the public marketing website (managed under Settings → «وب‌�
 ### `PUT /api/website/settings` → updated `WebsiteSettings`
 
 Any subset of the fields above.
+---
+
+## Blog CMS (admin, author)
+
+Content management for the public blog. Drafts are only visible through these endpoints; the public site renders published posts only.
+
+### `GET /api/blog` → `BlogPost[]` (incl. drafts)
+
+### `POST /api/blog` → `201 BlogPost`
+
+Body: the post shape from the [public storefront](#public-storefront-anonymous) minus `id`/`authorName` — required: `slug`, `title`, `excerpt`, `body` (`[{ heading?, text }]`); optional: `image`, `imageAlt`, `date`, `readTime`, `tags`, `status` (`draft` | `published`, default `draft`). The author is recorded from the session.
+
+### `PUT /api/blog/:id` → `BlogPost` (partial update)
+
+### `DELETE /api/blog/:id` → `{ "message": "…" }` (hard delete)
+
 ---
 
 ## Audit Logs

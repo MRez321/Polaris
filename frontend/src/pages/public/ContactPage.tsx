@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import type { PublicCompanyInfo } from '@/types';
 import { publicApi } from '@/lib/api';
+import { usePageMeta } from '@/lib/usePageMeta';
 import { toPersianDigits } from '@/utils/persian';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -29,6 +30,12 @@ const isValidPhone = (value: string) => /^0?\d{10,11}$/.test(value.replace(/[\s-
 
 export const ContactPage: React.FC = () => {
   const [company, setCompany] = useState<PublicCompanyInfo | null>(null);
+
+  usePageMeta(
+    'تماس با فروشگاه پولاریس',
+    'آدرس، شماره تماس و فرم ارتباط با فروشگاه پوشاک پولاریس استایل؛ مشاوره خرید تلفنی و هماهنگی بازدید حضوری.',
+    '/contact'
+  );
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');

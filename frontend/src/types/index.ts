@@ -375,4 +375,101 @@ export interface PublicCompanyInfo {
   establishedYear?: string;
 }
 
+// ---------------------------------------------------------------------------
+// Blog (public readers + control-panel CMS)
+// ---------------------------------------------------------------------------
+
+export type BlogPostStatus = 'draft' | 'published';
+
+/** One rendered block of a blog article: optional h2 heading + paragraph. */
+export interface BlogSection {
+  heading?: string;
+  text: string;
+}
+
+export interface BlogPost {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  image: string;
+  imageAlt: string;
+  /** Jalali display date set by the author, e.g. «۱۴۰۵/۰۶/۰۳». */
+  date: string;
+  readTime: string;
+  tags: string[];
+  body: BlogSection[];
+  status: BlogPostStatus;
+  authorId: string;
+  authorName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Display-only view shared by the blog API DTO and the static fallback data. */
+export type BlogPostDisplay = Pick<
+  BlogPost,
+  'slug' | 'title' | 'excerpt' | 'image' | 'imageAlt' | 'date' | 'readTime' | 'tags' | 'body'
+>;
+
+// ---------------------------------------------------------------------------
+// Customer orders (storefront checkout + profile history + admin management)
+// ---------------------------------------------------------------------------
+
+export type OrderStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'preparing'
+  | 'shipped'
+  | 'delivered'
+  | 'cancelled';
+
+export type OrderPaymentMethod = 'cod' | 'card_transfer';
+
+export interface OrderItemLine {
+  itemId: string;
+  code: string;
+  name: string;
+  /** Snapshot of retailPrice at order time (toman). */
+  price: number;
+  quantity: number;
+  size?: string;
+  color?: string;
+  imageUrl?: string;
+}
+
+export interface Order {
+  id: string;
+  code: string;
+  userId: string;
+  customerName: string;
+  phone: string;
+  city: string;
+  address: string;
+  note: string;
+  paymentMethod: OrderPaymentMethod;
+  status: OrderStatus;
+  total: number;
+  items: OrderItemLine[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Client-side shopping cart (localStorage; only itemId/quantity/variant are
+// sent to the backend at checkout — prices are re-resolved server-side)
+// ---------------------------------------------------------------------------
+
+export interface CartLine {
+  itemId: string;
+  code: string;
+  name: string;
+  /** Display-only; the backend recomputes the real price at order time. */
+  price: number;
+  quantity: number;
+  size?: string;
+  color?: string;
+  imageUrl?: string;
+}
+
 

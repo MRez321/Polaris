@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   Package,
+  ShoppingBag,
   Users,
   ArrowLeftRight,
   CreditCard,
@@ -22,6 +23,7 @@ export const Sidebar: React.FC = () => {
 
   const navItems = [
     { to: '/app', label: 'داشبورد', icon: LayoutDashboard, end: true },
+    { to: '/app/orders', label: 'سفارش‌های فروشگاه', icon: ShoppingBag },
     { to: '/app/inventory', label: 'انبار و موجودی اجناس', icon: Package },
     {
       to: '/app/consignments',

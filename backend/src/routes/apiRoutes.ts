@@ -13,6 +13,8 @@ import * as website from '../controllers/websiteController.js';
 import * as dashboard from '../controllers/dashboardController.js';
 import * as gallery from '../controllers/galleryController.js';
 import * as pub from '../controllers/publicController.js';
+import * as blog from '../controllers/blogController.js';
+import * as orders from '../controllers/ordersController.js';
 
 
 const router = Router();
@@ -25,14 +27,31 @@ router.get('/health', dashboard.health);
 router.get('/public/items', pub.listPublicItems);
 router.get('/public/categories', pub.listPublicCategories);
 router.get('/public/company', pub.getPublicCompany);
+router.get('/public/blog', pub.listPublicBlogPosts);
+router.get('/public/blog/:slug', pub.getPublicBlogPost);
 
 router.use(requireAuth);
 
-// Dashboard stats: any authenticated role.
-router.get('/dashboard/stats', dashboard.dashboardStats);
+// Customer orders: any authenticated user (website customers).
+router.post('/orders', orders.createOrder);
+router.get('/orders/mine', orders.listMyOrders);
+
+// Blog CMS: admin + author roles only.
+router.get('/blog', requireRole('admin', 'author'), blog.listPosts);
+router.post('/blog', requireRole('admin', 'author'), blog.createPost);
+router.put('/blog/:id', requireRole('admin', 'author'), blog.updatePost);
+router.delete('/blog/:id', requireRole('admin', 'author'), blog.deletePost);
 
 // Everything below is admin-only.
 router.use(requireRole('admin'));
+
+// Dashboard stats: admin-only (workshop data must not leak to website users).
+router.get('/dashboard/stats', dashboard.dashboardStats);
+
+// Orders management: all orders + status transitions.
+router.get('/orders', orders.listAllOrders);
+router.put('/orders/:id', orders.updateOrderStatus);
+
 
 // Items & categories
 router.get('/items', items.listItems);

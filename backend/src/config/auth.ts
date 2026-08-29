@@ -10,13 +10,25 @@ import { logAudit } from '../services/auditService.js';
 
 dotenv.config();
 
+// Vite auto-increments the dev port when 5173 is taken (5174, 5175, …).
+// This is better-auth's own CSRF origin gate — separate from Express CORS —
+// so the whole local dev range must be trusted here too, or every /api/auth
+// request from a secondary dev port fails with INVALID_ORIGIN.
+const localDevOrigins = ['localhost', '127.0.0.1'].flatMap((host) =>
+    [5173, 5174, 5175, 3000, 3001].map((port) => `http://${host}:${port}`),
+);
+
 export const auth = betterAuth({
     secret: process.env.BETTER_AUTH_SECRET,
     baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3016',
     trustedOrigins: [
-        process.env.FRONTEND_URL || 'http://localhost:5173',
-        process.env.BETTER_AUTH_URL || 'http://localhost:3016',
-    ],
+        process.env.CORS_ORIGIN,
+        process.env.FRONTEND_URL,
+        process.env.BETTER_AUTH_URL,
+        'http://localhost:3016',
+        'http://127.0.0.1:3016',
+        ...localDevOrigins,
+    ].filter((o): o is string => Boolean(o)),
     database: drizzleAdapter(db, {
         provider: 'mysql',
         schema: {
@@ -86,7 +98,9 @@ export const auth = betterAuth({
     },
     plugins: [
         admin({
-            defaultRole: 'staff',
+            // Website customers sign up as plain users; workshop roles are
+            // assigned explicitly by the admin in the users manager.
+            defaultRole: 'user',
             adminRoles: ['admin'],
         }),
         bearer(),

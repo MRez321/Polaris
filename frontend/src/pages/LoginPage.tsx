@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Scissors, LogIn, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { mapAuthError } from '@/lib/auth';
+import { mapAuthError, roleHome } from '@/lib/auth';
 import { GoogleSignInButton } from '@/components/common/GoogleSignInButton';
 
 const LoginPage: React.FC = () => {
@@ -16,6 +16,11 @@ const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Where to go after login: an explicit ?next= (same-origin paths only)
+  // wins, otherwise each role lands on its own home.
+  const nextParam = searchParams.get('next');
+  const safeNext = nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : null;
 
   // OAuth round-trip failures land back on /login?error=<code>.
   useEffect(() => {
@@ -30,7 +35,7 @@ const LoginPage: React.FC = () => {
   }, [searchParams, setSearchParams]);
 
   // Already authenticated → straight to the app.
-  if (user) return <Navigate to="/app" replace />;
+  if (user) return <Navigate to={safeNext ?? roleHome(user.role)} replace />;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -53,7 +58,10 @@ const LoginPage: React.FC = () => {
         setLoading(false);
         return;
       }
-      navigate('/app', { replace: true });
+      // With a ?next target go there directly; otherwise keep the loading
+      // state — the session update re-renders this page and the role-aware
+      // redirect above takes over.
+      if (safeNext) navigate(safeNext, { replace: true });
     } catch {
       const msg = 'خطا در اتصال به سرور؛ اتصال اینترنت را بررسی کنید';
       setError(msg);

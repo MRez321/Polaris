@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import type { PublicCatalogItem } from '@/types';
 import { publicApi } from '@/lib/api';
+import { usePageMeta } from '@/lib/usePageMeta';
 import { toPersianDigits } from '@/utils/persian';
 import { Reveal } from '@/components/public/Reveal';
 import { SectionHeading } from '@/components/public/SectionHeading';
@@ -42,6 +43,12 @@ const SHOP_FEATURES = [
 export const HomePage: React.FC = () => {
   const [items, setItems] = useState<PublicCatalogItem[]>([]);
   const [categories, setCategories] = useState<{ id: string; label: string }[]>([]);
+
+  usePageMeta(
+    'فروشگاه پوشاک پولاریس استایل | خرید کت، پیراهن و شلوار آماده',
+    'فروشگاه پوشاک آماده پولاریس استایل: کت، پالتو، پیراهن، شلوار و مانتو با تنوع سایز و رنگ، کیفیت منتخب و مشاوره خرید رایگان.',
+    '/'
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -190,6 +197,7 @@ export const HomePage: React.FC = () => {
                 <img
                   src={heroPhoto}
                   alt="فروشگاه پوشاک پولاریس"
+                  fetchPriority="high"
                   className="w-full h-72 sm:h-96 lg:h-[30rem] object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />

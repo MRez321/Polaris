@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Scissors, UserPlus, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { mapAuthError } from '@/lib/auth';
+import { mapAuthError, roleHome } from '@/lib/auth';
 import { GoogleSignInButton } from '@/components/common/GoogleSignInButton';
 
 const SignupPage: React.FC = () => {
@@ -17,8 +17,13 @@ const SignupPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const [searchParams] = useSearchParams();
+  // Checkout sends ?next=/checkout; same-origin paths only.
+  const nextParam = searchParams.get('next');
+  const safeNext = nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : null;
+
   // Already authenticated → straight to the app.
-  if (user) return <Navigate to="/app" replace />;
+  if (user) return <Navigate to={safeNext ?? roleHome(user.role)} replace />;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -56,7 +61,9 @@ const SignupPage: React.FC = () => {
         return;
       }
       toast.success('حساب کاربری شما ساخته شد؛ خوش آمدید');
-      navigate('/app', { replace: true });
+      // New accounts get the default `user` role → customer dashboard,
+      // unless checkout (or another page) asked for a specific target.
+      navigate(safeNext ?? '/dashboard', { replace: true });
     } catch {
       const msg = 'خطا در اتصال به سرور؛ اتصال اینترنت را بررسی کنید';
       setError(msg);

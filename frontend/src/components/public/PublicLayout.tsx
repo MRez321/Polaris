@@ -2,9 +2,10 @@ import React, { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { PublicHeader } from '@/components/public/PublicHeader';
 import { PublicFooter } from '@/components/public/PublicFooter';
+import { CartDrawer } from '@/components/public/CartDrawer';
 
 /**
- * Layout for the public marketing site (/, /shop, /services, /contact).
+ * Layout for the public marketing site (/, /shop, /blog, /contact).
  *
  * Deliberately isolated from the admin AppLayout: no DataContext, no
  * authenticated widgets, no admin navigation — public visitors never load
@@ -33,6 +34,8 @@ export const PublicLayout: React.FC = () => {
       </main>
 
       <PublicFooter />
+
+      <CartDrawer />
     </div>
   );
 };

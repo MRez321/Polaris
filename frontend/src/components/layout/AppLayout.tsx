@@ -31,7 +31,7 @@ export const AppLayout: React.FC = () => {
 
   // Route protection: once the session has settled, unauthenticated visitors
   // are bounced to the login page.
-  if (!isLoading && !user) return <Navigate to="/login" replace />;
+  if (!isLoading && !user) return <Navigate to="/login?next=%2Fapp" replace />;
 
   return (
     <div className="relative min-h-screen flex flex-col font-sans transition-colors duration-200 overflow-x-hidden" dir="rtl">

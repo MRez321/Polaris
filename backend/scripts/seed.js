@@ -13,6 +13,8 @@
  *      it to the `admin` role. Existing admins are left in place (role is
  *      re-asserted).
  */
+import crypto from 'node:crypto';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
@@ -199,7 +201,42 @@ try {
         console.log('  = اطلاعات برند و کارگاه قبلا ثبت شده است');
     }
 
-    // 3. Admin user through better-auth so the password hash is correct.
+    // 3. Blog posts — read the exported articles and INSERT IGNORE by slug.
+    const blogSeedPath = path.resolve(__dirname, 'blog-seed.json');
+    if (fs.existsSync(blogSeedPath)) {
+        const blogPosts = JSON.parse(fs.readFileSync(blogSeedPath, 'utf8'));
+        let createdPosts = 0;
+        for (const post of blogPosts) {
+            const [result] = await pool.query(
+                `INSERT IGNORE INTO blog_posts
+                 (id, slug, title, excerpt, image, image_alt, date, read_time, tags, body, status, author_id, author_name)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', '', 'تیم پولاریس')`,
+                [
+                    crypto.randomUUID(),
+                    post.slug,
+                    post.title,
+                    post.excerpt,
+                    post.image,
+                    post.imageAlt,
+                    post.date,
+                    post.readTime,
+                    JSON.stringify(post.tags),
+                    JSON.stringify(post.body),
+                ],
+            );
+            if (result.affectedRows > 0) {
+                console.log(`  + مطلب وبلاگ: ${post.title}`);
+                createdPosts += 1;
+            }
+        }
+        if (createdPosts === 0) {
+            console.log('  = مطالب وبلاگ قبلا ثبت شده‌اند');
+        }
+    } else {
+        console.log('  ⚠️ فایل blog-seed.json یافت نشد؛ وبلاگ seed نشد');
+    }
+
+    // 4. Admin user through better-auth so the password hash is correct.
     const auth = betterAuth({
         secret: process.env.BETTER_AUTH_SECRET,
         baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3016',
@@ -208,7 +245,7 @@ try {
             schema: { user, session, account, verification },
         }),
         emailAndPassword: { enabled: true },
-        plugins: [admin({ defaultRole: 'staff', adminRoles: ['admin'] })],
+        plugins: [admin({ defaultRole: 'user', adminRoles: ['admin'] })],
     });
 
     const [existingAdmin] = await pool.query('SELECT id FROM user WHERE email = ?', [ADMIN_EMAIL]);

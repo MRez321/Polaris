@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { PackageSearch, RefreshCw, Search, SlidersHorizontal, X } from 'lucide-react';
 import type { PublicCatalogItem } from '@/types';
 import { getApiErrorMessage, publicApi } from '@/lib/api';
+import { usePageMeta } from '@/lib/usePageMeta';
 import { formatGrouped, parseGrouped, toPersianDigits } from '@/utils/persian';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,12 @@ export const ShopPage: React.FC = () => {
   const [maxPrice, setMaxPrice] = useState('');
   const [sort, setSort] = useState<SortOrder>('default');
   const [searchParams] = useSearchParams();
+
+  usePageMeta(
+    'فروشگاه پوشاک آماده تحویل',
+    'خرید کت، پیراهن، شلوار و مانتو از فروشگاه پولاریس؛ قیمت مصرف‌کننده، تنوع سایز و رنگ، آماده تحویل.',
+    '/shop'
+  );
 
   const load = useCallback(() => {
     setLoading(true);

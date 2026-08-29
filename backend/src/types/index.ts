@@ -3,7 +3,7 @@
  * The API must return these shapes exactly.
  */
 
-export type UserRole = 'admin' | 'accountant' | 'supervisor' | 'tailor' | 'staff';
+export type UserRole = 'admin' | 'author' | 'user' | 'accountant' | 'supervisor' | 'tailor' | 'staff';
 
 export interface BankAccountInfo {
     id?: string;
@@ -337,3 +337,66 @@ export interface TrashData {
 }
 
 export type TrashEntityType = 'item' | 'seller' | 'staff' | 'expense' | 'consignment';
+
+// ---------------------------------------------------------------------------
+// Public website: blog posts & customer orders
+// ---------------------------------------------------------------------------
+
+export type BlogPostStatus = 'draft' | 'published';
+
+export interface BlogSection {
+    heading?: string;
+    text: string;
+}
+
+export interface BlogPost {
+    id: string;
+    slug: string;
+    title: string;
+    excerpt: string;
+    image: string;
+    imageAlt: string;
+    /** Jalali display date set by the author, e.g. «۱۴۰۵/۰۶/۰۳». */
+    date: string;
+    readTime: string;
+    tags: string[];
+    body: BlogSection[];
+    status: BlogPostStatus;
+    authorId: string;
+    authorName: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'shipped' | 'delivered' | 'cancelled';
+
+export type OrderPaymentMethod = 'cod' | 'card_transfer';
+
+export interface OrderItemLine {
+    itemId: string;
+    code: string;
+    name: string;
+    /** Snapshot of retailPrice at order time (toman). */
+    price: number;
+    quantity: number;
+    size?: string;
+    color?: string;
+    imageUrl?: string;
+}
+
+export interface Order {
+    id: string;
+    code: string;
+    userId: string;
+    customerName: string;
+    phone: string;
+    city: string;
+    address: string;
+    note: string;
+    paymentMethod: OrderPaymentMethod;
+    status: OrderStatus;
+    total: number;
+    items: OrderItemLine[];
+    createdAt: string;
+    updatedAt: string;
+}

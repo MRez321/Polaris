@@ -29,7 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: data.user.id,
       name: data.user.name,
       email: data.user.email,
-      role: data.user.role || 'staff',
+      role: data.user.role || 'user',
     };
   }, [data]);
 
@@ -54,7 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { error } = await authClient.signIn.social({
         provider: 'google',
-        callbackURL: `${window.location.origin}/app`,
+        callbackURL: `${window.location.origin}/login`,
         errorCallbackURL: `${window.location.origin}/login`,
       });
       return error?.message ?? null;

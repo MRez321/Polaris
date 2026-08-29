@@ -5,20 +5,30 @@ import { adminAc, userAc } from 'better-auth/plugins/admin/access';
 // Same-origin client: the backend mounts better-auth at /api/auth and the
 // Vite dev proxy forwards /api, so no baseURL override is needed.
 //
-// The server admin plugin (backend/src/config/auth.ts) works with the roles
-// `admin` / `staff`. A standalone client would only infer the default
-// `admin` | `user` roles, so the app's real roles are registered here to
-// keep the admin endpoints (setRole, createUser, …) typed correctly.
+// The server admin plugin (backend/src/config/auth.ts) knows the roles
+// `admin` / `author` / `user` (+ legacy `staff`). A standalone client would
+// only infer the default `admin` | `user` roles, so the app's real roles are
+// registered here to keep the admin endpoints (setRole, createUser, …) typed.
 export const authClient = createAuthClient({
   plugins: [
     adminClient({
       roles: {
         admin: adminAc,
+        author: userAc,
+        user: userAc,
         staff: userAc,
       },
     }),
   ],
 });
+
+// Landing route per role after login/signup: admins run the workshop panel,
+// authors manage the website blog, everyone else is a shop customer.
+export function roleHome(role: string | undefined): string {
+  if (role === 'admin') return '/app';
+  if (role === 'author') return '/controlpanel';
+  return '/dashboard';
+}
 
 // Map common better-auth (English) error messages to Persian copy.
 // Already-Persian messages pass through untouched.

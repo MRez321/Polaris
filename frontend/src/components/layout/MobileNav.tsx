@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   Package,
+  ShoppingBag,
   Users,
   ArrowLeftRight,
   CreditCard,
@@ -22,6 +23,7 @@ export const MobileNav: React.FC = () => {
 
   const items = [
     { to: '/app', label: 'داشبورد', icon: LayoutDashboard, end: true },
+    { to: '/app/orders', label: 'سفارش‌ها', icon: ShoppingBag },
     { to: '/app/inventory', label: 'انبار', icon: Package },
     {
       to: '/app/consignments',

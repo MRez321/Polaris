@@ -1,7 +1,9 @@
 import type { Request, Response } from 'express';
 
+import * as blogSvc from '../services/blogService.js';
 import * as svc from '../services/inventoryService.js';
 import { getCompany } from '../services/settingsService.js';
+import { notFound, pathParam } from '../utils/apiError.js';
 
 /**
  * Public storefront API — mounted BEFORE `requireAuth` in apiRoutes.ts so
@@ -55,4 +57,15 @@ export async function getPublicCompany(_req: Request, res: Response): Promise<vo
         secondaryPhone: company.secondaryPhone,
         establishedYear: company.establishedYear,
     });
+}
+
+export async function listPublicBlogPosts(_req: Request, res: Response): Promise<void> {
+    res.json(await blogSvc.listPosts(false));
+}
+
+export async function getPublicBlogPost(req: Request, res: Response): Promise<void> {
+    const slug = pathParam(req, 'slug', 'آدرس مطلب');
+    const post = await blogSvc.getPublishedPostBySlug(slug);
+    if (!post) throw notFound('مطلب یافت نشد');
+    res.json(post);
 }

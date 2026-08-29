@@ -54,7 +54,7 @@ export function requireRole(...roles: string[]) {
             res.status(401).json({ error: 'ابتدا وارد حساب کاربری خود شوید' });
             return;
         }
-        const role = req.auth.user.role ?? 'staff';
+        const role = req.auth.user.role ?? 'user';
         if (!roles.includes(role)) {
             res.status(403).json({ error: 'شما اجازه انجام این عمل را ندارید' });
             return;

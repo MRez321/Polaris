@@ -441,3 +441,83 @@ export const galleryImages = mysqlTable('gallery_images', {
 });
 
 export type GalleryImageRow = typeof galleryImages.$inferSelect;
+
+// ---------------------------------------------------------------------------
+// Public website: blog posts & customer orders
+// ---------------------------------------------------------------------------
+
+/** One rendered block of a blog article: optional h2 heading + paragraph. */
+export interface BlogPostSection {
+  heading?: string;
+  text: string;
+}
+
+/**
+ * Blog articles for the public marketing site. Managed by admin/author roles
+ * through the control panel; the storefront reads published posts through
+ * /api/public/blog. `date` is a display string (Jalali) set by the author —
+ * createdAt stays the canonical timestamp.
+ */
+export const blogPosts = mysqlTable(
+  'blog_posts',
+  {
+    id: varchar('id', { length: 36 }).primaryKey(),
+    slug: varchar('slug', { length: 255 }).notNull().unique(),
+    title: varchar('title', { length: 512 }).notNull(),
+    excerpt: text('excerpt').notNull(),
+    image: varchar('image', { length: 512 }).notNull().default(''),
+    imageAlt: varchar('image_alt', { length: 255 }).notNull().default(''),
+    date: varchar('date', { length: 32 }).notNull().default(''),
+    readTime: varchar('read_time', { length: 32 }).notNull().default(''),
+    tags: json('tags').$type<string[]>().notNull(),
+    body: json('body').$type<BlogPostSection[]>().notNull(),
+    status: varchar('status', { length: 16 }).notNull().default('draft'),
+    authorId: varchar('author_id', { length: 36 }).notNull().default(''),
+    authorName: varchar('author_name', { length: 255 }).notNull().default(''),
+    createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [index('blog_posts_status_idx').on(t.status)],
+);
+
+/** One line of a customer order; prices are snapshots from the order moment. */
+export interface OrderItemLine {
+  itemId: string;
+  code: string;
+  name: string;
+  price: number;
+  quantity: number;
+  size?: string;
+  color?: string;
+  imageUrl?: string;
+}
+
+/**
+ * Customer orders placed through the public storefront checkout. Prices and
+ * totals are computed server-side from the items table (never trusted from
+ * the client) and stock is decremented inside the create transaction.
+ */
+export const orders = mysqlTable(
+  'orders',
+  {
+    id: varchar('id', { length: 36 }).primaryKey(),
+    code: varchar('code', { length: 32 }).notNull().unique(),
+    userId: varchar('user_id', { length: 36 }).notNull(),
+    customerName: varchar('customer_name', { length: 255 }).notNull(),
+    phone: varchar('phone', { length: 32 }).notNull(),
+    city: varchar('city', { length: 128 }).notNull().default(''),
+    address: text('address').notNull(),
+    note: text('note'),
+    paymentMethod: varchar('payment_method', { length: 32 }).notNull().default('cod'),
+    status: varchar('status', { length: 32 }).notNull().default('pending'),
+    total: bigint('total', { mode: 'number' }).notNull().default(0),
+    items: json('items').$type<OrderItemLine[]>().notNull(),
+    createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index('orders_user_id_idx').on(t.userId),
+    index('orders_status_idx').on(t.status),
+    index('orders_created_at_idx').on(t.createdAt),
+  ],
+);

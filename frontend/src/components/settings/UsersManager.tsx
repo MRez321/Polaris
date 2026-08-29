@@ -18,13 +18,17 @@ interface ManagedUser {
 
 const ROLE_OPTIONS = [
   { value: 'admin', label: 'مدیر' },
-  { value: 'staff', label: 'کاربر' },
+  { value: 'author', label: 'نویسنده وبلاگ' },
+  { value: 'user', label: 'کاربر وب‌سایت' },
 ];
 
-type AppRole = 'admin' | 'staff';
+type AppRole = 'admin' | 'author' | 'user' | 'staff';
 
 /** Narrow a SelectMenu string value to the app's role union. */
-const toAppRole = (value: string): AppRole => (value === 'admin' ? 'admin' : 'staff');
+const toAppRole = (value: string): AppRole => {
+  if (value === 'admin' || value === 'author' || value === 'user' || value === 'staff') return value;
+  return 'user';
+};
 
 export const UsersManager: React.FC = () => {
   const { user: currentUser } = useAuth();
@@ -38,7 +42,7 @@ export const UsersManager: React.FC = () => {
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [newRole, setNewRole] = useState<AppRole>('staff');
+  const [newRole, setNewRole] = useState<AppRole>('user');
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
@@ -51,7 +55,7 @@ export const UsersManager: React.FC = () => {
           id: u.id,
           name: u.name,
           email: u.email,
-          role: Array.isArray(u.role) ? (u.role[0] ?? 'staff') : (u.role ?? 'staff'),
+          role: Array.isArray(u.role) ? (u.role[0] ?? 'user') : (u.role ?? 'user'),
           createdAt: u.createdAt,
           banned: Boolean(u.banned),
         }))
@@ -101,7 +105,7 @@ export const UsersManager: React.FC = () => {
     setNewName('');
     setNewEmail('');
     setNewPassword('');
-    setNewRole('staff');
+    setNewRole('user');
     fetchUsers();
   };
 
@@ -152,9 +156,8 @@ export const UsersManager: React.FC = () => {
   };
 
   const getRoleLabel = (role: string) => {
-    if (role === 'admin') return 'مدیر';
-    if (role === 'staff') return 'کاربر';
-    return role;
+    const option = ROLE_OPTIONS.find((o) => o.value === role);
+    return option ? option.label : role;
   };
 
   return (

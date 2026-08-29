@@ -1,11 +1,17 @@
 import axios from 'axios';
 import type {
   AuditLog,
+  BlogPost,
+  BlogPostStatus,
+  BlogSection,
   CompanyBranding,
   Consignment,
   ConsignmentReturn,
   DashboardStats,
   GarmentItem,
+  Order,
+  OrderPaymentMethod,
+  OrderStatus,
   Owner,
   PaymentRecord,
   ProfitShareDistribution,
@@ -219,4 +225,51 @@ export const publicApi = {
   categories: () =>
     api.get<{ id: string; label: string }[]>('/api/public/categories').then((r) => r.data),
   company: () => api.get<PublicCompanyInfo>('/api/public/company').then((r) => r.data),
+  blog: {
+    list: () => api.get<BlogPost[]>('/api/public/blog').then((r) => r.data),
+    bySlug: (slug: string) => api.get<BlogPost>(`/api/public/blog/${slug}`).then((r) => r.data),
+  },
+};
+
+// --- Blog CMS (admin + author) ---
+export interface BlogPostPayload {
+  slug: string;
+  title: string;
+  excerpt: string;
+  image?: string;
+  imageAlt?: string;
+  date?: string;
+  readTime?: string;
+  tags?: string[];
+  body: BlogSection[];
+  status?: BlogPostStatus;
+}
+
+export const blogApi = {
+  list: () => api.get<BlogPost[]>('/api/blog').then((r) => r.data),
+  create: (data: BlogPostPayload) => api.post<BlogPost>('/api/blog', data).then((r) => r.data),
+  update: (id: string, data: Partial<BlogPostPayload>) =>
+    api.put<BlogPost>(`/api/blog/${id}`, data).then((r) => r.data),
+  remove: (id: string) =>
+    api.delete<{ message: string }>(`/api/blog/${id}`).then((r) => r.data),
+};
+
+// --- Customer Orders ---
+export interface OrderPayload {
+  customerName: string;
+  phone: string;
+  city: string;
+  address: string;
+  note?: string;
+  paymentMethod: OrderPaymentMethod;
+  lines: { itemId: string; quantity: number; size?: string; color?: string }[];
+}
+
+export const ordersApi = {
+  create: (data: OrderPayload) => api.post<Order>('/api/orders', data).then((r) => r.data),
+  mine: () => api.get<Order[]>('/api/orders/mine').then((r) => r.data),
+  // Admin
+  all: () => api.get<Order[]>('/api/orders').then((r) => r.data),
+  updateStatus: (id: string, status: OrderStatus) =>
+    api.put<Order>(`/api/orders/${id}`, { status }).then((r) => r.data),
 };

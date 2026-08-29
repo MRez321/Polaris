@@ -20,20 +20,29 @@ app.set('trust proxy', true);
 const allowedOrigins = [
     process.env.CORS_ORIGIN,
     process.env.FRONTEND_URL,
-    'http://localhost:5173', // Vite dev
     'http://localhost:3016', // backend
-    'http://127.0.0.1:5173',
     'http://127.0.0.1:3016',
     'https://polarisstyle.ir',
     'http://polarisstyle.ir',
     'https://www.polarisstyle.ir',
 ].filter((o): o is string => Boolean(o));
 
+// Vite auto-increments the dev port when 5173 is taken (5174, 5175, …),
+// so allow the whole local dev range instead of one pinned port. Keep this
+// in sync with `localDevOrigins` in src/config/auth.ts (better-auth gate).
+const LOCAL_DEV_ORIGINS: Record<string, true> = Object.fromEntries(
+    ['localhost', '127.0.0.1'].flatMap((host) =>
+        [5173, 5174, 5175, 3000, 3001].map(
+            (port) => [`http://${host}:${port}`, true] as [string, true],
+        ),
+    ),
+);
+
 app.use(
     cors({
         origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
             // Allow requests with no origin (same-origin, mobile apps, curl)
-            if (!origin || allowedOrigins.includes(origin)) {
+            if (!origin || allowedOrigins.includes(origin) || LOCAL_DEV_ORIGINS[origin]) {
                 callback(null, true);
             } else {
                 console.warn(`CORS blocked origin: ${origin}`);
