@@ -3,7 +3,6 @@ import { z } from 'zod';
 
 import * as svc from '../services/ordersService.js';
 import { logAudit } from '../core/services/auditService.js';
-import { pathParam } from '../core/utils/apiError.js';
 
 const orderLineSchema = z.object({
     itemId: z.string().min(1),
@@ -25,8 +24,6 @@ const createOrderSchema = z.object({
     lines: z.array(orderLineSchema).min(1, 'سبد خرید خالی است'),
 });
 
-const statusSchema = z.enum(['pending', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled']);
-
 /** Authenticated customer: place an order from the cart. */
 export async function createOrder(req: Request, res: Response): Promise<void> {
     const data = createOrderSchema.parse(req.body);
@@ -47,18 +44,4 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
 /** Authenticated customer: own order history for the profile dashboard. */
 export async function listMyOrders(req: Request, res: Response): Promise<void> {
     res.json(await svc.listMyOrders(req.auth!.user.id));
-}
-
-/** Admin: every order, newest first. */
-export async function listAllOrders(_req: Request, res: Response): Promise<void> {
-    res.json(await svc.listAllOrders());
-}
-
-/** Admin: move an order between statuses (restocks on cancel). */
-export async function updateOrderStatus(req: Request, res: Response): Promise<void> {
-    const id = pathParam(req, 'id', 'شناسه سفارش');
-    const body = z.object({ status: statusSchema }).parse(req.body);
-    const order = await svc.updateOrderStatus(id, body.status);
-    logAudit(req.auth ?? null, 'update', 'settings', `وضعیت سفارش ${order.code} به «${order.status}» تغییر کرد`, req.ip);
-    res.json(order);
 }

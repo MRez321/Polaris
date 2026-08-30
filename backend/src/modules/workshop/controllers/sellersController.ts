@@ -1,11 +1,11 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 
-import * as svc from '../services/inventoryService.js';
-import { toSellerDto } from '../models/mappers.js';
-import { logAudit } from '../core/services/auditService.js';
-import { badRequest, pathParam } from '../core/utils/apiError.js';
-import { clientIdSchema } from '../schema/clientId.js';
+import * as svc from '../inventoryService.js';
+import { toSellerDto } from '../../../models/mappers.js';
+import { logAudit } from '../../../core/services/auditService.js';
+import { badRequest, pathParam } from '../../../core/utils/apiError.js';
+import { clientIdSchema } from '../../../schema/clientId.js';
 
 const bankAccountSchema = z.object({
     id: z.string().optional(),

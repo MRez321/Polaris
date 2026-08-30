@@ -1,10 +1,10 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 
-import * as svc from '../services/inventoryService.js';
-import { toConsignmentDto, toReturnDto } from '../models/mappers.js';
-import { logAudit } from '../core/services/auditService.js';
-import { badRequest, pathParam } from '../core/utils/apiError.js';
+import * as svc from '../inventoryService.js';
+import { toConsignmentDto, toReturnDto } from '../../../models/mappers.js';
+import { logAudit } from '../../../core/services/auditService.js';
+import { badRequest, pathParam } from '../../../core/utils/apiError.js';
 
 const handoverSchema = z.object({
     sellerId: z.string().min(1),

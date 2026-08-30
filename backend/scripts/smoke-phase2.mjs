@@ -151,6 +151,15 @@ check('customer blocked from /items', 403, (await req('GET', '/items', { token: 
 // 12. Anonymous blocked from orders
 check('anonymous blocked from orders/mine', 401, (await req('GET', '/orders/mine')).status);
 
+// 13. Workshop mount mirrors the legacy mount (Phase-2 alias contract)
+check('workshop mount: admin dashboard/stats', 200, (await req('GET', '/workshop/dashboard/stats', { token: AT })).status);
+check('workshop mount: admin items list', 200, (await req('GET', '/workshop/items', { token: AT })).status);
+check('workshop mount: admin sellers list', 200, (await req('GET', '/workshop/sellers', { token: AT })).status);
+check('workshop mount: admin audit-logs', 200, (await req('GET', '/workshop/audit-logs', { token: AT })).status);
+check('workshop mount: admin orders list', 200, (await req('GET', '/workshop/orders', { token: AT })).status);
+check('customer blocked from /workshop/items', 403, (await req('GET', '/workshop/items', { token: CT })).status);
+check('anonymous blocked from /workshop/dashboard/stats', 401, (await req('GET', '/workshop/dashboard/stats')).status);
+
 console.log('----------------------------------------');
 console.log(`PASS=${pass} FAIL=${fail}`);
 process.exit(fail === 0 ? 0 : 1);

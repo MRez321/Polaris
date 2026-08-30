@@ -1,9 +1,9 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 
-import * as svc from '../services/inventoryService.js';
-import { toPaymentDto } from '../models/mappers.js';
-import { logAudit } from '../core/services/auditService.js';
+import * as svc from '../inventoryService.js';
+import { toPaymentDto } from '../../../models/mappers.js';
+import { logAudit } from '../../../core/services/auditService.js';
 
 const paymentSchema = z.object({
     sellerId: z.string().min(1),

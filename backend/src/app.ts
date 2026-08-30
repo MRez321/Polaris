@@ -7,7 +7,7 @@ import { errorHandler } from './core/middleware/errorHandler.js';
 import { attachSession } from './core/middleware/authMiddleware.js';
 import { isLocalDevOrigin, trustedOrigins } from './core/origins.js';
 import { authHandler } from './routes/authRoutes.js';
-import apiRoutes from './routes/apiRoutes.js';
+import apiRoutes, { workshopAdminChain } from './routes/apiRoutes.js';
 import { ensureUploadsDir, uploadsDir } from './services/galleryService.js';
 
 dotenv.config();
@@ -54,6 +54,10 @@ app.use('/api', attachSession);
 
 // Business API
 app.use('/api', apiRoutes);
+
+// Workshop module at its own prefix (same admin-gated chain apiRoutes mounts
+// inline; alias mounts are removed in Phase 5 once the frontend migrates).
+app.use('/api/workshop', workshopAdminChain);
 
 // Unknown API routes → JSON 404 (never fall through to the SPA)
 app.use('/api', (_req, res) => {

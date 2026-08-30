@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, gt, sql } from 'drizzle-orm';
 import { v4 as uuid } from 'uuid';
 
-import { db } from '../config/drizzle.js';
+import { db } from '../../config/drizzle.js';
 import {
     items,
     sellers,
@@ -12,12 +12,17 @@ import {
     expenses,
     profitDistributions,
     categories,
-} from '../schema/index.js';
-import type { ConsignmentItemLine, DebtAllocation, ReturnItemLine } from '../schema/index.js';
-import { isClientId } from '../schema/clientId.js';
-import { badRequest, notFound } from '../core/utils/apiError.js';
-import { nextCode } from '../core/utils/code.js';
-import { emitDataChanged } from '../core/services/socketService.js';
+} from '../../schema/index.js';
+import type { ConsignmentItemLine, DebtAllocation, ReturnItemLine } from '../../schema/index.js';
+import type { TrashEntityType } from '../../types/index.js';
+import { isClientId } from '../../schema/clientId.js';
+import { badRequest, notFound } from '../../core/utils/apiError.js';
+import { nextCode } from '../../core/utils/code.js';
+import { emitDataChanged } from '../../core/services/socketService.js';
+
+// Shared type (frontend mirror in types/index.ts) re-exported for the
+// workshop controllers that import it from this module.
+export type { TrashEntityType };
 
 // ---------------------------------------------------------------------------
 // Items
@@ -713,7 +718,6 @@ export async function createProfitDistribution(data: Partial<typeof profitDistri
 // Trash
 // ---------------------------------------------------------------------------
 
-export type TrashEntityType = 'item' | 'seller' | 'staff' | 'expense' | 'consignment';
 
 const trashTables = {
     item: items,

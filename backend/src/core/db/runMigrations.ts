@@ -4,8 +4,6 @@ import mysql from 'mysql2/promise';
 import { drizzle } from 'drizzle-orm/mysql2';
 import { migrate } from 'drizzle-orm/mysql2/migrator';
 
-import pool from '../../config/db.js';
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
@@ -73,7 +71,7 @@ export async function runMigrations(): Promise<void> {
 
         console.log(`✅ مایگریشن: ${tableNames.length} جدول آماده است (utf8mb4_persian_ci)`);
     } finally {
+        // Own short-lived pool; the app pool (config/db) is untouched.
         await migrationPool?.end().catch(() => {});
-        void pool; // app pool untouched; referenced to assert config parity
     }
 }

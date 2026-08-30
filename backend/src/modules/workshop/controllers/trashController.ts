@@ -1,16 +1,16 @@
 import type { Request, Response } from 'express';
 
-import * as svc from '../services/inventoryService.js';
-import type { TrashEntityType } from '../services/inventoryService.js';
+import * as svc from '../inventoryService.js';
+import type { TrashEntityType } from '../inventoryService.js';
 import {
     toItemDto,
     toSellerDto,
     toStaffDto,
     toExpenseDto,
     toConsignmentDto,
-} from '../models/mappers.js';
-import { logAudit } from '../core/services/auditService.js';
-import { badRequest, pathParam } from '../core/utils/apiError.js';
+} from '../../../models/mappers.js';
+import { logAudit } from '../../../core/services/auditService.js';
+import { badRequest, pathParam } from '../../../core/utils/apiError.js';
 
 const TRASH_TYPES: readonly TrashEntityType[] = ['item', 'seller', 'staff', 'expense', 'consignment'];
 
