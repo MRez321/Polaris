@@ -1,8 +1,8 @@
 import { v4 as uuid } from 'uuid';
 
-import { db } from '../config/drizzle.js';
-import { auditLogs } from '../schema/index.js';
-import type { AuditLog } from '../types/index.js';
+import { db } from '../../config/drizzle.js';
+import { auditLogs } from '../../schema/index.js';
+import type { AuditLog } from '../../types/index.js';
 
 export interface AuditActor {
     user: {

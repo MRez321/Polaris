@@ -2,8 +2,8 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 
 import * as svc from '../services/ordersService.js';
-import { logAudit } from '../services/auditService.js';
-import { pathParam } from '../utils/apiError.js';
+import { logAudit } from '../core/services/auditService.js';
+import { pathParam } from '../core/utils/apiError.js';
 
 const orderLineSchema = z.object({
     itemId: z.string().min(1),

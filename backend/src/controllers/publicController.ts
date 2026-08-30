@@ -3,7 +3,7 @@ import type { Request, Response } from 'express';
 import * as blogSvc from '../services/blogService.js';
 import * as svc from '../services/inventoryService.js';
 import { getCompany } from '../services/settingsService.js';
-import { notFound, pathParam } from '../utils/apiError.js';
+import { notFound, pathParam } from '../core/utils/apiError.js';
 
 /**
  * Public storefront API — mounted BEFORE `requireAuth` in apiRoutes.ts so

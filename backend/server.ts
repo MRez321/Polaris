@@ -6,7 +6,8 @@ import http from 'http';
 
 import app from './src/app.js';
 import dbPool from './src/config/db.js';
-import { initSocket } from './src/services/socketService.js';
+import { runMigrations } from './src/core/db/runMigrations.js';
+import { initSocket } from './src/core/services/socketService.js';
 
 const PORT = process.env.PORT || 3016;
 
@@ -15,6 +16,17 @@ const httpServer = http.createServer(app);
 
 // Initialize socket.io on the same server
 initSocket(httpServer);
+
+// Migrations run before listen (approved Phase-1 decision): the app accepts
+// traffic only once the schema is current. A failure never kills the process —
+// log loudly, stay up, let Passenger's next restart re-attempt — matching the
+// existing never-exit philosophy for transient cPanel MySQL blips.
+await runMigrations().catch((err: unknown) => {
+    console.error(
+        '❌ مایگریشن ناموفق بود (سرور بالا می‌ماند؛ راه‌اندازی مجدد دوباره تلاش می‌کند):',
+        err instanceof Error ? err.message : err,
+    );
+});
 
 // Start Server
 httpServer.listen(PORT, () => {

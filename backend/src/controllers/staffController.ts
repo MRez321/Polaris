@@ -4,8 +4,8 @@ import { z } from 'zod';
 import * as svc from '../services/inventoryService.js';
 import { getOwners, setOwners } from '../services/settingsService.js';
 import { toStaffDto } from '../models/mappers.js';
-import { logAudit } from '../services/auditService.js';
-import { badRequest, pathParam } from '../utils/apiError.js';
+import { logAudit } from '../core/services/auditService.js';
+import { badRequest, pathParam } from '../core/utils/apiError.js';
 import { clientIdSchema } from '../schema/clientId.js';
 
 const bankAccountSchema = z.object({

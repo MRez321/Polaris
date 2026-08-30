@@ -3,8 +3,9 @@ import cors from 'cors';
 import path from 'path';
 import dotenv from 'dotenv';
 
-import { errorHandler } from './middleware/errorHandler.js';
-import { attachSession } from './middleware/authMiddleware.js';
+import { errorHandler } from './core/middleware/errorHandler.js';
+import { attachSession } from './core/middleware/authMiddleware.js';
+import { isLocalDevOrigin, trustedOrigins } from './core/origins.js';
 import { authHandler } from './routes/authRoutes.js';
 import apiRoutes from './routes/apiRoutes.js';
 import { ensureUploadsDir, uploadsDir } from './services/galleryService.js';
@@ -17,32 +18,13 @@ const app = express();
 app.set('trust proxy', true);
 
 // === CORS CONFIGURATION ===
-const allowedOrigins = [
-    process.env.CORS_ORIGIN,
-    process.env.FRONTEND_URL,
-    'http://localhost:3016', // backend
-    'http://127.0.0.1:3016',
-    'https://polarisstyle.ir',
-    'http://polarisstyle.ir',
-    'https://www.polarisstyle.ir',
-].filter((o): o is string => Boolean(o));
-
-// Vite auto-increments the dev port when 5173 is taken (5174, 5175, …),
-// so allow the whole local dev range instead of one pinned port. Keep this
-// in sync with `localDevOrigins` in src/config/auth.ts (better-auth gate).
-const LOCAL_DEV_ORIGINS: Record<string, true> = Object.fromEntries(
-    ['localhost', '127.0.0.1'].flatMap((host) =>
-        [5173, 5174, 5175, 3000, 3001].map(
-            (port) => [`http://${host}:${port}`, true] as [string, true],
-        ),
-    ),
-);
-
+// Origin trust lists live in one place: src/core/origins.ts (shared with
+// better-auth's CSRF gate and socket.io — they can no longer drift).
 app.use(
     cors({
         origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
             // Allow requests with no origin (same-origin, mobile apps, curl)
-            if (!origin || allowedOrigins.includes(origin) || LOCAL_DEV_ORIGINS[origin]) {
+            if (!origin || trustedOrigins.includes(origin) || isLocalDevOrigin(origin)) {
                 callback(null, true);
             } else {
                 console.warn(`CORS blocked origin: ${origin}`);

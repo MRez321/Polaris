@@ -9,8 +9,8 @@ import {
     toExpenseDto,
     toConsignmentDto,
 } from '../models/mappers.js';
-import { logAudit } from '../services/auditService.js';
-import { badRequest, pathParam } from '../utils/apiError.js';
+import { logAudit } from '../core/services/auditService.js';
+import { badRequest, pathParam } from '../core/utils/apiError.js';
 
 const TRASH_TYPES: readonly TrashEntityType[] = ['item', 'seller', 'staff', 'expense', 'consignment'];
 

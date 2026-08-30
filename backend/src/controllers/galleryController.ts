@@ -12,8 +12,8 @@ import {
     uploadsDir,
     validateImageMime,
 } from '../services/galleryService.js';
-import { logAudit } from '../services/auditService.js';
-import { badRequest, pathParam } from '../utils/apiError.js';
+import { logAudit } from '../core/services/auditService.js';
+import { badRequest, pathParam } from '../core/utils/apiError.js';
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024; // 8 MB per image
 const MAX_FILES = 10;

@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import { MulterError } from 'multer';
-import { ApiError } from '../utils/apiError.js';
+import { ApiError } from '../../core/utils/apiError.js';
 import { ZodError } from 'zod';
 
 /**

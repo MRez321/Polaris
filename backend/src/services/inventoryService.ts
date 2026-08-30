@@ -15,9 +15,9 @@ import {
 } from '../schema/index.js';
 import type { ConsignmentItemLine, DebtAllocation, ReturnItemLine } from '../schema/index.js';
 import { isClientId } from '../schema/clientId.js';
-import { badRequest, notFound } from '../utils/apiError.js';
-import { nextCode } from '../utils/code.js';
-import { emitDataChanged } from './socketService.js';
+import { badRequest, notFound } from '../core/utils/apiError.js';
+import { nextCode } from '../core/utils/code.js';
+import { emitDataChanged } from '../core/services/socketService.js';
 
 // ---------------------------------------------------------------------------
 // Items

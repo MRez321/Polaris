@@ -1,6 +1,8 @@
 import type { Server as HttpServer } from 'http';
 import { Server } from 'socket.io';
 
+import { trustedOrigins } from '../origins.js';
+
 let io: Server | null = null;
 
 /**
@@ -11,12 +13,9 @@ export function initSocket(httpServer: HttpServer): Server {
     io = new Server(httpServer, {
         cors: {
             // Same-origin in production (backend serves the frontend); dev uses Vite.
-            origin: [
-                process.env.FRONTEND_URL || 'http://localhost:5173',
-                'http://localhost:5173',
-                'https://polarisstyle.ir',
-                'https://www.polarisstyle.ir',
-            ],
+            // Single source of truth: src/core/origins.ts (shared with Express
+            // CORS and better-auth — the three lists can no longer drift).
+            origin: trustedOrigins,
             credentials: true,
         },
     });

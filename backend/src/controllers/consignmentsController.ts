@@ -3,8 +3,8 @@ import { z } from 'zod';
 
 import * as svc from '../services/inventoryService.js';
 import { toConsignmentDto, toReturnDto } from '../models/mappers.js';
-import { logAudit } from '../services/auditService.js';
-import { badRequest, pathParam } from '../utils/apiError.js';
+import { logAudit } from '../core/services/auditService.js';
+import { badRequest, pathParam } from '../core/utils/apiError.js';
 
 const handoverSchema = z.object({
     sellerId: z.string().min(1),
