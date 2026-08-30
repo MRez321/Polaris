@@ -16,12 +16,10 @@ Inventory, consignment, payments, and workshop management system for the **Polar
 | Icons              | Lucide React, @persianlabs/icons                   |
 | Routing            | React Router DOM 7                                 |
 | HTTP client        | Axios (same-origin `/api` base)                    |
-| Realtime           | socket.io-client                                   |
 | Charts             | Recharts                                           |
 | Validation         | Zod                                                |
 | Dates              | date-fns                                           |
 | Notifications      | Sonner                                             |
-| PWA                | vite-plugin-pwa (installable on mobile/desktop)    |
 
 ### Backend (`backend/`)
 
@@ -34,10 +32,6 @@ Inventory, consignment, payments, and workshop management system for the **Polar
 | Validation    | Zod                                             |
 | Realtime      | socket.io (attached to the same HTTP server)    |
 
-### Dev infrastructure
-
-- `docker-compose.yml`: MySQL 8.0 (port `3306`) + phpMyAdmin (port `3307`) for local development.
-
 ---
 
 ## Project Structure
@@ -46,25 +40,27 @@ Inventory, consignment, payments, and workshop management system for the **Polar
 ├── .github/workflows/deploy.yml   # CI/CD: build + FTP deploy + restart trigger
 ├── backend/
 │   ├── src/
-│   │   ├── config/                # db pool, drizzle, better-auth
-│   │   ├── controllers/           # request handlers
-│   │   ├── middleware/            # error handler, session attribution
-│   │   ├── routes/                # /api routes, better-auth handler
-│   │   ├── schema/                # Drizzle schema
-│   │   ├── services/              # business logic, socket.io
+│   │   ├── core/                   # cross-cutting: db, middleware, audit, socket, origins
+│   │   ├── modules/                # feature modules
+│   │   │   ├── auth/               # better-auth handler + guards
+│   │   │   ├── cms/               # blog, gallery, website settings, company
+│   │   │   └── workshop/          # admin workshop module → mounted at /api/workshop
+│   │   ├── routes/                 # apiRoutes.ts — shared surfaces (/api/*)
+│   │   ├── schema/                 # Drizzle schema (split per domain)
 │   │   └── app.ts                 # Express app (CORS, static, SPA fallback)
-│   ├── scripts/                   # copy-public.js (build helper), migrate, seed
+│   ├── scripts/                   # copy-public.js (build helper), migrate, seed, smoke tests
 │   ├── drizzle/                   # generated migrations
 │   └── server.ts                  # entry: HTTP server + socket.io + DB check
 ├── frontend/
 │   └── src/
-│       ├── components/            # feature components (inventory, sellers, ...)
-│       ├── context/               # data / network / theme / UI contexts
-│       ├── hooks/                 # useNetworkStatus (DB heartbeat), ...
+│       ├── modules/workshop/      # admin panel module (routed at /workshop)
+│       ├── components/            # shared components (ui, common, public)
 │       ├── lib/api.ts             # central axios client
-│       └── pages/
-└── docker-compose.yml             # local MySQL + phpMyAdmin
+│       └── pages/                 # public storefront + controlpanel
+└── markdown/                      # API, GUIDE, STRUCTURE, CMS docs
 ```
+
+Full tree: [markdown/STRUCTURE.md](markdown/STRUCTURE.md).
 
 ---
 
@@ -72,12 +68,11 @@ Inventory, consignment, payments, and workshop management system for the **Polar
 
 ### 1. Database
 
-```bash
-docker compose up -d
-```
+Native MySQL on `127.0.0.1:3306` (no container). Create a database and user, put the credentials in `backend/.env` (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`). Migrations run automatically at startup, or apply manually on first run:
 
-- MySQL on `localhost:3306` — user `polarisAdmin` / password `Polaris6432`, database `polaris`
-- phpMyAdmin on `http://localhost:3307`
+```bash
+cd backend && npm run db:migrate
+```
 
 ### 2. Backend
 
@@ -85,7 +80,6 @@ docker compose up -d
 cd backend
 npm install
 copy .env.example .env      # adjust if needed
-npm run db:migrate          # apply Drizzle migrations (first run)
 npm run dev                 # tsx watch on http://localhost:3016
 ```
 

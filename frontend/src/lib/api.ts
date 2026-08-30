@@ -4,7 +4,6 @@ import type {
   BlogPost,
   BlogPostStatus,
   BlogSection,
-  CompanyBranding,
   Consignment,
   ConsignmentReturn,
   DashboardStats,
@@ -204,11 +203,6 @@ export const trashApi = {
     api.delete(`${W}/trash/permanent/${type}/${id}`).then((r) => r.data),
 };
 
-// --- Company Branding ---
-export const companyApi = {
-  get: () => api.get<CompanyBranding>('/api/company').then((r) => r.data),
-  update: (data: Partial<CompanyBranding>) => api.put<CompanyBranding>('/api/company', data).then((r) => r.data),
-};
 
 // --- Public Website Settings ---
 export const websiteApi = {

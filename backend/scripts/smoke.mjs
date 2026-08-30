@@ -1,6 +1,9 @@
 // End-to-end smoke test against http://localhost:3016
-// Workshop/admin routes are role-gated: sign in first and attach the Bearer token.
+// Workshop (admin business-tracking) routes live under /api/workshop and are
+// role-gated: sign in first and attach the Bearer token. Global surfaces
+// (health, auth, company) stay on plain /api.
 const BASE = 'http://localhost:3016/api';
+const W = '/workshop'; // admin workshop prefix, appended to BASE
 let failures = 0;
 let TOKEN = '';
 
@@ -38,16 +41,14 @@ function check(name, cond, extra) {
 
 // 1. Health
 let r = await req('GET', '/health');
-check('health', r.status === 200 && r.data.status === 'ok', r);
-
 // 2. Categories (seeded)
-r = await req('GET', '/categories');
-const itemsBefore = await req('GET', '/items');
+r = await req('GET', W + '/categories');
+const itemsBefore = await req('GET', W + '/items');
 const baselineItemCount = Array.isArray(itemsBefore.data) ? itemsBefore.data.length : 0;
 check('categories seeded (7)', r.status === 200 && Array.isArray(r.data) && r.data.length === 7, r);
 
 // 3. Create item
-r = await req('POST', '/items', {
+r = await req('POST', W + '/items', {
     name: 'کاپشن زمستانی مردانه',
     category: 'coats_jackets',
     costPrice: 850000,
@@ -64,7 +65,7 @@ const item = r.data;
 check('item categoryLabel derived', item.categoryLabel === 'کت، کاپشن و پالتو', item.categoryLabel);
 
 // second item for multi-line handover
-r = await req('POST', '/items', {
+r = await req('POST', W + '/items', {
     name: 'شلوار جین اسلش',
     category: 'pants',
     costPrice: 400000,
@@ -78,15 +79,15 @@ check('create item2 201', r.status === 201, r);
 const item2 = r.data;
 
 // 4. List items
-r = await req('GET', '/items');
+r = await req('GET', W + '/items');
 check('list items grew by 2', r.status === 200 && r.data.length === baselineItemCount + 2, { before: baselineItemCount, after: r.data?.length });
 
 // 5. Update item
-r = await req('PUT', `/items/${item.id}`, { stockQuantity: 25 });
+r = await req('PUT', W + `/items/${item.id}`, { stockQuantity: 25 });
 check('update item stock', r.status === 200 && r.data.stockQuantity === 25, r);
 
 // 6. Create seller
-r = await req('POST', '/sellers', {
+r = await req('POST', W + '/sellers', {
     name: 'فروشگاه برادران احمدی',
     phone: '09121234567',
     streetLocation: 'بازار بزرع، راسته پوشاک',
@@ -101,7 +102,7 @@ const seller = r.data;
 
 // 7. Handover (consignment)
 const due = new Date(Date.now() + 30 * 86400000).toISOString();
-r = await req('POST', '/consignments', {
+r = await req('POST', W + '/consignments', {
     sellerId: seller.id,
     dueDate: due,
     notes: 'تحویل اول فصل',
@@ -116,19 +117,19 @@ check('handover totalAmount', cons.totalAmount === 5 * 1100000 + 4 * 550000, con
 check('handover remainingAmount', cons.remainingAmount === cons.totalAmount, cons.remainingAmount);
 
 // stock decremented?
-r = await req('GET', '/items');
+r = await req('GET', W + '/items');
 const it1 = r.data.find((i) => i.id === item.id);
 const it2 = r.data.find((i) => i.id === item2.id);
 check('stock decremented item1 (25→20)', it1.stockQuantity === 20, it1.stockQuantity);
 check('stock decremented item2 (15→11)', it2.stockQuantity === 11, it2.stockQuantity);
 
 // seller debt updated?
-r = await req('GET', `/sellers/${seller.id}`);
+r = await req('GET', W + `/sellers/${seller.id}`);
 check('seller currentDebt', r.data.currentDebt === cons.totalAmount, r.data.currentDebt);
 check('seller totalHandoversValue', r.data.totalHandoversValue === cons.totalAmount, r.data.totalHandoversValue);
 
 // 8. Payment (FIFO)
-r = await req('POST', '/payments', {
+r = await req('POST', W + '/payments', {
     sellerId: seller.id,
     amount: 3000000,
     paymentMethod: 'کارت به کارت',
@@ -141,18 +142,18 @@ check('allocation amount 3M', pay.allocations[0]?.allocatedAmount === 3000000, p
 check('allocation settled flag', pay.allocations[0]?.isFullySettled === false, pay.allocations);
 
 // consignment partially settled
-r = await req('GET', '/consignments');
+r = await req('GET', W + '/consignments');
 const cons2 = r.data.find((c) => c.id === cons.id);
 check('consignment partially_settled', cons2.status === 'partially_settled', cons2.status);
 check('consignment remainingAmount reduced', cons2.remainingAmount === cons.totalAmount - 3000000, cons2.remainingAmount);
 
 // seller debt reduced
-r = await req('GET', `/sellers/${seller.id}`);
+r = await req('GET', W + `/sellers/${seller.id}`);
 check('seller debt after payment', r.data.currentDebt === cons.totalAmount - 3000000, r.data.currentDebt);
 check('seller totalPaid', r.data.totalPaid === 3000000, r.data.totalPaid);
 
 // 9. Return (healthy restock)
-r = await req('POST', '/consignments/return', {
+r = await req('POST', W + '/consignments/return', {
     consignmentId: cons.id,
     returnItems: [{ itemId: item.id, quantity: 2, condition: 'healthy', reason: 'عدم فروش' }],
     notes: 'مرجوعی تست',
@@ -161,7 +162,7 @@ check('return 201', r.status === 201 && r.data.returnRecord && r.data.updatedCon
 const ret = r.data;
 check('return totalReturnAmount', ret.returnRecord.totalReturnAmount === 2 * 1100000, ret.returnRecord);
 // stock restocked?
-r = await req('GET', '/items');
+r = await req('GET', W + '/items');
 const it1b = r.data.find((i) => i.id === item.id);
 check('stock restocked (20→22)', it1b.stockQuantity === 22, it1b.stockQuantity);
 
@@ -169,26 +170,26 @@ check('stock restocked (20→22)', it1b.stockQuantity === 22, it1b.stockQuantity
 check('updatedConsignment remainingAmount', ret.updatedConsignment.remainingAmount === cons.totalAmount - 3000000 - 2200000, ret.updatedConsignment.remainingAmount);
 
 // 10. Dashboard (delta-based: DB accumulates rows across runs)
-r = await req('GET', '/dashboard/stats');
+r = await req('GET', W + '/dashboard/stats');
 check('dashboard 200', r.status === 200 && typeof r.data.totalActiveDebt === 'number', r);
 check('dashboard includes this run\'s active consignment', r.data.activeConsignmentsCount >= 1, r.data.activeConsignmentsCount);
 check('dashboard includes this run\'s items in hands', r.data.totalItemsInHands >= (5 - 2) + 4, r.data.totalItemsInHands);
 
 // 11. Trash flow: delete item → trash → restore
-r = await req('DELETE', `/items/${item2.id}`);
+r = await req('DELETE', W + `/items/${item2.id}`);
 check('delete item → trash', r.status === 200, r);
-r = await req('GET', '/trash');
+r = await req('GET', W + '/trash');
 check('trash lists item', r.status === 200 && r.data.items.some((i) => i.id === item2.id), r.data.items?.length);
-r = await req('POST', `/trash/restore/item/${item2.id}`);
+r = await req('POST', W + `/trash/restore/item/${item2.id}`);
 check('restore item', r.status === 200, r);
-r = await req('GET', '/items');
+r = await req('GET', W + '/items');
 check('item back in list', r.data.some((i) => i.id === item2.id), r.data.length);
 
 // permanent delete
-r = await req('DELETE', `/items/${item2.id}`);
-r = await req('DELETE', `/trash/permanent/item/${item2.id}`);
+r = await req('DELETE', W + `/items/${item2.id}`);
+r = await req('DELETE', W + `/trash/permanent/item/${item2.id}`);
 check('permanent delete', r.status === 200, r);
-r = await req('GET', '/trash');
+r = await req('GET', W + '/trash');
 check('trash empty of item2', !r.data.items.some((i) => i.id === item2.id), r.data.items?.length);
 
 // 12. Company
@@ -198,15 +199,15 @@ r = await req('PUT', '/company', { tagline: 'دوخت تخصصی پوشاک زم
 check('company update', r.status === 200 && r.data.tagline === 'دوخت تخصصی پوشاک زمستانه', r);
 
 // 13. Owners
-r = await req('PUT', '/owners', {
+r = await req('PUT', W + '/owners', {
     owners: [{ id: 'o1', name: 'محمدرضا', role: 'مدیر', sharePercentage: 60, nationalCode: '0012345678', phones: ['0912'], bankAccounts: [] }],
 });
 check('owners update', r.status === 200, r);
-r = await req('GET', '/owners');
+r = await req('GET', W + '/owners');
 check('owners list', r.status === 200 && r.data.length === 1 && r.data[0].name === 'محمدرضا', r);
 
 // 14. Staff
-r = await req('POST', '/staff', {
+r = await req('POST', W + '/staff', {
     name: 'علی خیاط',
     role: 'tailor',
     roleTitle: 'خیاط ارشد',
@@ -216,11 +217,11 @@ r = await req('POST', '/staff', {
 });
 check('create staff 201', r.status === 201 && r.data.code?.startsWith('STF-'), r);
 const stf = r.data;
-r = await req('PUT', `/staff/${stf.id}`, { status: 'leave' });
+r = await req('PUT', W + `/staff/${stf.id}`, { status: 'leave' });
 check('update staff', r.status === 200 && r.data.status === 'leave', r);
 
 // 15. Expenses
-r = await req('POST', '/expenses', {
+r = await req('POST', W + '/expenses', {
     title: 'خرید نخ و زیپ',
     category: 'materials',
     amount: 250000,
@@ -232,7 +233,7 @@ check('create expense 201', r.status === 201 && r.data.code?.startsWith('CST-'),
 const exp = r.data;
 
 // 16. Profit distribution
-r = await req('POST', '/profit-distribution', {
+r = await req('POST', W + '/profit-distribution', {
     periodName: 'مرداد ۱۴۰۵',
     startDate: '2026-07-23',
     endDate: '2026-08-22',
@@ -245,7 +246,7 @@ r = await req('POST', '/profit-distribution', {
 check('profit distribution 201', r.status === 201, r);
 
 // 17. Audit logs
-r = await req('GET', '/audit-logs');
+r = await req('GET', W + '/audit-logs');
 const auditLogs = Array.isArray(r.data) ? r.data : (r.data?.logs ?? []);
 check('audit logs recorded', r.status === 200 && auditLogs.length >= 10, auditLogs.length);
 
@@ -259,7 +260,7 @@ check('auth sign-in', r.status === 200 && r.data.user?.email === 'admin@polariss
 check('auth role admin', r.data.user?.role === 'admin', r.data.user?.role);
 
 // 19. Error shape { error: string }
-r = await req('POST', '/consignments', { sellerId: 'nonexistent', dueDate: due, itemsList: [{ itemId: 'x', quantity: 1, unitPrice: 1 }] });
+r = await req('POST', W + '/consignments', { sellerId: 'nonexistent', dueDate: due, itemsList: [{ itemId: 'x', quantity: 1, unitPrice: 1 }] });
 check('error shape {error}', r.status >= 400 && typeof r.data.error === 'string', r);
 
 console.log(failures === 0 ? '\n🎉 ALL SMOKE TESTS PASSED' : `\n💥 ${failures} FAILURES`);

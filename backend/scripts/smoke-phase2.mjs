@@ -120,11 +120,11 @@ if (!item) {
         check('orders/mine has 1', 1, ((await req('GET', '/orders/mine', { token: CT })).json ?? []).length);
 
         // 9. Admin sees + cancels (restock) + re-confirms (destock)
-        const all = (await req('GET', '/orders', { token: AT })).json ?? [];
+        const all = (await req('GET', '/workshop/orders', { token: AT })).json ?? [];
         check('admin sees order', 1, all.filter((o) => o.id === OID).length);
-        const cancel = await req('PUT', `/orders/${OID}`, { token: AT, body: { status: 'cancelled' } });
+        const cancel = await req('PUT', `/workshop/orders/${OID}`, { token: AT, body: { status: 'cancelled' } });
         check('admin cancel order', 'cancelled', cancel.json?.status);
-        const confirm = await req('PUT', `/orders/${OID}`, { token: AT, body: { status: 'confirmed' } });
+        const confirm = await req('PUT', `/workshop/orders/${OID}`, { token: AT, body: { status: 'confirmed' } });
         check('admin re-confirm order', 'confirmed', confirm.json?.status);
     }
 
@@ -144,19 +144,23 @@ if (!item) {
 
 // 11. Customer must NOT reach admin/author surfaces
 check('customer blocked from /blog', 403, (await req('GET', '/blog', { token: CT })).status);
-check('customer blocked from all-orders', 403, (await req('GET', '/orders', { token: CT })).status);
-check('customer blocked from dashboard/stats', 403, (await req('GET', '/dashboard/stats', { token: CT })).status);
-check('customer blocked from /items', 403, (await req('GET', '/items', { token: CT })).status);
+check('customer blocked from all-orders', 403, (await req('GET', '/workshop/orders', { token: CT })).status);
+check('customer blocked from dashboard/stats', 403, (await req('GET', '/workshop/dashboard/stats', { token: CT })).status);
+check('customer blocked from /items', 403, (await req('GET', '/workshop/items', { token: CT })).status);
 
 // 12. Anonymous blocked from orders
 check('anonymous blocked from orders/mine', 401, (await req('GET', '/orders/mine')).status);
 
-// 13. Workshop mount mirrors the legacy mount (Phase-2 alias contract)
+// 13. Workshop module mount is the ONLY mount (Phase-5 cutover contract):
+//     /api/workshop serves admins; legacy inline /api/* workshop paths 404.
 check('workshop mount: admin dashboard/stats', 200, (await req('GET', '/workshop/dashboard/stats', { token: AT })).status);
 check('workshop mount: admin items list', 200, (await req('GET', '/workshop/items', { token: AT })).status);
 check('workshop mount: admin sellers list', 200, (await req('GET', '/workshop/sellers', { token: AT })).status);
 check('workshop mount: admin audit-logs', 200, (await req('GET', '/workshop/audit-logs', { token: AT })).status);
 check('workshop mount: admin orders list', 200, (await req('GET', '/workshop/orders', { token: AT })).status);
+check('legacy /items is gone', 404, (await req('GET', '/items', { token: AT })).status);
+check('legacy /dashboard/stats is gone', 404, (await req('GET', '/dashboard/stats', { token: AT })).status);
+check('legacy /orders (admin all) is gone', 404, (await req('GET', '/orders', { token: AT })).status);
 check('customer blocked from /workshop/items', 403, (await req('GET', '/workshop/items', { token: CT })).status);
 check('anonymous blocked from /workshop/dashboard/stats', 401, (await req('GET', '/workshop/dashboard/stats')).status);
 

@@ -6,6 +6,7 @@ REST API for the Polaris Style inventory management system. The backend serves t
 - **Local dev**: `http://localhost:3016/api` (or `http://localhost:5173/api` through the Vite proxy)
 - **Format**: JSON everywhere. Request bodies must be sent with `Content-Type: application/json`.
 - **Errors**: every error is `{ "error": "<Persian message>" }` with an appropriate HTTP status (400 validation, 401/403 auth, 404 not found, 500 internal, 503 database down).
+- **Route groups**: shared surfaces (auth, health, public storefront, blog CMS, website settings, company branding, customer orders) live directly under `/api/*`. The admin workshop module (items, sellers, consignments, payments, staff, owners, expenses, profit distribution, trash, audit logs, admin order management) lives under `/api/workshop/*` — every route there requires the `admin` role.
 
 ---
 
@@ -34,11 +35,11 @@ With the bearer plugin, an `Authorization: Bearer <session-token>` header works 
 
 | Role | Surface | Notes |
 | ---- | ------- | ----- |
-| `admin` | workshop panel `/app` + website management `/controlpanel` | full access; the better-auth admin plugin treats `admin` as its admin role |
+| `admin` | workshop panel `/workshop` + website management `/controlpanel` | full access; the better-auth admin plugin treats `admin` as its admin role |
 | `author` | `/controlpanel/blog` only | writes blog posts; no workshop data, no website settings |
 | `staff` | — (migrated) | legacy pre-role-model accounts; migration `0005` promotes every remaining `staff` user to `admin` |
 
-Route guards are enforced server-side (`requireAuth`, `requireRole(...)` in `src/routes/apiRoutes.ts`): the public storefront is anonymous-readable, order placement and `/orders/mine` need any authenticated user, blog CMS needs `admin` or `author`, and every other business route needs `admin`. The better-auth admin plugin endpoints live under `/api/auth/admin/*` (user list, create user, `set-role`, ban/unban, remove user) and require the `admin` role.
+Route guards are enforced server-side (`requireAuth`, `requireRole(...)` in `src/routes/apiRoutes.ts`, with the workshop module mounted at `/api/workshop` through `workshopAdminChain`): the public storefront is anonymous-readable, order placement and `/orders/mine` need any authenticated user, blog CMS needs `admin` or `author`, and every workshop business route needs `admin`. The better-auth admin plugin endpoints live under `/api/auth/admin/*` (user list, create user, `set-role`, ban/unban, remove user) and require the `admin` role.
 
 ---
 
@@ -90,7 +91,7 @@ Connection check. Verifies the **MySQL database** is reachable — not just that
 | `200`  | data can be saved  | `{"status":"ok","database":"connected","uptime":123.4,"timestamp":"2026-08-24T07:37:56.432Z"}` |
 | `503`  | DB unreachable     | `{"status":"error","database":"disconnected","uptime":123.4,"timestamp":"…"}` |
 
-### `GET /api/dashboard/stats` (admin)
+### `GET /api/workshop/dashboard/stats` (admin)
 
 Aggregated numbers for the workshop dashboard. Admin-only — workshop data must not leak to website customers.
 
@@ -120,7 +121,7 @@ All amounts are in **toman**.
 
 ## Items & Categories
 
-### `GET /api/items` → `GarmentItem[]`
+### `GET /api/workshop/items` → `GarmentItem[]`
 
 ```json
 [{
@@ -134,7 +135,7 @@ All amounts are in **toman**.
 }]
 ```
 
-### `POST /api/items` → `201 GarmentItem`
+### `POST /api/workshop/items` → `201 GarmentItem`
 
 | Field               | Type       | Required | Notes                       |
 | ------------------- | ---------- | -------- | --------------------------- |
@@ -151,17 +152,17 @@ All amounts are in **toman**.
 
 `code` is generated server-side when omitted.
 
-### `PUT /api/items/:id` → `GarmentItem`
+### `PUT /api/workshop/items/:id` → `GarmentItem`
 
 Partial update — any subset of the fields above.
 
-### `DELETE /api/items/:id` → `{ "message": "…" }`
+### `DELETE /api/workshop/items/:id` → `{ "message": "…" }`
 
 **Soft delete** — moves the item to the trash (see [Trash](#trash--recycle-bin)).
 
-### `GET /api/categories` → `{ id, label }[]`
+### `GET /api/workshop/categories` → `{ id, label }[]`
 
-### `POST /api/categories` → `201 { id, label }`
+### `POST /api/workshop/categories` → `201 { id, label }`
 
 Body: `{ "label": "کاپشن" }`
 
@@ -171,9 +172,9 @@ Body: `{ "label": "کاپشن" }`
 
 Hand-sellers (دست‌فروش) who receive goods on consignment.
 
-### `GET /api/sellers` → `Seller[]`
+### `GET /api/workshop/sellers` → `Seller[]`
 
-### `GET /api/sellers/:id` → `Seller`
+### `GET /api/workshop/sellers/:id` → `Seller`
 
 ```json
 {
@@ -191,15 +192,15 @@ Hand-sellers (دست‌فروش) who receive goods on consignment.
 }
 ```
 
-### `POST /api/sellers` → `201 Seller`
+### `POST /api/workshop/sellers` → `201 Seller`
 
 Required: `name`, `phone`. Optional: everything else in the shape above (`guaranteeType` must be one of the four enum values when provided).
 
-### `PUT /api/sellers/:id` → `Seller`
+### `PUT /api/workshop/sellers/:id` → `Seller`
 
 Partial update.
 
-### `DELETE /api/sellers/:id`
+### `DELETE /api/workshop/sellers/:id`
 
 Soft delete → trash.
 
@@ -209,7 +210,7 @@ Soft delete → trash.
 
 A consignment hands items over to a seller. Money flow: `totalAmount` (value handed over) → `returnedAmount` (unsold returns) → `netAmount` (what the seller owes) → `paidAmount` → `remainingAmount` (debt).
 
-### `GET /api/consignments` → `Consignment[]`
+### `GET /api/workshop/consignments` → `Consignment[]`
 
 ```json
 [{
@@ -228,7 +229,7 @@ A consignment hands items over to a seller. Money flow: `totalAmount` (value han
 }]
 ```
 
-### `POST /api/consignments` → `201 Consignment`
+### `POST /api/workshop/consignments` → `201 Consignment`
 
 ```json
 {
@@ -245,7 +246,7 @@ A consignment hands items over to a seller. Money flow: `totalAmount` (value han
 - `itemsList` needs at least one line; quantities are positive integers.
 - Quantities are deducted from warehouse stock.
 
-### `POST /api/consignments/return` → `201`
+### `POST /api/workshop/consignments/return` → `201`
 
 Return unsold goods from a consignment.
 
@@ -263,7 +264,11 @@ Return unsold goods from a consignment.
 - Cannot return more than the remaining (not yet returned/sold) quantity per line.
 - Response: `{ "message", "returnRecord": ConsignmentReturn, "updatedConsignment": Consignment }`.
 
-### `DELETE /api/consignments/:id`
+### `GET /api/workshop/consignments/returns` → `ConsignmentReturn[]`
+
+All return records, newest first — powers the Returns tab (مرجوعی‌ها).
+
+### `DELETE /api/workshop/consignments/:id`
 
 Soft delete → trash.
 
@@ -271,7 +276,7 @@ Soft delete → trash.
 
 ## Payments
 
-### `GET /api/payments` → `PaymentRecord[]`
+### `GET /api/workshop/payments` → `PaymentRecord[]`
 
 ```json
 [{
@@ -290,7 +295,7 @@ Soft delete → trash.
 }]
 ```
 
-### `POST /api/payments` → `201 PaymentRecord`
+### `POST /api/workshop/payments` → `201 PaymentRecord`
 
 ```json
 {
@@ -327,11 +332,11 @@ Orders placed on the public storefront. Customers order their own cart; admins m
 
 The caller's own orders, newest first — powers the customer profile at `/dashboard`.
 
-### `GET /api/orders` → `Order[]` (admin)
+### `GET /api/workshop/orders` → `Order[]` (admin)
 
 All orders with customer details and line items.
 
-### `PUT /api/orders/:id` → `Order` (admin)
+### `PUT /api/workshop/orders/:id` → `Order` (admin)
 
 Body: `{ "status": "…" }` with one of `pending` | `confirmed` | `preparing` | `shipped` | `delivered` | `cancelled`. Moving to `cancelled` restocks the lines.
 
@@ -352,9 +357,9 @@ Order shape:
 
 ## Staff & Owners
 
-### `GET /api/staff` → `StaffMember[]`
+### `GET /api/workshop/staff` → `StaffMember[]`
 
-### `POST /api/staff` → `201 StaffMember`
+### `POST /api/workshop/staff` → `201 StaffMember`
 
 Required: `name`, `role`. Optional:
 
@@ -371,13 +376,13 @@ Required: `name`, `role`. Optional:
 | `resumeUrl`, `resumeAttachmentName`, `resumeAttachmentData` | string | resume file (URL or base64) |
 | `activityHistory` | StaffActivity[] | `{ id, date, title, type, description }`, type ∈ `task` \| `handover` \| `payment` \| `attendance` \| `note` |
 
-### `PUT /api/staff/:id` → `StaffMember` (partial) · `DELETE /api/staff/:id` (soft delete)
+### `PUT /api/workshop/staff/:id` → `StaffMember` (partial) · `DELETE /api/staff/:id` (soft delete)
 
-### `GET /api/owners` → `Owner[]`
+### `GET /api/workshop/owners` → `Owner[]`
 
 Co-founders/partners (kept in settings storage, not the staff table). Deleted owners are filtered out.
 
-### `PUT /api/owners`
+### `PUT /api/workshop/owners`
 
 Replaces the whole list: `{ "owners": [Owner, … ] }`
 
@@ -399,9 +404,9 @@ Replaces the whole list: `{ "owners": [Owner, … ] }`
 
 ## Workshop Expenses & Profit Distribution
 
-### `GET /api/expenses` → `WorkshopExpense[]`
+### `GET /api/workshop/expenses` → `WorkshopExpense[]`
 
-### `POST /api/expenses` → `201 WorkshopExpense`
+### `POST /api/workshop/expenses` → `201 WorkshopExpense`
 
 | Field | Type | Notes |
 | ----- | ---- | ----- |
@@ -418,9 +423,9 @@ Replaces the whole list: `{ "owners": [Owner, … ] }`
 
 ### `PUT /api/expenses/:id` (partial) · `DELETE /api/expenses/:id` (soft delete)
 
-### `GET /api/profit-distribution` → `ProfitShareDistribution[]`
+### `GET /api/workshop/profit-distribution` → `ProfitShareDistribution[]`
 
-### `POST /api/profit-distribution` → `201 ProfitShareDistribution`
+### `POST /api/workshop/profit-distribution` → `201 ProfitShareDistribution`
 
 ```json
 {
@@ -451,21 +456,21 @@ Replaces the whole list: `{ "owners": [Owner, … ] }`
 
 Deletes are soft. Five entity types: `item`, `seller`, `staff`, `expense`, `consignment`.
 
-### `GET /api/trash`
+### `GET /api/workshop/trash`
 
 ```json
 { "items": [], "sellers": [], "staff": [], "expenses": [], "consignments": [] }
 ```
 
-### `POST /api/trash/restore/:type/:id`
+### `POST /api/workshop/trash/restore/:type/:id`
 
 Restore as-is → `{ "message", "restored" }`.
 
-### `PUT /api/trash/edit-and-restore/:type/:id`
+### `PUT /api/workshop/trash/edit-and-restore/:type/:id`
 
 Body: a patch object for the entity (e.g. `{ "name": "نام جدید" }` for an item) — applied during restore → `{ "message", "restored" }`.
 
-### `DELETE /api/trash/permanent/:type/:id`
+### `DELETE /api/workshop/trash/permanent/:type/:id`
 
 Irreversible → `{ "message": "مورد برای همیشه حذف شد" }`.
 
@@ -536,7 +541,7 @@ Body: the post shape from the [public storefront](#public-storefront-anonymous) 
 
 ## Audit Logs
 
-### `GET /api/audit-logs` → `AuditLog[]` (latest 500)
+### `GET /api/workshop/audit-logs` → `AuditLog[]` (latest 500)
 
 ```json
 [{
@@ -564,8 +569,9 @@ Server → client event:
 | `data-changed` | `{ entity, action, at }`                         | any data mutation is broadcast |
 
 ```js
-import { io } from 'socket.io-client';
-const socket = io(); // same origin
+// Any socket.io client, same origin (the bundled frontend does not
+// currently subscribe — external integrations may).
+const socket = io();
 socket.on('data-changed', ({ entity, action }) => refresh(entity));
 ```
 
@@ -577,25 +583,25 @@ socket.on('data-changed', ({ entity, action }) => refresh(entity));
 BASE=https://polarisstyle.ir/api
 
 # 1. DB reachable?
-curl $BASE/api/health
+curl $BASE/health
 
-# 2. Create an item
-curl -X POST $BASE/api/items -H 'Content-Type: application/json' \
+# 2. Create an item (admin session required — see Authentication)
+curl -X POST $BASE/workshop/items -H 'Content-Type: application/json' \
   -d '{"name":"پالتو مردانه","category":"<cat-id>","costPrice":800000,"consignmentPrice":1100000,"retailPrice":1400000,"stockQuantity":10,"sizes":["L"],"colors":["مشکی"]}'
 
 # 3. Create a seller
-curl -X POST $BASE/api/sellers -H 'Content-Type: application/json' \
+curl -X POST $BASE/workshop/sellers -H 'Content-Type: application/json' \
   -d '{"name":"فروشنده نمونه","phone":"09120000000","creditLimit":20000000}'
 
 # 4. Hand over goods
-curl -X POST $BASE/api/consignments -H 'Content-Type: application/json' \
+curl -X POST $BASE/workshop/consignments -H 'Content-Type: application/json' \
   -d '{"sellerId":"<seller-id>","dueDate":"2026-09-30","itemsList":[{"itemId":"<item-id>","quantity":5,"unitPrice":1100000}]}'
 
 # 5. Record a payment (auto-settles oldest debt first)
-curl -X POST $BASE/api/payments -H 'Content-Type: application/json' \
+curl -X POST $BASE/workshop/payments -H 'Content-Type: application/json' \
   -d '{"sellerId":"<seller-id>","amount":2000000,"paymentMethod":"card"}'
 
 # 6. Return unsold items
-curl -X POST $BASE/api/consignments/return -H 'Content-Type: application/json' \
+curl -X POST $BASE/workshop/consignments/return -H 'Content-Type: application/json' \
   -d '{"consignmentId":"<consignment-id>","returnItems":[{"itemId":"<item-id>","quantity":2,"condition":"healthy"}]}'
 ```

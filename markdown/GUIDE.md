@@ -14,12 +14,12 @@ Full endpoint documentation lives in [API.md](API.md).
 
 | Page      | Route              | What it does                                    |
 | --------- | ------------------ | ----------------------------------------------- |
-| Dashboard | `/`                | Live numbers: debts, payments, stock, profit    |
-| Inventory | `/inventory`       | Goods, categories, stock levels                 |
-| Consignments | `/consignments` | Handovers to sellers, returns, settlements      |
-| People    | `/people`          | Sellers and staff                               |
-| Finances  | `/finances`        | Payments, workshop expenses, profit distribution, reports |
-| Settings  | `/settings`        | Branding, partners, trash, system status, audit logs |
+| Dashboard | `/workshop`          | Live numbers: debts, payments, stock, profit    |
+| Inventory | `/workshop/inventory` | Goods, categories, stock levels               |
+| Consignments | `/workshop/consignments` | Handovers to sellers, returns, settlements |
+| People    | `/workshop/people`    | Sellers and staff                             |
+| Finances  | `/workshop/finances`  | Payments, workshop expenses, profit distribution, reports |
+| Settings  | `/workshop/settings`  | Branding, partners, trash, system status, audit logs |
 
 ---
 

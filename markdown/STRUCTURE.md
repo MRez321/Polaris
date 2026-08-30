@@ -1,13 +1,27 @@
-├── .agents/
-├── .github/
-│   └── workflows/
-│       └── deploy.yml
-├── .omp/
-│   ├── context/
-│   │   └── PolarisStyle.md
-│   └── config.yml
+# Project Structure
+
+Polaris Style — modular monorepo: Express/MySQL backend serving a React SPA on one origin.
+Reorganized into feature modules (phases 1–5); the admin workshop app lives under
+`frontend/src/modules/workshop/` and mounts at `/workshop`; its API lives under `/api/workshop/*`.
+
+Key backend conventions:
+
+- `backend/src/core/` — cross-cutting infrastructure shared by all modules (db, middleware, audit, socket, origins, utils).
+- `backend/src/modules/{auth,cms,workshop}/` — feature modules; each owns its routes/controllers/services. The workshop router exports the chain mounted at `/api/workshop` (admin-only).
+- `backend/src/{config,routes,schema,services,types,models,controllers}` — app-level wiring: db/drizzle config, `apiRoutes.ts` mounting shared surfaces, drizzle schema split per domain, and the customer-order surface.
+- Migrations auto-run at startup (`core/db/runMigrations.ts`, 3 attempts × 5s backoff).
+
+Key frontend conventions:
+
+- `frontend/src/modules/workshop/` — the admin panel module (pages, managers, contexts `DataContext`/`UIContext`, layout, hooks, utils); routed at `/workshop/*` behind RequireAdmin.
+- Shared code stays at the conventional roots: `components/` (ui, common, public), `context/`, `hooks/`, `lib/`, `pages/` (public storefront + controlpanel), `types/`, `utils/`.
+- Path alias `@/` → `frontend/src/`; imports reference module files via `@/modules/workshop/…`.
+
+Removed during the reorg: `docker-compose.yml`, `frontend/src/App.css`, `frontend/src/components/layout/Footer.tsx`, `temp/`, `companyApi` (unused API client group), and unused deps (`axios` backend; `socket.io-client`, `vite-plugin-pwa` frontend).
+
+
+```text
 ├── backend/
-│   ├── drizzle/
 │   ├── public/
 │   │   └── index.html
 │   ├── scripts/
@@ -19,59 +33,75 @@
 │   │   └── smoke.mjs
 │   ├── src/
 │   │   ├── config/
-│   │   │   ├── auth.ts
 │   │   │   ├── db.ts
-│   │   │   ├── drizzle.ts
-│   │   │   └── test-db.js
+│   │   │   └── drizzle.ts
 │   │   ├── controllers/
-│   │   │   ├── authController.ts
-│   │   │   ├── blogController.ts
-│   │   │   ├── companyController.ts
-│   │   │   ├── consignmentsController.ts
-│   │   │   ├── dashboardController.ts
-│   │   │   ├── expensesController.ts
-│   │   │   ├── galleryController.ts
-│   │   │   ├── itemsController.ts
-│   │   │   ├── ordersController.ts
-│   │   │   ├── paymentsController.ts
-│   │   │   ├── publicController.ts
-│   │   │   ├── sellersController.ts
-│   │   │   ├── staffController.ts
-│   │   │   ├── trashController.ts
-│   │   │   └── websiteController.ts
-│   │   ├── middleware/
-│   │   │   ├── authMiddleware.ts
-│   │   │   └── errorHandler.ts
+│   │   │   ├── healthController.ts
+│   │   │   └── ordersController.ts
+│   │   ├── core/
+│   │   │   ├── db/
+│   │   │   │   └── runMigrations.ts
+│   │   │   ├── middleware/
+│   │   │   │   └── errorHandler.ts
+│   │   │   ├── services/
+│   │   │   │   ├── auditService.ts
+│   │   │   │   └── socketService.ts
+│   │   │   ├── utils/
+│   │   │   │   ├── apiError.ts
+│   │   │   │   └── code.ts
+│   │   │   └── origins.ts
 │   │   ├── models/
-│   │   │   ├── authModel.ts
 │   │   │   └── mappers.ts
+│   │   ├── modules/
+│   │   │   ├── auth/
+│   │   │   │   ├── middleware.ts
+│   │   │   │   ├── routes.ts
+│   │   │   │   └── service.ts
+│   │   │   ├── cms/
+│   │   │   │   ├── services/
+│   │   │   │   │   ├── blogService.ts
+│   │   │   │   │   ├── galleryService.ts
+│   │   │   │   │   ├── settingsService.ts
+│   │   │   │   │   └── websiteService.ts
+│   │   │   │   ├── blogController.ts
+│   │   │   │   ├── companyController.ts
+│   │   │   │   ├── galleryController.ts
+│   │   │   │   └── websiteController.ts
+│   │   │   └── workshop/
+│   │   │       ├── controllers/
+│   │   │       │   ├── consignmentsController.ts
+│   │   │       │   ├── dashboardController.ts
+│   │   │       │   ├── expensesController.ts
+│   │   │       │   ├── itemsController.ts
+│   │   │       │   ├── ordersController.ts
+│   │   │       │   ├── paymentsController.ts
+│   │   │       │   ├── publicController.ts
+│   │   │       │   ├── sellersController.ts
+│   │   │       │   ├── staffController.ts
+│   │   │       │   └── trashController.ts
+│   │   │       ├── services/
+│   │   │       ├── inventoryService.ts
+│   │   │       └── router.ts
 │   │   ├── routes/
-│   │   │   ├── apiRoutes.ts
-│   │   │   └── authRoutes.ts
+│   │   │   └── apiRoutes.ts
 │   │   ├── schema/
+│   │   │   ├── audit.ts
 │   │   │   ├── auth.ts
 │   │   │   ├── clientId.ts
-│   │   │   └── index.ts
+│   │   │   ├── cms.ts
+│   │   │   ├── company.ts
+│   │   │   ├── index.ts
+│   │   │   ├── orders.ts
+│   │   │   └── workshop.ts
 │   │   ├── services/
-│   │   │   ├── auditService.ts
-│   │   │   ├── blogService.ts
-│   │   │   ├── galleryService.ts
-│   │   │   ├── inventoryService.ts
-│   │   │   ├── ordersService.ts
-│   │   │   ├── settingsService.ts
-│   │   │   ├── socketService.ts
-│   │   │   └── websiteService.ts
+│   │   │   └── ordersService.ts
 │   │   ├── types/
 │   │   │   ├── express.d.ts
 │   │   │   └── index.ts
-│   │   ├── utils/
-│   │   │   ├── apiError.ts
-│   │   │   └── code.ts
 │   │   ├── app.ts
 │   │   └── startup.ts
 │   ├── .env.example
 │   ├── drizzle.config.ts
-│   ├── package-lock.json
 │   ├── package.json
 │   ├── server.ts
 │   └── tsconfig.json
@@ -104,10 +134,6 @@
 │   │   │   ├── react.svg
 │   │   │   └── vite.svg
 │   │   ├── components/
-│   │   │   ├── analytics/
-│   │   │   │   └── FinancialReports.tsx
-│   │   │   ├── audit/
-│   │   │   │   └── AuditLogsManager.tsx
 │   │   │   ├── common/
 │   │   │   │   ├── Badge.tsx
 │   │   │   │   ├── BankInput.tsx
@@ -118,34 +144,6 @@
 │   │   │   │   ├── ImagePickerModal.tsx
 │   │   │   │   ├── Modal.tsx
 │   │   │   │   └── SafeImage.tsx
-│   │   │   ├── consignments/
-│   │   │   │   ├── ConsignmentReceipt.tsx
-│   │   │   │   ├── HandoverManager.tsx
-│   │   │   │   ├── NewHandoverModal.tsx
-│   │   │   │   ├── ReturnModal.tsx
-│   │   │   │   └── ReturnsSection.tsx
-│   │   │   ├── dashboard/
-│   │   │   │   ├── DashboardOverview.tsx
-│   │   │   │   ├── OverdueAlertBanner.tsx
-│   │   │   │   ├── SalesDebtChart.tsx
-│   │   │   │   ├── StatsCard.tsx
-│   │   │   │   └── TopSellersCard.tsx
-│   │   │   ├── finances/
-│   │   │   │   └── FinancesManager.tsx
-│   │   │   ├── inventory/
-│   │   │   │   ├── InventoryManager.tsx
-│   │   │   │   └── ItemFormModal.tsx
-│   │   │   ├── layout/
-│   │   │   │   ├── AppLayout.tsx
-│   │   │   │   ├── Footer.tsx
-│   │   │   │   ├── Header.tsx
-│   │   │   │   ├── MobileNav.tsx
-│   │   │   │   └── Sidebar.tsx
-│   │   │   ├── payments/
-│   │   │   │   ├── NewPaymentModal.tsx
-│   │   │   │   └── PaymentsManager.tsx
-│   │   │   ├── people/
-│   │   │   │   └── PeopleManager.tsx
 │   │   │   ├── public/
 │   │   │   │   ├── CartDrawer.tsx
 │   │   │   │   ├── ProductCard.tsx
@@ -154,64 +152,44 @@
 │   │   │   │   ├── PublicLayout.tsx
 │   │   │   │   ├── Reveal.tsx
 │   │   │   │   └── SectionHeading.tsx
-│   │   │   ├── pwa/
-│   │   │   │   ├── ConnectionGuardian.tsx
-│   │   │   │   └── PwaInstallPrompt.tsx
-│   │   │   ├── sellers/
-│   │   │   │   ├── SellerFormModal.tsx
-│   │   │   │   ├── SellerProfileDrawer.tsx
-│   │   │   │   └── SellersManager.tsx
-│   │   │   ├── settings/
-│   │   │   │   ├── GalleryManager.tsx
-│   │   │   │   ├── OwnerCard.tsx
-│   │   │   │   ├── OwnerFormModal.tsx
-│   │   │   │   ├── SettingsManager.tsx
-│   │   │   │   └── UsersManager.tsx
-│   │   │   ├── staff/
-│   │   │   │   └── StaffManager.tsx
-│   │   │   ├── ui/
-│   │   │   │   ├── accordion.tsx
-│   │   │   │   ├── avatar.tsx
-│   │   │   │   ├── badge.tsx
-│   │   │   │   ├── breadcrumb.tsx
-│   │   │   │   ├── button.tsx
-│   │   │   │   ├── card.tsx
-│   │   │   │   ├── city-selector.tsx
-│   │   │   │   ├── combobox.tsx
-│   │   │   │   ├── drawer.tsx
-│   │   │   │   ├── dropdown-menu.tsx
-│   │   │   │   ├── empty.tsx
-│   │   │   │   ├── field.tsx
-│   │   │   │   ├── hitbox.tsx
-│   │   │   │   ├── input-group.tsx
-│   │   │   │   ├── input.tsx
-│   │   │   │   ├── label.tsx
-│   │   │   │   ├── mobile-number-input.tsx
-│   │   │   │   ├── price-input.tsx
-│   │   │   │   ├── scroll-area.tsx
-│   │   │   │   ├── select-menu.tsx
-│   │   │   │   ├── separator.tsx
-│   │   │   │   ├── sheet.tsx
-│   │   │   │   ├── skeleton.tsx
-│   │   │   │   ├── spinner.tsx
-│   │   │   │   ├── tabs.tsx
-│   │   │   │   ├── textarea.tsx
-│   │   │   │   └── toman-icon.tsx
-│   │   │   └── workshop/
-│   │   │       └── WorkshopManager.tsx
+│   │   │   └── ui/
+│   │   │       ├── accordion.tsx
+│   │   │       ├── avatar.tsx
+│   │   │       ├── badge.tsx
+│   │   │       ├── breadcrumb.tsx
+│   │   │       ├── button.tsx
+│   │   │       ├── card.tsx
+│   │   │       ├── city-selector.tsx
+│   │   │       ├── combobox.tsx
+│   │   │       ├── drawer.tsx
+│   │   │       ├── dropdown-menu.tsx
+│   │   │       ├── empty.tsx
+│   │   │       ├── field.tsx
+│   │   │       ├── hitbox.tsx
+│   │   │       ├── input-group.tsx
+│   │   │       ├── input.tsx
+│   │   │       ├── label.tsx
+│   │   │       ├── mobile-number-input.tsx
+│   │   │       ├── price-input.tsx
+│   │   │       ├── scroll-area.tsx
+│   │   │       ├── select-menu.tsx
+│   │   │       ├── separator.tsx
+│   │   │       ├── sheet.tsx
+│   │   │       ├── skeleton.tsx
+│   │   │       ├── spinner.tsx
+│   │   │       ├── tabs.tsx
+│   │   │       ├── textarea.tsx
+│   │   │       └── toman-icon.tsx
 │   │   ├── context/
 │   │   │   ├── AuthContext.tsx
 │   │   │   ├── CartContext.tsx
-│   │   │   ├── DataContext.tsx
 │   │   │   ├── FavoritesContext.tsx
 │   │   │   ├── NetworkContext.tsx
-│   │   │   ├── ThemeContext.tsx
-│   │   │   └── UIContext.tsx
+│   │   │   └── ThemeContext.tsx
 │   │   ├── data/
 │   │   │   └── blogPosts.ts
 │   │   ├── hooks/
 │   │   │   ├── use-controllable-state.ts
-│   │   │   ├── useComputedStats.ts
 │   │   │   └── useNetworkStatus.ts
 │   │   ├── lib/
 │   │   │   ├── api.ts
@@ -222,6 +200,74 @@
 │   │   │   ├── persian-provinces.ts
 │   │   │   ├── usePageMeta.ts
 │   │   │   └── utils.ts
+│   │   ├── modules/
+│   │   │   └── workshop/
+│   │   │       ├── analytics/
+│   │   │       │   └── FinancialReports.tsx
+│   │   │       ├── audit/
+│   │   │       │   └── AuditLogsManager.tsx
+│   │   │       ├── consignments/
+│   │   │       │   ├── ConsignmentReceipt.tsx
+│   │   │       │   ├── HandoverManager.tsx
+│   │   │       │   ├── NewHandoverModal.tsx
+│   │   │       │   ├── ReturnModal.tsx
+│   │   │       │   └── ReturnsSection.tsx
+│   │   │       ├── context/
+│   │   │       │   ├── DataContext.tsx
+│   │   │       │   └── UIContext.tsx
+│   │   │       ├── dashboard/
+│   │   │       │   ├── DashboardOverview.tsx
+│   │   │       │   ├── OverdueAlertBanner.tsx
+│   │   │       │   ├── SalesDebtChart.tsx
+│   │   │       │   ├── StatsCard.tsx
+│   │   │       │   └── TopSellersCard.tsx
+│   │   │       ├── finances/
+│   │   │       │   └── FinancesManager.tsx
+│   │   │       ├── hooks/
+│   │   │       │   └── useComputedStats.ts
+│   │   │       ├── inventory/
+│   │   │       │   ├── InventoryManager.tsx
+│   │   │       │   └── ItemFormModal.tsx
+│   │   │       ├── layout/
+│   │   │       │   ├── AppLayout.tsx
+│   │   │       │   ├── Header.tsx
+│   │   │       │   ├── MobileNav.tsx
+│   │   │       │   └── Sidebar.tsx
+│   │   │       ├── pages/
+│   │   │       │   ├── ConsignmentsPage.tsx
+│   │   │       │   ├── DashboardPage.tsx
+│   │   │       │   ├── EntityProfilePage.tsx
+│   │   │       │   ├── FinancesPage.tsx
+│   │   │       │   ├── InventoryPage.tsx
+│   │   │       │   ├── OrdersPage.tsx
+│   │   │       │   ├── PeoplePage.tsx
+│   │   │       │   └── SettingsPage.tsx
+│   │   │       ├── payments/
+│   │   │       │   ├── NewPaymentModal.tsx
+│   │   │       │   └── PaymentsManager.tsx
+│   │   │       ├── people/
+│   │   │       │   └── PeopleManager.tsx
+│   │   │       ├── pwa/
+│   │   │       │   ├── ConnectionGuardian.tsx
+│   │   │       │   └── PwaInstallPrompt.tsx
+│   │   │       ├── sellers/
+│   │   │       │   ├── SellerFormModal.tsx
+│   │   │       │   ├── SellerProfileDrawer.tsx
+│   │   │       │   └── SellersManager.tsx
+│   │   │       ├── settings/
+│   │   │       │   ├── GalleryManager.tsx
+│   │   │       │   ├── OwnerCard.tsx
+│   │   │       │   ├── OwnerFormModal.tsx
+│   │   │       │   ├── SettingsManager.tsx
+│   │   │       │   └── UsersManager.tsx
+│   │   │       ├── staff/
+│   │   │       │   └── StaffManager.tsx
+│   │   │       ├── utils/
+│   │   │       │   ├── fifo.ts
+│   │   │       │   ├── imageFile.ts
+│   │   │       │   └── validation.ts
+│   │   │       └── workshop/
+│   │   │           └── WorkshopManager.tsx
 │   │   ├── pages/
 │   │   │   ├── controlpanel/
 │   │   │   │   ├── BlogManagerPage.tsx
@@ -236,24 +282,12 @@
 │   │   │   │   ├── HomePage.tsx
 │   │   │   │   ├── ProductPage.tsx
 │   │   │   │   └── ShopPage.tsx
-│   │   │   ├── ConsignmentsPage.tsx
-│   │   │   ├── DashboardPage.tsx
-│   │   │   ├── EntityProfilePage.tsx
-│   │   │   ├── FinancesPage.tsx
-│   │   │   ├── InventoryPage.tsx
 │   │   │   ├── LoginPage.tsx
-│   │   │   ├── OrdersPage.tsx
-│   │   │   ├── PeoplePage.tsx
-│   │   │   ├── SettingsPage.tsx
 │   │   │   └── SignupPage.tsx
 │   │   ├── types/
 │   │   │   └── index.ts
 │   │   ├── utils/
-│   │   │   ├── fifo.ts
-│   │   │   ├── imageFile.ts
-│   │   │   ├── persian.ts
-│   │   │   └── validation.ts
-│   │   ├── App.css
+│   │   │   └── persian.ts
 │   │   ├── App.tsx
 │   │   ├── index.css
 │   │   └── main.tsx
@@ -261,26 +295,20 @@
 │   ├── components.json
 │   ├── eslint.config.js
 │   ├── index.html
-│   ├── package-lock.json
 │   ├── package.json
 │   ├── README.md
 │   ├── tsconfig.app.json
 │   ├── tsconfig.json
 │   ├── tsconfig.node.json
 │   └── vite.config.ts
-├── src/
-│   └── hooks/
-│       └── use-controllable-state.ts
-├── temp/
-│   ├── 1
-│   ├── endpoints
-│   └── oldscrap.md
+├── markdown/
+│   ├── API.md
+│   ├── CMS.md
+│   ├── GUIDE.md
+│   └── STRUCTURE.md
 ├── .gitignore
-├── API.md
-├── docker-compose.yml
-├── GUIDE.md
+├── CONTEXT.md
 ├── LICENSE
 ├── package.json
-├── README.md
-├── skills-lock.json
-└── STRUCTURE.md
+└── README.md
+```

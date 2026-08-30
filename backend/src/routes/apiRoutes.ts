@@ -39,9 +39,9 @@ router.delete('/blog/:id', requireRole('admin', 'author'), blog.deletePost);
 // Everything below is admin-only.
 router.use(requireRole('admin'));
 
-// Workshop business tracking: the module router owns its sub-path structure;
-// apiRoutes owns the role gate so the auth order stays in one visible place.
-router.use(workshopRouter);
+// Workshop business tracking moved to its own module mount at
+// /api/workshop — see workshopAdminChain below. Legacy inline mount
+// removed in Phase 5; /api/workshop is now the only path.
 
 // Company branding
 router.get('/company', company.getCompanyBranding);
@@ -57,9 +57,8 @@ router.delete('/gallery/:id', gallery.deleteImage);
 
 /**
  * The admin-gated workshop chain (requireAuth → requireRole('admin') →
- * workshopRouter), exported so app.ts can mount the same contract at the
- * /api/workshop prefix. During the migration window both mounts serve the
- * same handlers; Phase 5 removes the legacy inline mount.
+ * workshopRouter), exported so app.ts can mount the workshop API at
+ * /api/workshop — its single, only mount point.
  */
 export const workshopAdminChain: Router = (() => {
     const gated = Router();
