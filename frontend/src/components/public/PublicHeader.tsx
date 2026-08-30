@@ -189,7 +189,7 @@ export const PublicHeader: React.FC = () => {
                       </DropdownMenuItem>
                     )}
                     {isAdmin && (
-                      <DropdownMenuItem render={<Link to="/app" />}>
+                      <DropdownMenuItem render={<Link to="/workshop" />}>
                         <LayoutDashboard />
                         پنل کارگاه
                       </DropdownMenuItem>
@@ -294,7 +294,7 @@ export const PublicHeader: React.FC = () => {
                     )}
                     {isAdmin && (
                       <Link
-                        to="/app"
+                        to="/workshop"
                         className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-white/5 transition-colors"
                       >
                         <LayoutDashboard className="w-4 h-4 text-[#A67C38] dark:text-[#CEAE80]" />

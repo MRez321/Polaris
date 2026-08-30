@@ -1,12 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider } from '@/context/ThemeContext';
-import { DataProvider } from '@/context/DataContext';
-import { UIProvider } from '@/context/UIContext';
+
 import { NetworkProvider } from '@/context/NetworkContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 import { FavoritesProvider } from '@/context/FavoritesContext';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { AppLayout } from '@/modules/workshop/layout/AppLayout';
 import { PublicLayout } from '@/components/public/PublicLayout';
 import HomePage from '@/pages/public/HomePage';
 import ShopPage from '@/pages/public/ShopPage';
@@ -16,16 +15,16 @@ import BlogPostPage from '@/pages/public/BlogPostPage';
 import ProductPage from '@/pages/public/ProductPage';
 import CheckoutPage from '@/pages/public/CheckoutPage';
 import CustomerDashboardPage from '@/pages/public/CustomerDashboardPage';
-import DashboardPage from '@/pages/DashboardPage';
-import OrdersPage from '@/pages/OrdersPage';
+import DashboardPage from '@/modules/workshop/pages/DashboardPage';
+import OrdersPage from '@/modules/workshop/pages/OrdersPage';
 import LoginPage from '@/pages/LoginPage';
 import SignupPage from '@/pages/SignupPage';
-import InventoryPage from '@/pages/InventoryPage';
-import ConsignmentsPage from '@/pages/ConsignmentsPage';
-import PeoplePage from '@/pages/PeoplePage';
-import FinancesPage from '@/pages/FinancesPage';
-import SettingsPage from '@/pages/SettingsPage';
-import EntityProfilePage from '@/pages/EntityProfilePage';
+import InventoryPage from '@/modules/workshop/pages/InventoryPage';
+import ConsignmentsPage from '@/modules/workshop/pages/ConsignmentsPage';
+import PeoplePage from '@/modules/workshop/pages/PeoplePage';
+import FinancesPage from '@/modules/workshop/pages/FinancesPage';
+import SettingsPage from '@/modules/workshop/pages/SettingsPage';
+import EntityProfilePage from '@/modules/workshop/pages/EntityProfilePage';
 import ControlPanelLayout, { ControlPanelIndexRedirect } from '@/pages/controlpanel/ControlPanelLayout';
 import WebsiteSettingsPage from '@/pages/controlpanel/WebsiteSettingsPage';
 import BlogManagerPage from '@/pages/controlpanel/BlogManagerPage';
@@ -35,7 +34,7 @@ import BlogManagerPage from '@/pages/controlpanel/BlogManagerPage';
 function RequireAdmin() {
   const { user, isAdmin, isLoading } = useAuth();
   if (isLoading) return null;
-  if (!user) return <Navigate to="/login?next=%2Fapp" replace />;
+  if (!user) return <Navigate to="/login?next=%2Fworkshop" replace />;
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
   return <Outlet />;
 }
@@ -44,12 +43,10 @@ function App() {
   return (
     <ThemeProvider>
       <NetworkProvider>
-        <DataProvider>
-          <UIProvider>
-            <AuthProvider>
-              <CartProvider>
-                <FavoritesProvider>
-                  <BrowserRouter>
+        <AuthProvider>
+          <CartProvider>
+            <FavoritesProvider>
+              <BrowserRouter>
                     <Routes>
                       {/* Public marketing site (no admin code paths) */}
                       <Route element={<PublicLayout />}>
@@ -68,7 +65,7 @@ function App() {
                       <Route path="/signup" element={<SignupPage />} />
 
                       {/* Admin workshop panel, isolated under /app */}
-                      <Route path="/app" element={<AppLayout />}>
+                      <Route path="/workshop" element={<AppLayout />}>
                         <Route element={<RequireAdmin />}>
                           <Route index element={<DashboardPage />} />
                           <Route path="orders" element={<OrdersPage />} />
@@ -80,10 +77,10 @@ function App() {
                           <Route path="finances/workshop" element={<FinancesPage />} />
                           <Route path="finances/reports" element={<FinancesPage />} />
                           <Route path="settings" element={<SettingsPage />} />
-                          {/* /app/profile/{items|sellers|staff|owners}/:id */}
+                          {/* /workshop/profile/{items|sellers|staff|owners}/:id */}
                           <Route path="profile/:type/:id" element={<EntityProfilePage />} />
                         </Route>
-                        <Route path="*" element={<Navigate to="/app" replace />} />
+                        <Route path="*" element={<Navigate to="/workshop" replace />} />
                       </Route>
 
                       {/* Public website management (admin: settings+blog, author: blog) */}
@@ -100,8 +97,6 @@ function App() {
                 </FavoritesProvider>
               </CartProvider>
             </AuthProvider>
-          </UIProvider>
-        </DataProvider>
       </NetworkProvider>
     </ThemeProvider>
   );

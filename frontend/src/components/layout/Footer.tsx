@@ -7,8 +7,8 @@ import {
   Scissors,
   ChevronUp,
 } from 'lucide-react';
-import { toPersianDigits } from '../../utils/persian';
-import { Modal } from '../common/Modal';
+import { toPersianDigits } from '@/utils/persian';
+import { Modal } from '@/components/common/Modal';
 
 export const Footer: React.FC = () => {
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);

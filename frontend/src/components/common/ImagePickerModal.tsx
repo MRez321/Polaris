@@ -13,9 +13,9 @@ import {
 } from 'lucide-react';
 
 import { Modal } from './Modal';
-import { galleryApi, type GalleryImage } from '../../lib/galleryApi';
-import { compressImage } from '../../utils/imageFile';
-import { getApiErrorMessage } from '../../lib/api';
+import { galleryApi, type GalleryImage } from '@/lib/galleryApi';
+import { compressImage } from '@/modules/workshop/utils/imageFile';
+import { getApiErrorMessage } from '@/lib/api';
 
 export const GALLERY_CATEGORIES = [
   { value: 'all', label: 'همه' },

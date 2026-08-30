@@ -59,7 +59,7 @@ const PANEL_LINKS: Record<
   { to: string; label: string; icon: React.ComponentType<{ className?: string }>; primary?: boolean }[]
 > = {
   admin: [
-    { to: '/app', label: 'پنل مدیریت کارگاه', icon: LayoutDashboard, primary: true },
+    { to: '/workshop', label: 'پنل مدیریت کارگاه', icon: LayoutDashboard, primary: true },
     { to: '/controlpanel', label: 'مدیریت وب‌سایت و وبلاگ', icon: Settings2 },
   ],
   author: [{ to: '/controlpanel', label: 'پنل مدیریت وبلاگ', icon: PenLine, primary: true }],

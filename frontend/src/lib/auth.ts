@@ -25,7 +25,7 @@ export const authClient = createAuthClient({
 // Landing route per role after login/signup: admins run the workshop panel,
 // authors manage the website blog, everyone else is a shop customer.
 export function roleHome(role: string | undefined): string {
-  if (role === 'admin') return '/app';
+  if (role === 'admin') return '/workshop';
   if (role === 'author') return '/controlpanel';
   return '/dashboard';
 }
