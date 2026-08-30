@@ -1,8 +1,8 @@
 import type { Request, Response } from 'express';
 
-import * as blogSvc from '../../../services/blogService.js';
+import * as blogSvc from '../../../modules/cms/services/blogService.js';
 import * as svc from '../inventoryService.js';
-import { getCompany } from '../../../services/settingsService.js';
+import { getCompany } from '../../../modules/cms/services/settingsService.js';
 import { notFound, pathParam } from '../../../core/utils/apiError.js';
 
 /**

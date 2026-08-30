@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import { toNodeHandler } from 'better-auth/node';
 
-import { auth } from '../config/auth.js';
+import { auth } from './service.js';
 
 const handler = toNodeHandler(auth);
 

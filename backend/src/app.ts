@@ -4,11 +4,11 @@ import path from 'path';
 import dotenv from 'dotenv';
 
 import { errorHandler } from './core/middleware/errorHandler.js';
-import { attachSession } from './core/middleware/authMiddleware.js';
+import { attachSession } from './modules/auth/middleware.js';
 import { isLocalDevOrigin, trustedOrigins } from './core/origins.js';
-import { authHandler } from './routes/authRoutes.js';
+import { authHandler } from './modules/auth/routes.js';
 import apiRoutes, { workshopAdminChain } from './routes/apiRoutes.js';
-import { ensureUploadsDir, uploadsDir } from './services/galleryService.js';
+import { ensureUploadsDir, uploadsDir } from './modules/cms/services/galleryService.js';
 
 dotenv.config();
 

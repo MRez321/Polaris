@@ -1,8 +1,8 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 
-import { getWebsiteSettings, updateWebsiteSettings } from '../services/websiteService.js';
-import { logAudit } from '../core/services/auditService.js';
+import { getWebsiteSettings, updateWebsiteSettings } from './services/websiteService.js';
+import { logAudit } from '../../core/services/auditService.js';
 
 const websiteSettingsSchema = z.object({
     enabled: z.boolean().optional(),

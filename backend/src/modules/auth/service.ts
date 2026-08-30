@@ -4,10 +4,10 @@ import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { eq } from 'drizzle-orm';
 import dotenv from 'dotenv';
 
-import { db } from './drizzle.js';
-import * as schema from '../schema/index.js';
-import { logAudit } from '../core/services/auditService.js';
-import { trustedOrigins } from '../core/origins.js';
+import { db } from '../../config/drizzle.js';
+import * as schema from '../../schema/index.js';
+import { logAudit } from '../../core/services/auditService.js';
+import { trustedOrigins } from '../../core/origins.js';
 
 dotenv.config();
 

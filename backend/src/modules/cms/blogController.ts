@@ -1,9 +1,9 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 
-import * as svc from '../services/blogService.js';
-import { logAudit } from '../core/services/auditService.js';
-import { pathParam } from '../core/utils/apiError.js';
+import * as svc from './services/blogService.js';
+import { logAudit } from '../../core/services/auditService.js';
+import { pathParam } from '../../core/utils/apiError.js';
 
 const sectionSchema = z.object({
     heading: z.string().optional(),

@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm';
 import { v4 as uuid } from 'uuid';
 
-import { db } from '../config/drizzle.js';
-import { companySettings, owners } from '../schema/index.js';
-import type { CompanyBranding, Owner } from '../types/index.js';
+import { db } from '../../../config/drizzle.js';
+import { companySettings, owners } from '../../../schema/index.js';
+import type { CompanyBranding, Owner } from '../../../types/index.js';
 
 const SETTINGS_ROW_ID = 'company';
 

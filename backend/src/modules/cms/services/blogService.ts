@@ -1,10 +1,10 @@
 import { desc, eq } from 'drizzle-orm';
 import { v4 as uuid } from 'uuid';
 
-import { db } from '../config/drizzle.js';
-import { blogPosts } from '../schema/index.js';
-import type { BlogPost, BlogPostStatus, BlogSection } from '../types/index.js';
-import { badRequest, conflict, notFound } from '../core/utils/apiError.js';
+import { db } from '../../../config/drizzle.js';
+import { blogPosts } from '../../../schema/index.js';
+import type { BlogPost, BlogPostStatus, BlogSection } from '../../../types/index.js';
+import { badRequest, conflict, notFound } from '../../../core/utils/apiError.js';
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 

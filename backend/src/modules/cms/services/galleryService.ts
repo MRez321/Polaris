@@ -3,10 +3,10 @@ import path from 'path';
 import { eq } from 'drizzle-orm';
 import { v4 as uuid } from 'uuid';
 
-import { db } from '../config/drizzle.js';
-import { galleryImages } from '../schema/index.js';
-import type { GalleryImageRow } from '../schema/index.js';
-import { badRequest, notFound } from '../core/utils/apiError.js';
+import { db } from '../../../config/drizzle.js';
+import { galleryImages } from '../../../schema/index.js';
+import type { GalleryImageRow } from '../../../schema/index.js';
+import { badRequest, notFound } from '../../../core/utils/apiError.js';
 
 /** Directory uploaded image files are written to; served at /uploads. */
 export const uploadsDir = path.join(process.cwd(), 'uploads');

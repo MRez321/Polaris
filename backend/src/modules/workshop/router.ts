@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { requireRole } from '../../core/middleware/authMiddleware.js';
+import { requireRole } from '../../modules/auth/middleware.js';
 import * as items from './controllers/itemsController.js';
 import * as sellers from './controllers/sellersController.js';
 import * as consignments from './controllers/consignmentsController.js';

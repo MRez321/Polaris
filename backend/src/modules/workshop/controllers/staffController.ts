@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 
 import * as svc from '../inventoryService.js';
-import { getOwners, setOwners } from '../../../services/settingsService.js';
+import { getOwners, setOwners } from '../../../modules/cms/services/settingsService.js';
 import { toStaffDto } from '../../../models/mappers.js';
 import { logAudit } from '../../../core/services/auditService.js';
 import { badRequest, pathParam } from '../../../core/utils/apiError.js';

@@ -1,13 +1,13 @@
 import { Router } from 'express';
 
-import { requireAuth, requireRole } from '../core/middleware/authMiddleware.js';
+import { requireAuth, requireRole } from '../modules/auth/middleware.js';
 import { health } from '../controllers/healthController.js';
 import * as pub from '../modules/workshop/controllers/publicController.js';
-import * as blog from '../controllers/blogController.js';
+import * as blog from '../modules/cms/blogController.js';
 import * as orders from '../controllers/ordersController.js';
-import * as company from '../controllers/companyController.js';
-import * as website from '../controllers/websiteController.js';
-import * as gallery from '../controllers/galleryController.js';
+import * as company from '../modules/cms/companyController.js';
+import * as website from '../modules/cms/websiteController.js';
+import * as gallery from '../modules/cms/galleryController.js';
 import workshopRouter from '../modules/workshop/router.js';
 
 const router = Router();

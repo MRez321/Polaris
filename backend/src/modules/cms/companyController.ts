@@ -1,8 +1,8 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 
-import { getCompany, updateCompany } from '../services/settingsService.js';
-import { logAudit } from '../core/services/auditService.js';
+import { getCompany, updateCompany } from './services/settingsService.js';
+import { logAudit } from '../../core/services/auditService.js';
 
 const companySchema = z.object({
     name: z.string().optional(),

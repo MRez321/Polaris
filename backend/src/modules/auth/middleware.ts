@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { fromNodeHeaders } from 'better-auth/node';
 
-import { auth } from '../../config/auth.js';
+import { auth } from './service.js';
 
 /**
  * Attaches the better-auth session (if any) to `req.auth`.

@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm';
 
-import { db } from '../config/drizzle.js';
-import { websiteSettings } from '../schema/index.js';
-import type { WebsiteSettings } from '../types/index.js';
+import { db } from '../../../config/drizzle.js';
+import { websiteSettings } from '../../../schema/index.js';
+import type { WebsiteSettings } from '../../../types/index.js';
 
 const SETTINGS_ROW_ID = 'website';
 
