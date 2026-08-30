@@ -2,6 +2,7 @@
 // boot diagnostics before any other module (better-auth config, DB pool) runs.
 import './src/startup.js';
 
+import { setTimeout } from 'timers/promises';
 import http from 'http';
 
 import app from './src/app.js';
@@ -17,16 +18,26 @@ const httpServer = http.createServer(app);
 // Initialize socket.io on the same server
 initSocket(httpServer);
 
-// Migrations run before listen (approved Phase-1 decision): the app accepts
-// traffic only once the schema is current. A failure never kills the process —
-// log loudly, stay up, let Passenger's next restart re-attempt — matching the
-// existing never-exit philosophy for transient cPanel MySQL blips.
-await runMigrations().catch((err: unknown) => {
-    console.error(
-        '❌ مایگریشن ناموفق بود (سرور بالا می‌ماند؛ راه‌اندازی مجدد دوباره تلاش می‌کند):',
-        err instanceof Error ? err.message : err,
-    );
-});
+// Migrations run before listen (approved Phase-1 decision): retries with
+// short backoff, never crash. A transient cPanel MySQL blip heals itself; if
+// all attempts fail the server still listens (health reports DB state, next
+// Passenger restart re-attempts) — no restart loop.
+const MIGRATION_ATTEMPTS = 3;
+const MIGRATION_RETRY_DELAY_MS = 5_000;
+for (let attempt = 1; attempt <= MIGRATION_ATTEMPTS; attempt += 1) {
+    try {
+        await runMigrations();
+        break;
+    } catch (err: unknown) {
+        console.error(
+            `❌ مایگریشن ناموفق بود (تلاش ${attempt} از ${MIGRATION_ATTEMPTS}):`,
+            err instanceof Error ? err.message : err,
+        );
+        if (attempt < MIGRATION_ATTEMPTS) {
+            await setTimeout(MIGRATION_RETRY_DELAY_MS);
+        }
+    }
+}
 
 // Start Server
 httpServer.listen(PORT, () => {
