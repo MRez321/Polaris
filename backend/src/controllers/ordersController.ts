@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 
 import * as svc from '../services/ordersService.js';
+import { notifyNewOrder } from '../modules/notifications/services/notificationService.js';
 import { logAudit } from '../core/services/auditService.js';
 
 const orderLineSchema = z.object({
@@ -37,6 +38,7 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
         paymentMethod: data.paymentMethod,
         lines: data.lines,
     });
+    notifyNewOrder(order);
     logAudit(req.auth ?? null, 'create', 'settings', `سفارش ${order.code} توسط ${order.customerName} ثبت شد`, req.ip);
     res.status(201).json(order);
 }

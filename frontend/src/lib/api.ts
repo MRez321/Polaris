@@ -20,6 +20,8 @@ import type {
   StaffMember,
   WorkshopExpense,
   WebsiteSettings,
+  NotificationSettings,
+  NotificationSettingsResponse,
 } from '@/types';
 
 /**
@@ -275,4 +277,14 @@ export const ordersApi = {
   all: () => api.get<Order[]>(`${W}/orders`).then((r) => r.data),
   updateStatus: (id: string, status: OrderStatus) =>
     api.put<Order>(`${W}/orders/${id}`, { status }).then((r) => r.data),
+};
+
+// --- Workshop Notifications (Telegram / Melipayamak SMS) ---
+export const notificationsApi = {
+  get: () => api.get<NotificationSettingsResponse>(`${W}/notifications/settings`).then((r) => r.data),
+  update: (patch: Partial<NotificationSettings>) =>
+    api.put<NotificationSettingsResponse>(`${W}/notifications/settings`, patch).then((r) => r.data),
+  testTelegram: () => api.post<{ success: boolean; message: string }>(`${W}/notifications/test/telegram`).then((r) => r.data),
+  testSms: (recipient: string) =>
+    api.post<{ success: boolean; message: string }>(`${W}/notifications/test/sms`, { recipient }).then((r) => r.data),
 };

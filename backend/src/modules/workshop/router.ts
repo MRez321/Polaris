@@ -10,6 +10,7 @@ import * as expenses from './controllers/expensesController.js';
 import * as trash from './controllers/trashController.js';
 import * as dashboard from './controllers/dashboardController.js';
 import * as orders from './controllers/ordersController.js';
+import * as notifications from '../../modules/notifications/notificationsController.js';
 
 /**
  * Workshop (business-tracking) routes. Mounted at /api/workshop and, during
@@ -74,7 +75,10 @@ router.post('/trash/restore/:type/:id', trash.restoreEntity);
 router.put('/trash/edit-and-restore/:type/:id', trash.editAndRestore);
 router.delete('/trash/permanent/:type/:id', trash.permanentDelete);
 
-// Audit-log viewer (logAudit itself stays a core leaf).
-router.get('/audit-logs', dashboard.listAuditLogs);
+// Outbound notifications (Telegram / Melipayamak SMS) settings + test sends
+router.get('/notifications/settings', notifications.getNotifications);
+router.put('/notifications/settings', notifications.updateNotifications);
+router.post('/notifications/test/telegram', notifications.testTelegramNotification);
+router.post('/notifications/test/sms', notifications.testSmsNotification);
 
 export default router;

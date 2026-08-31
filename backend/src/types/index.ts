@@ -204,7 +204,7 @@ export interface AuditLog {
     userName: string;
     userRole?: string;
     action: string;
-    entity: 'item' | 'seller' | 'consignment' | 'payment' | 'return' | 'staff' | 'settings' | 'cost' | 'profit' | 'auth';
+    entity: 'item' | 'seller' | 'consignment' | 'payment' | 'return' | 'staff' | 'settings' | 'cost' | 'profit' | 'auth' | 'notifications';
     details: string;
     ipAddress: string | null;
 }
@@ -399,4 +399,29 @@ export interface Order {
     items: OrderItemLine[];
     createdAt: string;
     updatedAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Notifications: outbound Telegram / Melipayamak integrations
+// ---------------------------------------------------------------------------
+
+export interface TelegramNotificationSettings {
+    enabled: boolean;
+    /** Announce new storefront orders to the Telegram chat. */
+    notifyNewOrder: boolean;
+}
+
+export interface SmsNotificationSettings {
+    enabled: boolean;
+    /** Announce new storefront orders by SMS. */
+    notifyNewOrder: boolean;
+    /** Melipayamak sender line, e.g. 9015867713 — required to send. */
+    fromNumber: string;
+    /** Workshop manager mobile (09xxxxxxxxx) receiving the notifications. */
+    recipientPhone: string;
+}
+
+export interface NotificationSettings {
+    telegram: TelegramNotificationSettings;
+    sms: SmsNotificationSettings;
 }

@@ -26,6 +26,7 @@ import {
   Hash,
   History as HistoryIcon,
   Users,
+  Bell,
 } from 'lucide-react';
 import type { WorkshopInfo, GarmentItem, Seller, StaffMember, WorkshopExpense, Consignment } from '@/types';
 import { toPersianDigits, formatToman, toJalaliDate } from '@/utils/persian';
@@ -35,6 +36,7 @@ import { AuditLogsManager } from '../audit/AuditLogsManager';
 import { ImagePicker } from '@/components/common/ImagePicker';
 import { GalleryManager } from './GalleryManager';
 import { UsersManager } from './UsersManager';
+import { NotificationsManager } from './NotificationsManager';
 import { toast } from 'sonner';
 import { normalizePhoneInput, isValidIranPhone, PHONE_ERROR } from '@/modules/workshop/utils/validation';
 
@@ -61,7 +63,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
   networkStatus,
   onOpenPwaInstall,
 }) => {
-  const [activeTab, setActiveTab] = useState<'branding' | 'gallery' | 'trash' | 'system' | 'audit' | 'users'>('branding');
+  const [activeTab, setActiveTab] = useState<'branding' | 'gallery' | 'trash' | 'system' | 'audit' | 'users' | 'notifications'>('branding');
   const [isSavedAlert, setIsSavedAlert] = useState(false);
 
   // Form State for Workshop Info
@@ -539,6 +541,18 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
         >
           <Users className="w-3.5 h-3.5" />
           <span>مدیریت کاربران</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('notifications')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'notifications'
+              ? 'bg-[#CEAE80] text-black shadow-md font-black'
+              : 'text-stone-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5'
+          }`}
+        >
+          <Bell className="w-3.5 h-3.5" />
+          <span>اطلاع‌رسانی</span>
         </button>
       </div>
 
@@ -1276,6 +1290,15 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
       {activeTab === 'audit' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           <AuditLogsManager />
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* TAB 7: NOTIFICATIONS (اطلاع‌رسانی تلگرام و پیامک) */}
+      {/* ======================================================== */}
+      {activeTab === 'notifications' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <NotificationsManager />
         </div>
       )}
 

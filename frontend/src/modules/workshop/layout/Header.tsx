@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Scissors,
   Plus,
@@ -7,32 +7,54 @@ import {
   Sun,
   Bell,
   Receipt,
-  Wifi,
-  WifiOff,
+  Menu,
+  LayoutDashboard,
+  Settings2,
+  UserRound,
   LogIn,
   LogOut,
 } from 'lucide-react';
 import { toPersianDigits } from '@/utils/persian';
 import { useTheme } from '@/context/ThemeContext';
 import { useUI } from '@/modules/workshop/context/UIContext';
-import { useNetwork } from '@/context/NetworkContext';
 import { useData } from '@/modules/workshop/context/DataContext';
 import { useAuth } from '@/context/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuGroupLabel,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { SideMenu } from './SideMenu';
+
+/** First letter of up to two words, for the avatar fallback (PublicHeader pattern). */
+function initials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('‌');
+}
 
 export const Header: React.FC = () => {
-  const navigate = useNavigate();  const { isDarkMode, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+  const { isDarkMode, toggleTheme } = useTheme();
   const { openQuickHandover, openQuickPayment } = useUI();
-  const networkStatus = useNetwork();
   const { consignments } = useData();
   const { user, isAdmin, signOut } = useAuth();
+  const [sideMenuOpen, setSideMenuOpen] = React.useState(false);
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/login');
   };
 
-  const isFullyConnected = networkStatus.isFullyConnected;
-  const latency = networkStatus.latency;
+  const isAuthor = user?.role === 'author';
+  const canManageSite = isAdmin || isAuthor;
 
   const overdueCount = consignments.filter(
     (c) => (c.remainingAmount || 0) > 0 && new Date(c.dueDate).getTime() < Date.now()
@@ -41,10 +63,11 @@ export const Header: React.FC = () => {
   return (
     <header className="sticky top-0 z-40 glass-panel border-b border-stone-200 dark:border-white/5 shadow-sm transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
-        {/* Brand Logo & Name */}
-        <div
+        {/* Brand Logo & Name — links to the public storefront */}
+        <Link
+          to="/"
           className="flex items-center gap-3 cursor-pointer select-none"
-          onClick={() => navigate('/workshop')}
+          title="بازگشت به سایت فروشگاه"
         >
           <div className="w-10 h-10 rounded-xl bg-[#CEAE80] text-black flex items-center justify-center shadow-lg font-black shrink-0 ring-2 ring-[#CEAE80]/30 transition-transform active:scale-95">
             <Scissors className="w-5 h-5 -rotate-45 text-black" />
@@ -57,67 +80,30 @@ export const Header: React.FC = () => {
               سیستم مدیریت کارگاه
             </p>
           </div>
-        </div>
-
-        {/* Live Network & Date Status Display in Nav */}
-        <div className="hidden lg:flex items-center gap-3">
-          {/* Real-time Connection Status Pill */}
-          <div
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${
-              isFullyConnected
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
-                : 'bg-rose-500/15 border-rose-500/40 text-rose-700 dark:text-rose-400 animate-pulse'
-            }`}
-            title={
-              isFullyConnected
-                ? `اتصال به سرور کارگاه پایدار است ${latency ? `(${toPersianDigits(latency)}ms)` : ''}`
-                : 'قطع ارتباط با سرور - از ثبت اسناد مالی خودداری فرمایید'
-            }
-          >
-            {isFullyConnected ? (
-              <>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <Wifi className="w-3.5 h-3.5" />
-                <span>متصل و آنلاین</span>
-                {latency && (
-                  <span className="text-[10px] font-mono opacity-80 mr-1 hidden xl:inline">
-                    {toPersianDigits(latency)}ms
-                  </span>
-                )}
-              </>
-            ) : (
-              <>
-                <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-                <WifiOff className="w-3.5 h-3.5" />
-                <span>آفلاین / قطع ارتباط</span>
-              </>
-            )}
-          </div>
-
-        </div>
+        </Link>
 
         {/* Quick Actions & Utility controls */}
         <div className="flex items-center gap-2 sm:gap-3">
-
-          {/* Quick Payment Button */}
+          {/* Quick Payment Button (desktop; mobile uses the bottom nav) */}
           <button
             onClick={() => openQuickPayment()}
-            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl glass-card hover:border-[#CEAE80] text-stone-900 dark:text-stone-200 text-xs font-bold transition-all active:scale-95 shadow-sm"
+            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl glass-card hover:border-[#CEAE80] text-stone-900 dark:text-stone-200 text-xs font-bold transition-all active:scale-95 shadow-sm"
             title="ثبت وجه دریافتی با تسویه زنجیره‌ای فاکتورها"
           >
             <Receipt className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
             <span className="hidden sm:inline">وجه‌های دریافتی</span>
           </button>
 
-          {/* Quick Handover Button */}
+          {/* Quick Handover Button (desktop; mobile uses the bottom nav) */}
           <button
             onClick={() => openQuickHandover()}
-            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-black text-xs sm:text-sm shadow-md transition-all active:scale-95"
+            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-black text-xs sm:text-sm shadow-md transition-all active:scale-95"
             title="تحویل بار جدید"
           >
             <Plus className="w-4 h-4 text-black" />
             <span className="hidden sm:inline">تحویل بار جدید</span>
           </button>
+
           {/* Overdue alert indicator button */}
           {overdueCount > 0 && (
             <button
@@ -145,33 +131,52 @@ export const Header: React.FC = () => {
             )}
           </button>
 
-          {/* Auth: login button when signed out, user chip + logout when signed in */}
+          {/* Auth: login button when signed out, account dropdown when signed in */}
           {user ? (
-            <>
-              <div
-                className="flex items-center gap-2 px-2 py-1.5 rounded-xl glass-card shadow-sm"
-                title={user.email}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="flex items-center gap-2 h-9 sm:h-10 ps-1 pe-2 sm:pe-3 rounded-xl border border-stone-200/80 dark:border-white/10 hover:border-[#CEAE80]/50 bg-white dark:bg-white/5 transition-all active:scale-95"
+                aria-label="منوی حساب کاربری"
               >
-                <div className="w-7 h-7 rounded-full bg-[#CEAE80] text-black flex items-center justify-center text-xs font-black shrink-0 ring-1 ring-[#CEAE80]/30">
-                  {user.name.trim().charAt(0)}
-                </div>
-                <div className="hidden sm:flex items-center gap-1.5">
-                  <span className="text-xs font-black text-stone-900 dark:text-white max-w-[7rem] truncate">
-                    {user.name}
-                  </span>
-                  <span className="px-1.5 py-0.5 rounded-md bg-[#CEAE80]/15 border border-[#CEAE80]/30 text-[#A67C38] dark:text-[#CEAE80] text-[10px] font-black">
-                    {isAdmin ? 'مدیر' : 'کاربر'}
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={handleSignOut}
-                className="p-2.5 rounded-xl glass-card hover:border-rose-400 text-stone-800 dark:text-gray-200 hover:text-rose-500 dark:hover:text-rose-400 transition-all shadow-sm"
-                title="خروج از حساب کاربری"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </>
+                <span className="w-7 h-7 rounded-lg bg-[#CEAE80] text-black text-xs font-black flex items-center justify-center">
+                  {initials(user.name)}
+                </span>
+                <span className="hidden sm:block max-w-28 truncate text-xs font-bold text-stone-700 dark:text-stone-200">
+                  {user.name}
+                </span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-52">
+                <DropdownMenuGroup>
+                  <DropdownMenuGroupLabel>
+                    <span className="block truncate">{user.name}</span>
+                    <span className="block truncate text-[11px] font-normal text-muted-foreground" dir="ltr">
+                      {user.email}
+                    </span>
+                  </DropdownMenuGroupLabel>
+                  <DropdownMenuItem render={<Link to="/dashboard" />}>
+                    <UserRound />
+                    حساب کاربری من
+                  </DropdownMenuItem>
+                  {canManageSite && (
+                    <DropdownMenuItem render={<Link to="/controlpanel" />}>
+                      <Settings2 />
+                      مدیریت وب‌سایت
+                    </DropdownMenuItem>
+                  )}
+                  {isAdmin && (
+                    <DropdownMenuItem render={<Link to="/workshop" />}>
+                      <LayoutDashboard />
+                      پنل کارگاه
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onClick={handleSignOut}>
+                  <LogOut />
+                  خروج از حساب
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <button
               onClick={() => navigate('/login')}
@@ -182,8 +187,20 @@ export const Header: React.FC = () => {
               <span className="hidden sm:inline">ورود</span>
             </button>
           )}
+
+          {/* Hamburger: full workshop side menu (mobile only) */}
+          <button
+            type="button"
+            onClick={() => setSideMenuOpen(true)}
+            className="md:hidden p-2 rounded-xl glass-card hover:border-[#CEAE80] text-stone-800 dark:text-gray-200 transition-all active:scale-95 shadow-sm"
+            aria-label="باز کردن منوی کارگاه"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
         </div>
       </div>
+
+      <SideMenu open={sideMenuOpen} onOpenChange={setSideMenuOpen} />
     </header>
   );
 };

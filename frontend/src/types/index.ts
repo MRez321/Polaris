@@ -341,6 +341,39 @@ export interface WebsiteSettings {
 }
 
 // ---------------------------------------------------------------------------
+// Workshop notifications (outbound Telegram / Melipayamak SMS)
+// Mirrors backend/src/modules/notifications (settings + env-presence flags;
+// credentials themselves never leave the server).
+// ---------------------------------------------------------------------------
+
+export interface TelegramNotificationSettings {
+  enabled: boolean;
+  /** Announce new storefront orders to the Telegram chat. */
+  notifyNewOrder: boolean;
+}
+
+export interface SmsNotificationSettings {
+  enabled: boolean;
+  /** Announce new storefront orders by SMS. */
+  notifyNewOrder: boolean;
+  /** Melipayamak sender line, e.g. 9015867713. */
+  fromNumber: string;
+  /** Workshop manager mobile (09xxxxxxxxx) receiving notifications. */
+  recipientPhone: string;
+}
+
+export interface NotificationSettings {
+  telegram: TelegramNotificationSettings;
+  sms: SmsNotificationSettings;
+}
+
+/** NotificationSettings plus the server-side env-presence badges. */
+export interface NotificationSettingsResponse extends NotificationSettings {
+  telegramConfigured: boolean;
+  smsConfigured: boolean;
+}
+
+// ---------------------------------------------------------------------------
 // Public storefront (anonymous-readable API surface)
 // Marketing-safe subset of GarmentItem: no cost/consignment prices, no stock
 // counts — those stay admin-only. Mirrors backend/src/controllers/publicController.ts
