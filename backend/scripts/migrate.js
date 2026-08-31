@@ -54,6 +54,19 @@ async function closePool() {
     }
 }
 
+// Drizzle wraps every failed query in DrizzleQueryError whose message is just
+// "Failed query: …" — the real MySQL error (errno/code/sqlMessage) only exists
+// on err.cause. Unwrap the chain so a cPanel log shows the actual reason.
+function describeError(err) {
+    const parts = [err?.message ?? String(err)];
+    let cause = err?.cause;
+    while (cause) {
+        const detail = cause.code || cause.errno ? ` [${cause.code ?? cause.errno}] ${cause.sqlMessage ?? cause.message ?? ''}` : `: ${cause.message ?? String(cause)}`;
+        parts.push(`↳ علت: ${detail}`);
+        cause = cause.cause;
+    }
+    return parts.join('\n');
+}
 try {
     console.log('📦 شروع مایگریشن دیتابیس...');
 
@@ -95,7 +108,7 @@ try {
     await closePool();
     process.exit(0);
 } catch (err) {
-    console.error('❌ مایگریشن ناموفق بود:', err?.message ?? err);
+    console.error('❌ مایگریشن ناموفق بود:', describeError(err));
     await closePool();
     process.exit(1);
 }

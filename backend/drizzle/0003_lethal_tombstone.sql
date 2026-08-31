@@ -1,4 +1,4 @@
-CREATE TABLE `website_settings` (
+CREATE TABLE IF NOT EXISTS `website_settings` (
 	`id` varchar(36) NOT NULL,
 	`data` json NOT NULL,
 	`updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,

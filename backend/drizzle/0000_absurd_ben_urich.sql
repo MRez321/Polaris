@@ -1,4 +1,4 @@
-CREATE TABLE `account` (
+CREATE TABLE IF NOT EXISTS `account` (
 	`id` varchar(36) NOT NULL,
 	`account_id` varchar(255) NOT NULL,
 	`provider_id` varchar(255) NOT NULL,
@@ -15,7 +15,7 @@ CREATE TABLE `account` (
 	CONSTRAINT `account_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
-CREATE TABLE `audit_logs` (
+CREATE TABLE IF NOT EXISTS `audit_logs` (
 	`id` varchar(36) NOT NULL,
 	`user_id` varchar(36) NOT NULL DEFAULT '',
 	`user_name` varchar(255) NOT NULL DEFAULT '',
@@ -28,21 +28,21 @@ CREATE TABLE `audit_logs` (
 	CONSTRAINT `audit_logs_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
-CREATE TABLE `categories` (
+CREATE TABLE IF NOT EXISTS `categories` (
 	`id` varchar(64) NOT NULL,
 	`label` varchar(128) NOT NULL,
 	`created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	CONSTRAINT `categories_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
-CREATE TABLE `company_settings` (
+CREATE TABLE IF NOT EXISTS `company_settings` (
 	`id` varchar(36) NOT NULL,
 	`data` json NOT NULL,
 	`updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	CONSTRAINT `company_settings_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
-CREATE TABLE `consignment_returns` (
+CREATE TABLE IF NOT EXISTS `consignment_returns` (
 	`id` varchar(36) NOT NULL,
 	`consignment_id` varchar(36) NOT NULL,
 	`consignment_code` varchar(32) NOT NULL,
@@ -59,7 +59,7 @@ CREATE TABLE `consignment_returns` (
 	CONSTRAINT `consignment_returns_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
-CREATE TABLE `consignments` (
+CREATE TABLE IF NOT EXISTS `consignments` (
 	`id` varchar(36) NOT NULL,
 	`code` varchar(32) NOT NULL,
 	`seller_id` varchar(36) NOT NULL,
@@ -83,7 +83,7 @@ CREATE TABLE `consignments` (
 	CONSTRAINT `consignments_code_unique` UNIQUE(`code`)
 );
 --> statement-breakpoint
-CREATE TABLE `expenses` (
+CREATE TABLE IF NOT EXISTS `expenses` (
 	`id` varchar(36) NOT NULL,
 	`code` varchar(32) NOT NULL,
 	`title` varchar(255) NOT NULL,
@@ -105,7 +105,7 @@ CREATE TABLE `expenses` (
 	CONSTRAINT `expenses_code_unique` UNIQUE(`code`)
 );
 --> statement-breakpoint
-CREATE TABLE `items` (
+CREATE TABLE IF NOT EXISTS `items` (
 	`id` varchar(36) NOT NULL,
 	`code` varchar(32) NOT NULL,
 	`name` varchar(255) NOT NULL,
@@ -128,14 +128,14 @@ CREATE TABLE `items` (
 	CONSTRAINT `items_code_unique` UNIQUE(`code`)
 );
 --> statement-breakpoint
-CREATE TABLE `owners` (
+CREATE TABLE IF NOT EXISTS `owners` (
 	`id` varchar(36) NOT NULL,
 	`data` json NOT NULL,
 	`updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	CONSTRAINT `owners_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
-CREATE TABLE `payments` (
+CREATE TABLE IF NOT EXISTS `payments` (
 	`id` varchar(36) NOT NULL,
 	`code` varchar(32) NOT NULL,
 	`seller_id` varchar(36) NOT NULL,
@@ -155,7 +155,7 @@ CREATE TABLE `payments` (
 	CONSTRAINT `payments_code_unique` UNIQUE(`code`)
 );
 --> statement-breakpoint
-CREATE TABLE `profit_distributions` (
+CREATE TABLE IF NOT EXISTS `profit_distributions` (
 	`id` varchar(36) NOT NULL,
 	`period_name` varchar(255) NOT NULL,
 	`start_date` datetime NOT NULL,
@@ -174,7 +174,7 @@ CREATE TABLE `profit_distributions` (
 	CONSTRAINT `profit_distributions_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
-CREATE TABLE `sellers` (
+CREATE TABLE IF NOT EXISTS `sellers` (
 	`id` varchar(36) NOT NULL,
 	`code` varchar(32) NOT NULL,
 	`name` varchar(255) NOT NULL,
@@ -202,7 +202,7 @@ CREATE TABLE `sellers` (
 	CONSTRAINT `sellers_code_unique` UNIQUE(`code`)
 );
 --> statement-breakpoint
-CREATE TABLE `session` (
+CREATE TABLE IF NOT EXISTS `session` (
 	`id` varchar(36) NOT NULL,
 	`user_id` varchar(36) NOT NULL,
 	`token` varchar(255) NOT NULL,
@@ -212,10 +212,10 @@ CREATE TABLE `session` (
 	`created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	CONSTRAINT `session_id` PRIMARY KEY(`id`),
-	CONSTRAINT `session_token_unique` UNIQUE(`token`)
+	CONSTRAINT `session_token_unique` UNIQUE(`token`(191))
 );
 --> statement-breakpoint
-CREATE TABLE `staff` (
+CREATE TABLE IF NOT EXISTS `staff` (
 	`id` varchar(36) NOT NULL,
 	`code` varchar(32) NOT NULL,
 	`name` varchar(255) NOT NULL,
@@ -243,7 +243,7 @@ CREATE TABLE `staff` (
 	CONSTRAINT `staff_code_unique` UNIQUE(`code`)
 );
 --> statement-breakpoint
-CREATE TABLE `user` (
+CREATE TABLE IF NOT EXISTS `user` (
 	`id` varchar(36) NOT NULL,
 	`name` varchar(255) NOT NULL,
 	`email` varchar(255) NOT NULL,
@@ -256,10 +256,10 @@ CREATE TABLE `user` (
 	`created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	CONSTRAINT `user_id` PRIMARY KEY(`id`),
-	CONSTRAINT `user_email_unique` UNIQUE(`email`)
+	CONSTRAINT `user_email_unique` UNIQUE(`email`(191))
 );
 --> statement-breakpoint
-CREATE TABLE `verification` (
+CREATE TABLE IF NOT EXISTS `verification` (
 	`id` varchar(36) NOT NULL,
 	`identifier` varchar(255) NOT NULL,
 	`value` text NOT NULL,
@@ -284,4 +284,4 @@ CREATE INDEX `payments_date_idx` ON `payments` (`date`);--> statement-breakpoint
 CREATE INDEX `sellers_is_deleted_idx` ON `sellers` (`is_deleted`);--> statement-breakpoint
 CREATE INDEX `session_user_id_idx` ON `session` (`user_id`);--> statement-breakpoint
 CREATE INDEX `staff_is_deleted_idx` ON `staff` (`is_deleted`);--> statement-breakpoint
-CREATE INDEX `verification_identifier_idx` ON `verification` (`identifier`);
+CREATE INDEX `verification_identifier_idx` ON `verification` (`identifier`(191));

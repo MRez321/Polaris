@@ -1,4 +1,4 @@
-CREATE TABLE `blog_posts` (
+CREATE TABLE IF NOT EXISTS `blog_posts` (
 	`id` varchar(36) NOT NULL,
 	`slug` varchar(255) NOT NULL,
 	`title` varchar(512) NOT NULL,
@@ -15,10 +15,10 @@ CREATE TABLE `blog_posts` (
 	`created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	CONSTRAINT `blog_posts_id` PRIMARY KEY(`id`),
-	CONSTRAINT `blog_posts_slug_unique` UNIQUE(`slug`)
+	CONSTRAINT `blog_posts_slug_unique` UNIQUE(`slug`(191))
 );
 --> statement-breakpoint
-CREATE TABLE `orders` (
+CREATE TABLE IF NOT EXISTS `orders` (
 	`id` varchar(36) NOT NULL,
 	`code` varchar(32) NOT NULL,
 	`user_id` varchar(36) NOT NULL,

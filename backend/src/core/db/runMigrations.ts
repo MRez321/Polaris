@@ -7,6 +7,38 @@ import { migrate } from 'drizzle-orm/mysql2/migrator';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
+ * Drizzle wraps failed queries in DrizzleQueryError whose message is just
+ * "Failed query: …" — the real MySQL error (errno/code/sqlMessage) only exists
+ * on err.cause. Unwraps the chain so startup logs show the actual reason.
+ * (scripts/migrate.js keeps a twin copy — it must not import from src.)
+ */
+interface CauseLike {
+    code?: string;
+    errno?: number;
+    sqlMessage?: string;
+    message?: string;
+    cause?: unknown;
+}
+
+function isCauseLike(value: unknown): value is CauseLike {
+    return typeof value === 'object' && value !== null;
+}
+
+export function describeError(err: unknown): string {
+    const parts = [err instanceof Error ? err.message : String(err)];
+    let cause: unknown = err instanceof Error ? err.cause : undefined;
+    while (isCauseLike(cause)) {
+        const detail =
+            cause.code || cause.errno
+                ? ` [${cause.code ?? cause.errno}] ${cause.sqlMessage ?? cause.message ?? ''}`
+                : `: ${cause.message ?? String(cause)}`;
+        parts.push(`↳ علت: ${detail}`);
+        cause = cause.cause;
+    }
+    return parts.join('\n');
+}
+
+/**
  * Startup migration: same steps as scripts/migrate.js (which stays for manual
  * CLI runs) but non-fatal — a failed migration logs loudly and the server
  * stays up so cPanel never enters a restart loop; /api/health keeps reporting

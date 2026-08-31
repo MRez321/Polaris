@@ -1,4 +1,4 @@
-CREATE TABLE `gallery_images` (
+CREATE TABLE IF NOT EXISTS `gallery_images` (
 	`id` varchar(36) NOT NULL,
 	`url` varchar(512) NOT NULL,
 	`file_name` varchar(255) NOT NULL,

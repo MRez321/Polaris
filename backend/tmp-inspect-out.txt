@@ -1,0 +1,26 @@
+[DEBUG-p8] __drizzle_migrations rows: 6
+  id=1 created_at=1787529625732 (2026-08-24T00:00:25.732Z)
+  id=2 created_at=1787529815095 (2026-08-24T00:03:35.095Z)
+  id=3 created_at=1787728401144 (2026-08-26T07:13:21.144Z)
+  id=4 created_at=1787900489403 (2026-08-28T07:01:29.403Z)
+  id=5 created_at=1787950799377 (2026-08-28T20:59:59.377Z)
+  id=6 created_at=1788047700000 (2026-08-29T23:55:00.000Z)
+
+[DEBUG-p8] session DDL (index lines):
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `session_token_unique` (`token`),
+
+[DEBUG-p8] oldest table creation times:
+  __drizzle_migrations: 2026-08-31T00:25:03.000Z
+  account: 2026-08-31T00:25:03.000Z
+  audit_logs: 2026-08-31T00:25:03.000Z
+  blog_posts: 2026-08-31T00:25:03.000Z
+  categories: 2026-08-31T00:25:03.000Z
+
+[DEBUG-p8] row counts (dev data check):
+  user: 19
+  session: 83
+  items: 21
+  sellers: 17
+  categories: 7
+  consignments: 18

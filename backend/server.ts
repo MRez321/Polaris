@@ -7,7 +7,7 @@ import http from 'http';
 
 import app from './src/app.js';
 import dbPool from './src/config/db.js';
-import { runMigrations } from './src/core/db/runMigrations.js';
+import { describeError, runMigrations } from './src/core/db/runMigrations.js';
 import { initSocket } from './src/core/services/socketService.js';
 
 const PORT = process.env.PORT || 3016;
@@ -31,7 +31,7 @@ for (let attempt = 1; attempt <= MIGRATION_ATTEMPTS; attempt += 1) {
     } catch (err: unknown) {
         console.error(
             `❌ مایگریشن ناموفق بود (تلاش ${attempt} از ${MIGRATION_ATTEMPTS}):`,
-            err instanceof Error ? err.message : err,
+            describeError(err),
         );
         if (attempt < MIGRATION_ATTEMPTS) {
             await setTimeout(MIGRATION_RETRY_DELAY_MS);
