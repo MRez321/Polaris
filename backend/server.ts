@@ -22,42 +22,52 @@ initSocket(httpServer);
 // short backoff, never crash. A transient cPanel MySQL blip heals itself; if
 // all attempts fail the server still listens (health reports DB state, next
 // Passenger restart re-attempts) — no restart loop.
+//
+// IMPORTANT: keep this file free of top-level await. cPanel's LiteSpeed
+// (lsnode.js) loads the compiled server.js via require(), and require() of an
+// ESM graph containing top-level await throws ERR_REQUIRE_ASYNC_MODULE.
+// Boot therefore runs inside this async IIFE instead.
 const MIGRATION_ATTEMPTS = 3;
 const MIGRATION_RETRY_DELAY_MS = 5_000;
-for (let attempt = 1; attempt <= MIGRATION_ATTEMPTS; attempt += 1) {
-    try {
-        await runMigrations();
-        break;
-    } catch (err: unknown) {
-        console.error(
-            `❌ مایگریشن ناموفق بود (تلاش ${attempt} از ${MIGRATION_ATTEMPTS}):`,
-            describeError(err),
-        );
-        if (attempt < MIGRATION_ATTEMPTS) {
-            await setTimeout(MIGRATION_RETRY_DELAY_MS);
+void (async () => {
+    for (let attempt = 1; attempt <= MIGRATION_ATTEMPTS; attempt += 1) {
+        try {
+            await runMigrations();
+            break;
+        } catch (err: unknown) {
+            console.error(
+                `❌ مایگریشن ناموفق بود (تلاش ${attempt} از ${MIGRATION_ATTEMPTS}):`,
+                describeError(err),
+            );
+            if (attempt < MIGRATION_ATTEMPTS) {
+                await setTimeout(MIGRATION_RETRY_DELAY_MS);
+            }
         }
     }
-}
 
-// Start Server
-httpServer.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log('🔌 Socket.io ready');
+    // Start Server
+    httpServer.listen(PORT, () => {
+        console.log(`🚀 Server running on port ${PORT}`);
+        console.log('🔌 Socket.io ready');
 
-    // Test DB connection — but NEVER exit on failure. On cPanel shared hosting
-    // MySQL can be briefly unreachable; exiting puts the app in a restart loop
-    // and every request degrades to an opaque 503 page. /api/health reports
-    // the database state and the pool reconnects on its own once MySQL answers.
-    dbPool
-        .query('SELECT 1')
-        .then(() => console.log('✅ Database connection successful'))
-        .catch((err: unknown) =>
-            console.error(
-                '❌ Database connection failed (staying up; /api/health will report it):',
-                err instanceof Error ? err.message : err,
-            ),
-        );
+        // Test DB connection — but NEVER exit on failure. On cPanel shared hosting
+        // MySQL can be briefly unreachable; exiting puts the app in a restart loop
+        // and every request degrades to an opaque 503 page. /api/health reports
+        // the database state and the pool reconnects on its own once MySQL answers.
+        dbPool
+            .query('SELECT 1')
+            .then(() => console.log('✅ Database connection successful'))
+            .catch((err: unknown) =>
+                console.error(
+                    '❌ Database connection failed (staying up; /api/health will report it):',
+                    err instanceof Error ? err.message : err,
+                ),
+            );
 
-    console.log(`📦 Process ID: ${process.pid}`);
-    console.log(`⏰ Started at: ${new Date().toISOString()}`);
+        console.log(`📦 Process ID: ${process.pid}`);
+        console.log(`⏰ Started at: ${new Date().toISOString()}`);
+    });
+})().catch((err: unknown) => {
+    console.error('❌ Fatal boot error:', err instanceof Error ? err.stack : err);
+    process.exitCode = 1;
 });
