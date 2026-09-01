@@ -67,6 +67,12 @@ Removed during the reorg: `docker-compose.yml`, `frontend/src/App.css`, `fronten
 │   │   │   │   ├── companyController.ts
 │   │   │   │   ├── galleryController.ts
 │   │   │   │   └── websiteController.ts
+│   │   │   ├── notifications/
+│   │   │   │   ├── notificationsController.ts
+│   │   │   │   └── services/
+│   │   │   │       ├── melipayamakService.ts
+│   │   │   │       ├── notificationService.ts
+│   │   │   │       └── telegramService.ts
 │   │   │   └── workshop/
 │   │   │       ├── controllers/
 │   │   │       │   ├── consignmentsController.ts
@@ -87,10 +93,8 @@ Removed during the reorg: `docker-compose.yml`, `frontend/src/App.css`, `fronten
 │   │   ├── schema/
 │   │   │   ├── audit.ts
 │   │   │   ├── auth.ts
-│   │   │   ├── clientId.ts
-│   │   │   ├── cms.ts
-│   │   │   ├── company.ts
 │   │   │   ├── index.ts
+│   │   │   ├── notifications.ts
 │   │   │   ├── orders.ts
 │   │   │   └── workshop.ts
 │   │   ├── services/
@@ -170,6 +174,7 @@ Removed during the reorg: `docker-compose.yml`, `frontend/src/App.css`, `fronten
 │   │   │       ├── input.tsx
 │   │   │       ├── label.tsx
 │   │   │       ├── mobile-number-input.tsx
+│   │   │       ├── password-input.tsx
 │   │   │       ├── price-input.tsx
 │   │   │       ├── scroll-area.tsx
 │   │   │       ├── select-menu.tsx
@@ -177,6 +182,7 @@ Removed during the reorg: `docker-compose.yml`, `frontend/src/App.css`, `fronten
 │   │   │       ├── sheet.tsx
 │   │   │       ├── skeleton.tsx
 │   │   │       ├── spinner.tsx
+│   │   │       ├── switch.tsx
 │   │   │       ├── tabs.tsx
 │   │   │       ├── textarea.tsx
 │   │   │       └── toman-icon.tsx
@@ -256,6 +262,7 @@ Removed during the reorg: `docker-compose.yml`, `frontend/src/App.css`, `fronten
 │   │   │       │   └── SellersManager.tsx
 │   │   │       ├── settings/
 │   │   │       │   ├── GalleryManager.tsx
+│   │   │       │   ├── NotificationsManager.tsx
 │   │   │       │   ├── OwnerCard.tsx
 │   │   │       │   ├── OwnerFormModal.tsx
 │   │   │       │   ├── SettingsManager.tsx

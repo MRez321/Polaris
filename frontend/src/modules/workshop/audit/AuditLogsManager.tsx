@@ -12,12 +12,14 @@ import {
   ChevronDown,
   Loader2,
   Globe,
+  Receipt,
+  TrendingUp,
+  Bell,
 } from 'lucide-react';
 import type { AuditLog } from '@/types';
 import { auditApi, getApiErrorMessage } from '@/lib/api';
 import { toJalaliDateTime, toPersianDigits } from '@/utils/persian';
 import { SelectMenu } from '@/components/ui/select-menu';
-
 const PAGE_SIZE = 20;
 
 export const AuditLogsManager: React.FC = () => {
@@ -27,6 +29,7 @@ export const AuditLogsManager: React.FC = () => {
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEntity, setSelectedEntity] = useState<string>('all');
+  const [selectedAction, setSelectedAction] = useState<string>('all');
 
   const fetchLogs = useCallback(async (offset: number, append: boolean) => {
     if (append) {
@@ -50,15 +53,18 @@ export const AuditLogsManager: React.FC = () => {
     fetchLogs(0, false);
   }, [fetchLogs]);
 
+  const normalizedQuery = searchQuery.trim().toLowerCase();
   const filteredLogs = (logs || []).filter((log) => {
+    const q = normalizedQuery;
     const matchesSearch =
-      log.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      log.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      log.details.toLowerCase().includes(searchQuery.toLowerCase());
+      q.length === 0 ||
+      log.userName.toLowerCase().includes(q) ||
+      log.action.toLowerCase().includes(q) ||
+      log.details.toLowerCase().includes(q);
     const matchesEntity = selectedEntity === 'all' || log.entity === selectedEntity;
-    return matchesSearch && matchesEntity;
+    const matchesAction = selectedAction === 'all' || log.action === selectedAction;
+    return matchesSearch && matchesEntity && matchesAction;
   });
-
   const getEntityIcon = (entity: AuditLog['entity']) => {
     switch (entity) {
       case 'item':
@@ -73,6 +79,12 @@ export const AuditLogsManager: React.FC = () => {
         return <Shield className="w-4 h-4 text-purple-500" />;
       case 'return':
         return <HistoryIcon className="w-4 h-4 text-rose-500" />;
+      case 'cost':
+        return <Receipt className="w-4 h-4 text-orange-500" />;
+      case 'profit':
+        return <TrendingUp className="w-4 h-4 text-lime-600" />;
+      case 'notifications':
+        return <Bell className="w-4 h-4 text-sky-500" />;
       default:
         return <Clock className="w-4 h-4 text-stone-400" />;
     }
@@ -92,6 +104,12 @@ export const AuditLogsManager: React.FC = () => {
         return 'پرسنل و هم‌بنیان‌گذاران';
       case 'return':
         return 'مرجوعی کالا';
+      case 'cost':
+        return 'هزینه‌های کارگاه';
+      case 'profit':
+        return 'توزیع سود';
+      case 'notifications':
+        return 'اطلاع‌رسانی';
       case 'settings':
         return 'تنظیمات و برند';
       case 'auth':
@@ -169,8 +187,23 @@ export const AuditLogsManager: React.FC = () => {
             { value: 'seller', label: 'پرونده فروشندگان' },
             { value: 'staff', label: 'پرسنل و کادر کارگاه' },
             { value: 'return', label: 'مرجوعی کالا' },
+            { value: 'cost', label: 'هزینه‌های کارگاه' },
+            { value: 'profit', label: 'توزیع سود' },
+            { value: 'notifications', label: 'اطلاع‌رسانی' },
             { value: 'settings', label: 'تنظیمات و برندینگ' },
             { value: 'auth', label: 'ورود و امنیت' },
+          ]}
+        />
+
+        <SelectMenu
+          value={selectedAction}
+          onChange={setSelectedAction}
+          className="w-full sm:w-auto"
+          options={[
+            { value: 'all', label: 'همه اقدامات' },
+            { value: 'create', label: 'ایجاد' },
+            { value: 'update', label: 'ویرایش' },
+            { value: 'delete', label: 'حذف' },
           ]}
         />
       </div>

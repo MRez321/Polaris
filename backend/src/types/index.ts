@@ -409,6 +409,16 @@ export interface TelegramNotificationSettings {
     enabled: boolean;
     /** Announce new storefront orders to the Telegram chat. */
     notifyNewOrder: boolean;
+    /** Bot token from @BotFather (e.g. 8817538889:AA…). Empty → fall back to env. */
+    botToken: string;
+    /** Chat/group id the messages are delivered to. Empty → fall back to env. */
+    chatId: string;
+    /**
+     * HTTP(S) proxy URL (http:// or https://) that server-side requests to
+     * api.telegram.org are routed through — Telegram is blocked in Iran.
+     * Empty → direct connection (or env TELEGRAM_PROXY_URL).
+     */
+    proxyUrl: string;
 }
 
 export interface SmsNotificationSettings {
@@ -417,8 +427,10 @@ export interface SmsNotificationSettings {
     notifyNewOrder: boolean;
     /** Melipayamak sender line, e.g. 9015867713 — required to send. */
     fromNumber: string;
-    /** Workshop manager mobile (09xxxxxxxxx) receiving the notifications. */
-    recipientPhone: string;
+    /** Melipayamak Console REST API key (GUID). Empty → fall back to env. */
+    apiKey: string;
+    /** Workshop manager mobiles (09xxxxxxxxx) receiving the notifications. */
+    recipientPhones: string[];
 }
 
 export interface NotificationSettings {

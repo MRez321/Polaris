@@ -280,11 +280,14 @@ export const ordersApi = {
 };
 
 // --- Workshop Notifications (Telegram / Melipayamak SMS) ---
+// Credential values are stored in the notification_settings row (admin-only
+// surface); .env values on the server act as fallback until overridden here.
 export const notificationsApi = {
   get: () => api.get<NotificationSettingsResponse>(`${W}/notifications/settings`).then((r) => r.data),
   update: (patch: Partial<NotificationSettings>) =>
     api.put<NotificationSettingsResponse>(`${W}/notifications/settings`, patch).then((r) => r.data),
-  testTelegram: () => api.post<{ success: boolean; message: string }>(`${W}/notifications/test/telegram`).then((r) => r.data),
+  testTelegram: () =>
+    api.post<{ success: boolean; message: string; botUsername: string | null }>(`${W}/notifications/test/telegram`).then((r) => r.data),
   testSms: (recipient: string) =>
     api.post<{ success: boolean; message: string }>(`${W}/notifications/test/sms`, { recipient }).then((r) => r.data),
 };

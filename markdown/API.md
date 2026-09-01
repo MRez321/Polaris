@@ -6,7 +6,7 @@ REST API for the Polaris Style inventory management system. The backend serves t
 - **Local dev**: `http://localhost:3016/api` (or `http://localhost:5173/api` through the Vite proxy)
 - **Format**: JSON everywhere. Request bodies must be sent with `Content-Type: application/json`.
 - **Errors**: every error is `{ "error": "<Persian message>" }` with an appropriate HTTP status (400 validation, 401/403 auth, 404 not found, 500 internal, 503 database down).
-- **Route groups**: shared surfaces (auth, health, public storefront, blog CMS, website settings, company branding, customer orders) live directly under `/api/*`. The admin workshop module (items, sellers, consignments, payments, staff, owners, expenses, profit distribution, trash, audit logs, admin order management) lives under `/api/workshop/*` — every route there requires the `admin` role.
+- **Route groups**: shared surfaces (auth, health, public storefront, blog CMS, website settings, company branding, customer orders) live directly under `/api/*`. The admin workshop module (items, sellers, consignments, payments, staff, owners, expenses, profit distribution, trash, audit logs, admin order management, notifications) lives under `/api/workshop/*` — every route there requires the `admin` role.
 
 ---
 
@@ -523,6 +523,53 @@ Settings for the public marketing website, managed at `/controlpanel/website` (a
 Any subset of the fields above.
 ---
 
+## Notifications (admin)
+
+Telegram + Melipayamak SMS settings for order alerts, managed at `/workshop` → تنظیمات → اطلاع‌رسانی. All routes require the `admin` role. Credential values are stored in the database (JSON blob); env entries (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_PROXY_URL`, `MELIPAYAMAK_API`, `MELIPAYAMAK_USERNAME`) are fallbacks used only when no DB value exists.
+
+### `GET /api/workshop/notifications/settings` → `NotificationSettingsResponse`
+
+Never touches the network — returns cached settings immediately.
+
+```json
+{
+  "telegram": {
+    "enabled": false,
+    "notifyNewOrder": true,
+    "botToken": "…",
+    "chatId": "…",
+    "proxyUrl": ""
+  },
+  "sms": {
+    "enabled": false,
+    "notifyNewOrder": true,
+    "fromNumber": "9015867713",
+    "apiKey": "…",
+    "recipientPhones": ["0912xxxxxxx"]
+  },
+  "telegramConfigured": true,
+  "smsConfigured": true,
+  "botUsername": "PolarisStyleBot"
+}
+```
+
+- `proxyUrl` — optional HTTP(S) proxy used for Telegram API calls only (Telegram is blocked in Iran; domestic Melipayamak is never proxied). SOCKS is not supported.
+- `botUsername` — resolved once via Telegram `getMe` and cached in the blob; `null` when unknown or Telegram is unreachable.
+
+### `PUT /api/workshop/notifications/settings` → `NotificationSettingsResponse`
+
+Partial update — any subset of `telegram` / `sms` channel objects. Saved credentials are preserved when a patch omits them. When `botToken`/`chatId` are included, `botUsername` is refreshed (best-effort, 4s bound). `recipientPhones` is an array of Iranian mobile numbers (`09xxxxxxxxx`, max 20).
+
+### `POST /api/workshop/notifications/test/telegram` → `{ "success": true, "message": "…", "botUsername": "…" | null }`
+
+Sends a test message through the configured proxy; `502` with a Persian error on failure.
+
+### `POST /api/workshop/notifications/test/sms` → `{ "success": true, "message": "…" }`
+
+Body: `{ "recipient": "09xxxxxxxxx" }` — sends a test SMS to one number.
+
+---
+
 ## Blog CMS (admin, author)
 
 Content management for the public blog. Drafts are only visible through these endpoints; the public site renders published posts only.
@@ -548,7 +595,7 @@ Body: the post shape from the [public storefront](#public-storefront-anonymous) 
   "id": "…", "timestamp": "…",
   "userId": "…", "userName": "…", "userRole": "admin",
   "action": "create | update | delete",
-  "entity": "item | seller | consignment | payment | return | staff | settings | cost | profit | auth",
+  "entity": "item | seller | consignment | payment | return | staff | settings | cost | profit | notifications | auth",
   "details": "کالای «پالتو» با کد ITM-12 ایجاد شد",
   "ipAddress": "…"
 }]

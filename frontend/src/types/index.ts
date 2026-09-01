@@ -209,7 +209,7 @@ export interface AuditLog {
   userName: string;
   userRole?: string;
   action: string;
-  entity: 'item' | 'seller' | 'consignment' | 'payment' | 'return' | 'staff' | 'settings' | 'cost' | 'profit' | 'auth';
+  entity: 'item' | 'seller' | 'consignment' | 'payment' | 'return' | 'staff' | 'settings' | 'cost' | 'profit' | 'notifications' | 'auth';
   details: string;
   ipAddress?: string | null;
 }
@@ -342,14 +342,21 @@ export interface WebsiteSettings {
 
 // ---------------------------------------------------------------------------
 // Workshop notifications (outbound Telegram / Melipayamak SMS)
-// Mirrors backend/src/modules/notifications (settings + env-presence flags;
-// credentials themselves never leave the server).
+// Mirrors backend/src/modules/notifications. Credentials are stored in the
+// notification_settings JSON blob (admin-only route) with .env as fallback,
+// so the admin surface sees and edits the real values (masked client-side).
 // ---------------------------------------------------------------------------
 
 export interface TelegramNotificationSettings {
   enabled: boolean;
   /** Announce new storefront orders to the Telegram chat. */
   notifyNewOrder: boolean;
+  /** Bot token from @BotFather. Empty → server falls back to .env. */
+  botToken: string;
+  /** Chat/group id the messages are delivered to. Empty → .env fallback. */
+  chatId: string;
+  /** HTTP(S) proxy URL for api.telegram.org (blocked in Iran). '' → direct. */
+  proxyUrl: string;
 }
 
 export interface SmsNotificationSettings {
@@ -358,8 +365,10 @@ export interface SmsNotificationSettings {
   notifyNewOrder: boolean;
   /** Melipayamak sender line, e.g. 9015867713. */
   fromNumber: string;
-  /** Workshop manager mobile (09xxxxxxxxx) receiving notifications. */
-  recipientPhone: string;
+  /** Melipayamak Console REST API key. Empty → .env fallback. */
+  apiKey: string;
+  /** Workshop manager mobiles (09xxxxxxxxx) receiving notifications. */
+  recipientPhones: string[];
 }
 
 export interface NotificationSettings {
@@ -367,10 +376,12 @@ export interface NotificationSettings {
   sms: SmsNotificationSettings;
 }
 
-/** NotificationSettings plus the server-side env-presence badges. */
+/** NotificationSettings plus configured badges and the bot @username. */
 export interface NotificationSettingsResponse extends NotificationSettings {
   telegramConfigured: boolean;
   smsConfigured: boolean;
+  /** Bot @username from Telegram getMe — null when unreachable/unconfigured. */
+  botUsername: string | null;
 }
 
 // ---------------------------------------------------------------------------

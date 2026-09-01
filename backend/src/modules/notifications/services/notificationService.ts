@@ -3,63 +3,111 @@ import { eq } from 'drizzle-orm';
 import { db } from '../../../config/drizzle.js';
 import { notificationSettings } from '../../../schema/index.js';
 import type { NotificationSettings, Order } from '../../../types/index.js';
-import { isTelegramConfigured, sendTelegramMessage } from './telegramService.js';
-import { isMelipayamakConfigured, sendMelipayamakSms } from './melipayamakService.js';
+import {
+    sendTelegramMessage,
+    isTelegramConfigured,
+    resolveTelegramBotUsername,
+} from './telegramService.js';
+import { sendMelipayamakSms, isMelipayamakConfigured, normalizeMobilePhone } from './melipayamakService.js';
 
 const SETTINGS_ROW_ID = 'notifications';
 
-export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
+/**
+ * Persisted settings. `botUsername` is cached from a Telegram getMe call —
+ * GET /settings must never block on Telegram (unreachable from Iran without
+ * a proxy), so identity is resolved once per credential save / test send and
+ * served from the blob afterwards.
+ */
+export interface StoredNotificationSettings extends NotificationSettings {
+    botUsername: string | null;
+}
+
+export const DEFAULT_NOTIFICATION_SETTINGS: StoredNotificationSettings = {
     telegram: {
         enabled: false,
         notifyNewOrder: false,
+        botToken: '',
+        chatId: '',
+        proxyUrl: '',
     },
     sms: {
         enabled: false,
         notifyNewOrder: false,
         fromNumber: '',
-        recipientPhone: '',
+        apiKey: '',
+        recipientPhones: [],
     },
+    botUsername: null,
 };
 
 // ---------------------------------------------------------------------------
 // Settings persistence (single JSON-blob row, websiteService pattern)
 // ---------------------------------------------------------------------------
 
-function mergeSettings(stored: Partial<NotificationSettings>): NotificationSettings {
+function mergeSettings(stored: Partial<StoredNotificationSettings>): StoredNotificationSettings {
+    const legacySms = stored.sms as (typeof stored.sms & { recipientPhone?: string }) | undefined;
+    const storedPhones = legacySms?.recipientPhones ?? [];
+    const migratedPhones =
+        storedPhones.length > 0 || !legacySms?.recipientPhone
+            ? storedPhones
+            : [legacySms.recipientPhone];
+
     return {
-        telegram: { ...DEFAULT_NOTIFICATION_SETTINGS.telegram, ...(stored.telegram ?? {}) },
-        sms: { ...DEFAULT_NOTIFICATION_SETTINGS.sms, ...(stored.sms ?? {}) },
+        telegram: {
+            ...DEFAULT_NOTIFICATION_SETTINGS.telegram,
+            ...(stored.telegram ?? {}),
+        },
+        sms: {
+            ...DEFAULT_NOTIFICATION_SETTINGS.sms,
+            ...(legacySms ? { ...legacySms, recipientPhones: migratedPhones } : {}),
+        },
+        botUsername: stored.botUsername ?? null,
     };
 }
 
-export async function getNotificationSettings(): Promise<NotificationSettings> {
+export async function getNotificationSettings(): Promise<StoredNotificationSettings> {
     const rows = await db
         .select()
         .from(notificationSettings)
         .where(eq(notificationSettings.id, SETTINGS_ROW_ID));
-    return mergeSettings((rows[0]?.data ?? {}) as Partial<NotificationSettings>);
+    return mergeSettings((rows[0]?.data ?? {}) as Partial<StoredNotificationSettings>);
 }
 
 export async function updateNotificationSettings(
-    patch: Partial<NotificationSettings>,
-): Promise<NotificationSettings> {
-    const merged = mergeSettings({ ...(await getNotificationSettings()), ...patch });
-    const existing = await db
-        .select({ id: notificationSettings.id })
-        .from(notificationSettings)
-        .where(eq(notificationSettings.id, SETTINGS_ROW_ID));
-    if (existing[0]) {
-        await db
-            .update(notificationSettings)
-            .set({ data: merged as unknown as Record<string, unknown>, updatedAt: new Date() })
-            .where(eq(notificationSettings.id, SETTINGS_ROW_ID));
-    } else {
-        await db.insert(notificationSettings).values({
+    patch: Partial<StoredNotificationSettings>,
+): Promise<StoredNotificationSettings> {
+    // Channel-level deep merge: a partial telegram/sms patch (e.g. only
+    // `enabled`) must not wipe the credentials already saved in the blob.
+    const current = await getNotificationSettings();
+    const merged = mergeSettings({
+        ...current,
+        ...patch,
+        telegram: { ...current.telegram, ...(patch.telegram ?? {}) },
+        sms: { ...current.sms, ...(patch.sms ?? {}) },
+    });
+    await db
+        .insert(notificationSettings)
+        .values({
             id: SETTINGS_ROW_ID,
             data: merged as unknown as Record<string, unknown>,
+        })
+        .onDuplicateKeyUpdate({
+            set: { data: merged as unknown as Record<string, unknown>, updatedAt: new Date() },
         });
-    }
     return merged;
+}
+
+/**
+ * Resolves the bot @username via Telegram getMe (through the configured
+ * proxy, bounded 4s) and persists it into the settings row for the t.me deep
+ * link. Best-effort: unreachable Telegram just keeps the previous value.
+ */
+export async function refreshTelegramBotUsername(): Promise<string | null> {
+    const settings = await getNotificationSettings();
+    const identity = await resolveTelegramBotUsername(settings.telegram, 4_000);
+    if (!identity) return settings.botUsername;
+    await updateNotificationSettings({ botUsername: identity.username });
+    return identity.username;
 }
 
 
@@ -96,24 +144,34 @@ export function notifyNewOrder(order: Order): void {
         const settings = await getNotificationSettings().catch(() => null);
         if (!settings) return;
 
-        if (settings.telegram.enabled && settings.telegram.notifyNewOrder && isTelegramConfigured()) {
+        if (
+            settings.telegram.enabled &&
+            settings.telegram.notifyNewOrder &&
+            isTelegramConfigured(settings.telegram)
+        ) {
             try {
-                await sendTelegramMessage(buildNewOrderMessage(order));
+                await sendTelegramMessage(buildNewOrderMessage(order), settings.telegram);
             } catch (err) {
                 console.error('[notifications] telegram failed:', err instanceof Error ? err.message : err);
             }
         }
 
+        const recipients = settings.sms.recipientPhones
+            .map(normalizeMobilePhone)
+            .filter((phone): phone is string => phone !== null);
+
         if (
             settings.sms.enabled &&
             settings.sms.notifyNewOrder &&
-            settings.sms.recipientPhone &&
-            isMelipayamakConfigured()
+            recipients.length > 0 &&
+            isMelipayamakConfigured(settings.sms)
         ) {
-            try {
-                await sendMelipayamakSms(settings.sms.recipientPhone, buildNewOrderMessage(order));
-            } catch (err) {
-                console.error('[notifications] sms failed:', err instanceof Error ? err.message : err);
+            for (const phone of recipients) {
+                try {
+                    await sendMelipayamakSms(phone, buildNewOrderMessage(order), settings.sms);
+                } catch (err) {
+                    console.error('[notifications] sms failed:', err instanceof Error ? err.message : err);
+                }
             }
         }
     })();
@@ -124,12 +182,18 @@ export function notifyNewOrder(order: Order): void {
 // ---------------------------------------------------------------------------
 
 export async function sendTestTelegramMessage(): Promise<void> {
-    await sendTelegramMessage('✅ پیام آزمایشی از سامانه اطلاع‌رسانی پولاریس — اتصال تلگرام برقرار است.');
+    const settings = await getNotificationSettings();
+    await sendTelegramMessage(
+        '✅ پیام آزمایشی از سامانه اطلاع‌رسانی پولاریس — اتصال تلگرام برقرار است.',
+        settings.telegram,
+    );
 }
 
 export async function sendTestSms(recipient: string): Promise<void> {
+    const settings = await getNotificationSettings();
     await sendMelipayamakSms(
         recipient,
         'پیام آزمایشی از سامانه اطلاع‌رسانی پولاریس — اتصال پیامک برقرار است.',
+        settings.sms,
     );
 }

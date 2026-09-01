@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Users as UsersIcon, UserPlus, Loader2, Ban, CircleCheck, Trash2 } from 'lucide-react';
+import { Users as UsersIcon, UserPlus, Loader2, Ban, CircleCheck, Trash2, Search } from 'lucide-react';
 import { authClient } from '@/lib/auth';
 import { useAuth } from '@/context/AuthContext';
 import { toJalaliDate, toPersianDigits } from '@/utils/persian';
@@ -43,6 +43,10 @@ export const UsersManager: React.FC = () => {
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newRole, setNewRole] = useState<AppRole>('user');
+
+  // List filters: search matches name/email; role narrows the list.
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
@@ -160,6 +164,16 @@ export const UsersManager: React.FC = () => {
     return option ? option.label : role;
   };
 
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredUsers = users.filter((user) => {
+    const matchesQuery =
+      normalizedQuery.length === 0 ||
+      user.name.toLowerCase().includes(normalizedQuery) ||
+      user.email.toLowerCase().includes(normalizedQuery);
+    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+    return matchesQuery && matchesRole;
+  });
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto text-stone-900 dark:text-white">
       {/* Header */}
@@ -200,13 +214,35 @@ export const UsersManager: React.FC = () => {
           <Loader2 className="w-4 h-4 animate-spin text-[#CEAE80]" />
           <span>در حال دریافت لیست کاربران...</span>
         </div>
-      ) : users.length === 0 ? (
-        <div className="p-8 text-center glass-panel rounded-2xl text-xs text-stone-400">
-          هیچ کاربری در سامانه ثبت نشده است.
-        </div>
       ) : (
         <div className="space-y-3">
-          {users.map((user) => {
+          {/* Filters: search bar + role SelectMenu */}
+          <div className="glass-panel p-4 rounded-2xl flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shadow-xl">
+            <div className="relative flex-1">
+              <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="جستجوی نام یا ایمیل کاربر…"
+                className="w-full ps-9 pe-3 py-2 rounded-xl glass-input text-xs sm:text-sm outline-none"
+              />
+            </div>
+            <SelectMenu
+              value={roleFilter}
+              onChange={setRoleFilter}
+              options={[{ value: 'all', label: 'همه نقش‌ها' }, ...ROLE_OPTIONS]}
+              className="w-full sm:w-48"
+            />
+          </div>
+
+          {filteredUsers.length === 0 ? (
+            <div className="p-8 text-center glass-panel rounded-2xl text-xs text-stone-400">
+              کاربری با این مشخصات یافت نشد.
+            </div>
+          ) : (
+            <div className="space-y-3">
+          {filteredUsers.map((user) => {
             const isSelf = currentUser?.id === user.id;
             return (
               <div
@@ -301,8 +337,11 @@ export const UsersManager: React.FC = () => {
               </div>
             );
           })}
+            </div>
+          )}
         </div>
       )}
+
 
       {/* Create User Modal */}
       <Modal
