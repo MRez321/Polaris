@@ -324,7 +324,9 @@ export const NotificationsManager: React.FC = () => {
                       toast.error('شماره موبایل باید با ۰۹ شروع شود و ۱۱ رقم باشد');
                       return;
                     }
-                    commitSmsPhones(settings.sms.recipientPhones);
+                    // Drop empty draft rows before committing — the server
+                    // schema rejects '' entries and would fail the whole save.
+                    commitSmsPhones(settings.sms.recipientPhones.filter((p) => p !== ''));
                   }}
                   placeholder="09xxxxxxxxx"
                   inputMode="numeric"

@@ -23,6 +23,9 @@ const router = Router();
 // Dashboard stats: admin-only (workshop data must not leak to website users).
 router.get('/dashboard/stats', dashboard.dashboardStats);
 
+// Audit trail: paginated newest-first; client filters locally.
+router.get('/audit-logs', dashboard.listAuditLogs);
+
 // Orders management: all orders + status transitions.
 router.get('/orders', orders.listAllOrders);
 router.put('/orders/:id', orders.updateOrderStatus);
