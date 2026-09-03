@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal } from '@/components/common/Modal';
 import { SafeImage } from '@/components/common/SafeImage';
 import type { GarmentItem, Seller } from '@/types';
@@ -13,12 +13,14 @@ import {
   UserPlus,
   PackagePlus,
   MapPin,
+  Shield,
 } from 'lucide-react';
 import { SellerFormModal } from '../sellers/SellerFormModal';
 import { ItemFormModal } from '../inventory/ItemFormModal';
 import { SelectMenu, SelectBadge, SelectOptionContent, persianColorToCss } from '@/components/ui/select-menu';
 import { toast } from 'sonner';
 import { isValidIranPhone, PHONE_ERROR } from '@/modules/workshop/utils/validation';
+import { FormattedNumberInput } from '@/components/common/FormattedNumberInput';
 
 interface NewHandoverModalProps {
   isOpen: boolean;
@@ -40,6 +42,8 @@ interface NewHandoverModalProps {
   }) => void;
   onQuickCreateSeller?: (sellerData: Partial<Seller>) => void;
   onQuickCreateItem?: (itemData: Partial<GarmentItem>) => void;
+  /** به‌روزرسانی تنظیمات ضمانت و سقف امانت فروشنده در همین فرم */
+  onUpdateSeller?: (id: string, patch: Partial<Seller>) => void;
 }
 
 export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
@@ -51,6 +55,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
   onSubmitHandover,
   onQuickCreateSeller,
   onQuickCreateItem,
+  onUpdateSeller,
 }) => {
   const [selectedSellerId, setSelectedSellerId] = useState(
     preSelectedSeller?.id || (sellers.length > 0 ? sellers[0].id : '')
@@ -81,6 +86,27 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
   );
   const [matrixQty, setMatrixQty] = useState<Record<string, string>>({});
   const [stockError, setStockError] = useState('');
+
+  // --- تنظیمات ضمانت و سقف امانت (هم‌زمان با فرم) ---
+  const [hasGuarantee, setHasGuarantee] = useState(false);
+  const [guaranteeType, setGuaranteeType] = useState<Seller['guaranteeType']>('promissory_note');
+  const [guaranteeAmount, setGuaranteeAmount] = useState<number | null>(null);
+  const [guaranteeDetails, setGuaranteeDetails] = useState('');
+  const [creditLimit, setCreditLimit] = useState<number | null>(null);
+
+  // Seed guarantee fields from the selected seller (reset on seller/modal change)
+  useEffect(() => {
+    if (!isOpen) return;
+    const seller = (sellers || []).find((s) => s.id === selectedSellerId);
+    if (seller) {
+      setHasGuarantee(Boolean(seller.hasGuarantee));
+      setGuaranteeType(seller.guaranteeType || 'promissory_note');
+      setGuaranteeAmount(seller.guaranteeAmount ?? null);
+      setGuaranteeDetails(seller.guaranteeDetails || '');
+      setCreditLimit(seller.creditLimit ?? null);
+    }
+  }, [selectedSellerId, isOpen, sellers]);
+
 
   // Filter sellers by search query
   const filteredSellers = (sellers || []).filter(
@@ -170,13 +196,32 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
     (sum, line) => sum + (line.quantity || 0) * (line.unitPrice || 0),
     0
   );
-  const totalItemsCount = (lines || []).reduce((sum, line) => sum + (line.quantity || 0), 0);
-  const effectiveDueDays = Number(dueDays) > 0 ? Number(dueDays) : 10;
 
+  // سقف امانت لحظه‌ای: مقدار فرم بر مقدار ذخیره‌شده فروشنده اولویت دارد
+  const liveCreditLimit = creditLimit ?? 0;
   const remainingCredit = selectedSeller
-    ? Math.max(0, (selectedSeller.creditLimit || 0) - (selectedSeller.currentDebt || 0))
+    ? Math.max(0, liveCreditLimit - (selectedSeller.currentDebt || 0))
     : 0;
   const isOverCreditLimit = selectedSeller && totalHandoverValue > remainingCredit;
+
+  // ذخیره تنظیمات ضمانت و سقف امانت روی فروشنده (بدون خروج از فرم)
+  const handleSaveGuarantee = () => {
+    if (!onUpdateSeller || !selectedSellerId) return;
+    if (hasGuarantee && creditLimit === null) {
+      toast.error('سقف اعتبار امانت را وارد نمایید');
+      return;
+    }
+    onUpdateSeller(selectedSellerId, {
+      hasGuarantee,
+      guaranteeType,
+      guaranteeAmount: hasGuarantee ? guaranteeAmount || 0 : 0,
+      guaranteeDetails: hasGuarantee ? guaranteeDetails.trim() : '',
+      creditLimit: hasGuarantee ? creditLimit || 0 : 0,
+    });
+    toast.success('تنظیمات ضمانت و سقف امانت ذخیره شد');
+  };
+  const totalItemsCount = (lines || []).reduce((sum, line) => sum + (line.quantity || 0), 0);
+  const effectiveDueDays = Number(dueDays) > 0 ? Number(dueDays) : 10;
 
   // Matrix axes: fall back to a single unlabeled axis when the item has no sizes/colors
   const effSizes = currentInvItem?.sizes?.length ? currentInvItem.sizes : [''];
@@ -423,6 +468,101 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
                     </span>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Guarantee & Credit Limit Settings — synced with seller file */}
+            {selectedSeller && (
+              <div className="p-4 rounded-2xl bg-[#CEAE80]/10 border border-[#CEAE80]/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={hasGuarantee}
+                      onChange={(e) => setHasGuarantee(e.target.checked)}
+                      className="w-4 h-4 accent-[#CEAE80] rounded cursor-pointer"
+                    />
+                    <span className="text-xs font-bold text-stone-900 dark:text-[#CEAE80] flex items-center gap-1.5">
+                      <Shield className="w-4 h-4 text-[#CEAE80]" />
+                      تنظیمات ضمانت و سقف امانت مالی
+                    </span>
+                  </label>
+                  <span className="text-[11px] text-stone-500 dark:text-stone-400">
+                    {hasGuarantee ? 'فعال (تضمین دارد)' : 'غیرفعال (امانت بدون وثیقه)'}
+                  </span>
+                </div>
+
+                {hasGuarantee && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-[#CEAE80]/20">
+                    <div>
+                      <label className="block text-[11px] text-stone-700 dark:text-stone-300 font-bold mb-1">
+                        نوع مدرک ضمانتی
+                      </label>
+                      <SelectMenu
+                        value={guaranteeType}
+                        onChange={(v) => setGuaranteeType(v as Seller['guaranteeType'])}
+                        options={[
+                          { value: 'promissory_note', label: 'سفته معتبر بانکی' },
+                          { value: 'cheque', label: 'چک صیادی بنفش' },
+                          { value: 'trusted_guarantor', label: 'ضمانت حضوری کاسب معتمد بازار' },
+                          { value: 'national_card', label: 'کارت ملی هوشمند / اصل شناسنامه' },
+                        ]}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] text-stone-700 dark:text-stone-300 font-bold mb-1">
+                        مبلغ ضمانت تودیع شده (تومان)
+                      </label>
+                      <FormattedNumberInput
+                        value={guaranteeAmount}
+                        onChange={setGuaranteeAmount}
+                        suffix="تومان"
+                        placeholder="مثلاً: ۵۰,۰۰۰,۰۰۰"
+                        className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm font-mono outline-none focus:border-[#CEAE80]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] text-stone-700 dark:text-stone-300 font-bold mb-1">
+                        مشخصات سند ضمانت (شماره سفته/شناسه چک)
+                      </label>
+                      <input
+                        type="text"
+                        value={guaranteeDetails}
+                        onChange={(e) => setGuaranteeDetails(e.target.value)}
+                        placeholder="مثلاً: سفته شماره ۹۸۴۵۱ به امضای ضامن"
+                        className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm outline-none focus:border-[#CEAE80]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] text-[#CEAE80] font-bold mb-1">
+                        سقف اعتبار امانت مجاز (تومان) *
+                      </label>
+                      <FormattedNumberInput
+                        value={creditLimit}
+                        onChange={setCreditLimit}
+                        suffix="تومان"
+                        placeholder="مثلاً: ۳۰,۰۰۰,۰۰۰"
+                        className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#141414] border border-[#CEAE80] text-[#CEAE80] text-xs sm:text-sm font-bold font-mono outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {onUpdateSeller && (
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleSaveGuarantee}
+                      className="px-3 py-1.5 rounded-lg bg-[#CEAE80] hover:bg-[#B59363] text-black text-[11px] font-bold flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                    >
+                      <Shield className="w-3.5 h-3.5" />
+                      ذخیره تنظیمات ضمانت
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { PublicHeader } from '@/components/public/PublicHeader';
 import { PublicFooter } from '@/components/public/PublicFooter';
+import { PublicMobileNav } from '@/components/public/PublicMobileNav';
 import { CartDrawer } from '@/components/public/CartDrawer';
 
 /**
@@ -35,7 +36,13 @@ export const PublicLayout: React.FC = () => {
 
       <PublicFooter />
 
+      {/* Mobile bottom clearance so the fixed nav never covers footer content */}
+      <div className="md:hidden h-16" aria-hidden />
+
       <CartDrawer />
+
+      {/* Mobile Bottom Navigation Bar */}
+      <PublicMobileNav />
     </div>
   );
 };

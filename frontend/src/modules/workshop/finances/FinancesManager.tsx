@@ -18,19 +18,21 @@ import { PaymentsManager } from '../payments/PaymentsManager';
 import { WorkshopManager } from '../workshop/WorkshopManager';
 import { FinancialReports } from '../analytics/FinancialReports';
 import { toPersianDigits } from '@/utils/persian';
+import type { PaymentPayload, ReturnPayload } from '@/lib/api';
 
 interface FinancesManagerProps {
   payments: PaymentRecord[];
   sellers: Seller[];
   consignments: Consignment[];
-  onSubmitPayment: (data: any) => Promise<any>;
-  preSelectedSellerId?: string;
+  onSubmitPayment: (data: PaymentPayload) => void;
+  onSubmitReturn: (data: ReturnPayload) => void;
   owners: Owner[];
   staff: StaffMember[];
   totalActiveDebt: number;
   todayPayments: number;
   stats: DashboardStats | null;
   items: GarmentItem[];
+  preSelectedSellerId?: string;
   initialSubTab?: 'payments' | 'workshop' | 'reports';
 }
 
@@ -39,6 +41,7 @@ export const FinancesManager: React.FC<FinancesManagerProps> = ({
   sellers,
   consignments,
   onSubmitPayment,
+  onSubmitReturn,
   preSelectedSellerId,
   owners,
   staff,
@@ -125,6 +128,7 @@ export const FinancesManager: React.FC<FinancesManagerProps> = ({
           sellers={sellers}
           consignments={consignments}
           onSubmitPayment={onSubmitPayment}
+          onSubmitReturn={onSubmitReturn}
           preSelectedSellerId={preSelectedSellerId}
         />
       )}

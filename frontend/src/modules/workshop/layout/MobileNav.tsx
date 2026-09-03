@@ -37,7 +37,7 @@ export const MobileNav: React.FC = () => {
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-[#141416] border-t border-stone-200 dark:border-white/5 px-2 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] shadow-2xl">
-      <div className="flex items-center justify-around">
+      <div className="grid grid-cols-5 items-center justify-items-center h-14">
         {/* امانات — route (RTL first slot, leftmost) */}
         <NavLink to="/workshop/consignments" className={routeClass}>
           <span className="relative">
@@ -57,15 +57,13 @@ export const MobileNav: React.FC = () => {
           <span className="text-[10px] whitespace-nowrap">سفارش‌ها</span>
         </NavLink>
 
-        {/* داشبورد — center, elevated gold primary */}
-        <NavLink to="/workshop" end className={routeClass}>
-          <span className="flex flex-col items-center -mt-2">
-            <span className="w-11 h-11 rounded-2xl bg-[#CEAE80] text-black flex items-center justify-center shadow-lg shadow-[#CEAE80]/30 ring-4 ring-white dark:ring-[#141416] transition-transform active:scale-95">
-              <LayoutDashboard className="w-5 h-5 text-black" />
-            </span>
-            <span className="text-[10px] whitespace-nowrap font-black text-black dark:text-[#CEAE80] mt-0.5">
-              داشبورد
-            </span>
+        {/* داشبورد — center, lifted gold FAB */}
+        <NavLink to="/workshop" end className="relative flex flex-col items-center px-2 -translate-y-3.5">
+          <span className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#CEAE80] to-[#B59363] text-black flex items-center justify-center shadow-lg shadow-[#CEAE80]/40 ring-4 ring-white dark:ring-[#141416] transition-transform active:scale-95">
+            <LayoutDashboard className="w-5 h-5 text-black" />
+          </span>
+          <span className="text-[10px] whitespace-nowrap font-black text-black dark:text-[#CEAE80] mt-0.5">
+            داشبورد
           </span>
         </NavLink>
 

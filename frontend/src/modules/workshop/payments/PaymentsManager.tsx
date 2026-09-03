@@ -6,13 +6,16 @@ import {
   Eye,
 } from 'lucide-react';
 import type { PaymentRecord, Seller, Consignment } from '@/types';
-import { formatToman, toPersianDigits, toJalaliDate } from '@/utils/persian';import { NewPaymentModal } from './NewPaymentModal';
+import type { PaymentPayload, ReturnPayload } from '@/lib/api';
+import { formatToman, toPersianDigits, toJalaliDate } from '@/utils/persian';
+import { NewPaymentModal } from './NewPaymentModal';
 
 interface PaymentsManagerProps {
   payments: PaymentRecord[];
   sellers: Seller[];
   consignments: Consignment[];
-  onSubmitPayment: (data: any) => void;
+  onSubmitPayment: (data: PaymentPayload) => void;
+  onSubmitReturn: (data: ReturnPayload) => void;
   preSelectedSellerId?: string;
 }
 
@@ -21,6 +24,7 @@ export const PaymentsManager: React.FC<PaymentsManagerProps> = ({
   sellers = [],
   consignments = [],
   onSubmitPayment,
+  onSubmitReturn,
   preSelectedSellerId,
 }) => {
   const safePayments = payments || [];
@@ -213,7 +217,6 @@ export const PaymentsManager: React.FC<PaymentsManagerProps> = ({
         </div>
       </div>
 
-      {/* New Payment Modal */}
       <NewPaymentModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -221,6 +224,7 @@ export const PaymentsManager: React.FC<PaymentsManagerProps> = ({
         consignments={consignments}
         preSelectedSellerId={preSelectedSellerId}
         onSubmitPayment={onSubmitPayment}
+        onSubmitReturn={onSubmitReturn}
       />
     </div>
   );

@@ -51,8 +51,17 @@ const WorkshopShell: React.FC = () => {
     pwaModalOpen,
     setPwaModalOpen,
   } = useUI();
-  const { sellers, items, consignments, handleSubmitHandover, handleAddSeller, handleAddItem, handleSubmitPayment } =
-    useData();
+  const {
+    sellers,
+    items,
+    consignments,
+    handleSubmitHandover,
+    handleAddSeller,
+    handleAddItem,
+    handleSubmitPayment,
+    handleSubmitReturn,
+    handleUpdateSeller,
+  } = useData();
 
   return (
     <div className="relative min-h-screen flex flex-col font-sans transition-colors duration-200 overflow-x-hidden" dir="rtl">
@@ -96,6 +105,7 @@ const WorkshopShell: React.FC = () => {
           items={items}
           preSelectedSeller={quickHandoverSeller}
           onSubmitHandover={handleSubmitHandover}
+          onUpdateSeller={handleUpdateSeller}
           onQuickCreateSeller={handleAddSeller}
           onQuickCreateItem={handleAddItem}
         />
@@ -110,6 +120,7 @@ const WorkshopShell: React.FC = () => {
           consignments={consignments}
           preSelectedSellerId={quickPaymentSellerId}
           onSubmitPayment={handleSubmitPayment}
+          onSubmitReturn={handleSubmitReturn}
         />
       )}
     </div>

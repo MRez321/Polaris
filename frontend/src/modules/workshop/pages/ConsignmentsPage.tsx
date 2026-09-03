@@ -16,6 +16,7 @@ const ConsignmentsPage: React.FC = () => {
     returns,
     handleSubmitHandover,
     handleSubmitReturn,
+    handleUpdateSeller,
     handleAddSeller,
     handleAddItem,
   } = useData();
@@ -70,6 +71,7 @@ const ConsignmentsPage: React.FC = () => {
           items={items}
           onSubmitHandover={handleSubmitHandover}
           onSubmitReturn={handleSubmitReturn}
+          onUpdateSeller={handleUpdateSeller}
           onRecordPaymentForSeller={(sellerId) => openQuickPayment(sellerId)}
           selectedConsignmentForView={selectedConsignment}
           onClearSelectedConsignment={() => setSelectedConsignment(null)}

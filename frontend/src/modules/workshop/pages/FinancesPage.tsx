@@ -7,7 +7,8 @@ import { useComputedStats } from '@/modules/workshop/hooks/useComputedStats';
 
 const FinancesPage: React.FC = () => {
   const location = useLocation();
-  const { payments, sellers, consignments, owners, staffMembers, items, handleSubmitPayment } = useData();
+  const { payments, sellers, consignments, owners, staffMembers, items, handleSubmitPayment, handleSubmitReturn } =
+    useData();
   const { quickPaymentSellerId } = useUI();
   const stats = useComputedStats();
 
@@ -23,6 +24,7 @@ const FinancesPage: React.FC = () => {
       sellers={sellers}
       consignments={consignments}
       onSubmitPayment={handleSubmitPayment}
+      onSubmitReturn={handleSubmitReturn}
       preSelectedSellerId={quickPaymentSellerId}
       owners={owners}
       staff={staffMembers}

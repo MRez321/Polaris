@@ -25,6 +25,7 @@ interface HandoverManagerProps {
   onClearSelectedConsignment?: () => void;
   onQuickCreateSeller?: (seller: Partial<Seller>) => void;
   onQuickCreateItem?: (item: Partial<GarmentItem>) => void;
+  onUpdateSeller?: (id: string, patch: Partial<Seller>) => void;
 }
 
 export const HandoverManager: React.FC<HandoverManagerProps> = ({
@@ -38,6 +39,7 @@ export const HandoverManager: React.FC<HandoverManagerProps> = ({
   onClearSelectedConsignment,
   onQuickCreateSeller,
   onQuickCreateItem,
+  onUpdateSeller,
 }) => {
   const safeConsignments = consignments || [];
   const [search, setSearch] = useState('');
@@ -294,6 +296,7 @@ export const HandoverManager: React.FC<HandoverManagerProps> = ({
         onSubmitHandover={onSubmitHandover}
         onQuickCreateSeller={onQuickCreateSeller}
         onQuickCreateItem={onQuickCreateItem}
+        onUpdateSeller={onUpdateSeller}
       />
 
       {/* Return Modal */}
