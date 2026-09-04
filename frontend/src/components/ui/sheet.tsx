@@ -22,7 +22,14 @@ const SheetDirContext = React.createContext<{
 }>({ dir: "ltr", setDir: () => {} })
 
 function Sheet({ ...props }: SheetPrimitive.Root.Props) {
-  const [dir, setDir] = React.useState<"ltr" | "rtl">("ltr")
+  // Start from the document's real direction so controlled sheets without a
+  // trigger (e.g. SideMenu) render RTL portals from the first paint; a
+  // rendered SheetTrigger refines it with the ambient direction afterwards.
+  const [dir, setDir] = React.useState<"ltr" | "rtl">(() =>
+    document.documentElement.dir === "rtl" || document.documentElement.dir === "ltr"
+      ? (document.documentElement.dir as "ltr" | "rtl")
+      : "ltr"
+  )
   const contextValue = React.useMemo(() => ({ dir, setDir }), [dir])
 
   return (

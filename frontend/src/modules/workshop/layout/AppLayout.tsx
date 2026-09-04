@@ -64,7 +64,7 @@ const WorkshopShell: React.FC = () => {
   } = useData();
 
   return (
-    <div className="relative min-h-screen flex flex-col font-sans transition-colors duration-200 overflow-x-hidden" dir="rtl">
+    <div className="relative min-h-screen flex flex-col font-sans transition-colors duration-200 overflow-x-clip" dir="rtl">
       {/* Subtle Ambient Glow Light Orbs for Glassmorphism depth */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute -top-32 right-1/4 w-96 h-96 bg-[#CEAE80] rounded-full blur-[140px] opacity-[0.14] dark:opacity-[0.12] transition-opacity" />

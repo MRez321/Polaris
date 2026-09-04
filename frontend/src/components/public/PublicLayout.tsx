@@ -21,7 +21,7 @@ export const PublicLayout: React.FC = () => {
   }, [pathname]);
 
   return (
-    <div className="relative min-h-screen flex flex-col overflow-x-hidden" dir="rtl">
+    <div className="relative min-h-screen flex flex-col overflow-x-clip" dir="rtl">
       {/* Ambient gold glow shared by all public pages */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden>
         <div className="absolute -top-40 left-1/4 w-[28rem] h-[28rem] bg-[#CEAE80] rounded-full blur-[160px] opacity-[0.13] dark:opacity-[0.10]" />
