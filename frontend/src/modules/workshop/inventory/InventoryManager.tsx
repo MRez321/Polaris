@@ -6,22 +6,38 @@ import {
   AlertTriangle,
   Edit2,
   Trash2,
+  Boxes,
+  Globe,
+  HandCoins,
+  Store,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { GarmentItem } from '@/types';
 import { formatToman, toPersianDigits } from '@/utils/persian';
 import { Badge } from '@/components/common/Badge';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ItemFormModal } from './ItemFormModal';
 
 interface InventoryManagerProps {
   items: GarmentItem[];
   onAddItem: (itemData: Partial<GarmentItem>) => void;
-  onUpdateItem: (id: string, itemData: Partial<GarmentItem>) => void;
+  onUpdateItem: (id: string, itemData: InventoryUpdatePayload) => void;
   onDeleteItem: (id: string) => void;
-  onQuickHandoverItem?: (item: GarmentItem) => void;
+  onQuickHandoverItem?: (item: GarmentPoolItem) => void;
   categories?: { id: string; label: string }[];
   onCreateCategory?: (label: string) => void;
 }
+
+/** A channel-aware item — the shop pool is a client-side filter on listing
+ *  availability, so keep the channel fields optional for callers that
+ *  don't track them (only channel tabs need them). */
+type GarmentPoolItem = GarmentItem & {
+  websiteQuantity?: number;
+  sellerHeld?: number;
+};
+type InventoryUpdatePayload = Partial<GarmentItem> & {
+  websiteQuantity?: number;
+};
 
 export const InventoryManager: React.FC<InventoryManagerProps> = ({
   items = [],
@@ -46,11 +62,13 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<GarmentItem | null>(null);
+  const [channel, setChannel] = useState<'all' | 'handover' | 'shop' | 'warehouse'>('all');
 
   const displayCategories = [
     { id: 'all', label: 'همه دسته‌ها' },
     ...categories,
   ];
+
 
   const filteredItems = safeItems.filter((item) => {
     const matchesSearch =
@@ -60,13 +78,26 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
 
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
     const matchesLowStock = !showLowStockOnly || (item.stockQuantity || 0) <= (item.minStockThreshold || 0);
+    const matchesChannel =
+      channel === 'all' ||
+      (channel === 'handover' && (item.sellerHeld || 0) > 0) ||
+      (channel === 'shop' && (item.websiteQuantity || 0) > 0) ||
+      (channel === 'warehouse' && (item.stockQuantity || 0) > 0);
 
-    return matchesSearch && matchesCategory && matchesLowStock;
+    return matchesSearch && matchesCategory && matchesLowStock && matchesChannel;
   });
 
-  const lowStockCount = safeItems.filter((i) => (i.stockQuantity || 0) <= (i.minStockThreshold || 0)).length;
-  const totalStockCount = safeItems.reduce((sum, i) => sum + (i.stockQuantity || 0), 0);
-  const totalValue = safeItems.reduce((sum, i) => sum + (i.stockQuantity || 0) * (i.consignmentPrice || 0), 0);
+  const lowStockCount = safeItems.filter(
+    (i) => (i.stockQuantity || 0) <= (i.minStockThreshold || 0)
+  ).length;
+  const totalStockCount = safeItems.reduce(
+    (sum, i) => sum + (i.stockQuantity || 0) + (i.websiteQuantity || 0),
+    0
+  );
+  const totalValue = safeItems.reduce(
+    (sum, i) => sum + ((i.stockQuantity || 0) + (i.websiteQuantity || 0)) * (i.consignmentPrice || 0),
+    0
+  );
 
   const handleEdit = (item: GarmentItem) => {
     setEditingItem(item);
@@ -154,6 +185,40 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
           ))}
         </div>
       </div>
+
+      {/* Channel Tabs: همه / تحویل به دست‌فروش / در فروشگاه آنلاین / در انبار */}
+      <Tabs value={channel} onValueChange={(v) => setChannel(v as typeof channel)} className="w-full">
+        <TabsList className="w-full justify-start overflow-x-auto rounded-2xl glass-panel border border-stone-200 dark:border-white/5 p-1.5 h-auto">
+          <TabsTrigger
+            value="all"
+            className="rounded-xl px-3.5 py-2 text-xs font-bold data-[panel-hidden]:text-stone-500"
+          >
+            <Boxes className="w-4 h-4" />
+            همه ({toPersianDigits(safeItems.length)})
+          </TabsTrigger>
+          <TabsTrigger
+            value="handover"
+            className="rounded-xl px-3.5 py-2 text-xs font-bold data-[panel-hidden]:text-stone-500"
+          >
+            <HandCoins className="w-4 h-4" />
+            تحویل به دست‌فروش ({toPersianDigits(safeItems.filter((i) => (i.sellerHeld || 0) > 0).length)})
+          </TabsTrigger>
+          <TabsTrigger
+            value="shop"
+            className="rounded-xl px-3.5 py-2 text-xs font-bold data-[panel-hidden]:text-stone-500"
+          >
+            <Globe className="w-4 h-4" />
+            در فروشگاه آنلاین ({toPersianDigits(safeItems.filter((i) => (i.websiteQuantity || 0) > 0).length)})
+          </TabsTrigger>
+          <TabsTrigger
+            value="warehouse"
+            className="rounded-xl px-3.5 py-2 text-xs font-bold data-[panel-hidden]:text-stone-500"
+          >
+            <Store className="w-4 h-4" />
+            در انبار ({toPersianDigits(safeItems.filter((i) => (i.stockQuantity || 0) > 0).length)})
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Items Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -243,11 +308,11 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                 </div>
               </div>
 
-              {/* Stock Bar & Actions */}
-              <div className="mt-4 pt-3 border-t border-stone-200 dark:border-white/5 flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              {/* Stock Bar & Actions — remaining free units big/bold, total smaller in parentheses */}
+              <div className="mt-4 pt-3 border-t border-stone-200 dark:border-white/5 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
                   <div
-                    className={`w-3 h-3 rounded-full ${
+                    className={`w-3 h-3 rounded-full shrink-0 ${
                       item.stockQuantity === 0
                         ? 'bg-rose-500'
                         : isLowStock
@@ -255,22 +320,41 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                         : 'bg-emerald-500'
                     }`}
                   />
-                  <span className="text-xs font-black text-stone-900 dark:text-white">
-                    {toPersianDigits(item.stockQuantity)} عدد در انبار
+                  <span className="text-sm font-black text-stone-900 dark:text-white whitespace-nowrap">
+                    {toPersianDigits(item.stockQuantity)}
+                    <span className="text-[10px] font-bold text-stone-500 dark:text-gray-400 mr-1">
+                      آزاد انبار
+                    </span>
+                  </span>
+                  <span className="text-[10px] text-stone-400 dark:text-stone-500 whitespace-nowrap">
+                    (مجموع {toPersianDigits((item.stockQuantity || 0) + (item.websiteQuantity || 0) + (item.sellerHeld || 0))})
                   </span>
                 </div>
 
-                {onQuickHandoverItem && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onQuickHandoverItem(item);
-                    }}
-                    className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-[#CEAE80] text-amber-800 dark:text-[#CEAE80] hover:text-black border border-amber-500/30 text-xs font-black transition-colors"
-                  >
-                    تحویل امانی
-                  </button>
-                )}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {(item.websiteQuantity || 0) > 0 && (
+                    <Badge variant="default" size="sm" className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25">
+                      فروشگاه: {toPersianDigits(item.websiteQuantity || 0)}
+                    </Badge>
+                  )}
+                  {(item.sellerHeld || 0) > 0 && (
+                    <Badge variant="default" size="sm" className="bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/25">
+                      دست‌فروش: {toPersianDigits(item.sellerHeld || 0)}
+                    </Badge>
+                  )}
+
+                  {onQuickHandoverItem && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onQuickHandoverItem(item);
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-[#CEAE80] text-amber-800 dark:text-[#CEAE80] hover:text-black border border-amber-500/30 text-xs font-black transition-colors"
+                    >
+                      تحویل امانی
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           );

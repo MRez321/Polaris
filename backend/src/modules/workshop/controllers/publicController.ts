@@ -19,21 +19,25 @@ export async function listPublicItems(_req: Request, res: Response): Promise<voi
     const [rows, categories] = await Promise.all([svc.listItems(), svc.listCategories()]);
     const labelMap = new Map(categories.map((c) => [c.id, c.label]));
     res.json(
-        rows.map((r) => ({
-            id: r.id,
-            code: r.code,
-            name: r.name,
-            category: r.category,
-            categoryLabel: labelMap.get(r.category),
-            retailPrice: r.retailPrice,
-            sizes: r.sizes,
-            colors: r.colors,
-            fabric: r.fabric,
-            imageUrl: r.imageUrl,
-            images: r.images,
-            // Availability as a boolean — exact stock counts stay private.
-            inStock: r.stockQuantity > 0,
-        })),
+        // Shop catalog = items explicitly allocated to the website channel.
+        // A zero allocation naturally hides the item; no extra flag needed.
+        rows
+            .filter((r) => r.websiteQuantity > 0)
+            .map((r) => ({
+                id: r.id,
+                code: r.code,
+                name: r.name,
+                category: r.category,
+                categoryLabel: labelMap.get(r.category),
+                retailPrice: r.retailPrice,
+                sizes: r.sizes,
+                colors: r.colors,
+                fabric: r.fabric,
+                imageUrl: r.imageUrl,
+                images: r.images,
+                // Availability as a boolean — exact stock counts stay private.
+                inStock: r.websiteQuantity > 0,
+            })),
     );
 }
 

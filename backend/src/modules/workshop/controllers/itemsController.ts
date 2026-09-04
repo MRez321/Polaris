@@ -60,6 +60,24 @@ export async function deleteItem(req: Request, res: Response): Promise<void> {
     res.json({ message: 'کالا به سطل بازیافت منتقل شد' });
 }
 
+// --- Shop channel allocation ---
+
+export async function setShopAllocation(req: Request, res: Response): Promise<void> {
+    const id = pathParam(req, 'id', 'شناسه کالا');
+    const { websiteQuantity } = z
+        .object({ websiteQuantity: z.number().int().min(0) })
+        .parse(req.body);
+    const row = await svc.setShopAllocation(id, websiteQuantity);
+    logAudit(
+        req.auth ?? null,
+        'update',
+        'item',
+        `تخصیص فروشگاه آنلاین کالای «${row.name}» به ${websiteQuantity} عدد تنظیم شد`,
+        req.ip,
+    );
+    res.json(toItemDto(row, await categoryLabelFor(row.category)));
+}
+
 // --- Categories ---
 
 export async function listCategories(_req: Request, res: Response): Promise<void> {

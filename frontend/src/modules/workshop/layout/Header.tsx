@@ -8,53 +8,21 @@ import {
   Bell,
   Receipt,
   Menu,
-  LayoutDashboard,
-  Settings2,
-  UserRound,
-  LogIn,
-  LogOut,
 } from 'lucide-react';
 import { toPersianDigits } from '@/utils/persian';
 import { useTheme } from '@/context/ThemeContext';
 import { useUI } from '@/modules/workshop/context/UIContext';
 import { useData } from '@/modules/workshop/context/DataContext';
-import { useAuth } from '@/context/AuthContext';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuGroupLabel,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { UserMenu } from '@/components/common/UserMenu';
 import { SideMenu } from './SideMenu';
 
-/** First letter of up to two words, for the avatar fallback (PublicHeader pattern). */
-function initials(name: string): string {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join('‌');
-}
 
 export const Header: React.FC = () => {
   const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useTheme();
   const { openQuickHandover, openQuickPayment } = useUI();
   const { consignments } = useData();
-  const { user, isAdmin, signOut } = useAuth();
   const [sideMenuOpen, setSideMenuOpen] = React.useState(false);
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/login');
-  };
-
-  const isAuthor = user?.role === 'author';
-  const canManageSite = isAdmin || isAuthor;
 
   const overdueCount = consignments.filter(
     (c) => (c.remainingAmount || 0) > 0 && new Date(c.dueDate).getTime() < Date.now()
@@ -131,62 +99,8 @@ export const Header: React.FC = () => {
             )}
           </button>
 
-          {/* Auth: login button when signed out, account dropdown when signed in */}
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className="flex items-center gap-2 h-9 sm:h-10 ps-1 pe-2 sm:pe-3 rounded-xl border border-stone-200/80 dark:border-white/10 hover:border-[#CEAE80]/50 bg-white dark:bg-white/5 transition-all active:scale-95"
-                aria-label="منوی حساب کاربری"
-              >
-                <span className="w-7 h-7 rounded-lg bg-[#CEAE80] text-black text-xs font-black flex items-center justify-center">
-                  {initials(user.name)}
-                </span>
-                <span className="hidden sm:block max-w-28 truncate text-xs font-bold text-stone-700 dark:text-stone-200">
-                  {user.name}
-                </span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-52">
-                <DropdownMenuGroup>
-                  <DropdownMenuGroupLabel>
-                    <span className="block truncate">{user.name}</span>
-                    <span className="block truncate text-[11px] font-normal text-muted-foreground" dir="ltr">
-                      {user.email}
-                    </span>
-                  </DropdownMenuGroupLabel>
-                  <DropdownMenuItem render={<Link to="/dashboard" />}>
-                    <UserRound />
-                    حساب کاربری من
-                  </DropdownMenuItem>
-                  {canManageSite && (
-                    <DropdownMenuItem render={<Link to="/controlpanel" />}>
-                      <Settings2 />
-                      مدیریت وب‌سایت
-                    </DropdownMenuItem>
-                  )}
-                  {isAdmin && (
-                    <DropdownMenuItem render={<Link to="/workshop" />}>
-                      <LayoutDashboard />
-                      پنل کارگاه
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" onClick={handleSignOut}>
-                  <LogOut />
-                  خروج از حساب
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <button
-              onClick={() => navigate('/login')}
-              className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl glass-card hover:border-[#CEAE80] text-stone-900 dark:text-stone-200 text-xs font-bold transition-all active:scale-95 shadow-sm"
-              title="ورود به حساب کاربری"
-            >
-              <LogIn className="w-4 h-4 text-[#A67C38] dark:text-[#CEAE80]" />
-              <span className="hidden sm:inline">ورود</span>
-            </button>
-          )}
+          {/* Auth: shared role-aware user menu (login chip when signed out) */}
+          <UserMenu className="glass-card" />
 
           {/* Hamburger: full workshop side menu (mobile only) */}
           <button

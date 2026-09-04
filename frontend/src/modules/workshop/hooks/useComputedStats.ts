@@ -18,7 +18,7 @@ export function useComputedStats(): DashboardStats {
         .filter((c) => (c.remainingAmount || 0) > 0 && new Date(c.dueDate).getTime() < Date.now())
         .reduce((sum, c) => sum + (c.remainingAmount || 0), 0),
       totalInventoryValue: (items || []).reduce(
-        (sum, i) => sum + (i.stockQuantity || 0) * (i.consignmentPrice || 0),
+        (sum, i) => sum + ((i.stockQuantity || 0) + (i.websiteQuantity || 0)) * (i.consignmentPrice || 0),
         0
       ),
       todayPayments: (payments || [])

@@ -76,7 +76,9 @@ export interface GarmentItem {
   costPrice: number; // قیمت تمام شده دوخت
   consignmentPrice: number; // قیمت امانی به دست‌فروش
   retailPrice: number; // قیمت فروش به مشتری نهایی
-  stockQuantity: number; // موجودی انبار
+  stockQuantity: number; // موجودی آزاد انبار (بدون تخصیص فروشگاه و دست‌فروش)
+  websiteQuantity: number; // تخصیص‌یافته به فروشگاه آنلاین
+  sellerHeld?: number; // نزد دست‌فروش‌ها (واگذاری‌های فعال)
   minStockThreshold: number; // حداقل موجودی هشدار
   sizes: string[]; // ['M', 'L', 'XL', '2XL'] or ['38', '40', '42']
   colors: string[]; // ['مشکی', 'سرمه‌ای', 'کرم']

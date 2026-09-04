@@ -35,6 +35,7 @@ router.get('/items', items.listItems);
 router.post('/items', items.createItem);
 router.put('/items/:id', items.updateItem);
 router.delete('/items/:id', items.deleteItem);
+router.put('/items/:id/shop-allocation', items.setShopAllocation);
 router.get('/categories', items.listCategories);
 router.post('/categories', items.createCategory);
 

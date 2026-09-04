@@ -69,6 +69,8 @@ export const itemsApi = {
   update: (id: string, data: Partial<GarmentItem>) =>
     api.put<GarmentItem>(`${W}/items/${id}`, data).then((r) => r.data),
   remove: (id: string) => api.delete(`${W}/items/${id}`).then((r) => r.data),
+  setShopAllocation: (id: string, websiteQuantity: number) =>
+    api.put<GarmentItem>(`${W}/items/${id}/shop-allocation`, { websiteQuantity }).then((r) => r.data),
 };
 
 export const categoriesApi = {

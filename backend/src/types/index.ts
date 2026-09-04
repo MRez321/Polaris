@@ -72,7 +72,9 @@ export interface GarmentItem {
     costPrice: number;
     consignmentPrice: number;
     retailPrice: number;
-    stockQuantity: number;
+    stockQuantity: number; // free warehouse pool
+    websiteQuantity: number; // units allocated to the online shop
+    sellerHeld?: number; // units out with street sellers (active consignments)
     minStockThreshold: number;
     sizes: string[];
     colors: string[];

@@ -27,6 +27,7 @@ import SettingsPage from '@/modules/workshop/pages/SettingsPage';
 import EntityProfilePage from '@/modules/workshop/pages/EntityProfilePage';
 import ControlPanelLayout, { ControlPanelIndexRedirect } from '@/pages/controlpanel/ControlPanelLayout';
 import WebsiteSettingsPage from '@/pages/controlpanel/WebsiteSettingsPage';
+import ShopManagementPage from '@/pages/controlpanel/ShopManagementPage';
 import BlogManagerPage from '@/pages/controlpanel/BlogManagerPage';
 
 // Guard for management routes: requires an authenticated admin.
@@ -87,6 +88,7 @@ function App() {
                       <Route path="/controlpanel" element={<ControlPanelLayout />}>
                         <Route index element={<ControlPanelIndexRedirect />} />
                         <Route path="website" element={<WebsiteSettingsPage />} />
+                        <Route path="shop" element={<ShopManagementPage />} />
                         <Route path="blog" element={<BlogManagerPage />} />
                       </Route>
 

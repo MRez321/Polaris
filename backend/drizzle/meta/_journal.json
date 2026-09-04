@@ -50,6 +50,13 @@
       "when": 1788134100000,
       "tag": "0006_notification_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1788220500000,
+      "tag": "0007_shop_allocation",
+      "breakpoints": true
     }
   ]
 }

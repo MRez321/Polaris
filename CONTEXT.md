@@ -62,6 +62,18 @@ _Avoid_: tax, fee
 The public sales site: catalog, product pages, blog, checkout with cash-on-delivery. Customers order here; the workshop fulfills from the same inventory Handovers draw on.
 _Avoid_: shop (when meaning the whole public site), e-commerce
 
+**Shop allocation** (تخصیص فروشگاه):
+The admin's act of committing N free warehouse units of an item to the storefront pool. Website orders draw only from this pool; a zero allocation hides the item from the public catalog. Persian UI term: «تخصیص».
+_Avoid_: publishing, listing, sync
+
+**Free warehouse pool** (موجودی آزاد انبار):
+The unallocated units of an item — what Handovers can still draw on and what allocation pulls from. Displayed big and bold on inventory cards («آزاد انبار»), with the all-channel total smaller in parentheses.
+_Avoid_: stock (unqualified), available inventory
+
+**Seller-held** (نزد دست‌فروش):
+Units currently out on consignment lines — derived per item from open Consignments, never stored or denormalized. Invariant: total units = free warehouse + shop allocation + seller-held.
+_Avoid_: reserved, held stock, channel stock
+
 **Customer** (مشتری):
 A person who places an Order on the storefront. Has an account (role `user`) and sees only their own orders.
 _Avoid_: client, buyer, hand-seller

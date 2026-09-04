@@ -58,6 +58,8 @@ Read-only catalog for the marketing website. Responses are filtered to marketing
 }]
 ```
 
+**Shop gating**: only items with `websiteQuantity > 0` (units allocated to the shop via the admin's Shop Management page) are listed. `inStock` is a boolean (`websiteQuantity > 0`) — exact unit counts of any channel never leave this endpoint.
+
 ### `GET /api/public/categories` → `{ id, label }[]`
 
 ### `GET /api/public/company` → public brand info (name, tagline, contact details)
@@ -128,12 +130,18 @@ All amounts are in **toman**.
   "id": "…", "code": "ITM-…", "name": "پالتو مردانه",
   "category": "<category-id>", "categoryLabel": "پالتو",
   "costPrice": 800000, "consignmentPrice": 1100000, "retailPrice": 1400000,
-  "stockQuantity": 12, "minStockThreshold": 3,
+  "stockQuantity": 12, "websiteQuantity": 3, "minStockThreshold": 3,
   "sizes": ["L", "XL"], "colors": ["مشکی", "سرمه‌ای"], "fabric": "پشم",
   "imageUrl": null, "images": [],
   "createdAt": "…", "updatedAt": "…"
 }]
 ```
+
+**Channel buckets** (invariant: total units = `stockQuantity` + `websiteQuantity` + seller-held units from open consignment lines):
+
+- `stockQuantity` — free warehouse pool (handovers and returns move this).
+- `websiteQuantity` — pool committed to the online shop; only `setShopAllocation` and the order flow change it. Website orders decrement it; cancelling an order restores it.
+- seller-held — derived per item from active consignment lines; never stored.
 
 ### `POST /api/workshop/items` → `201 GarmentItem`
 
@@ -148,13 +156,15 @@ All amounts are in **toman**.
 | `minStockThreshold` | int ≥ 0    | —        | low-stock alert level       |
 | `sizes` / `colors`  | string[]   | —        |                             |
 | `fabric`            | string     | —        |                             |
-| `imageUrl`, `images`| string / string[] | — |                             |
-
-`code` is generated server-side when omitted.
-
 ### `PUT /api/workshop/items/:id` → `GarmentItem`
 
-Partial update — any subset of the fields above.
+Partial update — any subset of the fields above. **`websiteQuantity` cannot be changed here** — it only moves through the locked transfer endpoint below.
+
+### `PUT /api/workshop/items/:id/shop-allocation` → `GarmentItem`
+
+Moves units between the free warehouse pool and the website shop pool. Row-locked: a concurrent handover or website order can never over-allocate.
+
+Body: `{ "websiteQuantity": <int ≥ 0> }` — the **absolute target** for the shop pool, not a delta. Raising it pulls `(target − current)` units out of `stockQuantity`; lowering returns the difference. Requesting more than the free warehouse pool can cover → `400` with a Persian message. Writes an audit entry (e.g. «۳ واحد کالای PLR-488 به فروشگاه آنلاین تخصیص یافت»).
 
 ### `DELETE /api/workshop/items/:id` → `{ "message": "…" }`
 
@@ -326,7 +336,7 @@ Orders placed on the public storefront. Customers order their own cart; admins m
 }
 ```
 
-`paymentMethod`: `cod` (پرداخت در محل) | `card_transfer` (کارت به کارت). Phone must match `^0\d{10}$`. Stock is validated and decremented atomically; insufficient stock → `400`.
+`paymentMethod`: `cod` (پرداخت در محل) | `card_transfer` (کارت به کارت). Phone must match `^0\d{10}$`. **Stock is drawn from the item's `websiteQuantity` (shop pool)** — validated and decremented atomically; more units in the order than the shop pool holds → `400`.
 
 ### `GET /api/orders/mine` → `Order[]` (any authenticated user)
 
@@ -338,7 +348,7 @@ All orders with customer details and line items.
 
 ### `PUT /api/workshop/orders/:id` → `Order` (admin)
 
-Body: `{ "status": "…" }` with one of `pending` | `confirmed` | `preparing` | `shipped` | `delivered` | `cancelled`. Moving to `cancelled` restocks the lines.
+Body: `{ "status": "…" }` with one of `pending` | `confirmed` | `preparing` | `shipped` | `delivered` | `cancelled`. Moving to `cancelled` returns the units to the item's `websiteQuantity` (shop pool); un-cancelling takes them back out.
 
 Order shape:
 

@@ -29,10 +29,23 @@ export type { TrashEntityType };
 // ---------------------------------------------------------------------------
 
 export async function listItems(includeDeleted = false) {
-    const rows = includeDeleted
-        ? await db.select().from(items)
-        : await db.select().from(items).where(eq(items.isDeleted, false));
-    return rows;
+    const [rows, activeConsignments] = await Promise.all([
+        includeDeleted
+            ? db.select().from(items)
+            : await db.select().from(items).where(eq(items.isDeleted, false)),
+        db.select().from(consignments).where(eq(consignments.isDeleted, false)),
+    ]);
+    // Units out with street sellers: derived from active consignment lines
+    // (quantity − returned − sold), never denormalized into items.
+    const held = new Map<string, number>();
+    for (const c of activeConsignments) {
+        if (c.status === 'settled') continue;
+        for (const l of c.items) {
+            const out = l.quantity - l.returnedQuantity - l.soldQuantity;
+            if (out > 0) held.set(l.itemId, (held.get(l.itemId) ?? 0) + out);
+        }
+    }
+    return rows.map((r) => ({ ...r, sellerHeld: held.get(r.id) ?? 0 }));
 }
 
 export async function createItem(data: Partial<typeof items.$inferInsert>) {
@@ -82,6 +95,44 @@ export async function softDeleteItem(id: string) {
     await db.update(items).set({ isDeleted: true, deletedAt: new Date() }).where(eq(items.id, id));
     emitDataChanged('item', 'delete');
     return row;
+}
+
+/**
+ * Allocates warehouse units to the website shop channel (or pulls them
+ * back). Moves happen inside a row-locked transaction so a concurrent
+ * handover or website order can never over-allocate. websiteQuantity is
+ * the absolute target; the delta transfers against stockQuantity.
+ */
+export async function setShopAllocation(id: string, websiteQuantity: number) {
+    if (!Number.isInteger(websiteQuantity) || websiteQuantity < 0) {
+        throw badRequest('تعداد تخصیصی فروشگاه باید عدد صحیح و بزرگ‌تر یا مساوی صفر باشد');
+    }
+
+    const updated = await db.transaction(async (tx) => {
+        const rows = await tx.select().from(items).where(eq(items.id, id)).for('update');
+        const item = rows[0];
+        if (!item || item.isDeleted) throw notFound('کالا یافت نشد');
+
+        const delta = websiteQuantity - item.websiteQuantity;
+        if (delta > 0 && item.stockQuantity < delta) {
+            throw badRequest(
+                `موجودی آزاد «${item.name}» برای تخصیص به فروشگاه کافی نیست (موجودی آزاد: ${item.stockQuantity})`,
+            );
+        }
+
+        await tx
+            .update(items)
+            .set({
+                stockQuantity: item.stockQuantity - delta,
+                websiteQuantity,
+                updatedAt: new Date(),
+            })
+            .where(eq(items.id, item.id));
+        return (await tx.select().from(items).where(eq(items.id, id)))[0]!;
+    });
+
+    emitDataChanged('item', 'update');
+    return updated;
 }
 
 // ---------------------------------------------------------------------------
@@ -824,7 +875,10 @@ export async function getDashboardStats() {
     );
     const totalOverdueDebt = overdueConsignments.reduce((s, c) => s + c.remainingAmount, 0);
     const todayPayments = todayPaymentRows.reduce((s, p) => s + p.amount, 0);
-    const totalInventoryValue = activeItems.reduce((s, i) => s + i.stockQuantity * i.costPrice, 0);
+    const totalInventoryValue = activeItems.reduce(
+        (s, i) => s + (i.stockQuantity + i.websiteQuantity) * i.costPrice,
+        0
+    );
     const totalItemsInHands = activeConsignments
         .filter((c) => c.status !== 'settled')
         .reduce((s, c) => s + c.items.reduce((ls, l) => ls + (l.quantity - l.returnedQuantity - l.soldQuantity), 0), 0);

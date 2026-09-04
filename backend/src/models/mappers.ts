@@ -29,7 +29,7 @@ type AuditRow = typeof schema.auditLogs.$inferSelect;
 const iso = (d: Date | string | null | undefined): string =>
     d instanceof Date ? d.toISOString() : (d ?? '');
 
-export function toItemDto(row: ItemRow, categoryLabel?: string): GarmentItem {
+export function toItemDto(row: ItemRow & { sellerHeld?: number }, categoryLabel?: string): GarmentItem {
     return {
         id: row.id,
         code: row.code,
@@ -40,6 +40,8 @@ export function toItemDto(row: ItemRow, categoryLabel?: string): GarmentItem {
         consignmentPrice: row.consignmentPrice,
         retailPrice: row.retailPrice,
         stockQuantity: row.stockQuantity,
+        websiteQuantity: row.websiteQuantity,
+        ...(row.sellerHeld !== undefined ? { sellerHeld: row.sellerHeld } : {}),
         minStockThreshold: row.minStockThreshold,
         sizes: row.sizes,
         colors: row.colors,

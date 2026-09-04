@@ -76,13 +76,15 @@ export async function createOrder(input: OrderInput) {
                 .for('update');
             const item = rows[0];
             if (!item || item.isDeleted) throw badRequest('یکی از کالاهای سبد خرید دیگر در دسترس نیست');
-            if (item.stockQuantity < line.quantity) {
-                throw badRequest(`موجودی «${item.name}» کافی نیست (حداکثر ${item.stockQuantity} عدد)`);
+            // Website orders draw from the dedicated shop pool, never from
+            // the free warehouse stock that handovers use.
+            if (item.websiteQuantity < line.quantity) {
+                throw badRequest(`موجودی «${item.name}» کافی نیست (حداکثر ${item.websiteQuantity} عدد)`);
             }
 
             await tx
                 .update(items)
-                .set({ stockQuantity: item.stockQuantity - line.quantity, updatedAt: new Date() })
+                .set({ websiteQuantity: item.websiteQuantity - line.quantity, updatedAt: new Date() })
                 .where(eq(items.id, item.id));
 
             const price = item.retailPrice;
@@ -168,10 +170,12 @@ export async function updateOrderStatus(id: string, status: OrderStatus) {
                     .for('update');
                 const item = itemRows[0];
                 if (!item || item.isDeleted) continue;
-                const next = Math.max(0, item.stockQuantity + direction * line.quantity);
+                // Website orders own the shop pool; cancel restores to it and
+                // un-cancel takes from it again (clamped at zero like before).
+                const next = Math.max(0, item.websiteQuantity + direction * line.quantity);
                 await tx
                     .update(items)
-                    .set({ stockQuantity: next, updatedAt: new Date() })
+                    .set({ websiteQuantity: next, updatedAt: new Date() })
                     .where(eq(items.id, item.id));
             }
         }

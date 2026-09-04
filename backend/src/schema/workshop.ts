@@ -126,6 +126,10 @@ export const items = mysqlTable(
         consignmentPrice: bigint('consignment_price', { mode: 'number' }).notNull().default(0),
         retailPrice: bigint('retail_price', { mode: 'number' }).notNull().default(0),
         stockQuantity: int('stock_quantity').notNull().default(0),
+        // Units committed to the website storefront channel. stockQuantity
+        // is the free warehouse pool; seller-held units stay derived from
+        // consignment lines. total = stock + websiteQuantity + seller-held.
+        websiteQuantity: int('website_quantity').notNull().default(0),
         minStockThreshold: int('min_stock_threshold').notNull().default(5),
         sizes: json('sizes').$type<string[]>().notNull(),
         colors: json('colors').$type<string[]>().notNull(),
@@ -137,7 +141,11 @@ export const items = mysqlTable(
         isDeleted: boolean('is_deleted').notNull().default(false),
         deletedAt: datetime('deleted_at'),
     },
-    (t) => [index('items_category_idx').on(t.category), index('items_is_deleted_idx').on(t.isDeleted)],
+    (t) => [
+        index('items_category_idx').on(t.category),
+        index('items_is_deleted_idx').on(t.isDeleted),
+        index('items_website_quantity_idx').on(t.websiteQuantity),
+    ],
 );
 
 export const sellers = mysqlTable(

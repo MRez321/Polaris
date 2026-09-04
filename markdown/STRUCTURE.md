@@ -30,6 +30,7 @@ Removed during the reorg: `docker-compose.yml`, `frontend/src/App.css`, `fronten
 │   │   ├── migrate.js
 │   │   ├── seed.js
 │   │   ├── smoke-phase2.mjs
+│   │   ├── smoke-phase3.mjs
 │   │   └── smoke.mjs
 │   ├── src/
 │   │   ├── config/
@@ -147,6 +148,7 @@ Removed during the reorg: `docker-compose.yml`, `frontend/src/App.css`, `fronten
 │   │   │   │   ├── ImagePicker.tsx
 │   │   │   │   ├── ImagePickerModal.tsx
 │   │   │   │   ├── Modal.tsx
+│   │   │   │   ├── UserMenu.tsx
 │   │   │   │   └── SafeImage.tsx
 │   │   │   ├── public/
 │   │   │   │   ├── CartDrawer.tsx
@@ -279,6 +281,7 @@ Removed during the reorg: `docker-compose.yml`, `frontend/src/App.css`, `fronten
 │   │   │   ├── controlpanel/
 │   │   │   │   ├── BlogManagerPage.tsx
 │   │   │   │   ├── ControlPanelLayout.tsx
+│   │   │   │   ├── ShopManagementPage.tsx
 │   │   │   │   └── WebsiteSettingsPage.tsx
 │   │   │   ├── public/
 │   │   │   │   ├── BlogPage.tsx

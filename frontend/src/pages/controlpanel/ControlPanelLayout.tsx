@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link, Navigate, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { ArrowRight, Globe, Newspaper } from 'lucide-react';
+import { ArrowRight, Globe, Newspaper, ShoppingBag } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { UserMenu } from '@/components/common/UserMenu';
 import { cn } from '@/lib/utils';
 
 /** Roles allowed inside /controlpanel at all. */
@@ -46,15 +47,17 @@ export const ControlPanelLayout: React.FC = () => {
               </p>
             </div>
           </div>
-
-          <Link
-            to="/"
-            className="flex items-center gap-1.5 text-xs font-bold text-stone-600 dark:text-stone-300 hover:text-[#A67C38] dark:hover:text-[#CEAE80] transition-colors shrink-0"
-          >
-            <ArrowRight className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">بازگشت به سایت</span>
-            <span className="sm:hidden">سایت</span>
-          </Link>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              to="/"
+              className="flex items-center gap-1.5 text-xs font-bold text-stone-600 dark:text-stone-300 hover:text-[#A67C38] dark:hover:text-[#CEAE80] transition-colors"
+            >
+              <ArrowRight className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">بازگشت به سایت</span>
+              <span className="sm:hidden">سایت</span>
+            </Link>
+            <UserMenu />
+          </div>
         </div>
 
         <nav className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-3 flex items-center gap-2 overflow-x-auto">
@@ -62,6 +65,12 @@ export const ControlPanelLayout: React.FC = () => {
             <NavLink to="/controlpanel/website" className={navLinkClass}>
               <Globe className="w-3.5 h-3.5" />
               تنظیمات وب‌سایت
+            </NavLink>
+          )}
+          {isAdmin && (
+            <NavLink to="/controlpanel/shop" className={navLinkClass}>
+              <ShoppingBag className="w-3.5 h-3.5" />
+              مدیریت فروشگاه
             </NavLink>
           )}
           <NavLink to="/controlpanel/blog" className={navLinkClass}>
@@ -84,7 +93,7 @@ export const ControlPanelLayout: React.FC = () => {
  */
 export const ControlPanelIndexRedirect: React.FC = () => {
   const { isAdmin } = useAuth();
-  return <Navigate to={isAdmin ? '/controlpanel/website' : '/controlpanel/blog'} replace />;
+  return <Navigate to={isAdmin ? '/controlpanel/shop' : '/controlpanel/blog'} replace />;
 };
 
 export default ControlPanelLayout;
