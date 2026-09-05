@@ -7,6 +7,7 @@ export * from './auth.js';
 export * from './workshop.js';
 export * from './cms.js';
 export * from './orders.js';
+export * from './userAddresses.js';
 export * from './company.js';
 export * from './audit.js';
 export * from './notifications.js';

@@ -330,17 +330,359 @@ Orders placed on the public storefront. Customers order their own cart; admins m
 ```json
 {
   "customerName": "…", "phone": "09121234567",
-  "city": "تهران", "address": "…", "note": "optional",
+  "province": "تهران", "city": "تهران", "postalCode": "1234567890", "address": "…", "note": "optional",
   "paymentMethod": "cod",
   "lines": [{ "itemId": "<item-id>", "quantity": 1, "size": "M", "color": "مشکی" }]
 }
 ```
 
-`paymentMethod`: `cod` (پرداخت در محل) | `card_transfer` (کارت به کارت). Phone must match `^0\d{10}$`. **Stock is drawn from the item's `websiteQuantity` (shop pool)** — validated and decremented atomically; more units in the order than the shop pool holds → `400`.
+`paymentMethod`: `cod` (پرداخت در محل) | `card_transfer` (کارت به کارت). Phone must match `^0\d{10}# Polaris Style — API Reference
+
+REST API for the Polaris Style inventory management system. The backend serves the API and the frontend on the **same origin**.
+
+- **Production base URL**: `https://polarisstyle.ir/api`
+- **Local dev**: `http://localhost:3016/api` (or `http://localhost:5173/api` through the Vite proxy)
+- **Format**: JSON everywhere. Request bodies must be sent with `Content-Type: application/json`.
+- **Errors**: every error is `{ "error": "<Persian message>" }` with an appropriate HTTP status (400 validation, 401/403 auth, 404 not found, 500 internal, 503 database down).
+- **Route groups**: shared surfaces (auth, health, public storefront, blog CMS, website settings, company branding, customer orders) live directly under `/api/*`. The admin workshop module (items, sellers, consignments, payments, staff, owners, expenses, profit distribution, trash, audit logs, admin order management, notifications) lives under `/api/workshop/*` — every route there requires the `admin` role.
+
+---
+
+## Authentication
+
+Auth is handled by [better-auth](https://www.better-auth.com/) mounted at `/api/auth/*` (email/password + Google OAuth, with admin and bearer plugins).
+
+Session flow:
+
+1. `POST /api/auth/sign-up/email` — create an account
+2. `POST /api/auth/sign-in/email` — returns the session and sets the session cookie
+3. `GET /api/auth/get-session` — current session (or `null`)
+4. `POST /api/auth/sign-out` — invalidate the session
+
+Example:
+
+```bash
+curl -c cookies.txt -X POST https://polarisstyle.ir/api/auth/sign-in/email \
+  -H 'Content-Type: application/json' \
+  -d '{"email": "owner@polarisstyle.ir", "password": "…"}'
+```
+
+With the bearer plugin, an `Authorization: Bearer <session-token>` header works instead of cookies.
+
+### Roles
+
+| Role | Surface | Notes |
+| ---- | ------- | ----- |
+| `admin` | workshop panel `/workshop` + website management `/controlpanel` | full access; the better-auth admin plugin treats `admin` as its admin role |
+| `author` | `/controlpanel/blog` only | writes blog posts; no workshop data, no website settings |
+| `staff` | — (migrated) | legacy pre-role-model accounts; migration `0005` promotes every remaining `staff` user to `admin` |
+
+Route guards are enforced server-side (`requireAuth`, `requireRole(...)` in `src/routes/apiRoutes.ts`, with the workshop module mounted at `/api/workshop` through `workshopAdminChain`): the public storefront is anonymous-readable, order placement and `/orders/mine` need any authenticated user, blog CMS needs `admin` or `author`, and every workshop business route needs `admin`. The better-auth admin plugin endpoints live under `/api/auth/admin/*` (user list, create user, `set-role`, ban/unban, remove user) and require the `admin` role.
+
+---
+
+## Public Storefront (anonymous)
+
+Read-only catalog for the marketing website. Responses are filtered to marketing-safe fields — cost/consignment prices, stock levels and internal notes never leave these endpoints.
+
+### `GET /api/public/items` → catalog item list
+
+```json
+[{
+  "id": "…", "code": "PLR-477", "name": "…", "category": "coats_jackets",
+  "categoryLabel": "کت، کاپشن و پالتو", "retailPrice": 1099998,
+  "sizes": ["M", "L"], "colors": ["مشکی"], "fabric": "…",
+  "imageUrl": "…", "images": ["…"], "inStock": true
+}]
+```
+
+**Shop gating**: only items with `websiteQuantity > 0` (units allocated to the shop via the admin's Shop Management page) are listed. `inStock` is a boolean (`websiteQuantity > 0`) — exact unit counts of any channel never leave this endpoint.
+
+### `GET /api/public/categories` → `{ id, label }[]`
+
+### `GET /api/public/company` → public brand info (name, tagline, contact details)
+
+### `GET /api/public/blog` → published posts only (newest first)
+
+### `GET /api/public/blog/:slug` → one published post (`404` for drafts/unknown slugs)
+
+Blog post shape (shared with the CMS below):
+
+```json
+{
+  "id": "…", "slug": "ket-size-guide", "title": "…", "excerpt": "…",
+  "image": "/uploads/….jpg", "imageAlt": "…", "date": "۱۴۰۵/۰۶/۰۳",
+  "readTime": "۵ دقیقه مطالعه", "tags": ["راهنمای خرید"],
+  "body": [{ "heading": "optional h2", "text": "paragraph…" }],
+  "status": "published", "authorName": "مدیر سیستم"
+}
+```
+
+---
+
+## Health & Dashboard
+
+### `GET /api/health`
+
+Connection check. Verifies the **MySQL database** is reachable — not just that the Node process is up. The frontend's online-status monitor and the Settings ping test both use this endpoint.
+
+| Status | Meaning            | Body |
+| ------ | ------------------ | ---- |
+| `200`  | data can be saved  | `{"status":"ok","database":"connected","uptime":123.4,"timestamp":"2026-08-24T07:37:56.432Z"}` |
+| `503`  | DB unreachable     | `{"status":"error","database":"disconnected","uptime":123.4,"timestamp":"…"}` |
+
+### `GET /api/workshop/dashboard/stats` (admin)
+
+Aggregated numbers for the workshop dashboard. Admin-only — workshop data must not leak to website customers.
+
+```json
+{
+  "totalActiveDebt": 0,
+  "totalOverdueDebt": 0,
+  "todayPayments": 0,
+  "totalInventoryValue": 0,
+  "totalItemsInHands": 0,
+  "activeConsignmentsCount": 0,
+  "overdueConsignmentsCount": 0,
+  "lowStockItemsCount": 0,
+  "totalSellersCount": 0,
+  "activeSellersCount": 0,
+  "totalOutstandingDebt": 0,
+  "totalWorkshopCosts": 0,
+  "netWorkshopProfit": 0,
+  "totalConsignmentValue": 0,
+  "totalCollected": 0
+}
+```
+
+All amounts are in **toman**.
+
+---
+
+## Items & Categories
+
+### `GET /api/workshop/items` → `GarmentItem[]`
+
+```json
+[{
+  "id": "…", "code": "ITM-…", "name": "پالتو مردانه",
+  "category": "<category-id>", "categoryLabel": "پالتو",
+  "costPrice": 800000, "consignmentPrice": 1100000, "retailPrice": 1400000,
+  "stockQuantity": 12, "websiteQuantity": 3, "minStockThreshold": 3,
+  "sizes": ["L", "XL"], "colors": ["مشکی", "سرمه‌ای"], "fabric": "پشم",
+  "imageUrl": null, "images": [],
+  "createdAt": "…", "updatedAt": "…"
+}]
+```
+
+**Channel buckets** (invariant: total units = `stockQuantity` + `websiteQuantity` + seller-held units from open consignment lines):
+
+- `stockQuantity` — free warehouse pool (handovers and returns move this).
+- `websiteQuantity` — pool committed to the online shop; only `setShopAllocation` and the order flow change it. Website orders decrement it; cancelling an order restores it.
+- seller-held — derived per item from active consignment lines; never stored.
+
+### `POST /api/workshop/items` → `201 GarmentItem`
+
+| Field               | Type       | Required | Notes                       |
+| ------------------- | ---------- | -------- | --------------------------- |
+| `name`              | string     | ✅       |                             |
+| `category`          | string     | ✅       | category id                 |
+| `costPrice`         | number ≥ 0 | —        |                             |
+| `consignmentPrice`  | number ≥ 0 | —        | price given to the seller   |
+| `retailPrice`       | number ≥ 0 | —        |                             |
+| `stockQuantity`     | int ≥ 0    | —        |                             |
+| `minStockThreshold` | int ≥ 0    | —        | low-stock alert level       |
+| `sizes` / `colors`  | string[]   | —        |                             |
+| `fabric`            | string     | —        |                             |
+### `PUT /api/workshop/items/:id` → `GarmentItem`
+
+Partial update — any subset of the fields above. **`websiteQuantity` cannot be changed here** — it only moves through the locked transfer endpoint below.
+
+### `PUT /api/workshop/items/:id/shop-allocation` → `GarmentItem`
+
+Moves units between the free warehouse pool and the website shop pool. Row-locked: a concurrent handover or website order can never over-allocate.
+
+Body: `{ "websiteQuantity": <int ≥ 0> }` — the **absolute target** for the shop pool, not a delta. Raising it pulls `(target − current)` units out of `stockQuantity`; lowering returns the difference. Requesting more than the free warehouse pool can cover → `400` with a Persian message. Writes an audit entry (e.g. «۳ واحد کالای PLR-488 به فروشگاه آنلاین تخصیص یافت»).
+
+### `DELETE /api/workshop/items/:id` → `{ "message": "…" }`
+
+**Soft delete** — moves the item to the trash (see [Trash](#trash--recycle-bin)).
+
+### `GET /api/workshop/categories` → `{ id, label }[]`
+
+### `POST /api/workshop/categories` → `201 { id, label }`
+
+Body: `{ "label": "کاپشن" }`
+
+---
+
+## Sellers
+
+Hand-sellers (دست‌فروش) who receive goods on consignment.
+
+### `GET /api/workshop/sellers` → `Seller[]`
+
+### `GET /api/workshop/sellers/:id` → `Seller`
+
+```json
+{
+  "id": "…", "code": "SEL-…", "name": "…", "phone": "0912…",
+  "additionalPhones": [], "nationalCode": "…", "streetLocation": "…",
+  "hasGuarantee": true,
+  "guaranteeType": "promissory_note | cheque | national_card | trusted_guarantor",
+  "guaranteeAmount": 5000000, "guaranteeDetails": "…",
+  "creditLimit": 20000000,
+  "bankAccounts": [{ "bankName": "…", "cardNumber": "…", "shebaNumber": "…", "accountHolder": "…" }],
+  "currentDebt": 3500000,
+  "totalHandoversValue": 15000000, "totalPaid": 11500000,
+  "status": "active | suspended | settled",
+  "avatarUrl": null, "notes": null, "createdAt": "…"
+}
+```
+
+### `POST /api/workshop/sellers` → `201 Seller`
+
+Required: `name`, `phone`. Optional: everything else in the shape above (`guaranteeType` must be one of the four enum values when provided).
+
+### `PUT /api/workshop/sellers/:id` → `Seller`
+
+Partial update.
+
+### `DELETE /api/workshop/sellers/:id`
+
+Soft delete → trash.
+
+---
+
+## Consignments (Handovers / واگذاری)
+
+A consignment hands items over to a seller. Money flow: `totalAmount` (value handed over) → `returnedAmount` (unsold returns) → `netAmount` (what the seller owes) → `paidAmount` → `remainingAmount` (debt).
+
+### `GET /api/workshop/consignments` → `Consignment[]`
+
+```json
+[{
+  "id": "…", "code": "HND-…", "sellerId": "…", "sellerName": "…",
+  "date": "…", "dueDate": "…",
+  "status": "active | partially_settled | settled | overdue",
+  "items": [{
+    "itemId": "…", "itemName": "…", "itemCode": "…",
+    "quantity": 5, "returnedQuantity": 1, "soldQuantity": 2,
+    "unitPrice": 1100000, "totalPrice": 5500000,
+    "selectedSize": "L", "selectedColor": "مشکی"
+  }],
+  "totalAmount": 5500000, "returnedAmount": 1100000, "netAmount": 4400000,
+  "paidAmount": 2000000, "remainingAmount": 2400000,
+  "notes": null, "handedOverBy": "…", "createdAt": "…"
+}]
+```
+
+### `POST /api/workshop/consignments` → `201 Consignment`
+
+```json
+{
+  "sellerId": "<seller id>",
+  "dueDate": "2026-09-30",
+  "notes": "optional",
+  "itemsList": [
+    { "itemId": "<item id>", "quantity": 5, "unitPrice": 1100000,
+      "selectedSize": "L", "selectedColor": "مشکی" }
+  ]
+}
+```
+
+- `itemsList` needs at least one line; quantities are positive integers.
+- Quantities are deducted from warehouse stock.
+
+### `POST /api/workshop/consignments/return` → `201`
+
+Return unsold goods from a consignment.
+
+```json
+{
+  "consignmentId": "<consignment id>",
+  "returnItems": [
+    { "itemId": "<item id>", "quantity": 2, "condition": "healthy", "reason": "فروش نرفته" }
+  ],
+  "notes": "optional"
+}
+```
+
+- `condition`: `"healthy"` → quantity goes **back into warehouse stock**; `"damaged"` → written off the consignment but not restocked.
+- Cannot return more than the remaining (not yet returned/sold) quantity per line.
+- Response: `{ "message", "returnRecord": ConsignmentReturn, "updatedConsignment": Consignment }`.
+
+### `GET /api/workshop/consignments/returns` → `ConsignmentReturn[]`
+
+All return records, newest first — powers the Returns tab (مرجوعی‌ها).
+
+### `DELETE /api/workshop/consignments/:id`
+
+Soft delete → trash.
+
+---
+
+## Payments
+
+### `GET /api/workshop/payments` → `PaymentRecord[]`
+
+```json
+[{
+  "id": "…", "code": "PAY-…", "sellerId": "…", "sellerName": "…",
+  "amount": 2000000, "date": "…",
+  "paymentMethod": "cash | card | bank_transfer | pos",
+  "trackingNumber": null,
+  "allocations": [{
+    "consignmentId": "…", "consignmentCode": "…", "consignmentDate": "…",
+    "allocatedAmount": 1500000,
+    "remainingDebtBefore": 2400000, "remainingDebtAfter": 900000,
+    "isFullySettled": false
+  }],
+  "unallocatedAmount": 500000,
+  "recordedBy": "…", "notes": null, "createdAt": "…"
+}]
+```
+
+### `POST /api/workshop/payments` → `201 PaymentRecord`
+
+```json
+{
+  "sellerId": "<seller id>",
+  "amount": 2000000,
+  "paymentMethod": "card",
+  "trackingNumber": "optional",
+  "notes": "optional"
+}
+```
+
+**Automatic chain settlement:** the payment is allocated across the seller's open consignments in chronological order (oldest debt first). Each allocation reduces that consignment's `remainingAmount` and the seller's `currentDebt`; leftovers appear in `unallocatedAmount`.
+
+---
+
+## Store Orders (فروشگاه)
+
+Orders placed on the public storefront. Customers order their own cart; admins manage every order. Prices are re-computed server-side from the items table inside a transaction — client-side totals are estimates only. Cancelling an order restocks its lines.
+
+### `POST /api/orders` → `201 Order` (any authenticated user)
+
+```json
+{
+  "customerName": "…", "phone": "09121234567",
+  "province": "تهران", "city": "تهران", "postalCode": "1234567890", "address": "…", "note": "optional",
+  "paymentMethod": "cod",
+  "lines": [{ "itemId": "<item-id>", "quantity": 1, "size": "M", "color": "مشکی" }]
+}
+```
+
+. `province` and `city` are required; `postalCode` is optional but must be exactly 10 digits when provided. The shipping fields are snapshotted onto the order at creation time. **Stock is drawn from the item's `websiteQuantity` (shop pool)** — validated and decremented atomically; more units in the order than the shop pool holds → `400`.
 
 ### `GET /api/orders/mine` → `Order[]` (any authenticated user)
 
 The caller's own orders, newest first — powers the customer profile at `/dashboard`.
+
+### `GET /api/orders/mine/:id` → `Order` (any authenticated user)
+
+One of the caller's own orders (404 for anyone else's id) — used by the order-tracking timeline in the customer dashboard.
 
 ### `GET /api/workshop/orders` → `Order[]` (admin)
 
@@ -348,20 +690,757 @@ All orders with customer details and line items.
 
 ### `PUT /api/workshop/orders/:id` → `Order` (admin)
 
-Body: `{ "status": "…" }` with one of `pending` | `confirmed` | `preparing` | `shipped` | `delivered` | `cancelled`. Moving to `cancelled` returns the units to the item's `websiteQuantity` (shop pool); un-cancelling takes them back out.
+Body: `{ "status": "…", "trackingCode": "RA123456789IR" }` with one of `pending` | `confirmed` | `preparing` | `shipped` | `delivered` | `cancelled`. `trackingCode` (optional, ≤64 chars) is stored when transitioning to `shipped` and shown to the customer as کد رهگیری. Moving to `delivered` stamps `deliveredAt`; re-opening a delivered order clears the stamp. Moving to `cancelled` returns the units to the item's `websiteQuantity` (shop pool); un-cancelling takes them back out.
 
 Order shape:
 
 ```json
 {
   "id": "…", "code": "ORD-2", "userId": "…", "customerName": "…",
-  "phone": "0912…", "city": "تهران", "address": "…", "note": null,
+  "phone": "0912…", "province": "تهران", "city": "تهران", "postalCode": "1234567890", "address": "…", "note": null,
+  "trackingCode": "RA…", "deliveredAt": null,
   "paymentMethod": "cod", "status": "pending",
   "totalPrice": 1099998,
   "items": [{ "itemId": "…", "name": "…", "quantity": 1, "unitPrice": 1099998, "size": "M", "color": "مشکی" }],
   "createdAt": "…"
 }
 ```
+
+---
+
+## Customer Address Book (نشانی‌های ارسال)
+
+Saved delivery addresses shown in the customer profile (`/dashboard` → پروفایل) and used to pre-fill checkout. Every route is owner-scoped: a user only ever sees and edits their own addresses.
+
+### `GET /api/addresses` → `UserAddress[]` (any authenticated user)
+
+The caller's addresses, default first, then newest. The default address pre-fills the checkout form.
+
+### `POST /api/addresses` → `201 UserAddress`
+
+```json
+{
+  "label": "خانه", "receiverName": "سارا محمدی", "phone": "09121234567",
+  "province": "تهران", "city": "تهران", "postalCode": "1234567890",
+  "address": "خیابان ولیعصر، کوچه بهار، پلاک ۱۲", "isDefault": true
+}
+```
+
+`label` (≤40 chars) is the display nickname; `phone` must match `^0\d{10}# Polaris Style — API Reference
+
+REST API for the Polaris Style inventory management system. The backend serves the API and the frontend on the **same origin**.
+
+- **Production base URL**: `https://polarisstyle.ir/api`
+- **Local dev**: `http://localhost:3016/api` (or `http://localhost:5173/api` through the Vite proxy)
+- **Format**: JSON everywhere. Request bodies must be sent with `Content-Type: application/json`.
+- **Errors**: every error is `{ "error": "<Persian message>" }` with an appropriate HTTP status (400 validation, 401/403 auth, 404 not found, 500 internal, 503 database down).
+- **Route groups**: shared surfaces (auth, health, public storefront, blog CMS, website settings, company branding, customer orders) live directly under `/api/*`. The admin workshop module (items, sellers, consignments, payments, staff, owners, expenses, profit distribution, trash, audit logs, admin order management, notifications) lives under `/api/workshop/*` — every route there requires the `admin` role.
+
+---
+
+## Authentication
+
+Auth is handled by [better-auth](https://www.better-auth.com/) mounted at `/api/auth/*` (email/password + Google OAuth, with admin and bearer plugins).
+
+Session flow:
+
+1. `POST /api/auth/sign-up/email` — create an account
+2. `POST /api/auth/sign-in/email` — returns the session and sets the session cookie
+3. `GET /api/auth/get-session` — current session (or `null`)
+4. `POST /api/auth/sign-out` — invalidate the session
+
+Example:
+
+```bash
+curl -c cookies.txt -X POST https://polarisstyle.ir/api/auth/sign-in/email \
+  -H 'Content-Type: application/json' \
+  -d '{"email": "owner@polarisstyle.ir", "password": "…"}'
+```
+
+With the bearer plugin, an `Authorization: Bearer <session-token>` header works instead of cookies.
+
+### Roles
+
+| Role | Surface | Notes |
+| ---- | ------- | ----- |
+| `admin` | workshop panel `/workshop` + website management `/controlpanel` | full access; the better-auth admin plugin treats `admin` as its admin role |
+| `author` | `/controlpanel/blog` only | writes blog posts; no workshop data, no website settings |
+| `staff` | — (migrated) | legacy pre-role-model accounts; migration `0005` promotes every remaining `staff` user to `admin` |
+
+Route guards are enforced server-side (`requireAuth`, `requireRole(...)` in `src/routes/apiRoutes.ts`, with the workshop module mounted at `/api/workshop` through `workshopAdminChain`): the public storefront is anonymous-readable, order placement and `/orders/mine` need any authenticated user, blog CMS needs `admin` or `author`, and every workshop business route needs `admin`. The better-auth admin plugin endpoints live under `/api/auth/admin/*` (user list, create user, `set-role`, ban/unban, remove user) and require the `admin` role.
+
+---
+
+## Public Storefront (anonymous)
+
+Read-only catalog for the marketing website. Responses are filtered to marketing-safe fields — cost/consignment prices, stock levels and internal notes never leave these endpoints.
+
+### `GET /api/public/items` → catalog item list
+
+```json
+[{
+  "id": "…", "code": "PLR-477", "name": "…", "category": "coats_jackets",
+  "categoryLabel": "کت، کاپشن و پالتو", "retailPrice": 1099998,
+  "sizes": ["M", "L"], "colors": ["مشکی"], "fabric": "…",
+  "imageUrl": "…", "images": ["…"], "inStock": true
+}]
+```
+
+**Shop gating**: only items with `websiteQuantity > 0` (units allocated to the shop via the admin's Shop Management page) are listed. `inStock` is a boolean (`websiteQuantity > 0`) — exact unit counts of any channel never leave this endpoint.
+
+### `GET /api/public/categories` → `{ id, label }[]`
+
+### `GET /api/public/company` → public brand info (name, tagline, contact details)
+
+### `GET /api/public/blog` → published posts only (newest first)
+
+### `GET /api/public/blog/:slug` → one published post (`404` for drafts/unknown slugs)
+
+Blog post shape (shared with the CMS below):
+
+```json
+{
+  "id": "…", "slug": "ket-size-guide", "title": "…", "excerpt": "…",
+  "image": "/uploads/….jpg", "imageAlt": "…", "date": "۱۴۰۵/۰۶/۰۳",
+  "readTime": "۵ دقیقه مطالعه", "tags": ["راهنمای خرید"],
+  "body": [{ "heading": "optional h2", "text": "paragraph…" }],
+  "status": "published", "authorName": "مدیر سیستم"
+}
+```
+
+---
+
+## Health & Dashboard
+
+### `GET /api/health`
+
+Connection check. Verifies the **MySQL database** is reachable — not just that the Node process is up. The frontend's online-status monitor and the Settings ping test both use this endpoint.
+
+| Status | Meaning            | Body |
+| ------ | ------------------ | ---- |
+| `200`  | data can be saved  | `{"status":"ok","database":"connected","uptime":123.4,"timestamp":"2026-08-24T07:37:56.432Z"}` |
+| `503`  | DB unreachable     | `{"status":"error","database":"disconnected","uptime":123.4,"timestamp":"…"}` |
+
+### `GET /api/workshop/dashboard/stats` (admin)
+
+Aggregated numbers for the workshop dashboard. Admin-only — workshop data must not leak to website customers.
+
+```json
+{
+  "totalActiveDebt": 0,
+  "totalOverdueDebt": 0,
+  "todayPayments": 0,
+  "totalInventoryValue": 0,
+  "totalItemsInHands": 0,
+  "activeConsignmentsCount": 0,
+  "overdueConsignmentsCount": 0,
+  "lowStockItemsCount": 0,
+  "totalSellersCount": 0,
+  "activeSellersCount": 0,
+  "totalOutstandingDebt": 0,
+  "totalWorkshopCosts": 0,
+  "netWorkshopProfit": 0,
+  "totalConsignmentValue": 0,
+  "totalCollected": 0
+}
+```
+
+All amounts are in **toman**.
+
+---
+
+## Items & Categories
+
+### `GET /api/workshop/items` → `GarmentItem[]`
+
+```json
+[{
+  "id": "…", "code": "ITM-…", "name": "پالتو مردانه",
+  "category": "<category-id>", "categoryLabel": "پالتو",
+  "costPrice": 800000, "consignmentPrice": 1100000, "retailPrice": 1400000,
+  "stockQuantity": 12, "websiteQuantity": 3, "minStockThreshold": 3,
+  "sizes": ["L", "XL"], "colors": ["مشکی", "سرمه‌ای"], "fabric": "پشم",
+  "imageUrl": null, "images": [],
+  "createdAt": "…", "updatedAt": "…"
+}]
+```
+
+**Channel buckets** (invariant: total units = `stockQuantity` + `websiteQuantity` + seller-held units from open consignment lines):
+
+- `stockQuantity` — free warehouse pool (handovers and returns move this).
+- `websiteQuantity` — pool committed to the online shop; only `setShopAllocation` and the order flow change it. Website orders decrement it; cancelling an order restores it.
+- seller-held — derived per item from active consignment lines; never stored.
+
+### `POST /api/workshop/items` → `201 GarmentItem`
+
+| Field               | Type       | Required | Notes                       |
+| ------------------- | ---------- | -------- | --------------------------- |
+| `name`              | string     | ✅       |                             |
+| `category`          | string     | ✅       | category id                 |
+| `costPrice`         | number ≥ 0 | —        |                             |
+| `consignmentPrice`  | number ≥ 0 | —        | price given to the seller   |
+| `retailPrice`       | number ≥ 0 | —        |                             |
+| `stockQuantity`     | int ≥ 0    | —        |                             |
+| `minStockThreshold` | int ≥ 0    | —        | low-stock alert level       |
+| `sizes` / `colors`  | string[]   | —        |                             |
+| `fabric`            | string     | —        |                             |
+### `PUT /api/workshop/items/:id` → `GarmentItem`
+
+Partial update — any subset of the fields above. **`websiteQuantity` cannot be changed here** — it only moves through the locked transfer endpoint below.
+
+### `PUT /api/workshop/items/:id/shop-allocation` → `GarmentItem`
+
+Moves units between the free warehouse pool and the website shop pool. Row-locked: a concurrent handover or website order can never over-allocate.
+
+Body: `{ "websiteQuantity": <int ≥ 0> }` — the **absolute target** for the shop pool, not a delta. Raising it pulls `(target − current)` units out of `stockQuantity`; lowering returns the difference. Requesting more than the free warehouse pool can cover → `400` with a Persian message. Writes an audit entry (e.g. «۳ واحد کالای PLR-488 به فروشگاه آنلاین تخصیص یافت»).
+
+### `DELETE /api/workshop/items/:id` → `{ "message": "…" }`
+
+**Soft delete** — moves the item to the trash (see [Trash](#trash--recycle-bin)).
+
+### `GET /api/workshop/categories` → `{ id, label }[]`
+
+### `POST /api/workshop/categories` → `201 { id, label }`
+
+Body: `{ "label": "کاپشن" }`
+
+---
+
+## Sellers
+
+Hand-sellers (دست‌فروش) who receive goods on consignment.
+
+### `GET /api/workshop/sellers` → `Seller[]`
+
+### `GET /api/workshop/sellers/:id` → `Seller`
+
+```json
+{
+  "id": "…", "code": "SEL-…", "name": "…", "phone": "0912…",
+  "additionalPhones": [], "nationalCode": "…", "streetLocation": "…",
+  "hasGuarantee": true,
+  "guaranteeType": "promissory_note | cheque | national_card | trusted_guarantor",
+  "guaranteeAmount": 5000000, "guaranteeDetails": "…",
+  "creditLimit": 20000000,
+  "bankAccounts": [{ "bankName": "…", "cardNumber": "…", "shebaNumber": "…", "accountHolder": "…" }],
+  "currentDebt": 3500000,
+  "totalHandoversValue": 15000000, "totalPaid": 11500000,
+  "status": "active | suspended | settled",
+  "avatarUrl": null, "notes": null, "createdAt": "…"
+}
+```
+
+### `POST /api/workshop/sellers` → `201 Seller`
+
+Required: `name`, `phone`. Optional: everything else in the shape above (`guaranteeType` must be one of the four enum values when provided).
+
+### `PUT /api/workshop/sellers/:id` → `Seller`
+
+Partial update.
+
+### `DELETE /api/workshop/sellers/:id`
+
+Soft delete → trash.
+
+---
+
+## Consignments (Handovers / واگذاری)
+
+A consignment hands items over to a seller. Money flow: `totalAmount` (value handed over) → `returnedAmount` (unsold returns) → `netAmount` (what the seller owes) → `paidAmount` → `remainingAmount` (debt).
+
+### `GET /api/workshop/consignments` → `Consignment[]`
+
+```json
+[{
+  "id": "…", "code": "HND-…", "sellerId": "…", "sellerName": "…",
+  "date": "…", "dueDate": "…",
+  "status": "active | partially_settled | settled | overdue",
+  "items": [{
+    "itemId": "…", "itemName": "…", "itemCode": "…",
+    "quantity": 5, "returnedQuantity": 1, "soldQuantity": 2,
+    "unitPrice": 1100000, "totalPrice": 5500000,
+    "selectedSize": "L", "selectedColor": "مشکی"
+  }],
+  "totalAmount": 5500000, "returnedAmount": 1100000, "netAmount": 4400000,
+  "paidAmount": 2000000, "remainingAmount": 2400000,
+  "notes": null, "handedOverBy": "…", "createdAt": "…"
+}]
+```
+
+### `POST /api/workshop/consignments` → `201 Consignment`
+
+```json
+{
+  "sellerId": "<seller id>",
+  "dueDate": "2026-09-30",
+  "notes": "optional",
+  "itemsList": [
+    { "itemId": "<item id>", "quantity": 5, "unitPrice": 1100000,
+      "selectedSize": "L", "selectedColor": "مشکی" }
+  ]
+}
+```
+
+- `itemsList` needs at least one line; quantities are positive integers.
+- Quantities are deducted from warehouse stock.
+
+### `POST /api/workshop/consignments/return` → `201`
+
+Return unsold goods from a consignment.
+
+```json
+{
+  "consignmentId": "<consignment id>",
+  "returnItems": [
+    { "itemId": "<item id>", "quantity": 2, "condition": "healthy", "reason": "فروش نرفته" }
+  ],
+  "notes": "optional"
+}
+```
+
+- `condition`: `"healthy"` → quantity goes **back into warehouse stock**; `"damaged"` → written off the consignment but not restocked.
+- Cannot return more than the remaining (not yet returned/sold) quantity per line.
+- Response: `{ "message", "returnRecord": ConsignmentReturn, "updatedConsignment": Consignment }`.
+
+### `GET /api/workshop/consignments/returns` → `ConsignmentReturn[]`
+
+All return records, newest first — powers the Returns tab (مرجوعی‌ها).
+
+### `DELETE /api/workshop/consignments/:id`
+
+Soft delete → trash.
+
+---
+
+## Payments
+
+### `GET /api/workshop/payments` → `PaymentRecord[]`
+
+```json
+[{
+  "id": "…", "code": "PAY-…", "sellerId": "…", "sellerName": "…",
+  "amount": 2000000, "date": "…",
+  "paymentMethod": "cash | card | bank_transfer | pos",
+  "trackingNumber": null,
+  "allocations": [{
+    "consignmentId": "…", "consignmentCode": "…", "consignmentDate": "…",
+    "allocatedAmount": 1500000,
+    "remainingDebtBefore": 2400000, "remainingDebtAfter": 900000,
+    "isFullySettled": false
+  }],
+  "unallocatedAmount": 500000,
+  "recordedBy": "…", "notes": null, "createdAt": "…"
+}]
+```
+
+### `POST /api/workshop/payments` → `201 PaymentRecord`
+
+```json
+{
+  "sellerId": "<seller id>",
+  "amount": 2000000,
+  "paymentMethod": "card",
+  "trackingNumber": "optional",
+  "notes": "optional"
+}
+```
+
+**Automatic chain settlement:** the payment is allocated across the seller's open consignments in chronological order (oldest debt first). Each allocation reduces that consignment's `remainingAmount` and the seller's `currentDebt`; leftovers appear in `unallocatedAmount`.
+
+---
+
+## Store Orders (فروشگاه)
+
+Orders placed on the public storefront. Customers order their own cart; admins manage every order. Prices are re-computed server-side from the items table inside a transaction — client-side totals are estimates only. Cancelling an order restocks its lines.
+
+### `POST /api/orders` → `201 Order` (any authenticated user)
+
+```json
+{
+  "customerName": "…", "phone": "09121234567",
+  "province": "تهران", "city": "تهران", "postalCode": "1234567890", "address": "…", "note": "optional",
+  "paymentMethod": "cod",
+  "lines": [{ "itemId": "<item-id>", "quantity": 1, "size": "M", "color": "مشکی" }]
+}
+```
+
+`paymentMethod`: `cod` (پرداخت در محل) | `card_transfer` (کارت به کارت). Phone must match `^0\d{10}# Polaris Style — API Reference
+
+REST API for the Polaris Style inventory management system. The backend serves the API and the frontend on the **same origin**.
+
+- **Production base URL**: `https://polarisstyle.ir/api`
+- **Local dev**: `http://localhost:3016/api` (or `http://localhost:5173/api` through the Vite proxy)
+- **Format**: JSON everywhere. Request bodies must be sent with `Content-Type: application/json`.
+- **Errors**: every error is `{ "error": "<Persian message>" }` with an appropriate HTTP status (400 validation, 401/403 auth, 404 not found, 500 internal, 503 database down).
+- **Route groups**: shared surfaces (auth, health, public storefront, blog CMS, website settings, company branding, customer orders) live directly under `/api/*`. The admin workshop module (items, sellers, consignments, payments, staff, owners, expenses, profit distribution, trash, audit logs, admin order management, notifications) lives under `/api/workshop/*` — every route there requires the `admin` role.
+
+---
+
+## Authentication
+
+Auth is handled by [better-auth](https://www.better-auth.com/) mounted at `/api/auth/*` (email/password + Google OAuth, with admin and bearer plugins).
+
+Session flow:
+
+1. `POST /api/auth/sign-up/email` — create an account
+2. `POST /api/auth/sign-in/email` — returns the session and sets the session cookie
+3. `GET /api/auth/get-session` — current session (or `null`)
+4. `POST /api/auth/sign-out` — invalidate the session
+
+Example:
+
+```bash
+curl -c cookies.txt -X POST https://polarisstyle.ir/api/auth/sign-in/email \
+  -H 'Content-Type: application/json' \
+  -d '{"email": "owner@polarisstyle.ir", "password": "…"}'
+```
+
+With the bearer plugin, an `Authorization: Bearer <session-token>` header works instead of cookies.
+
+### Roles
+
+| Role | Surface | Notes |
+| ---- | ------- | ----- |
+| `admin` | workshop panel `/workshop` + website management `/controlpanel` | full access; the better-auth admin plugin treats `admin` as its admin role |
+| `author` | `/controlpanel/blog` only | writes blog posts; no workshop data, no website settings |
+| `staff` | — (migrated) | legacy pre-role-model accounts; migration `0005` promotes every remaining `staff` user to `admin` |
+
+Route guards are enforced server-side (`requireAuth`, `requireRole(...)` in `src/routes/apiRoutes.ts`, with the workshop module mounted at `/api/workshop` through `workshopAdminChain`): the public storefront is anonymous-readable, order placement and `/orders/mine` need any authenticated user, blog CMS needs `admin` or `author`, and every workshop business route needs `admin`. The better-auth admin plugin endpoints live under `/api/auth/admin/*` (user list, create user, `set-role`, ban/unban, remove user) and require the `admin` role.
+
+---
+
+## Public Storefront (anonymous)
+
+Read-only catalog for the marketing website. Responses are filtered to marketing-safe fields — cost/consignment prices, stock levels and internal notes never leave these endpoints.
+
+### `GET /api/public/items` → catalog item list
+
+```json
+[{
+  "id": "…", "code": "PLR-477", "name": "…", "category": "coats_jackets",
+  "categoryLabel": "کت، کاپشن و پالتو", "retailPrice": 1099998,
+  "sizes": ["M", "L"], "colors": ["مشکی"], "fabric": "…",
+  "imageUrl": "…", "images": ["…"], "inStock": true
+}]
+```
+
+**Shop gating**: only items with `websiteQuantity > 0` (units allocated to the shop via the admin's Shop Management page) are listed. `inStock` is a boolean (`websiteQuantity > 0`) — exact unit counts of any channel never leave this endpoint.
+
+### `GET /api/public/categories` → `{ id, label }[]`
+
+### `GET /api/public/company` → public brand info (name, tagline, contact details)
+
+### `GET /api/public/blog` → published posts only (newest first)
+
+### `GET /api/public/blog/:slug` → one published post (`404` for drafts/unknown slugs)
+
+Blog post shape (shared with the CMS below):
+
+```json
+{
+  "id": "…", "slug": "ket-size-guide", "title": "…", "excerpt": "…",
+  "image": "/uploads/….jpg", "imageAlt": "…", "date": "۱۴۰۵/۰۶/۰۳",
+  "readTime": "۵ دقیقه مطالعه", "tags": ["راهنمای خرید"],
+  "body": [{ "heading": "optional h2", "text": "paragraph…" }],
+  "status": "published", "authorName": "مدیر سیستم"
+}
+```
+
+---
+
+## Health & Dashboard
+
+### `GET /api/health`
+
+Connection check. Verifies the **MySQL database** is reachable — not just that the Node process is up. The frontend's online-status monitor and the Settings ping test both use this endpoint.
+
+| Status | Meaning            | Body |
+| ------ | ------------------ | ---- |
+| `200`  | data can be saved  | `{"status":"ok","database":"connected","uptime":123.4,"timestamp":"2026-08-24T07:37:56.432Z"}` |
+| `503`  | DB unreachable     | `{"status":"error","database":"disconnected","uptime":123.4,"timestamp":"…"}` |
+
+### `GET /api/workshop/dashboard/stats` (admin)
+
+Aggregated numbers for the workshop dashboard. Admin-only — workshop data must not leak to website customers.
+
+```json
+{
+  "totalActiveDebt": 0,
+  "totalOverdueDebt": 0,
+  "todayPayments": 0,
+  "totalInventoryValue": 0,
+  "totalItemsInHands": 0,
+  "activeConsignmentsCount": 0,
+  "overdueConsignmentsCount": 0,
+  "lowStockItemsCount": 0,
+  "totalSellersCount": 0,
+  "activeSellersCount": 0,
+  "totalOutstandingDebt": 0,
+  "totalWorkshopCosts": 0,
+  "netWorkshopProfit": 0,
+  "totalConsignmentValue": 0,
+  "totalCollected": 0
+}
+```
+
+All amounts are in **toman**.
+
+---
+
+## Items & Categories
+
+### `GET /api/workshop/items` → `GarmentItem[]`
+
+```json
+[{
+  "id": "…", "code": "ITM-…", "name": "پالتو مردانه",
+  "category": "<category-id>", "categoryLabel": "پالتو",
+  "costPrice": 800000, "consignmentPrice": 1100000, "retailPrice": 1400000,
+  "stockQuantity": 12, "websiteQuantity": 3, "minStockThreshold": 3,
+  "sizes": ["L", "XL"], "colors": ["مشکی", "سرمه‌ای"], "fabric": "پشم",
+  "imageUrl": null, "images": [],
+  "createdAt": "…", "updatedAt": "…"
+}]
+```
+
+**Channel buckets** (invariant: total units = `stockQuantity` + `websiteQuantity` + seller-held units from open consignment lines):
+
+- `stockQuantity` — free warehouse pool (handovers and returns move this).
+- `websiteQuantity` — pool committed to the online shop; only `setShopAllocation` and the order flow change it. Website orders decrement it; cancelling an order restores it.
+- seller-held — derived per item from active consignment lines; never stored.
+
+### `POST /api/workshop/items` → `201 GarmentItem`
+
+| Field               | Type       | Required | Notes                       |
+| ------------------- | ---------- | -------- | --------------------------- |
+| `name`              | string     | ✅       |                             |
+| `category`          | string     | ✅       | category id                 |
+| `costPrice`         | number ≥ 0 | —        |                             |
+| `consignmentPrice`  | number ≥ 0 | —        | price given to the seller   |
+| `retailPrice`       | number ≥ 0 | —        |                             |
+| `stockQuantity`     | int ≥ 0    | —        |                             |
+| `minStockThreshold` | int ≥ 0    | —        | low-stock alert level       |
+| `sizes` / `colors`  | string[]   | —        |                             |
+| `fabric`            | string     | —        |                             |
+### `PUT /api/workshop/items/:id` → `GarmentItem`
+
+Partial update — any subset of the fields above. **`websiteQuantity` cannot be changed here** — it only moves through the locked transfer endpoint below.
+
+### `PUT /api/workshop/items/:id/shop-allocation` → `GarmentItem`
+
+Moves units between the free warehouse pool and the website shop pool. Row-locked: a concurrent handover or website order can never over-allocate.
+
+Body: `{ "websiteQuantity": <int ≥ 0> }` — the **absolute target** for the shop pool, not a delta. Raising it pulls `(target − current)` units out of `stockQuantity`; lowering returns the difference. Requesting more than the free warehouse pool can cover → `400` with a Persian message. Writes an audit entry (e.g. «۳ واحد کالای PLR-488 به فروشگاه آنلاین تخصیص یافت»).
+
+### `DELETE /api/workshop/items/:id` → `{ "message": "…" }`
+
+**Soft delete** — moves the item to the trash (see [Trash](#trash--recycle-bin)).
+
+### `GET /api/workshop/categories` → `{ id, label }[]`
+
+### `POST /api/workshop/categories` → `201 { id, label }`
+
+Body: `{ "label": "کاپشن" }`
+
+---
+
+## Sellers
+
+Hand-sellers (دست‌فروش) who receive goods on consignment.
+
+### `GET /api/workshop/sellers` → `Seller[]`
+
+### `GET /api/workshop/sellers/:id` → `Seller`
+
+```json
+{
+  "id": "…", "code": "SEL-…", "name": "…", "phone": "0912…",
+  "additionalPhones": [], "nationalCode": "…", "streetLocation": "…",
+  "hasGuarantee": true,
+  "guaranteeType": "promissory_note | cheque | national_card | trusted_guarantor",
+  "guaranteeAmount": 5000000, "guaranteeDetails": "…",
+  "creditLimit": 20000000,
+  "bankAccounts": [{ "bankName": "…", "cardNumber": "…", "shebaNumber": "…", "accountHolder": "…" }],
+  "currentDebt": 3500000,
+  "totalHandoversValue": 15000000, "totalPaid": 11500000,
+  "status": "active | suspended | settled",
+  "avatarUrl": null, "notes": null, "createdAt": "…"
+}
+```
+
+### `POST /api/workshop/sellers` → `201 Seller`
+
+Required: `name`, `phone`. Optional: everything else in the shape above (`guaranteeType` must be one of the four enum values when provided).
+
+### `PUT /api/workshop/sellers/:id` → `Seller`
+
+Partial update.
+
+### `DELETE /api/workshop/sellers/:id`
+
+Soft delete → trash.
+
+---
+
+## Consignments (Handovers / واگذاری)
+
+A consignment hands items over to a seller. Money flow: `totalAmount` (value handed over) → `returnedAmount` (unsold returns) → `netAmount` (what the seller owes) → `paidAmount` → `remainingAmount` (debt).
+
+### `GET /api/workshop/consignments` → `Consignment[]`
+
+```json
+[{
+  "id": "…", "code": "HND-…", "sellerId": "…", "sellerName": "…",
+  "date": "…", "dueDate": "…",
+  "status": "active | partially_settled | settled | overdue",
+  "items": [{
+    "itemId": "…", "itemName": "…", "itemCode": "…",
+    "quantity": 5, "returnedQuantity": 1, "soldQuantity": 2,
+    "unitPrice": 1100000, "totalPrice": 5500000,
+    "selectedSize": "L", "selectedColor": "مشکی"
+  }],
+  "totalAmount": 5500000, "returnedAmount": 1100000, "netAmount": 4400000,
+  "paidAmount": 2000000, "remainingAmount": 2400000,
+  "notes": null, "handedOverBy": "…", "createdAt": "…"
+}]
+```
+
+### `POST /api/workshop/consignments` → `201 Consignment`
+
+```json
+{
+  "sellerId": "<seller id>",
+  "dueDate": "2026-09-30",
+  "notes": "optional",
+  "itemsList": [
+    { "itemId": "<item id>", "quantity": 5, "unitPrice": 1100000,
+      "selectedSize": "L", "selectedColor": "مشکی" }
+  ]
+}
+```
+
+- `itemsList` needs at least one line; quantities are positive integers.
+- Quantities are deducted from warehouse stock.
+
+### `POST /api/workshop/consignments/return` → `201`
+
+Return unsold goods from a consignment.
+
+```json
+{
+  "consignmentId": "<consignment id>",
+  "returnItems": [
+    { "itemId": "<item id>", "quantity": 2, "condition": "healthy", "reason": "فروش نرفته" }
+  ],
+  "notes": "optional"
+}
+```
+
+- `condition`: `"healthy"` → quantity goes **back into warehouse stock**; `"damaged"` → written off the consignment but not restocked.
+- Cannot return more than the remaining (not yet returned/sold) quantity per line.
+- Response: `{ "message", "returnRecord": ConsignmentReturn, "updatedConsignment": Consignment }`.
+
+### `GET /api/workshop/consignments/returns` → `ConsignmentReturn[]`
+
+All return records, newest first — powers the Returns tab (مرجوعی‌ها).
+
+### `DELETE /api/workshop/consignments/:id`
+
+Soft delete → trash.
+
+---
+
+## Payments
+
+### `GET /api/workshop/payments` → `PaymentRecord[]`
+
+```json
+[{
+  "id": "…", "code": "PAY-…", "sellerId": "…", "sellerName": "…",
+  "amount": 2000000, "date": "…",
+  "paymentMethod": "cash | card | bank_transfer | pos",
+  "trackingNumber": null,
+  "allocations": [{
+    "consignmentId": "…", "consignmentCode": "…", "consignmentDate": "…",
+    "allocatedAmount": 1500000,
+    "remainingDebtBefore": 2400000, "remainingDebtAfter": 900000,
+    "isFullySettled": false
+  }],
+  "unallocatedAmount": 500000,
+  "recordedBy": "…", "notes": null, "createdAt": "…"
+}]
+```
+
+### `POST /api/workshop/payments` → `201 PaymentRecord`
+
+```json
+{
+  "sellerId": "<seller id>",
+  "amount": 2000000,
+  "paymentMethod": "card",
+  "trackingNumber": "optional",
+  "notes": "optional"
+}
+```
+
+**Automatic chain settlement:** the payment is allocated across the seller's open consignments in chronological order (oldest debt first). Each allocation reduces that consignment's `remainingAmount` and the seller's `currentDebt`; leftovers appear in `unallocatedAmount`.
+
+---
+
+## Store Orders (فروشگاه)
+
+Orders placed on the public storefront. Customers order their own cart; admins manage every order. Prices are re-computed server-side from the items table inside a transaction — client-side totals are estimates only. Cancelling an order restocks its lines.
+
+### `POST /api/orders` → `201 Order` (any authenticated user)
+
+```json
+{
+  "customerName": "…", "phone": "09121234567",
+  "province": "تهران", "city": "تهران", "postalCode": "1234567890", "address": "…", "note": "optional",
+  "paymentMethod": "cod",
+  "lines": [{ "itemId": "<item-id>", "quantity": 1, "size": "M", "color": "مشکی" }]
+}
+```
+
+. `province` and `city` are required; `postalCode` is optional but must be exactly 10 digits when provided. The shipping fields are snapshotted onto the order at creation time. **Stock is drawn from the item's `websiteQuantity` (shop pool)** — validated and decremented atomically; more units in the order than the shop pool holds → `400`.
+
+### `GET /api/orders/mine` → `Order[]` (any authenticated user)
+
+The caller's own orders, newest first — powers the customer profile at `/dashboard`.
+
+### `GET /api/orders/mine/:id` → `Order` (any authenticated user)
+
+One of the caller's own orders (404 for anyone else's id) — used by the order-tracking timeline in the customer dashboard.
+
+### `GET /api/workshop/orders` → `Order[]` (admin)
+
+All orders with customer details and line items.
+
+### `PUT /api/workshop/orders/:id` → `Order` (admin)
+
+Body: `{ "status": "…", "trackingCode": "RA123456789IR" }` with one of `pending` | `confirmed` | `preparing` | `shipped` | `delivered` | `cancelled`. `trackingCode` (optional, ≤64 chars) is stored when transitioning to `shipped` and shown to the customer as کد رهگیری. Moving to `delivered` stamps `deliveredAt`; re-opening a delivered order clears the stamp. Moving to `cancelled` returns the units to the item's `websiteQuantity` (shop pool); un-cancelling takes them back out.
+
+Order shape:
+
+```json
+{
+  "id": "…", "code": "ORD-2", "userId": "…", "customerName": "…",
+  "phone": "0912…", "province": "تهران", "city": "تهران", "postalCode": "1234567890", "address": "…", "note": null,
+  "trackingCode": "RA…", "deliveredAt": null,
+  "paymentMethod": "cod", "status": "pending",
+  "totalPrice": 1099998,
+  "items": [{ "itemId": "…", "name": "…", "quantity": 1, "unitPrice": 1099998, "size": "M", "color": "مشکی" }],
+  "createdAt": "…"
+}
+```
+
+; `postalCode` optional but 10 digits when present; `isDefault` demotes any previous default automatically (at most one default per user; the first address is default by default).
+
+### `PUT /api/addresses/:id` → `UserAddress`
+
+Same body as create (all fields required). Editing with `isDefault: true` demotes the previous default.
+
+### `DELETE /api/addresses/:id` → `204`
 
 ---
 

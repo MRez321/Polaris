@@ -12,6 +12,7 @@ import type {
   Order,
   OrderPaymentMethod,
   OrderStatus,
+  UserAddress,
   Owner,
   PaymentRecord,
   ProfitShareDistribution,
@@ -273,7 +274,9 @@ export const blogApi = {
 export interface OrderPayload {
   customerName: string;
   phone: string;
+  province: string;
   city: string;
+  postalCode: string;
   address: string;
   note?: string;
   paymentMethod: OrderPaymentMethod;
@@ -284,10 +287,31 @@ export const ordersApi = {
   // Public storefront checkout (global routes, no workshop prefix).
   create: (data: OrderPayload) => api.post<Order>('/api/orders', data).then((r) => r.data),
   mine: () => api.get<Order[]>('/api/orders/mine').then((r) => r.data),
+  mineOne: (id: string) => api.get<Order>(`/api/orders/mine/${id}`).then((r) => r.data),
   // Admin order management (workshop routes).
   all: () => api.get<Order[]>(`${W}/orders`).then((r) => r.data),
-  updateStatus: (id: string, status: OrderStatus) =>
-    api.put<Order>(`${W}/orders/${id}`, { status }).then((r) => r.data),
+  updateStatus: (id: string, status: OrderStatus, trackingCode?: string) =>
+    api.put<Order>(`${W}/orders/${id}`, { status, trackingCode }).then((r) => r.data),
+};
+
+// --- Customer Address Book ---
+export interface AddressPayload {
+  label: string;
+  receiverName: string;
+  phone: string;
+  province: string;
+  city: string;
+  postalCode: string;
+  address: string;
+  isDefault: boolean;
+}
+
+export const addressesApi = {
+  list: () => api.get<UserAddress[]>('/api/addresses').then((r) => r.data),
+  create: (data: AddressPayload) => api.post<UserAddress>('/api/addresses', data).then((r) => r.data),
+  update: (id: string, data: AddressPayload) =>
+    api.put<UserAddress>(`/api/addresses/${id}`, data).then((r) => r.data),
+  remove: (id: string) => api.delete<void>(`/api/addresses/${id}`).then((r) => r.data),
 };
 
 // --- Workshop Notifications (Telegram / Melipayamak SMS) ---

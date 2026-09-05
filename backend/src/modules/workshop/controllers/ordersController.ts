@@ -12,11 +12,14 @@ export async function listAllOrders(_req: Request, res: Response): Promise<void>
     res.json(await svc.listAllOrders());
 }
 
-/** Admin: move an order between statuses (restocks on cancel). */
+/** Admin: move an order between statuses (restocks on cancel; shipped may
+ *  attach a postal tracking code; delivered stamps the delivery time). */
 export async function updateOrderStatus(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه سفارش');
-    const body = z.object({ status: statusSchema }).parse(req.body);
-    const order = await svc.updateOrderStatus(id, body.status);
+    const body = z
+        .object({ status: statusSchema, trackingCode: z.string().trim().max(64).optional() })
+        .parse(req.body);
+    const order = await svc.updateOrderStatus(id, body.status, body.trackingCode);
     logAudit(req.auth ?? null, 'update', 'settings', `وضعیت سفارش ${order.code} به «${order.status}» تغییر کرد`, req.ip);
     res.json(order);
 }

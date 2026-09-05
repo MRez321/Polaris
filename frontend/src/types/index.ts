@@ -503,13 +503,32 @@ export interface Order {
   userId: string;
   customerName: string;
   phone: string;
+  province: string;
   city: string;
+  postalCode: string;
+  trackingCode: string;
+  deliveredAt: string | null;
   address: string;
   note: string;
   paymentMethod: OrderPaymentMethod;
   status: OrderStatus;
   total: number;
   items: OrderItemLine[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserAddress {
+  id: string;
+  userId: string;
+  label: string;
+  receiverName: string;
+  phone: string;
+  province: string;
+  city: string;
+  postalCode: string;
+  address: string;
+  isDefault: boolean;
   createdAt: string;
   updatedAt: string;
 }

@@ -18,7 +18,9 @@ const createOrderSchema = z.object({
         .string()
         .regex(/^0\d{10}$/, 'شماره تماس باید ۱۱ رقم و با ۰ شروع شود')
         .transform((v) => v.trim()),
-    city: z.string().optional().default(''),
+    city: z.string().min(1, 'شهر را وارد کنید'),
+    province: z.string().min(1, 'استان را انتخاب کنید'),
+    postalCode: z.string().regex(/^\d{10}$/, 'کد پستی باید ۱۰ رقم باشد').optional().default(''),
     address: z.string().min(5, 'آدرس کامل را وارد کنید'),
     note: z.string().optional(),
     paymentMethod: z.enum(['cod', 'card_transfer']),
@@ -33,6 +35,8 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
         customerName: data.customerName.trim(),
         phone: data.phone,
         city: data.city.trim(),
+        province: data.province.trim(),
+        postalCode: data.postalCode.trim(),
         address: data.address.trim(),
         note: data.note?.trim(),
         paymentMethod: data.paymentMethod,
@@ -46,4 +50,23 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
 /** Authenticated customer: own order history for the profile dashboard. */
 export async function listMyOrders(req: Request, res: Response): Promise<void> {
     res.json(await svc.listMyOrders(req.auth!.user.id));
+}
+
+/** Authenticated customer: one own order (status timeline detail). */
+export async function getMyOrder(req: Request, res: Response): Promise<void> {
+    res.json(await svc.getMyOrder(req.auth!.user.id, String(req.params.id)));
+}
+
+const statusSchema = z.enum(['pending', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled']);
+
+/** Admin: move an order between statuses (restocks on cancel; shipped may
+ *  attach a tracking code; delivered stamps the delivery time). */
+export async function updateOrderStatus(req: Request, res: Response): Promise<void> {
+    const id = String(req.params.id);
+    const body = z
+        .object({ status: statusSchema, trackingCode: z.string().trim().max(64).optional() })
+        .parse(req.body);
+    const order = await svc.updateOrderStatus(id, body.status, body.trackingCode);
+    logAudit(req.auth ?? null, 'update', 'settings', `وضعیت سفارش ${order.code} به «${order.status}» تغییر کرد`, req.ip);
+    res.json(order);
 }

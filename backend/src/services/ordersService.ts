@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { v4 as uuid } from 'uuid';
 
 import { db } from '../config/drizzle.js';
@@ -24,6 +24,10 @@ export function toOrderDto(row: typeof orders.$inferSelect): Order {
         customerName: row.customerName,
         phone: row.phone,
         city: row.city,
+        province: row.province,
+        postalCode: row.postalCode,
+        trackingCode: row.trackingCode ?? '',
+        deliveredAt: row.deliveredAt ? row.deliveredAt.toISOString() : null,
         address: row.address,
         note: row.note ?? '',
         paymentMethod: row.paymentMethod as OrderPaymentMethod,
@@ -46,7 +50,9 @@ export interface OrderInput {
     userId: string;
     customerName: string;
     phone: string;
+    province: string;
     city: string;
+    postalCode: string;
     address: string;
     note?: string;
     paymentMethod: OrderPaymentMethod;
@@ -104,20 +110,24 @@ export async function createOrder(input: OrderInput) {
         const codes = await tx.select({ code: orders.code }).from(orders);
         const id = uuid();
         const code = nextCode('ORD', codes.map((c) => c.code));
-        await tx.insert(orders).values({
+        const row: typeof orders.$inferInsert = {
             id,
             code,
             userId: input.userId,
             customerName: input.customerName,
             phone: input.phone,
             city: input.city,
+            province: input.province,
+            postalCode: input.postalCode,
             address: input.address,
             note: input.note ?? '',
             paymentMethod: input.paymentMethod,
             status: 'pending',
             total,
             items: lines,
-        });
+        };
+        await tx.insert(orders).values(row);
+
 
         const created = await tx.select().from(orders).where(eq(orders.id, id)).limit(1);
         return toOrderDto(created[0]!);
@@ -133,6 +143,17 @@ export async function listMyOrders(userId: string) {
     return rows.map(toOrderDto);
 }
 
+/** One of the user's own orders for the tracking timeline (404 on foreign ids). */
+export async function getMyOrder(userId: string, id: string): Promise<Order> {
+    const rows = await db
+        .select()
+        .from(orders)
+        .where(and(eq(orders.id, id), eq(orders.userId, userId)))
+        .limit(1);
+    if (!rows[0]) throw notFound('سفارش یافت نشد');
+    return toOrderDto(rows[0]);
+}
+
 export async function listAllOrders() {
     const rows = await db.select().from(orders).orderBy(desc(orders.createdAt));
     return rows.map(toOrderDto);
@@ -146,9 +167,10 @@ export async function getOrderById(id: string) {
 
 /**
  * Admin status transition. Cancelling an order restores its stock; moving a
- * cancelled order back to any active state decrements stock again.
+ * cancelled order back to any active state decrements stock again. Marking
+ * shipped may attach a tracking code; marking delivered stamps deliveredAt.
  */
-export async function updateOrderStatus(id: string, status: OrderStatus) {
+export async function updateOrderStatus(id: string, status: OrderStatus, trackingCode?: string) {
     if (!ORDER_STATUSES.includes(status)) throw badRequest('وضعیت سفارش معتبر نیست');
 
     return db.transaction(async (tx) => {
@@ -180,7 +202,20 @@ export async function updateOrderStatus(id: string, status: OrderStatus) {
             }
         }
 
-        await tx.update(orders).set({ status, updatedAt: new Date() }).where(eq(orders.id, id));
+        const patch: { status: OrderStatus; updatedAt: Date; trackingCode?: string; deliveredAt?: Date | null } = {
+            status,
+            updatedAt: new Date(),
+        };
+        if (status === 'shipped' && trackingCode !== undefined && trackingCode.trim() !== '') {
+            patch.trackingCode = trackingCode.trim();
+        }
+        if (status === 'delivered') {
+            patch.deliveredAt = new Date();
+        } else if ((order.status as string) === 'delivered') {
+            // Re-opening a delivered order clears the stale stamp.
+            patch.deliveredAt = null;
+        }
+        await tx.update(orders).set(patch).where(eq(orders.id, id));
         const updated = await tx.select().from(orders).where(eq(orders.id, id)).limit(1);
         return toOrderDto(updated[0]!);
     });

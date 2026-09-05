@@ -29,6 +29,7 @@ Removed during the reorg: `docker-compose.yml`, `frontend/src/App.css`, `fronten
 │   │   ├── copy-public.js
 │   │   ├── migrate.js
 │   │   ├── seed.js
+│   │   ├── seed-workshop.js
 │   │   ├── smoke-phase2.mjs
 │   │   ├── smoke-phase3.mjs
 │   │   └── smoke.mjs
@@ -37,6 +38,7 @@ Removed during the reorg: `docker-compose.yml`, `frontend/src/App.css`, `fronten
 │   │   │   ├── db.ts
 │   │   │   └── drizzle.ts
 │   │   ├── controllers/
+│   │   │   ├── addressesController.ts
 │   │   │   ├── healthController.ts
 │   │   │   └── ordersController.ts
 │   │   ├── core/
@@ -97,8 +99,10 @@ Removed during the reorg: `docker-compose.yml`, `frontend/src/App.css`, `fronten
 │   │   │   ├── index.ts
 │   │   │   ├── notifications.ts
 │   │   │   ├── orders.ts
+│   │   │   ├── userAddresses.ts
 │   │   │   └── workshop.ts
 │   │   ├── services/
+│   │   │   ├── addressesService.ts
 │   │   │   └── ordersService.ts
 │   │   ├── types/
 │   │   │   ├── express.d.ts

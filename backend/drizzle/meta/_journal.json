@@ -64,6 +64,13 @@
       "when": 1788500831667,
       "tag": "0008_absurd_warbound",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1788568525337,
+      "tag": "0009_giant_white_queen",
+      "breakpoints": true
     }
   ]
 }

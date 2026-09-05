@@ -10,7 +10,8 @@
     "start": "node server.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node scripts/migrate.js",
-    "db:seed": "node scripts/seed.js"
+    "db:seed": "node scripts/seed.js",
+    "db:seed:workshop": "node scripts/seed-workshop.js"
   },
   "keywords": [],
   "type": "module",

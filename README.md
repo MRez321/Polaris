@@ -83,7 +83,9 @@ copy .env.example .env      # adjust if needed
 npm run dev                 # tsx watch on http://localhost:3016
 ```
 
-Optional: `npm run db:seed` to seed initial data, `npm run db:generate` after schema changes.
+Optional: `npm run db:seed` for initial data, `npm run db:seed:workshop` for a full workshop
+dataset (owners, sellers, consignments with FIFO payments, returns, staff, expenses,
+profit distribution — idempotent), and `npm run db:generate` after schema changes.
 
 ### 3. Frontend
 

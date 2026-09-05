@@ -5,6 +5,7 @@ import { health } from '../controllers/healthController.js';
 import * as pub from '../modules/workshop/controllers/publicController.js';
 import * as blog from '../modules/cms/blogController.js';
 import * as orders from '../controllers/ordersController.js';
+import * as addresses from '../controllers/addressesController.js';
 import * as company from '../modules/cms/companyController.js';
 import * as website from '../modules/cms/websiteController.js';
 import * as gallery from '../modules/cms/galleryController.js';
@@ -24,11 +25,19 @@ router.get('/public/company', pub.getPublicCompany);
 router.get('/public/blog', pub.listPublicBlogPosts);
 router.get('/public/blog/:slug', pub.getPublicBlogPost);
 
+
 router.use(requireAuth);
 
 // Customer orders: any authenticated user (website customers).
 router.post('/orders', orders.createOrder);
 router.get('/orders/mine', orders.listMyOrders);
+router.get('/orders/mine/:id', orders.getMyOrder);
+
+// Customer address book: owner-scoped CRUD.
+router.get('/addresses', addresses.listMyAddresses);
+router.post('/addresses', addresses.createAddress);
+router.put('/addresses/:id', addresses.updateAddress);
+router.delete('/addresses/:id', addresses.deleteAddress);
 
 // Blog CMS: admin + author roles only.
 router.get('/blog', requireRole('admin', 'author'), blog.listPosts);

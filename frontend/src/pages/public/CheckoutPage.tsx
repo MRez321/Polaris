@@ -3,7 +3,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { Banknote, CheckCircle2, CreditCard, MapPin, PackageCheck, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Order, OrderPaymentMethod } from '@/types';
-import { getApiErrorMessage, ordersApi } from '@/lib/api';
+import { addressesApi, getApiErrorMessage, ordersApi } from '@/lib/api';
 import { usePageMeta } from '@/lib/usePageMeta';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { MobileNumberInput } from '@/components/ui/mobile-number-input';
 import { CitySelector, type CitySelectorValue } from '@/components/ui/city-selector';
+import { persianProvinces } from '@/lib/persian-provinces';
 import { Empty, EmptyContent, EmptyDescription, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { cn } from '@/lib/utils';
 
@@ -44,6 +45,7 @@ interface FormErrors {
   name?: string;
   phone?: string;
   city?: string;
+  postalCode?: string;
   address?: string;
 }
 
@@ -60,6 +62,7 @@ export const CheckoutPage: React.FC = () => {
   const [name, setName] = useState(user?.name ?? '');
   const [phone, setPhone] = useState('');
   const [cityValue, setCityValue] = useState<CitySelectorValue>({ province: null, city: null });
+  const [postalCode, setPostalCode] = useState('');
   const [address, setAddress] = useState('');
   const [note, setNote] = useState('');
   const [payment, setPayment] = useState<OrderPaymentMethod>('cod');
@@ -77,6 +80,35 @@ export const CheckoutPage: React.FC = () => {
   // while the user may still be loading).
   useEffect(() => {
     if (user) setName((n) => n.trim() || user.name);
+  }, [user]);
+
+  // Prefill the form with the saved default address (user can override).
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    addressesApi
+      .list()
+      .then((list) => {
+        if (cancelled || list.length === 0) return;
+        const def = list.find((a) => a.isDefault) ?? list[0];
+        setName((n) => n.trim() || def.receiverName);
+        setPhone((ph) => ph || def.phone);
+        setPostalCode((pc) => pc || def.postalCode);
+        setAddress((a) => a || def.address);
+        // Resolve the saved province/city names into the CitySelector value
+        setCityValue((cv) => {
+          if (cv.province || cv.city) return cv;
+          const prov = persianProvinces.find((pr) => pr.name === def.province);
+          const city = prov?.cities.find((c) => c.name === def.city) ?? null;
+          return prov ? { province: prov, city } : cv;
+        });
+      })
+      .catch(() => {
+        /* Address book is optional — checkout stays fully manual. */
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   if (isLoading) return null;
@@ -141,6 +173,8 @@ export const CheckoutPage: React.FC = () => {
     if (name.trim().length < 3) next.name = 'نام و نام خانوادگی را کامل وارد کنید';
     if (!isValidIranPhone(phone)) next.phone = 'شماره موبایل معتبر نیست (مثال: ۰۹۱۲۳۴۵۶۷۸۹)';
     if (!cityValue.city) next.city = 'استان و شهر را انتخاب کنید';
+    if (postalCode.trim() && !/^\d{10}$/.test(postalCode.trim()))
+      next.postalCode = 'کد پستی باید ۱۰ رقم باشد';
     if (address.trim().length < 10) next.address = 'نشانی کامل پستی را وارد کنید';
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -155,6 +189,8 @@ export const CheckoutPage: React.FC = () => {
         customerName: name.trim(),
         phone: phone,
         city: cityValue.city!.name,
+        province: cityValue.province!.name,
+        postalCode: postalCode.trim(),
         address: address.trim(),
         note: note.trim() || undefined,
         paymentMethod: payment,
@@ -218,6 +254,21 @@ export const CheckoutPage: React.FC = () => {
               <FieldLabel>استان و شهر</FieldLabel>
               <CitySelector value={cityValue} onValueChange={setCityValue} />
               {errors.city && <FieldError>{errors.city}</FieldError>}
+            </Field>
+
+            <Field data-invalid={!!errors.postalCode || undefined}>
+              <FieldLabel htmlFor="checkout-postal">کد پستی</FieldLabel>
+              <Input
+                id="checkout-postal"
+                value={postalCode}
+                onChange={(e) => setPostalCode(e.target.value.replace(/[^0-9۰-۹]/g, ''))}
+                placeholder="۱۰ رقم، مثال: ۱۲۳۴۵۶۷۸۹۰"
+                inputMode="numeric"
+                dir="ltr"
+                className="text-left"
+                aria-invalid={!!errors.postalCode || undefined}
+              />
+              {errors.postalCode && <FieldError>{errors.postalCode}</FieldError>}
             </Field>
 
             <Field data-invalid={!!errors.address || undefined}>

@@ -59,7 +59,7 @@ export const PublicFooter: React.FC = () => {
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-l from-transparent via-brand/60 to-transparent" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8 max-sm:text-center max-sm:[&>*]:flex max-sm:[&>*]:flex-col max-sm:[&>*]:items-center">
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
@@ -120,7 +120,7 @@ export const PublicFooter: React.FC = () => {
               <span className="w-1.5 h-4 rounded-full bg-brand" />
               دسترسی سریع
             </h3>
-            <ul className="space-y-2.5">
+            <ul className="space-y-2.5 max-sm:mx-auto max-sm:w-fit">
               {QUICK_LINKS.map((link) => (
                 <li key={link.to}>
                   <Link
@@ -148,7 +148,7 @@ export const PublicFooter: React.FC = () => {
               <span className="w-1.5 h-4 rounded-full bg-brand" />
               فروشگاه
             </h3>
-            <ul className="space-y-2.5">
+            <ul className="space-y-2.5 max-sm:mx-auto max-sm:w-fit">
               <li>
                 <Link
                   to="/shop"
@@ -182,7 +182,7 @@ export const PublicFooter: React.FC = () => {
               <span className="w-1.5 h-4 rounded-full bg-brand" />
               اطلاعات تماس
             </h3>
-            <ul className="space-y-3.5 text-xs font-bold text-stone-600 dark:text-stone-400">
+            <ul className="space-y-3.5 text-xs font-bold text-stone-600 dark:text-stone-400 max-sm:mx-auto max-sm:w-fit">
               <li className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 mt-0.5 shrink-0 text-brand-ink" />
                 <span className="leading-6">
@@ -202,18 +202,32 @@ export const PublicFooter: React.FC = () => {
                 <span className="leading-6">شنبه تا پنجشنبه، ۹ صبح تا ۹ شب</span>
               </li>
             </ul>
+
+            {/* Enamad (electronic trust badge) placeholder — replaced with
+                the real script tag once the license is issued. */}
+            <a
+              href="#"
+              aria-label="نماد اعتماد الکترونیکی"
+              title="نماد اعتماد الکترونیکی"
+              onClick={(e) => e.preventDefault()}
+              className="mt-5 inline-flex items-center justify-center w-20 h-20 rounded-2xl border border-dashed border-stone-300 dark:border-white/15 bg-stone-50 dark:bg-white/4 text-center"
+            >
+              <span className="text-[10px] font-bold leading-5 text-stone-400 dark:text-stone-500 px-2">
+                جای نماد اعتماد
+              </span>
+            </a>
           </div>
         </div>
       </div>
 
       {/* Bottom bar */}
       <div className="border-t border-stone-200/70 dark:border-white/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-center">
           <p className="text-[11px] font-bold text-stone-500 dark:text-stone-500 text-center sm:text-right">
             © {jalaliYear} پولاریس استایل — تمامی حقوق محفوظ است.
           </p>
           <p className="text-[11px] font-bold text-stone-500 dark:text-stone-500">
-            طراحی و توسعه: <span className="text-brand-ink font-black">MRez</span>
+            طراحی و توسعه:{' '}<a href="https://MRez.dev" target="_blank" rel="noopener noreferrer" className="text-brand-ink font-black hover:underline underline-offset-4">MRez</a>
           </p>
           <p className="flex items-center gap-1.5 text-[11px] font-bold text-stone-500 dark:text-stone-500">
             <ShieldCheck className="w-3.5 h-3.5 text-brand-ink" />
