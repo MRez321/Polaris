@@ -203,10 +203,10 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({
         if (e.target === e.currentTarget) handleClose();
       }}
     >
-      <div className="relative w-full max-w-lg glass-modal text-stone-900 dark:text-stone-100 rounded-3xl border border-[#CEAE80]/50 shadow-2xl overflow-hidden p-6 sm:p-7 space-y-5">
+      <div className="relative w-full max-w-lg glass-modal text-stone-900 dark:text-stone-100 rounded-3xl border border-brand/50 shadow-2xl overflow-hidden p-6 sm:p-7 space-y-5">
         {/* Background ambient glow inside glass modal */}
-        <div className="absolute top-0 right-0 w-48 h-48 bg-[#CEAE80]/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-amber-600/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-48 h-48 bg-brand/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-brand-deep/15 rounded-full blur-3xl pointer-events-none" />
 
         {/* Close Button */}
         <button
@@ -219,7 +219,7 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({
 
         {/* Header with App Icon */}
         <div className="flex items-center gap-4 relative z-10">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#1c1c1c] via-[#121212] to-[#0a0a0a] border-2 border-[#CEAE80]/70 p-2 flex items-center justify-center shadow-xl ring-4 ring-[#CEAE80]/20 shrink-0">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#1c1c1c] via-[#121212] to-[#0a0a0a] border-2 border-brand/70 p-2 flex items-center justify-center shadow-xl ring-4 ring-brand/20 shrink-0">
             <img
               src="/icons/icon.svg"
               alt="لوگوی پولاریس استایل"
@@ -230,7 +230,7 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({
             <h3 className="text-base sm:text-lg font-black text-stone-900 dark:text-white">
               نصب نسخه وب‌اپلیکیشن
             </h3>
-            <p className="text-xs text-amber-800 dark:text-[#CEAE80] font-bold mt-0.5">
+            <p className="text-xs text-brand-ink dark:text-brand font-bold mt-0.5">
               سامانه جامع کارگاه و امانات پولاریس استایل را مثل یک اپلیکیشن روی دستگاه خود داشته باشید.
             </p>
           </div>
@@ -239,7 +239,7 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({
         {/* Feature Benefits List */}
         <div className="space-y-2.5 pt-1 relative z-10">
           <div className="p-3 rounded-2xl glass-card flex items-center gap-3 text-xs text-stone-700 dark:text-stone-300">
-            <Zap className="w-4 h-4 text-[#A67C38] dark:text-[#CEAE80] shrink-0" />
+            <Zap className="w-4 h-4 text-brand-ink shrink-0" />
             <span>دسترسی سریع و تمام‌صفحه بدون باز کردن مرورگر</span>
           </div>
 
@@ -256,8 +256,8 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({
 
         {/* iOS Step by step visual guide */}
         {isIOS && (
-          <div className="p-4 rounded-2xl bg-[#CEAE80]/15 border border-[#CEAE80]/30 space-y-2 text-xs text-stone-800 dark:text-stone-200 relative z-10 glass-card">
-            <div className="flex items-center gap-2 font-black text-amber-800 dark:text-[#CEAE80]">
+          <div className="p-4 rounded-2xl bg-brand/15 border border-brand/30 space-y-2 text-xs text-stone-800 dark:text-stone-200 relative z-10 glass-card">
+            <div className="flex items-center gap-2 font-black text-brand-ink dark:text-brand">
               <Smartphone className="w-4 h-4" />
               <span>راهنمای نصب روی آیفون و آیپد (Safari):</span>
             </div>
@@ -265,14 +265,14 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({
               <li>
                 در نوار پایین یا بالای مرورگر Safari، روی دکمه{' '}
                 <strong className="text-stone-900 dark:text-white inline-flex items-center gap-1 mx-1">
-                  <Share2 className="w-3.5 h-3.5 text-[#A67C38] dark:text-[#CEAE80]" /> Share
+                  <Share2 className="w-3.5 h-3.5 text-brand-ink" /> Share
                 </strong>{' '}
                 بزنید.
               </li>
               <li>
                 از منوی باز شده گزینه{' '}
                 <strong className="text-stone-900 dark:text-white inline-flex items-center gap-1 mx-1">
-                  <PlusSquare className="w-3.5 h-3.5 text-[#A67C38] dark:text-[#CEAE80]" /> Add to Home Screen
+                  <PlusSquare className="w-3.5 h-3.5 text-brand-ink" /> Add to Home Screen
                 </strong>{' '}
                 (افزودن به صفحه اصلی) را انتخاب کنید.
               </li>
@@ -292,9 +292,9 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({
         <div className="space-y-2 pt-2 relative z-10">
           <button
             onClick={handleInstallClick}
-            className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-[#CEAE80] to-[#B59363] hover:from-[#DFBF91] hover:to-[#C6A474] text-black font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-[#CEAE80]/20 transition-all active:scale-98"
+            className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-brand to-brand-hover hover:from-brand/85 hover:to-brand-hover/85 text-brand-on font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-brand/20 transition-all active:scale-98"
           >
-            <Download className="w-4 h-4 text-black" />
+            <Download className="w-4 h-4 text-brand-on" />
             <span>نصب اپلیکیشن روی دستگاه</span>
           </button>
 

@@ -307,6 +307,17 @@ export interface WorkshopInfo {
     logoText?: string;
 }
 
+/**
+ * Site-wide appearance: default visitor mode + palette choice.
+ * `palette.type === 'custom'` pins the whole site to one admin-picked
+ * primary color; every derived role (hover, ink, deep, on-fill ink) is
+ * computed from it. Stored inside `company_settings.data`.
+ */
+export interface CompanyTheme {
+    defaultMode: 'dark' | 'light';
+    palette: { type: 'default' } | { type: 'custom'; primary: string };
+}
+
 export interface CompanyBranding extends WorkshopInfo {
     brandName: string;
     tagline: string;
@@ -314,6 +325,7 @@ export interface CompanyBranding extends WorkshopInfo {
     workshopPhone: string;
     secondaryPhone?: string;
     establishedYear?: string;
+    theme?: CompanyTheme;
     owners: Owner[];
 }
 

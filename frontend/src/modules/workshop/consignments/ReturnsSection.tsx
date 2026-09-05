@@ -99,7 +99,7 @@ export const ReturnsSection: React.FC<ReturnsSectionProps> = ({
               ? 'هیچ فاکتور امانی فعالی با مانده قابل مرجوع وجود ندارد'
               : undefined
           }
-          className="px-3.5 py-2 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] disabled:opacity-50 disabled:cursor-not-allowed text-black font-black text-xs shadow-md transition-all active:scale-95 flex items-center gap-1.5 whitespace-nowrap"
+          className="px-3.5 py-2 rounded-xl bg-brand hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed text-brand-on font-black text-xs shadow-md transition-all active:scale-95 flex items-center gap-1.5 whitespace-nowrap"
         >
           <PlusCircle className="w-3.5 h-3.5" />
           ثبت مرجوعی جدید
@@ -252,7 +252,7 @@ export const ReturnsSection: React.FC<ReturnsSectionProps> = ({
                   type="button"
                   onClick={handleConfirmPick}
                   disabled={!pickerValue}
-                  className="px-5 py-2.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] disabled:opacity-50 text-black font-black text-sm shadow-md transition-all active:scale-95"
+                  className="px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-hover disabled:opacity-50 text-brand-on font-black text-sm shadow-md transition-all active:scale-95"
                 >
                   ادامه و ثبت اقلام
                 </button>

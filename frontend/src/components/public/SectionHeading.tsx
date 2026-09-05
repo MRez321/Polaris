@@ -27,10 +27,10 @@ export const SectionHeading: React.FC<SectionHeadingProps> = ({
     )}
   >
     {eyebrow && (
-      <span className="inline-flex items-center gap-2 text-[#A67C38] dark:text-[#CEAE80] text-xs sm:text-sm font-black tracking-widest mb-3">
-        <span className="w-8 h-px bg-[#CEAE80]/60" />
+      <span className="inline-flex items-center gap-2 text-brand-ink text-xs sm:text-sm font-black tracking-widest mb-3">
+        <span className="w-8 h-px bg-brand/60" />
         {eyebrow}
-        {align === 'center' && <span className="w-8 h-px bg-[#CEAE80]/60" />}
+        {align === 'center' && <span className="w-8 h-px bg-brand/60" />}
       </span>
     )}
     <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-stone-900 dark:text-white leading-snug">

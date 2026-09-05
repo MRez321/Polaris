@@ -294,13 +294,13 @@ export const BankCardInput: React.FC<BankCardInputProps> = ({
     <div className={`space-y-1.5 ${className}`}>
       <div className="flex items-center justify-between">
         <label className="text-xs font-bold text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
-          <CreditCard className="w-4 h-4 text-[#CEAE80]" />
+          <CreditCard className="w-4 h-4 text-brand" />
           <span>{label}</span>
           {required && <span className="text-rose-500">*</span>}
         </label>
 
         {detectedBank ? (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-[#CEAE80]/15 text-[#CEAE80] border border-[#CEAE80]/30 animate-in fade-in duration-200">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-brand/15 text-brand border border-brand/30 animate-in fade-in duration-200">
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: detectedBank.color }} />
             <span>{detectedBank.name}</span>
           </span>
@@ -320,7 +320,7 @@ export const BankCardInput: React.FC<BankCardInputProps> = ({
           className={`w-full px-3.5 py-2.5 rounded-xl glass-input text-xs sm:text-sm font-mono tracking-wider text-center outline-none transition-all ${
             isValidLength
               ? 'border-emerald-500/50 focus:border-emerald-500'
-              : 'focus:border-[#CEAE80]'
+              : 'focus:border-brand'
           }`}
           maxLength={25}
         />
@@ -372,13 +372,13 @@ export const ShebaInput: React.FC<ShebaInputProps> = ({
     <div className={`space-y-1.5 ${className}`}>
       <div className="flex items-center justify-between">
         <label className="text-xs font-bold text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
-          <Building2 className="w-4 h-4 text-[#CEAE80]" />
+          <Building2 className="w-4 h-4 text-brand" />
           <span>{label}</span>
           {required && <span className="text-rose-500">*</span>}
         </label>
 
         {detectedBank ? (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-[#CEAE80]/15 text-[#CEAE80] border border-[#CEAE80]/30 animate-in fade-in duration-200">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-brand/15 text-brand border border-brand/30 animate-in fade-in duration-200">
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: detectedBank.color }} />
             <span>{detectedBank.name}</span>
           </span>
@@ -398,7 +398,7 @@ export const ShebaInput: React.FC<ShebaInputProps> = ({
           className={`w-full px-3.5 py-2.5 rounded-xl glass-input text-xs sm:text-sm font-mono tracking-wide text-center outline-none transition-all ${
             isValidLength
               ? 'border-emerald-500/50 focus:border-emerald-500'
-              : 'focus:border-[#CEAE80]'
+              : 'focus:border-brand'
           }`}
           maxLength={35}
         />

@@ -91,12 +91,12 @@ export const ShopPage: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
       {/* Page header */}
       <Reveal className="text-center mb-10">
-        <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#CEAE80]/40 bg-[#CEAE80]/10 text-[#A67C38] dark:text-[#CEAE80] text-xs font-black tracking-wide">
+        <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand/40 bg-brand/10 text-brand-ink text-xs font-black tracking-wide">
           <PackageSearch className="w-3.5 h-3.5" />
           فروشگاه پولاریس
         </span>
         <h1 className="mt-5 text-2xl sm:text-4xl font-black text-stone-900 dark:text-white">
-          کالکشن پوشاک <span className="text-[#A67C38] dark:text-[#CEAE80]">آماده تحویل</span>
+          کالکشن پوشاک <span className="text-brand-ink">آماده تحویل</span>
         </h1>
         <p className="mt-4 text-sm leading-7 text-stone-600 dark:text-stone-400 max-w-xl mx-auto">
           همه محصولات آماده تحویل‌اند؛ قیمت‌ها برای مصرف‌کننده نهایی است.
@@ -112,8 +112,8 @@ export const ShopPage: React.FC = () => {
             className={cn(
               'px-4 py-2 rounded-full text-xs font-black border transition-all active:scale-95',
               activeCategory === 'all'
-                ? 'bg-[#CEAE80] text-black border-[#CEAE80] shadow-md shadow-[#CEAE80]/25'
-                : 'bg-white dark:bg-white/5 text-stone-600 dark:text-stone-300 border-stone-200 dark:border-white/10 hover:border-[#CEAE80]/50'
+                ? 'bg-brand text-brand-on border-brand shadow-md shadow-brand/25'
+                : 'bg-white dark:bg-white/5 text-stone-600 dark:text-stone-300 border-stone-200 dark:border-white/10 hover:border-brand/50'
             )}
           >
             همه محصولات
@@ -126,8 +126,8 @@ export const ShopPage: React.FC = () => {
               className={cn(
                 'px-4 py-2 rounded-full text-xs font-black border transition-all active:scale-95',
                 activeCategory === cat.id
-                  ? 'bg-[#CEAE80] text-black border-[#CEAE80] shadow-md shadow-[#CEAE80]/25'
-                  : 'bg-white dark:bg-white/5 text-stone-600 dark:text-stone-300 border-stone-200 dark:border-white/10 hover:border-[#CEAE80]/50'
+                  ? 'bg-brand text-brand-on border-brand shadow-md shadow-brand/25'
+                  : 'bg-white dark:bg-white/5 text-stone-600 dark:text-stone-300 border-stone-200 dark:border-white/10 hover:border-brand/50'
               )}
             >
               {cat.label}
@@ -140,7 +140,7 @@ export const ShopPage: React.FC = () => {
       <Reveal delay={0.12}>
         <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#16161a] border border-stone-200/80 dark:border-white/8 shadow-sm mb-8">
           <div className="flex items-center gap-2 text-xs font-black text-stone-500 dark:text-stone-400 mb-3">
-            <SlidersHorizontal className="w-4 h-4 text-[#A67C38] dark:text-[#CEAE80]" />
+            <SlidersHorizontal className="w-4 h-4 text-brand-ink" />
             فیلتر و جست‌وجو
           </div>
 
@@ -190,7 +190,7 @@ export const ShopPage: React.FC = () => {
                   className={cn(
                     'flex-1 px-1 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-black transition-all',
                     sort === option.value
-                      ? 'bg-[#CEAE80] text-black shadow-sm'
+                      ? 'bg-brand text-brand-on shadow-sm'
                       : 'text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200'
                   )}
                 >
@@ -247,15 +247,15 @@ export const ShopPage: React.FC = () => {
       ) : error ? (
         <div className="py-20 text-center space-y-4">
           <p className="text-sm font-black text-stone-700 dark:text-stone-300">{error}</p>
-          <Button onClick={load} className="h-11 px-6 rounded-xl bg-[#CEAE80] hover:bg-[#c2a06e] text-black font-black">
+          <Button onClick={load} className="h-11 px-6 rounded-xl bg-brand hover:bg-brand-hover text-brand-on font-black">
             <RefreshCw className="w-4 h-4" />
             تلاش دوباره
           </Button>
         </div>
       ) : filtered.length === 0 ? (
         <div className="py-20 text-center space-y-3">
-          <span className="mx-auto w-16 h-16 rounded-3xl bg-[#CEAE80]/12 border border-[#CEAE80]/25 flex items-center justify-center">
-            <PackageSearch className="w-8 h-8 text-[#A67C38] dark:text-[#CEAE80]" />
+          <span className="mx-auto w-16 h-16 rounded-3xl bg-brand/12 border border-brand/25 flex items-center justify-center">
+            <PackageSearch className="w-8 h-8 text-brand-ink" />
           </span>
           <p className="text-sm font-black text-stone-700 dark:text-stone-300">محصولی با این فیلترها پیدا نشد</p>
           <p className="text-xs text-stone-500 dark:text-stone-400">فیلترها را تغییر دهید یا حذف کنید.</p>

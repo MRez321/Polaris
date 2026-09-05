@@ -38,9 +38,9 @@ export const ConsignmentReceipt: React.FC<ConsignmentReceiptProps> = ({
         {/* Printable Card Area */}
         <div className="p-6 rounded-2xl border border-stone-200 dark:border-white/10 bg-white dark:bg-[#141416] text-stone-900 dark:text-white shadow-md space-y-5 print:border-stone-800 print:text-black">
           {/* Header of Receipt */}
-          <div className="flex items-center justify-between border-b-2 border-[#CEAE80] pb-4">
+          <div className="flex items-center justify-between border-b-2 border-brand pb-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-amber-500/10 dark:bg-[#1E1E22] text-amber-800 dark:text-[#CEAE80] flex items-center justify-center font-bold border border-amber-500/30 dark:border-[#CEAE80]/40">
+              <div className="w-12 h-12 rounded-xl bg-brand/10 dark:bg-[#1E1E22] text-brand-ink dark:text-brand flex items-center justify-center font-bold border border-brand/30 dark:border-brand/40">
                 <Scissors className="w-6 h-6 -rotate-45" />
               </div>
               <div>
@@ -56,7 +56,7 @@ export const ConsignmentReceipt: React.FC<ConsignmentReceiptProps> = ({
             <div className="text-left text-xs space-y-1">
               <div>
                 <span className="text-stone-500 dark:text-gray-400">شماره فاکتور: </span>
-                <span className="font-mono font-black text-sm text-amber-800 dark:text-[#CEAE80]">
+                <span className="font-mono font-black text-sm text-brand-ink dark:text-brand">
                   {consignment.code}
                 </span>
               </div>
@@ -85,7 +85,7 @@ export const ConsignmentReceipt: React.FC<ConsignmentReceiptProps> = ({
             </div>
             <div>
               <span className="text-stone-500 dark:text-gray-400 block">شماره تماس:</span>
-              <span className="font-mono font-bold text-amber-800 dark:text-[#CEAE80]">{seller?.phone || '-'}</span>
+              <span className="font-mono font-bold text-brand-ink dark:text-brand">{seller?.phone || '-'}</span>
             </div>
             <div className="col-span-2">
               <span className="text-stone-500 dark:text-gray-400 block">محل استقرار بساط:</span>
@@ -138,7 +138,7 @@ export const ConsignmentReceipt: React.FC<ConsignmentReceiptProps> = ({
             <div className="text-stone-500 dark:text-gray-400 text-[11px] space-y-1">
               <p>تحویل دهنده: {consignment.handedOverBy}</p>
               <p>توضیحات: {consignment.notes || 'سالم و بدون ایراد تحویل داده شد.'}</p>
-              <p className="font-bold text-amber-800 dark:text-[#CEAE80]">
+              <p className="font-bold text-brand-ink dark:text-brand">
                 قانون تسویه: دریافت‌ها به ترتیب تاریخ فاکتورها اعمال و تسویه می‌گردد.
               </p>
             </div>
@@ -158,7 +158,7 @@ export const ConsignmentReceipt: React.FC<ConsignmentReceiptProps> = ({
               </div>
               <div className="flex justify-between font-black text-sm pt-1.5 border-t border-stone-200 dark:border-white/10 text-stone-900 dark:text-white">
                 <span>مانده بدهی این فاکتور:</span>
-                <span className="font-mono text-amber-800 dark:text-[#CEAE80]">
+                <span className="font-mono text-brand-ink dark:text-brand">
                   {formatToman(consignment.remainingAmount)}
                 </span>
               </div>
@@ -195,7 +195,7 @@ export const ConsignmentReceipt: React.FC<ConsignmentReceiptProps> = ({
                 onClose();
                 onRecordPayment(consignment.sellerId);
               }}
-              className="px-4 py-2.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black text-xs sm:text-sm font-black shadow-md transition-colors"
+              className="px-4 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-brand-on text-xs sm:text-sm font-black shadow-md transition-colors"
             >
               ثبت دریافت وجه و تسویه
             </button>
@@ -203,7 +203,7 @@ export const ConsignmentReceipt: React.FC<ConsignmentReceiptProps> = ({
 
           <button
             onClick={handlePrint}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-[#1E1E22] dark:hover:bg-[#252525] border border-stone-300 dark:border-[#CEAE80]/30 text-amber-800 dark:text-[#CEAE80] text-xs sm:text-sm font-black shadow-sm transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-[#1E1E22] dark:hover:bg-[#252525] border border-stone-300 dark:border-brand/30 text-brand-ink dark:text-brand text-xs sm:text-sm font-black shadow-sm transition-colors"
           >
             <Printer className="w-4 h-4" />
             <span>چاپ فاکتور رسمی</span>

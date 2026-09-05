@@ -62,11 +62,11 @@ export const PaymentsManager: React.FC<PaymentsManagerProps> = ({
   return (
     <div className="space-y-6 text-stone-900 dark:text-white">
       {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 glass-panel p-5 rounded-2xl border border-stone-200 dark:border-[#CEAE80]/20 shadow-md">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 glass-panel p-5 rounded-2xl border border-stone-200 dark:border-brand/20 shadow-md">
         <div>
           <h3 className="text-base sm:text-lg font-bold text-stone-900 dark:text-white flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-[#CEAE80]" />
-            <span className="text-amber-800 dark:text-[#CEAE80] font-black">دفتر دریافت‌ها و تسویه حساب‌ها</span>
+            <CreditCard className="w-5 h-5 text-brand" />
+            <span className="text-brand-ink dark:text-brand font-black">دفتر دریافت‌ها و تسویه حساب‌ها</span>
           </h3>
           <p className="text-xs text-stone-500 dark:text-gray-400 mt-1">
             مجموع کل وجوه وصولی ثبت شده:{' '}
@@ -79,7 +79,7 @@ export const PaymentsManager: React.FC<PaymentsManagerProps> = ({
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-black text-xs sm:text-sm shadow-md transition-all active:scale-95"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-brand-on font-black text-xs sm:text-sm shadow-md transition-all active:scale-95"
         >
           <Plus className="w-4 h-4" />
           <span>ثبت دریافت وجه و تسویه</span>
@@ -104,7 +104,7 @@ export const PaymentsManager: React.FC<PaymentsManagerProps> = ({
             onClick={() => setMethodFilter('all')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
               methodFilter === 'all'
-                ? 'bg-[#CEAE80] text-black shadow-md'
+                ? 'bg-brand text-brand-on shadow-md'
                 : 'bg-stone-100 dark:bg-[#1A1A1E] text-stone-600 dark:text-gray-400 hover:text-stone-900 dark:hover:text-white border border-stone-200 dark:border-white/5'
             }`}
           >
@@ -114,7 +114,7 @@ export const PaymentsManager: React.FC<PaymentsManagerProps> = ({
             onClick={() => setMethodFilter('cash')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
               methodFilter === 'cash'
-                ? 'bg-[#CEAE80] text-black shadow-md'
+                ? 'bg-brand text-brand-on shadow-md'
                 : 'bg-stone-100 dark:bg-[#1A1A1E] text-stone-600 dark:text-gray-400 hover:text-stone-900 dark:hover:text-white border border-stone-200 dark:border-white/5'
             }`}
           >
@@ -124,7 +124,7 @@ export const PaymentsManager: React.FC<PaymentsManagerProps> = ({
             onClick={() => setMethodFilter('pos')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
               methodFilter === 'pos'
-                ? 'bg-[#CEAE80] text-black shadow-md'
+                ? 'bg-brand text-brand-on shadow-md'
                 : 'bg-stone-100 dark:bg-[#1A1A1E] text-stone-600 dark:text-gray-400 hover:text-stone-900 dark:hover:text-white border border-stone-200 dark:border-white/5'
             }`}
           >
@@ -134,7 +134,7 @@ export const PaymentsManager: React.FC<PaymentsManagerProps> = ({
             onClick={() => setMethodFilter('bank_transfer')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
               methodFilter === 'bank_transfer'
-                ? 'bg-[#CEAE80] text-black shadow-md'
+                ? 'bg-brand text-brand-on shadow-md'
                 : 'bg-stone-100 dark:bg-[#1A1A1E] text-stone-600 dark:text-gray-400 hover:text-stone-900 dark:hover:text-white border border-stone-200 dark:border-white/5'
             }`}
           >
@@ -165,7 +165,7 @@ export const PaymentsManager: React.FC<PaymentsManagerProps> = ({
                   key={p.id}
                   className="hover:bg-stone-50 dark:hover:bg-white/[0.02] transition-colors"
                 >
-                  <td data-label="شماره رسید" className="p-3.5 font-mono font-black text-amber-800 dark:text-[#CEAE80]">
+                  <td data-label="شماره رسید" className="p-3.5 font-mono font-black text-brand-ink dark:text-brand">
                     {p.code}
                   </td>
                   <td data-label="فروشنده" className="p-3.5 font-bold text-stone-900 dark:text-white">
@@ -191,7 +191,7 @@ export const PaymentsManager: React.FC<PaymentsManagerProps> = ({
                         p.allocations.map((a, i) => (
                           <span
                             key={i}
-                            className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-800 dark:text-[#CEAE80] font-mono text-[10px] border border-amber-500/30 font-bold"
+                            className="px-1.5 py-0.5 rounded bg-brand/10 text-brand-ink dark:text-brand font-mono text-[10px] border border-brand/30 font-bold"
                           >
                             {a.consignmentCode}: {formatToman(a.allocatedAmount)}
                           </span>

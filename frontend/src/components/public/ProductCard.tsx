@@ -54,7 +54,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
   };
 
   return (
-    <article className="group relative rounded-2xl overflow-hidden bg-white dark:bg-[#16161a] border border-stone-200/80 dark:border-white/8 shadow-sm hover:shadow-2xl hover:shadow-[#CEAE80]/10 hover:border-[#CEAE80]/50 hover:-translate-y-1 transition-all duration-300">
+    <article className="group relative rounded-2xl overflow-hidden bg-white dark:bg-[#16161a] border border-stone-200/80 dark:border-white/8 shadow-sm hover:shadow-2xl hover:shadow-brand/10 hover:border-brand/50 hover:-translate-y-1 transition-all duration-300">
       {/* Product image */}
       <Link to={`/product/${item.id}`} className="block relative aspect-[3/4] overflow-hidden bg-stone-100 dark:bg-white/5">
         <SafeImage
@@ -86,7 +86,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
         className={cn(
           'absolute top-3 left-3 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all active:scale-90',
           favorite
-            ? 'bg-[#CEAE80] text-black shadow-md shadow-[#CEAE80]/40'
+            ? 'bg-brand text-brand-on shadow-md shadow-brand/40'
             : 'bg-black/40 text-white hover:bg-black/60'
         )}
         aria-label={favorite ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها'}
@@ -98,13 +98,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
       {/* Details */}
       <div className="p-4 sm:p-5 space-y-2.5">
         {item.categoryLabel && (
-          <p className="text-[10px] sm:text-[11px] font-black tracking-wider text-[#A67C38] dark:text-[#CEAE80]">
+          <p className="text-[10px] sm:text-[11px] font-black tracking-wider text-brand-ink">
             {item.categoryLabel}
           </p>
         )}
 
         <Link to={`/product/${item.id}`} className="block">
-          <h3 className="font-bold text-sm sm:text-base leading-6 text-stone-900 dark:text-white line-clamp-1 group-hover:text-[#A67C38] dark:group-hover:text-[#CEAE80] transition-colors">
+          <h3 className="font-bold text-sm sm:text-base leading-6 text-stone-900 dark:text-white line-clamp-1 group-hover:text-brand-ink dark:group-hover:text-brand transition-colors">
             {item.name}
           </h3>
         </Link>
@@ -131,7 +131,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
         <div className="flex items-center justify-between gap-2 pt-2 border-t border-dashed border-stone-200 dark:border-white/10">
           <div className="flex flex-col min-w-0">
             <span className="text-[10px] text-stone-400 dark:text-stone-500 font-medium">قیمت مصرف‌کننده</span>
-            <span className="text-sm sm:text-base font-black text-[#A67C38] dark:text-[#CEAE80]">
+            <span className="text-sm sm:text-base font-black text-brand-ink">
               {formatToman(item.retailPrice)}
             </span>
           </div>
@@ -142,7 +142,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
             className={cn(
               'shrink-0 flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-black transition-all active:scale-95',
               item.inStock
-                ? 'bg-[#CEAE80] hover:bg-[#c2a06e] text-black shadow-md shadow-[#CEAE80]/25'
+                ? 'bg-brand hover:bg-brand-hover text-brand-on shadow-md shadow-brand/25'
                 : 'bg-stone-100 dark:bg-white/5 text-stone-400 dark:text-stone-500 cursor-not-allowed'
             )}
             aria-label={hasVariants ? `مشاهده و انتخاب ${item.name}` : `افزودن ${item.name} به سبد خرید`}

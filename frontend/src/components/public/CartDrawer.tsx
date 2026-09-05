@@ -34,7 +34,7 @@ export const CartDrawer: React.FC = () => {
       <SheetContent side="end" className="w-full sm:w-[26rem] flex flex-col p-0">
         <SheetHeader className="px-5 pt-5 pb-4 border-b border-stone-200/70 dark:border-white/8">
           <SheetTitle className="flex items-center gap-2 text-base font-black">
-            <ShoppingBag className="w-4.5 h-4.5 text-[#A67C38] dark:text-[#CEAE80]" />
+            <ShoppingBag className="w-4.5 h-4.5 text-brand-ink" />
             سبد خرید
             {count > 0 && (
               <span className="text-xs font-bold text-stone-500 dark:text-stone-400">
@@ -91,7 +91,7 @@ export const CartDrawer: React.FC = () => {
                         <Link
                           to={`/product/${line.itemId}`}
                           onClick={closeCart}
-                          className="text-sm font-bold text-stone-900 dark:text-white line-clamp-1 hover:text-[#A67C38] dark:hover:text-[#CEAE80] transition-colors"
+                          className="text-sm font-bold text-stone-900 dark:text-white line-clamp-1 hover:text-brand-ink transition-colors"
                         >
                           {line.name}
                         </Link>
@@ -135,7 +135,7 @@ export const CartDrawer: React.FC = () => {
                             <Minus className="w-3 h-3" />
                           </button>
                         </div>
-                        <span className="text-sm font-black text-[#A67C38] dark:text-[#CEAE80]">
+                        <span className="text-sm font-black text-brand-ink">
                           {formatToman(line.price * line.quantity)}
                         </span>
                       </div>
@@ -158,7 +158,7 @@ export const CartDrawer: React.FC = () => {
               </p>
               <Button
                 size="lg"
-                className="w-full h-12 bg-[#CEAE80] hover:bg-[#c2a06e] text-black font-black shadow-lg shadow-[#CEAE80]/25"
+                className="w-full h-12 bg-brand hover:bg-brand-hover text-brand-on font-black shadow-lg shadow-brand/25"
                 onClick={goCheckout}
               >
                 ادامه و ثبت سفارش

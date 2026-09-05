@@ -67,9 +67,9 @@ const WorkshopShell: React.FC = () => {
     <div className="relative min-h-screen flex flex-col font-sans transition-colors duration-200 overflow-x-clip" dir="rtl">
       {/* Subtle Ambient Glow Light Orbs for Glassmorphism depth */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-32 right-1/4 w-96 h-96 bg-[#CEAE80] rounded-full blur-[140px] opacity-[0.14] dark:opacity-[0.12] transition-opacity" />
-        <div className="absolute top-1/3 -left-20 w-80 h-80 bg-amber-600 rounded-full blur-[130px] opacity-[0.10] dark:opacity-[0.09] transition-opacity" />
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-[#A67C38] rounded-full blur-[150px] opacity-[0.10] dark:opacity-[0.08] transition-opacity" />
+        <div className="absolute -top-32 right-1/4 w-96 h-96 bg-brand rounded-full blur-[140px] opacity-[0.14] dark:opacity-[0.12] transition-opacity" />
+        <div className="absolute top-1/3 -left-20 w-80 h-80 bg-brand-deep rounded-full blur-[130px] opacity-[0.10] dark:opacity-[0.09] transition-opacity" />
+        <div className="absolute bottom-10 right-10 w-96 h-96 bg-brand-deep rounded-full blur-[150px] opacity-[0.10] dark:opacity-[0.08] transition-opacity" />
       </div>
 
       {/* Network & Offline Safe Data Entry Guardian */}

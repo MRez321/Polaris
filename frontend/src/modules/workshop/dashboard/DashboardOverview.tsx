@@ -164,12 +164,12 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         <div className="glass-panel p-5 rounded-2xl shadow-xl transition-all">
           <div className="flex items-center justify-between mb-4">
             <h4 className="font-black text-stone-900 dark:text-white text-sm sm:text-base flex items-center gap-2">
-              <ArrowUpRight className="w-4 h-4 text-[#CEAE80]" />
+              <ArrowUpRight className="w-4 h-4 text-brand" />
               <span>آخرین واگذاری‌های امانی به دست‌فروشان</span>
             </h4>
             <button
               onClick={() => onGoToTab('consignments')}
-              className="text-xs text-amber-800 dark:text-[#CEAE80] hover:underline font-bold"
+              className="text-xs text-brand-ink dark:text-brand hover:underline font-bold"
             >
               مشاهده همه
             </button>
@@ -182,14 +182,14 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                 <div
                   key={c.id}
                   onClick={() => onSelectConsignment(c)}
-                  className="p-3.5 rounded-xl glass-card hover:border-[#CEAE80]/50 flex items-center justify-between gap-3 cursor-pointer transition-all active:scale-[0.99]"
+                  className="p-3.5 rounded-xl glass-card hover:border-brand/50 flex items-center justify-between gap-3 cursor-pointer transition-all active:scale-[0.99]"
                 >
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-black text-xs sm:text-sm text-stone-900 dark:text-white">
                         {c.sellerName}
                       </span>
-                      <span className="text-[11px] px-1.5 py-0.5 rounded bg-stone-100 dark:bg-[#1E1E22] text-stone-700 dark:text-[#CEAE80] font-mono border border-black/5 dark:border-white/5">
+                      <span className="text-[11px] px-1.5 py-0.5 rounded bg-stone-100 dark:bg-[#1E1E22] text-stone-700 dark:text-brand font-mono border border-black/5 dark:border-white/5">
                         {c.code}
                       </span>
                     </div>
@@ -232,7 +232,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             </h4>
             <button
               onClick={() => onGoToTab('finances')}
-              className="text-xs text-amber-800 dark:text-[#CEAE80] hover:underline font-bold"
+              className="text-xs text-brand-ink dark:text-brand hover:underline font-bold"
             >
               مشاهده همه
             </button>

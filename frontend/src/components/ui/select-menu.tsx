@@ -69,7 +69,7 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
               <span className="text-stone-400">{placeholder}</span>
             )}
           </span>
-          <ChevronDown className="w-4 h-4 shrink-0 text-stone-400 transition-transform duration-200 group-data-[popup-open]:rotate-180 group-data-[popup-open]:text-[#CEAE80]" />
+          <ChevronDown className="w-4 h-4 shrink-0 text-stone-400 transition-transform duration-200 group-data-[popup-open]:rotate-180 group-data-[popup-open]:text-brand" />
         </DropdownMenuTrigger>
 
         <DropdownMenuContent
@@ -88,12 +88,12 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
                 className={cn(
                   'justify-between gap-2 rounded-lg px-2.5 py-2 text-xs sm:text-sm',
                   isSelected &&
-                    'bg-[#CEAE80]/15 text-stone-900 dark:bg-[#CEAE80]/20 dark:text-[#F4E8D4]'
+                    'bg-brand/15 text-stone-900 dark:bg-brand/20 dark:text-brand-faint'
                 )}
               >
                 <span className="min-w-0 flex-1">{opt.label}</span>
                 {isSelected && (
-                  <Check className="w-3.5 h-3.5 shrink-0 text-[#A67C38] dark:text-[#CEAE80]" />
+                  <Check className="w-3.5 h-3.5 shrink-0 text-brand-ink" />
                 )}
               </DropdownMenuItem>
             );
@@ -118,7 +118,7 @@ export type SelectBadgeTone =
   | 'neutral';
 
 const badgeTones: Record<SelectBadgeTone, string> = {
-  gold: 'bg-[#CEAE80]/15 text-[#A67C38] dark:text-[#CEAE80] border-[#CEAE80]/40',
+  gold: 'bg-brand/15 text-brand-ink border-brand/40',
   green:
     'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30',
   red: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30',

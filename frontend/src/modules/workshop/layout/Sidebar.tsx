@@ -54,7 +54,7 @@ export const Sidebar: React.FC = () => {
               className={({ isActive }) =>
                 `w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all text-right ${
                   isActive
-                    ? 'bg-[#CEAE80] text-black font-black shadow-md'
+                    ? 'bg-brand text-brand-on font-black shadow-md'
                     : 'text-stone-800 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5 font-bold'
                 }`
               }
@@ -63,7 +63,7 @@ export const Sidebar: React.FC = () => {
                 <>
                   <div className="flex items-center gap-3">
                     <Icon
-                      className={`w-4 h-4 shrink-0 ${isActive ? 'text-black' : 'text-[#A67C38] dark:text-[#CEAE80]'}`}
+                      className={`w-4 h-4 shrink-0 ${isActive ? 'text-black' : 'text-brand-ink'}`}
                     />
                     <span className={isActive ? 'text-black' : 'text-stone-800 dark:text-gray-200'}>
                       {item.label}
@@ -82,9 +82,9 @@ export const Sidebar: React.FC = () => {
         })}
 
         <div className="pt-3 mt-3 border-t border-stone-200 dark:border-white/5 px-1">
-          <div className="p-3 rounded-xl bg-amber-500/10 dark:bg-[#CEAE80]/15 border border-amber-600/20 dark:border-[#CEAE80]/30 space-y-1">
+          <div className="p-3 rounded-xl bg-brand/10 dark:bg-brand/15 border border-brand/20 dark:border-brand/30 space-y-1">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#A67C38] dark:bg-[#CEAE80] animate-pulse"></span>
+              <span className="w-2 h-2 rounded-full bg-brand-deep dark:bg-brand animate-pulse"></span>
               <p className="font-black text-xs text-stone-900 dark:text-white">قاعده مالی کارگاه:</p>
             </div>
             <p className="text-[10px] text-stone-700 dark:text-stone-300 leading-relaxed font-medium">

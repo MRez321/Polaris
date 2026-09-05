@@ -42,7 +42,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({ name, image, className }
   return (
     <span
       className={cn(
-        'relative w-9 h-9 rounded-full p-[2.5px] bg-gradient-to-br from-[#A67C38] via-[#CEAE80] to-[#A67C38] shadow-md shrink-0',
+        'relative inline-flex w-9 h-9 rounded-full p-[2.5px] bg-gradient-to-br from-brand-deep via-brand to-brand-deep shadow-md shrink-0',
         className
       )}
     >
@@ -55,7 +55,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({ name, image, className }
         />
       )}
       {!showImage && (
-        <span className="w-full h-full rounded-full bg-[#CEAE80] text-black text-xs font-black flex items-center justify-center">
+        <span className="w-full h-full rounded-full bg-brand text-brand-on text-xs font-black flex items-center justify-center border-2 border-[#F8F7F4] dark:border-[#16161a]">
           {initials(name)}
         </span>
       )}
@@ -92,7 +92,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
         type="button"
         onClick={() => navigate(loginTo)}
         className={cn(
-          'flex items-center gap-1.5 h-9 sm:h-10 px-4 sm:px-5 rounded-xl bg-[#CEAE80] hover:bg-[#c2a06e] text-black text-xs sm:text-sm font-black shadow-md shadow-[#CEAE80]/25 transition-all active:scale-95',
+          'flex items-center gap-1.5 h-9 sm:h-10 px-4 sm:px-5 rounded-xl bg-brand hover:bg-brand-hover text-brand-on text-xs sm:text-sm font-black shadow-md shadow-brand/25 transition-all active:scale-95',
           className
         )}
       >
@@ -114,7 +114,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          'flex items-center gap-2 h-9 sm:h-10 ps-1 pe-2 sm:pe-3 rounded-xl border border-stone-200/80 dark:border-white/10 hover:border-[#CEAE80]/50 bg-white dark:bg-white/5 transition-all active:scale-95',
+          'flex items-center gap-2 h-9 sm:h-10 ps-1 pe-2 sm:pe-3 rounded-xl border border-stone-200/80 dark:border-white/10 hover:border-brand/50 bg-white dark:bg-white/5 transition-all active:scale-95',
           className
         )}
         aria-label="منوی حساب کاربری"

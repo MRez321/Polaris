@@ -19,7 +19,7 @@
   }
 
   ::selection {
-    background-color: rgba(206, 174, 128, 0.3);
+    background-color: color-mix(in srgb, var(--brand) 30%, transparent);
   }
   .dark ::selection {
     color: #fff;
@@ -37,11 +37,11 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(206, 174, 128, 0.3);
+    background: color-mix(in srgb, var(--brand) 30%, transparent);
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(206, 174, 128, 0.6);
+    background: color-mix(in srgb, var(--brand) 60%, transparent);
   }
 }
 
@@ -65,47 +65,60 @@ html.theme-switching *::after {
 }
 
 :root {
-  --primary-gold: #CEAE80;
-  --primary-gold-dark: #A67C38;
-  --primary-gold-light: #F4E8D4;
+  /* Brand palette — literal Gold defaults; custom themes override via <style id="brand-palette"> */
+  --brand: #CEAE80;
+  --brand-ink: #A67C38;
+  --brand-hover: #B59363;
+  --brand-deep: #A67C38;
+  --brand-on: #000000;
+  --brand-faint: #F4E8D4;
+  --brand-glow: 0 0 8px color-mix(in srgb, var(--brand) 60%, transparent);
+  --brand-glow-soft: 0 0 8px color-mix(in srgb, var(--brand) 10%, transparent);
 
   /* shadcn / persian-labs design tokens (light) */
   --radius: 0.75rem;
   --background: #F8F7F4;
   --foreground: #1C1917;
+  --card: #FFFFFF;
+  --card-foreground: #1C1917;
   --popover: #FFFFFF;
   --popover-foreground: #1C1917;
-  --primary: #CEAE80;
+  --primary: var(--brand);
   --primary-foreground: #1C1917;
   --secondary: #F5F5F4;
   --secondary-foreground: #1C1917;
-  --muted: #F5F5F4;
+  --muted: #E7E5E4;
   --muted-foreground: #78716C;
   --accent: #F4E8D4;
   --accent-foreground: #1C1917;
   --destructive: #E11D48;
   --border: #E7E5E4;
   --input: #CBD5E1;
-  --ring: #CEAE80;
+  --ring: var(--brand);
 }
 
 .dark {
-  --background: #0A0A0A;
+  --brand-ink: #CEAE80;
+  --brand-hover: #B59363;
+
+  --background: #0D0D10;
   --foreground: #F5F5F4;
-  --popover: #1A1A1E;
+  --card: #16161a;
+  --card-foreground: #F5F5F4;
+  --popover: #1E1E1E;
   --popover-foreground: #F5F5F4;
-  --primary: #CEAE80;
+  --primary: var(--brand);
   --primary-foreground: #1C1917;
   --secondary: #232329;
   --secondary-foreground: #F5F5F4;
-  --muted: #232329;
+  --muted: #26262c;
   --muted-foreground: #A8A29E;
   --accent: #2A2620;
   --accent-foreground: #F4E8D4;
   --destructive: #FB7185;
   --border: rgba(255, 255, 255, 0.1);
   --input: rgba(255, 255, 255, 0.15);
-  --ring: #CEAE80;
+  --ring: var(--brand);
 }
 
 @theme inline {
@@ -128,7 +141,14 @@ html.theme-switching *::after {
   --color-destructive: var(--destructive);
   --color-border: var(--border);
   --color-input: var(--input);
-  --color-ring: var(--ring);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-deep: var(--brand-deep);
+  --color-brand-on: var(--brand-on);
+  --color-brand-faint: var(--brand-faint);
+  --shadow-brand-glow: var(--brand-glow);
+  --shadow-brand-glow-soft: var(--brand-glow-soft);
 }
 
 /* Minimal tw-animate-css subset used by persian-labs popup components */
@@ -319,7 +339,7 @@ html:not(.dark) .glass-panel {
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(206, 174, 128, 0.25);
+  border: 1px solid color-mix(in srgb, var(--brand) 25%, transparent);
   box-shadow: 
     0 10px 30px -5px rgba(15, 23, 42, 0.06),
     0 2px 8px -2px rgba(15, 23, 42, 0.04),
@@ -343,7 +363,7 @@ html:not(.dark) .glass-card {
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
   border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: 
+  box-shadow:
     0 6px 20px -2px rgba(15, 23, 42, 0.05),
     0 2px 6px -1px rgba(15, 23, 42, 0.03),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
@@ -356,19 +376,19 @@ html:not(.dark) .glass-card {
 
 .glass-card-interactive:hover {
   transform: translateY(-2px);
-  border-color: rgba(206, 174, 128, 0.4);
+  border-color: color-mix(in srgb, var(--brand) 40%, transparent);
   box-shadow: 
     0 14px 32px -4px rgba(0, 0, 0, 0.45),
-    0 0 16px 0 rgba(206, 174, 128, 0.15),
+    0 0 16px 0 color-mix(in srgb, var(--brand) 15%, transparent),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
 }
 
 .light .glass-card-interactive:hover,
 html:not(.dark) .glass-card-interactive:hover {
-  border-color: rgba(206, 174, 128, 0.6);
+  border-color: color-mix(in srgb, var(--brand) 60%, transparent);
   box-shadow: 
     0 12px 28px -4px rgba(15, 23, 42, 0.08),
-    0 0 16px 0 rgba(206, 174, 128, 0.12),
+    0 0 16px 0 color-mix(in srgb, var(--brand) 12%, transparent),
     inset 0 1px 0 0 rgba(255, 255, 255, 1);
 }
 
@@ -380,7 +400,7 @@ html:not(.dark) .glass-card-interactive:hover {
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 
     0 25px 50px -12px rgba(0, 0, 0, 0.7),
-    0 0 30px 0 rgba(206, 174, 128, 0.08),
+    0 0 30px 0 color-mix(in srgb, var(--brand) 8%, transparent),
     inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
 }
 
@@ -389,10 +409,10 @@ html:not(.dark) .glass-modal {
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(28px) saturate(190%);
   -webkit-backdrop-filter: blur(28px) saturate(190%);
-  border: 1px solid rgba(206, 174, 128, 0.3);
+  border: 1px solid color-mix(in srgb, var(--brand) 30%, transparent);
   box-shadow: 
     0 25px 50px -12px rgba(15, 23, 42, 0.15),
-    0 0 25px 0 rgba(206, 174, 128, 0.1),
+    0 0 25px 0 color-mix(in srgb, var(--brand) 10%, transparent),
     inset 0 1px 1px 0 rgba(255, 255, 255, 1);
 }
 
@@ -418,19 +438,19 @@ html:not(.dark) .glass-input {
 }
 
 .glass-input:focus {
-  border-color: #CEAE80;
+  border-color: var(--brand);
   background: rgba(20, 20, 26, 0.85);
   box-shadow: 
-    0 0 0 3px rgba(206, 174, 128, 0.25),
+    0 0 0 3px color-mix(in srgb, var(--brand) 25%, transparent),
     inset 0 2px 4px 0 rgba(0, 0, 0, 0.2);
 }
 
 .light .glass-input:focus,
 html:not(.dark) .glass-input:focus {
-  border-color: #B58E58;
+  border-color: var(--brand-hover);
   background: #FFFFFF;
   box-shadow: 
-    0 0 0 3px rgba(181, 142, 88, 0.2),
+    0 0 0 3px color-mix(in srgb, var(--brand-hover) 20%, transparent),
     inset 0 1px 2px 0 rgba(0, 0, 0, 0.02);
 }
 
@@ -448,14 +468,14 @@ html:not(.dark) .glass-input:focus {
 
 .glass-btn:hover {
   background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(206, 174, 128, 0.4);
+  border-color: color-mix(in srgb, var(--brand) 40%, transparent);
   transform: translateY(-1px);
 }
 
 .light .glass-btn,
 html:not(.dark) .glass-btn {
   background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(206, 174, 128, 0.3);
+  border: 1px solid color-mix(in srgb, var(--brand) 30%, transparent);
   box-shadow: 
     0 4px 12px 0 rgba(15, 23, 42, 0.04),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
@@ -464,7 +484,7 @@ html:not(.dark) .glass-btn {
 .light .glass-btn:hover,
 html:not(.dark) .glass-btn:hover {
   background: #FFFFFF;
-  border-color: rgba(206, 174, 128, 0.6);
+  border-color: color-mix(in srgb, var(--brand) 60%, transparent);
   box-shadow: 0 6px 16px 0 rgba(15, 23, 42, 0.08);
 }
 

@@ -71,7 +71,7 @@ export const SideMenu: React.FC<SideMenuProps> = ({ open, onOpenChange }) => {
   const itemClass = (active: boolean) =>
     `flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${
       active
-        ? 'bg-[#CEAE80]/15 border border-[#CEAE80]/40 text-black dark:text-[#CEAE80]'
+        ? 'bg-brand/15 border border-brand/40 text-brand-on dark:text-brand'
         : 'border border-transparent text-stone-700 dark:text-gray-300 hover:bg-stone-100 dark:hover:bg-white/5 hover:text-black dark:hover:text-white'
     }`;
 
@@ -80,7 +80,7 @@ export const SideMenu: React.FC<SideMenuProps> = ({ open, onOpenChange }) => {
       <SheetContent side="start" showCloseButton={false} className="w-80 p-0 bg-white dark:bg-[#141416] border-e border-stone-200 dark:border-white/10">
         <SheetHeader className="p-4 pb-2 border-b border-stone-200 dark:border-white/5">
           <SheetTitle className="flex items-center gap-2.5 text-base font-black text-stone-900 dark:text-white">
-            <span className="w-9 h-9 rounded-xl bg-[#CEAE80] text-black flex items-center justify-center shadow-md">
+            <span className="w-9 h-9 rounded-xl bg-brand text-brand-on flex items-center justify-center shadow-md">
               <Scissors className="w-5 h-5 -rotate-45 text-black" />
             </span>
             پولاریس استایل
@@ -140,12 +140,12 @@ export const SideMenu: React.FC<SideMenuProps> = ({ open, onOpenChange }) => {
 
           {/* Gold gradient separator + website section */}
           <div className="my-3 mx-1 flex items-center gap-2">
-            <span className="flex-1 h-px bg-gradient-to-l from-transparent via-[#CEAE80]/60 to-transparent" />
-            <span className="text-[11px] font-black text-[#A67C38] dark:text-[#CEAE80] flex items-center gap-1">
+            <span className="flex-1 h-px bg-gradient-to-l from-transparent via-brand/60 to-transparent" />
+            <span className="text-[11px] font-black text-brand-ink flex items-center gap-1">
               <Globe className="w-3 h-3" />
               فروشگاه
             </span>
-            <span className="flex-1 h-px bg-gradient-to-l from-transparent via-[#CEAE80]/60 to-transparent" />
+            <span className="flex-1 h-px bg-gradient-to-l from-transparent via-brand/60 to-transparent" />
           </div>
 
           <NavLink to="/workshop/orders" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>

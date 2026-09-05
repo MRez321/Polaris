@@ -1,14 +1,39 @@
 <!doctype html>
 <html lang="fa" dir="rtl" class="dark">
   <head>
+    <!-- Palette math shared with app code; must load before the pre-paint script. -->
+    <script src="/derive-palette.js"></script>
     <script>
-      // Pre-paint theme resolution: prevents flash of the wrong palette (FOUC).
-      try {
-        if (localStorage.getItem('polaris_theme') === 'light') {
-          document.documentElement.classList.remove('dark');
-          document.documentElement.classList.add('light');
-        }
-      } catch (e) {}
+      // Pre-paint theme + palette resolution: prevents flash of the wrong
+      // mode or colors (FOUC). Derivation lives in /derive-palette.js.
+      (function () {
+        try {
+          var mode = null;
+          try { mode = localStorage.getItem('polaris_theme'); } catch (e) {}
+          var cached = null;
+          try { cached = JSON.parse(localStorage.getItem('polaris_palette') || 'null'); } catch (e) {}
+          // Visitor's explicit mode wins; else the admin default (dark).
+          var isLight =
+            mode === 'light' ||
+            (mode !== 'dark' && cached && cached.defaultMode === 'light');
+          var root = document.documentElement;
+          root.classList.toggle('dark', !isLight);
+          root.classList.toggle('light', isLight);
+
+          var pal = cached && cached.palette;
+          if (
+            window.PolarisPalette &&
+            pal &&
+            pal.type === 'custom' &&
+            window.PolarisPalette.isValidPrimaryColor(pal.primary)
+          ) {
+            var style = document.createElement('style');
+            style.id = 'brand-palette';
+            style.textContent = window.PolarisPalette.derivePaletteCss(pal.primary);
+            document.head.appendChild(style);
+          }
+        } catch (e) {}
+      })();
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />

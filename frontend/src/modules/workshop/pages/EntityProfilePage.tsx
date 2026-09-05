@@ -112,15 +112,15 @@ const KIND_META: Record<
   TimelineKind,
   { Icon: typeof Receipt; boxCls: string; iconCls: string }
 > = {
-  consignment: { Icon: ArrowLeftRight, boxCls: 'bg-amber-500/15 border-amber-500/30', iconCls: 'text-amber-700 dark:text-[#CEAE80]' },
-  item_line: { Icon: ArrowLeftRight, boxCls: 'bg-amber-500/15 border-amber-500/30', iconCls: 'text-amber-700 dark:text-[#CEAE80]' },
+  consignment: { Icon: ArrowLeftRight, boxCls: 'bg-brand/15 border-brand/30', iconCls: 'text-brand-ink dark:text-brand' },
+  item_line: { Icon: ArrowLeftRight, boxCls: 'bg-brand/15 border-brand/30', iconCls: 'text-brand-ink dark:text-brand' },
   payment: { Icon: Receipt, boxCls: 'bg-emerald-500/15 border-emerald-500/30', iconCls: 'text-emerald-600 dark:text-emerald-400' },
   return: { Icon: RotateCcw, boxCls: 'bg-rose-500/15 border-rose-500/30', iconCls: 'text-rose-600 dark:text-rose-400' },
   return_line: { Icon: RotateCcw, boxCls: 'bg-rose-500/15 border-rose-500/30', iconCls: 'text-rose-600 dark:text-rose-400' },
   activity: { Icon: History, boxCls: 'bg-blue-500/15 border-blue-500/30', iconCls: 'text-blue-600 dark:text-blue-400' },
   audit: { Icon: ScrollText, boxCls: 'bg-stone-500/10 border-stone-400/30', iconCls: 'text-stone-500 dark:text-gray-400' },
   cost_share: { Icon: Wallet, boxCls: 'bg-violet-500/15 border-violet-500/30', iconCls: 'text-violet-600 dark:text-violet-400' },
-  created: { Icon: PackagePlus, boxCls: 'bg-[#CEAE80]/15 border-[#CEAE80]/30', iconCls: 'text-[#CEAE80]' },
+  created: { Icon: PackagePlus, boxCls: 'bg-brand/15 border-brand/30', iconCls: 'text-brand' },
 };
 
 /* ------------------------------- small pieces -------------------------------- */
@@ -146,13 +146,13 @@ const Avatar: React.FC<{ name: string; url?: string; sizeCls?: string }> = ({ na
   <SafeImage
     src={url}
     alt={name}
-    className={`${sizeCls} rounded-2xl object-cover border border-[#CEAE80]/50 shrink-0`}
+    className={`${sizeCls} rounded-2xl object-cover border border-brand/50 shrink-0`}
   />
 );
 
 const ContactRow: React.FC<{ icon: React.ReactNode; children: React.ReactNode }> = ({ icon, children }) => (
   <div className="flex items-start gap-2 text-xs text-stone-600 dark:text-gray-300">
-    <span className="text-[#CEAE80] shrink-0 mt-0.5">{icon}</span>
+    <span className="text-brand shrink-0 mt-0.5">{icon}</span>
     <div className="min-w-0 flex-1">{children}</div>
   </div>
 );
@@ -421,7 +421,7 @@ export const EntityProfilePage: React.FC = () => {
         </p>
         <button
           onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black text-xs font-black transition-all active:scale-95"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand hover:bg-brand-hover text-brand-on text-xs font-black transition-all active:scale-95"
         >
           <ArrowRight className="w-4 h-4" />
           <span>بازگشت</span>
@@ -447,7 +447,7 @@ export const EntityProfilePage: React.FC = () => {
                   <h2 className="font-black text-base sm:text-lg text-stone-900 dark:text-white truncate">{item.name}</h2>
                   <Badge variant="neutral">{item.code}</Badge>
                 </div>
-                <p className="text-[11px] text-[#CEAE80] font-bold mt-0.5">{categoryLabel}</p>
+                <p className="text-[11px] text-brand font-bold mt-0.5">{categoryLabel}</p>
               </div>
             </div>
             <Badge variant={isLowStock ? 'warning' : 'success'}>
@@ -474,7 +474,7 @@ export const EntityProfilePage: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
-            <Boxes className="w-3.5 h-3.5 text-[#CEAE80]" />
+            <Boxes className="w-3.5 h-3.5 text-brand" />
             {(item.sizes || []).map((s) => (
               <Chip key={`sz-${s}`}>سایز {s}</Chip>
             ))}
@@ -504,7 +504,7 @@ export const EntityProfilePage: React.FC = () => {
                   <h2 className="font-black text-base sm:text-lg text-stone-900 dark:text-white truncate">{s.name}</h2>
                   <Badge variant="neutral">{s.code}</Badge>
                 </div>
-                <p className="text-[11px] text-[#CEAE80] font-bold mt-0.5">فروشنده امانی</p>
+                <p className="text-[11px] text-brand font-bold mt-0.5">فروشنده امانی</p>
               </div>
             </div>
             <Badge variant={statusMeta.variant}>{statusMeta.label}</Badge>
@@ -529,7 +529,7 @@ export const EntityProfilePage: React.FC = () => {
             <ContactRow icon={<Phone className="w-3.5 h-3.5" />}>
               <div className="flex flex-wrap gap-x-3 gap-y-1">
                 {[s.phone, ...(s.additionalPhones || [])].filter(Boolean).map((ph) => (
-                  <a key={ph} href={`tel:${ph}`} dir="ltr" className="font-mono text-[#CEAE80] hover:underline">
+                  <a key={ph} href={`tel:${ph}`} dir="ltr" className="font-mono text-brand hover:underline">
                     {ph}
                   </a>
                 ))}
@@ -585,7 +585,7 @@ export const EntityProfilePage: React.FC = () => {
                   <h2 className="font-black text-base sm:text-lg text-stone-900 dark:text-white truncate">{m.name}</h2>
                   <Badge variant="neutral">{m.code}</Badge>
                 </div>
-                <p className="text-[11px] text-[#CEAE80] font-bold mt-0.5">{m.roleTitle}</p>
+                <p className="text-[11px] text-brand font-bold mt-0.5">{m.roleTitle}</p>
               </div>
             </div>
             <Badge variant={statusMeta.variant}>{statusMeta.label}</Badge>
@@ -611,7 +611,7 @@ export const EntityProfilePage: React.FC = () => {
               <ContactRow icon={<Phone className="w-3.5 h-3.5" />}>
                 <div className="flex flex-wrap gap-x-3 gap-y-1">
                   {m.phones.map((ph) => (
-                    <a key={ph} href={`tel:${ph}`} dir="ltr" className="font-mono text-[#CEAE80] hover:underline">
+                    <a key={ph} href={`tel:${ph}`} dir="ltr" className="font-mono text-brand hover:underline">
                       {ph}
                     </a>
                   ))}
@@ -635,14 +635,14 @@ export const EntityProfilePage: React.FC = () => {
                 <h2 className="font-black text-base sm:text-lg text-stone-900 dark:text-white truncate">{o.name}</h2>
                 <Badge variant="gold">مالک و هم‌بنیان‌گذار</Badge>
               </div>
-              <p className="text-[11px] text-[#CEAE80] font-bold mt-0.5">{o.role}</p>
+              <p className="text-[11px] text-brand font-bold mt-0.5">{o.role}</p>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
           <StatBox label="سهم از کارگاه">
-            <span className="text-[#CEAE80]">{toPersianDigits(o.sharePercentage)}٪</span>
+            <span className="text-brand">{toPersianDigits(o.sharePercentage)}٪</span>
           </StatBox>
           <StatBox label="تعداد دنگ">
             <span>{o.sharesCount != null ? `${toPersianDigits(o.sharesCount)} دنگ` : '—'}</span>
@@ -655,7 +655,7 @@ export const EntityProfilePage: React.FC = () => {
           <StatBox label="تلفن‌ها">
             <div className="space-y-0.5">
               {(o.phones || []).map((ph) => (
-                <a key={ph} href={`tel:${ph}`} dir="ltr" className="block font-mono text-[11px] text-[#CEAE80] hover:underline">
+                <a key={ph} href={`tel:${ph}`} dir="ltr" className="block font-mono text-[11px] text-brand hover:underline">
                   {ph}
                 </a>
               ))}
@@ -702,14 +702,14 @@ export const EntityProfilePage: React.FC = () => {
       </button>
 
       {/* Summary card */}
-      <section className="glass-panel p-4 sm:p-6 rounded-2xl border border-stone-200 dark:border-[#CEAE80]/20 shadow-md space-y-4">
+      <section className="glass-panel p-4 sm:p-6 rounded-2xl border border-stone-200 dark:border-brand/20 shadow-md space-y-4">
         {headerBlock}
       </section>
 
       {/* History timeline */}
       <section className="glass-panel p-4 sm:p-6 rounded-2xl border border-stone-200 dark:border-white/5 shadow-md">
         <h3 className="text-sm sm:text-base font-black text-stone-900 dark:text-white flex items-center gap-2 mb-4">
-          <History className="w-5 h-5 text-[#CEAE80]" />
+          <History className="w-5 h-5 text-brand" />
           <span>{historyTitle}</span>
         </h3>
 

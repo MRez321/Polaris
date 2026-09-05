@@ -65,10 +65,10 @@ export const GalleryManager: React.FC = () => {
       <div className="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
         <div>
           <h3 className="text-base sm:text-lg font-black flex items-center gap-2">
-            <span className="w-9 h-9 rounded-xl bg-[#CEAE80]/20 flex items-center justify-center">
-              <Images className="w-5 h-5 text-[#CEAE80]" />
+            <span className="w-9 h-9 rounded-xl bg-brand/20 flex items-center justify-center">
+              <Images className="w-5 h-5 text-brand" />
             </span>
-            <span className="text-[#CEAE80]">گالری تصاویر کارگاه</span>
+            <span className="text-brand">گالری تصاویر کارگاه</span>
           </h3>
           <p className="text-xs text-stone-500 dark:text-gray-400 mt-1">
             مدیریت تمام عکس‌های بارگذاری‌شده: پروفایل افراد، تصاویر کالا، فاکتورها و لوگو
@@ -78,9 +78,9 @@ export const GalleryManager: React.FC = () => {
         <button
           type="button"
           onClick={() => void refresh()}
-          className="px-3 py-1.5 rounded-xl glass-card hover:border-[#CEAE80] text-xs font-bold flex items-center gap-1.5 transition-colors"
+          className="px-3 py-1.5 rounded-xl glass-card hover:border-brand text-xs font-bold flex items-center gap-1.5 transition-colors"
         >
-          <Loader2 className={`w-3.5 h-3.5 ${rows === null ? 'animate-spin text-[#CEAE80]' : ''}`} />
+          <Loader2 className={`w-3.5 h-3.5 ${rows === null ? 'animate-spin text-brand' : ''}`} />
           <span>به‌روزرسانی</span>
         </button>
       </div>
@@ -95,8 +95,8 @@ export const GalleryManager: React.FC = () => {
               onClick={() => setCatFilter(c.value)}
               className={`px-3 py-1 rounded-full text-[11px] font-bold transition-colors ${
                 catFilter === c.value
-                  ? 'bg-[#CEAE80] text-black'
-                  : 'bg-stone-100 dark:bg-white/10 text-stone-600 dark:text-gray-300 hover:bg-[#CEAE80]/30'
+                  ? 'bg-brand text-brand-on'
+                  : 'bg-stone-100 dark:bg-white/10 text-stone-600 dark:text-gray-300 hover:bg-brand/30'
               }`}
             >
               {c.label}
@@ -134,8 +134,8 @@ export const GalleryManager: React.FC = () => {
                 onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
                 className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-colors ${
                   tagFilter === tag
-                    ? 'bg-[#CEAE80] text-black'
-                    : 'bg-stone-100 dark:bg-white/10 text-stone-600 dark:text-gray-300 hover:bg-[#CEAE80]/30'
+                    ? 'bg-brand text-brand-on'
+                    : 'bg-stone-100 dark:bg-white/10 text-stone-600 dark:text-gray-300 hover:bg-brand/30'
                 }`}
               >
                 {tag} ({toPersianDigits(count)})
@@ -148,7 +148,7 @@ export const GalleryManager: React.FC = () => {
       {/* Grid */}
       {rows === null ? (
         <div className="py-16 flex justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-[#CEAE80]" />
+          <Loader2 className="w-8 h-8 animate-spin text-brand" />
         </div>
       ) : filtered.length === 0 ? (
         <div className="glass-panel py-16 rounded-2xl text-center space-y-3">
@@ -164,7 +164,7 @@ export const GalleryManager: React.FC = () => {
               key={row.id}
               type="button"
               onClick={() => setSelected(row)}
-              className="group relative aspect-square rounded-xl overflow-hidden border border-[#CEAE80]/20 hover:border-[#CEAE80] hover:ring-2 hover:ring-[#CEAE80]/40 transition-all bg-black/10 dark:bg-black/30"
+              className="group relative aspect-square rounded-xl overflow-hidden border border-brand/20 hover:border-brand hover:ring-2 hover:ring-brand/40 transition-all bg-black/10 dark:bg-black/30"
             >
               <img src={row.url} alt={row.label} loading="lazy" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
               <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[9px] px-1.5 py-1 truncate opacity-0 group-hover:opacity-100 transition-opacity">
@@ -269,7 +269,7 @@ const GalleryImageDetailModal: React.FC<DetailModalProps> = ({ image, onClose, o
             onClick={() => {
               void navigator.clipboard.writeText(image.url).then(() => toast.success('آدرس تصویر کپی شد'));
             }}
-            className="p-2 rounded-xl bg-stone-100 dark:bg-white/10 hover:bg-[#CEAE80] hover:text-black text-stone-500 dark:text-gray-300 transition-colors"
+            className="p-2 rounded-xl bg-stone-100 dark:bg-white/10 hover:bg-brand hover:text-brand-on text-stone-500 dark:text-gray-300 transition-colors"
             title="کپی آدرس"
           >
             <Copy className="w-4 h-4" />
@@ -335,7 +335,7 @@ const GalleryImageDetailModal: React.FC<DetailModalProps> = ({ image, onClose, o
               type="button"
               disabled={busy}
               onClick={() => void handleSave()}
-              className="px-4 py-2 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-bold text-xs disabled:opacity-50"
+              className="px-4 py-2 rounded-xl bg-brand hover:bg-brand-hover text-brand-on font-bold text-xs disabled:opacity-50"
             >
               ذخیره تغییرات
             </button>

@@ -118,10 +118,10 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
       <div className="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
         <div>
           <h3 className="text-base sm:text-lg font-black text-stone-900 dark:text-white flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-[#CEAE80]/20 flex items-center justify-center text-[#CEAE80]">
+            <div className="w-9 h-9 rounded-xl bg-brand/20 flex items-center justify-center text-brand">
               <Users className="w-5 h-5" />
             </div>
-            <span className="text-[#CEAE80]">فروشندگان خیابانی و توزیع‌کنندگان امانی راسته بازار</span>
+            <span className="text-brand">فروشندگان خیابانی و توزیع‌کنندگان امانی راسته بازار</span>
           </h3>
           <p className="text-xs text-stone-500 dark:text-gray-400 mt-1">
             {toPersianDigits(sellers.length)} بساط‌دار و توزیع‌کننده فعال • مجموع مانده طلب کارگاه:{' '}
@@ -136,7 +136,7 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
             setEditingSeller(null);
             setIsModalOpen(true);
           }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-black text-xs sm:text-sm shadow-md transition-all active:scale-95 self-stretch sm:self-auto justify-center"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-brand-on font-black text-xs sm:text-sm shadow-md transition-all active:scale-95 self-stretch sm:self-auto justify-center"
         >
           <UserPlus className="w-4 h-4 text-black" />
           <span>ثبت فروشنده و دست‌فروش جدید</span>
@@ -145,7 +145,7 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
 
       {/* KPI Overview Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-2xl glass-card border border-[#CEAE80]/30 space-y-1">
+        <div className="p-4 rounded-2xl glass-card border border-brand/30 space-y-1">
           <span className="text-xs text-stone-500 dark:text-gray-400 block">کل مطالبات وصول نشده:</span>
           <div className="text-lg font-black text-rose-500 dark:text-rose-400 font-mono" dir="ltr">
             {formatToman(totalDebts)}
@@ -179,7 +179,7 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="جستجوی نام فروشنده، شماره تماس، کد شناسایی، راسته بساط..."
-            className="w-full pl-4 pr-10 py-2.5 rounded-xl glass-input text-xs sm:text-sm focus:border-[#CEAE80] outline-none"
+            className="w-full pl-4 pr-10 py-2.5 rounded-xl glass-input text-xs sm:text-sm focus:border-brand outline-none"
           />
         </div>
 
@@ -190,7 +190,7 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
               onClick={() => setStatusFilter('all')}
               className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
                 statusFilter === 'all'
-                  ? 'bg-[#CEAE80] text-black shadow-sm'
+                  ? 'bg-brand text-brand-on shadow-sm'
                   : 'text-stone-600 dark:text-gray-400 hover:text-stone-900 dark:hover:text-white'
               }`}
             >
@@ -244,7 +244,7 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
           return (
             <div
               onClick={() => navigate(`/workshop/profile/sellers/${seller.id}`)}
-              className="glass-card p-4 sm:p-5 rounded-2xl hover:border-[#CEAE80]/50 shadow-md hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between space-y-3.5 group relative"
+              className="glass-card p-4 sm:p-5 rounded-2xl hover:border-brand/50 shadow-md hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between space-y-3.5 group relative"
             >
               <div>
                 {/* Header Row */}
@@ -255,7 +255,7 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
                       <div
                         className={`w-6 h-6 rounded-lg flex items-center justify-center font-black text-xs shrink-0 ${
                           index === 0
-                            ? 'bg-[#CEAE80] text-black shadow-md'
+                            ? 'bg-brand text-brand-on shadow-md'
                             : 'bg-stone-200 dark:bg-black/50 text-stone-700 dark:text-stone-300'
                         }`}
                       >
@@ -266,12 +266,12 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
                     <SafeImage
                       src={seller.avatarUrl}
                       alt={seller.name}
-                      className="w-11 h-11 rounded-xl object-cover border border-[#CEAE80]/40 shrink-0"
+                      className="w-11 h-11 rounded-xl object-cover border border-brand/40 shrink-0"
                     />
 
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <h4 className="font-black text-stone-900 dark:text-white text-sm sm:text-base truncate group-hover:text-[#CEAE80] transition-colors">
+                        <h4 className="font-black text-stone-900 dark:text-white text-sm sm:text-base truncate group-hover:text-brand transition-colors">
                           {seller.name}
                         </h4>
                         <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-stone-200 dark:bg-black/50 text-stone-600 dark:text-stone-400 font-mono">
@@ -283,10 +283,10 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
                       <a
                         href={`tel:${seller.phone}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="text-xs text-[#CEAE80] hover:underline font-mono inline-flex items-center gap-1 mt-0.5"
+                        className="text-xs text-brand hover:underline font-mono inline-flex items-center gap-1 mt-0.5"
                         dir="ltr"
                       >
-                        <Phone className="w-3 h-3 text-[#CEAE80]" />
+                        <Phone className="w-3 h-3 text-brand" />
                         <span>{seller.phone}</span>
                       </a>
                     </div>
@@ -312,7 +312,7 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
 
                 {/* Location */}
                 <div className="mt-2.5 flex items-start gap-1.5 text-xs text-stone-500 dark:text-gray-400">
-                  <MapPin className="w-3.5 h-3.5 text-[#CEAE80] shrink-0 mt-0.5" />
+                  <MapPin className="w-3.5 h-3.5 text-brand shrink-0 mt-0.5" />
                   <span className="line-clamp-1">{seller.streetLocation}</span>
                 </div>
 
@@ -347,14 +347,14 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
                           {acc.cardNumber && (
                             <div
                               onClick={(e) => handleCopy(acc.cardNumber, cKey, e)}
-                              className="p-2 rounded-xl bg-stone-100 dark:bg-black/30 hover:bg-[#CEAE80]/15 dark:hover:bg-[#CEAE80]/15 border border-black/5 dark:border-white/5 flex items-center justify-between text-xs cursor-pointer transition-all group"
+                              className="p-2 rounded-xl bg-stone-100 dark:bg-black/30 hover:bg-brand/15 dark:hover:bg-brand/15 border border-black/5 dark:border-white/5 flex items-center justify-between text-xs cursor-pointer transition-all group"
                               title="کلیک روی کل کادر برای کپی شماره کارت"
                             >
                               <div className="flex items-center gap-1.5 text-stone-700 dark:text-stone-300 font-mono" dir="ltr">
-                                <CreditCard className="w-3.5 h-3.5 text-[#CEAE80]" />
+                                <CreditCard className="w-3.5 h-3.5 text-brand" />
                                 <span className="text-[11px] font-bold tracking-wider">{acc.cardNumber}</span>
                               </div>
-                              <span className="text-[10px] text-[#CEAE80] font-bold flex items-center gap-1">
+                              <span className="text-[10px] text-brand font-bold flex items-center gap-1">
                                 {isCardCopied ? (
                                   <>
                                     <Check className="w-3 h-3 text-emerald-500" />
@@ -373,14 +373,14 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
                           {!acc.cardNumber && acc.shebaNumber && (
                             <div
                               onClick={(e) => handleCopy(acc.shebaNumber, sKey, e)}
-                              className="p-2 rounded-xl bg-stone-100 dark:bg-black/30 hover:bg-[#CEAE80]/15 dark:hover:bg-[#CEAE80]/15 border border-black/5 dark:border-white/5 flex items-center justify-between text-xs cursor-pointer transition-all group"
+                              className="p-2 rounded-xl bg-stone-100 dark:bg-black/30 hover:bg-brand/15 dark:hover:bg-brand/15 border border-black/5 dark:border-white/5 flex items-center justify-between text-xs cursor-pointer transition-all group"
                               title="کلیک برای کپی شماره شبا"
                             >
                               <div className="flex items-center gap-1.5 text-stone-700 dark:text-stone-300 font-mono" dir="ltr">
                                 <span className="text-[10px] text-stone-400 font-sans">شبا:</span>
                                 <span className="text-[10px] truncate max-w-[170px]">{acc.shebaNumber}</span>
                               </div>
-                              <span className="text-[10px] text-[#CEAE80] font-bold flex items-center gap-1">
+                              <span className="text-[10px] text-brand font-bold flex items-center gap-1">
                                 {isShebaCopied ? (
                                   <>
                                     <Check className="w-3 h-3 text-emerald-500" />
@@ -401,7 +401,7 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
 
                     {seller.bankAccounts.length > 2 && (
                       <div className="text-left">
-                        <span className="text-[10px] text-stone-400 font-bold hover:text-[#CEAE80] cursor-pointer">
+                        <span className="text-[10px] text-stone-400 font-bold hover:text-brand cursor-pointer">
                           + {toPersianDigits(seller.bankAccounts.length - 2)} حساب دیگر در پرونده
                         </span>
                       </div>
@@ -422,7 +422,7 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
                           ? 'bg-rose-500'
                           : debtPercentage > 50
                           ? 'bg-amber-500'
-                          : 'bg-[#CEAE80]'
+                          : 'bg-brand'
                       }`}
                       style={{ width: `${debtPercentage}%` }}
                     />
@@ -437,10 +437,10 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
                     e.stopPropagation();
                     setSelectedProfileSeller(seller);
                   }}
-                  className="p-2 rounded-xl glass-card hover:border-[#CEAE80] text-stone-700 dark:text-stone-200 text-xs font-bold flex items-center justify-center gap-1 shadow-sm transition-all"
+                  className="p-2 rounded-xl glass-card hover:border-brand text-stone-700 dark:text-stone-200 text-xs font-bold flex items-center justify-center gap-1 shadow-sm transition-all"
                   title="مشاهده پرونده و فاکتورها"
                 >
-                  <Eye className="w-4 h-4 text-[#CEAE80]" />
+                  <Eye className="w-4 h-4 text-brand" />
                 </button>
 
                 <button
@@ -448,9 +448,9 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
                     e.stopPropagation();
                     onQuickHandover(seller);
                   }}
-                  className="flex-1 py-2 rounded-xl glass-card hover:border-[#CEAE80] text-stone-800 dark:text-stone-200 text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95"
+                  className="flex-1 py-2 rounded-xl glass-card hover:border-brand text-stone-800 dark:text-stone-200 text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95"
                 >
-                  <ArrowLeftRight className="w-3.5 h-3.5 text-[#CEAE80]" />
+                  <ArrowLeftRight className="w-3.5 h-3.5 text-brand" />
                   <span>تحویل بار</span>
                 </button>
 
@@ -459,7 +459,7 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
                     e.stopPropagation();
                     onQuickPayment(seller);
                   }}
-                  className="flex-1 py-2 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black text-xs font-black flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-95"
+                  className="flex-1 py-2 rounded-xl bg-brand hover:bg-brand-hover text-brand-on text-xs font-black flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-95"
                 >
                   <Receipt className="w-3.5 h-3.5 text-black" />
                   <span>دریافت وجه</span>

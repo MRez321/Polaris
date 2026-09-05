@@ -184,7 +184,7 @@ export const ProductPage: React.FC = () => {
                   className={cn(
                     'shrink-0 w-20 h-24 rounded-xl overflow-hidden border-2 transition-all',
                     i === activeImage
-                      ? 'border-[#CEAE80] shadow-md shadow-[#CEAE80]/20'
+                      ? 'border-brand shadow-md shadow-brand/20'
                       : 'border-transparent opacity-70 hover:opacity-100'
                   )}
                   aria-label={`تصویر ${toPersianDigits(i + 1)}`}
@@ -200,7 +200,7 @@ export const ProductPage: React.FC = () => {
         <div className="space-y-5">
           <div className="space-y-2">
             {item.categoryLabel && (
-              <p className="text-xs font-black tracking-wider text-[#A67C38] dark:text-[#CEAE80]">
+              <p className="text-xs font-black tracking-wider text-brand-ink">
                 {item.categoryLabel}
               </p>
             )}
@@ -213,7 +213,7 @@ export const ProductPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-2xl sm:text-3xl font-black text-[#A67C38] dark:text-[#CEAE80]">
+            <span className="text-2xl sm:text-3xl font-black text-brand-ink">
               {formatToman(item.retailPrice)}
             </span>
             <button
@@ -222,8 +222,8 @@ export const ProductPage: React.FC = () => {
               className={cn(
                 'w-10 h-10 rounded-xl flex items-center justify-center border transition-all active:scale-90',
                 favorite
-                  ? 'bg-[#CEAE80] border-[#CEAE80] text-black shadow-md shadow-[#CEAE80]/30'
-                  : 'border-stone-200 dark:border-white/10 text-stone-500 dark:text-stone-300 hover:border-[#CEAE80]/50 hover:text-[#A67C38]'
+                  ? 'bg-brand border-brand text-brand-on shadow-md shadow-brand/30'
+                  : 'border-stone-200 dark:border-white/10 text-stone-500 dark:text-stone-300 hover:border-brand/50 hover:text-brand-ink'
               )}
               aria-label={favorite ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها'}
               aria-pressed={favorite}
@@ -245,7 +245,7 @@ export const ProductPage: React.FC = () => {
               <p className="text-sm font-black text-stone-900 dark:text-white">
                 سایز{' '}
                 {size && (
-                  <span className="text-[#A67C38] dark:text-[#CEAE80]">— {size}</span>
+                  <span className="text-brand-ink">— {size}</span>
                 )}
               </p>
               <div className="flex flex-wrap gap-2">
@@ -257,8 +257,8 @@ export const ProductPage: React.FC = () => {
                     className={cn(
                       'min-w-11 h-10 px-3 rounded-xl border text-sm font-bold transition-all active:scale-95',
                       size === s
-                        ? 'bg-[#CEAE80] border-[#CEAE80] text-black shadow-md shadow-[#CEAE80]/25'
-                        : 'border-stone-200 dark:border-white/10 text-stone-700 dark:text-stone-200 hover:border-[#CEAE80]/60'
+                        ? 'bg-brand border-brand text-brand-on shadow-md shadow-brand/25'
+                        : 'border-stone-200 dark:border-white/10 text-stone-700 dark:text-stone-200 hover:border-brand/60'
                     )}
                     aria-pressed={size === s}
                   >
@@ -275,7 +275,7 @@ export const ProductPage: React.FC = () => {
               <p className="text-sm font-black text-stone-900 dark:text-white">
                 رنگ{' '}
                 {color && (
-                  <span className="text-[#A67C38] dark:text-[#CEAE80]">— {color}</span>
+                  <span className="text-brand-ink">— {color}</span>
                 )}
               </p>
               <div className="flex flex-wrap gap-2">
@@ -287,8 +287,8 @@ export const ProductPage: React.FC = () => {
                     className={cn(
                       'h-10 px-4 rounded-xl border text-sm font-bold transition-all active:scale-95',
                       color === c
-                        ? 'bg-[#CEAE80] border-[#CEAE80] text-black shadow-md shadow-[#CEAE80]/25'
-                        : 'border-stone-200 dark:border-white/10 text-stone-700 dark:text-stone-200 hover:border-[#CEAE80]/60'
+                        ? 'bg-brand border-brand text-brand-on shadow-md shadow-brand/25'
+                        : 'border-stone-200 dark:border-white/10 text-stone-700 dark:text-stone-200 hover:border-brand/60'
                     )}
                     aria-pressed={color === c}
                   >
@@ -330,7 +330,7 @@ export const ProductPage: React.FC = () => {
               className={cn(
                 'flex-1 h-12 px-6 rounded-xl flex items-center justify-center gap-2 text-sm font-black transition-all active:scale-[0.98]',
                 item.inStock && selectionComplete
-                  ? 'bg-[#CEAE80] hover:bg-[#c2a06e] text-black shadow-lg shadow-[#CEAE80]/25'
+                  ? 'bg-brand hover:bg-brand-hover text-brand-on shadow-lg shadow-brand/25'
                   : 'bg-stone-100 dark:bg-white/5 text-stone-400 dark:text-stone-500 cursor-not-allowed'
               )}
             >

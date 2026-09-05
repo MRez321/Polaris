@@ -28,7 +28,7 @@ export const MobileNav: React.FC = () => {
   const routeClass = ({ isActive }: { isActive: boolean }) =>
     `relative flex flex-col items-center py-1 px-2 rounded-xl transition-all ${
       isActive
-        ? 'text-black dark:text-[#CEAE80] font-black bg-amber-500/20 dark:bg-[#CEAE80]/20 border border-amber-600/30 dark:border-[#CEAE80]/40'
+        ? 'text-brand-on dark:text-brand font-black bg-brand/20 dark:bg-brand/20 border border-brand/30 dark:border-brand/40'
         : 'text-stone-700 dark:text-gray-400 hover:text-black dark:hover:text-white font-bold'
     }`;
 
@@ -59,10 +59,10 @@ export const MobileNav: React.FC = () => {
 
         {/* داشبورد — center, lifted gold FAB */}
         <NavLink to="/workshop" end className="relative flex flex-col items-center px-2 -translate-y-3.5">
-          <span className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#CEAE80] to-[#B59363] text-black flex items-center justify-center shadow-lg shadow-[#CEAE80]/40 ring-4 ring-white dark:ring-[#141416] transition-transform active:scale-95">
-            <LayoutDashboard className="w-5 h-5 text-black" />
+          <span className="w-11 h-11 rounded-2xl bg-gradient-to-br from-brand to-brand-hover text-brand-on flex items-center justify-center shadow-lg shadow-brand/40 ring-4 ring-white dark:ring-[#141416] transition-transform active:scale-95">
+            <LayoutDashboard className="w-5 h-5 text-brand-on" />
           </span>
-          <span className="text-[10px] whitespace-nowrap font-black text-black dark:text-[#CEAE80] mt-0.5">
+          <span className="text-[10px] whitespace-nowrap font-black text-black dark:text-brand mt-0.5">
             داشبورد
           </span>
         </NavLink>

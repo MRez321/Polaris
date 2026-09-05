@@ -115,15 +115,15 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
   return (
     <div className="space-y-6 text-stone-900 dark:text-white">
       {/* Top Banner & Quick stats */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 glass-panel p-5 rounded-2xl border border-stone-200 dark:border-[#CEAE80]/20 shadow-md">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 glass-panel p-5 rounded-2xl border border-stone-200 dark:border-brand/20 shadow-md">
         <div>
           <h3 className="text-base sm:text-lg font-bold text-stone-900 dark:text-white flex items-center gap-2">
-            <Package className="w-5 h-5 text-[#CEAE80]" />
-            <span className="text-amber-800 dark:text-[#CEAE80] font-black">انبار پوشاک و ملزومات دوزندگی پولاریس</span>
+            <Package className="w-5 h-5 text-brand" />
+            <span className="text-brand-ink dark:text-brand font-black">انبار پوشاک و ملزومات دوزندگی پولاریس</span>
           </h3>
           <p className="text-xs text-stone-500 dark:text-gray-400 mt-1">
             مجموع موجودی: <span className="font-bold text-stone-900 dark:text-white">{toPersianDigits(totalStockCount)} عدد</span> • ارزش
-            امانی کل انبار: <span className="font-black text-amber-800 dark:text-[#CEAE80]">{formatToman(totalValue)}</span>
+            امانی کل انبار: <span className="font-black text-brand-ink dark:text-brand">{formatToman(totalValue)}</span>
           </p>
         </div>
 
@@ -132,7 +132,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
             setEditingItem(null);
             setIsModalOpen(true);
           }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-black text-xs sm:text-sm shadow-md transition-all active:scale-95"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-brand-on font-black text-xs sm:text-sm shadow-md transition-all active:scale-95"
         >
           <Plus className="w-4 h-4" />
           <span>افزودن کالا به انبار</span>
@@ -176,7 +176,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
               onClick={() => setSelectedCategory(cat.id)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 selectedCategory === cat.id
-                  ? 'bg-[#CEAE80] text-black shadow-md'
+                  ? 'bg-brand text-brand-on shadow-md'
                   : 'bg-stone-100 dark:bg-[#1A1A1E] text-stone-600 dark:text-gray-400 hover:text-stone-900 dark:hover:text-white border border-stone-200 dark:border-white/5'
               }`}
             >
@@ -228,7 +228,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
           return (
             <div
               key={item.id}
-              className={`p-4 rounded-2xl glass-card border transition-all hover:border-[#CEAE80]/50 shadow-md flex flex-col justify-between cursor-pointer ${
+              className={`p-4 rounded-2xl glass-card border transition-all hover:border-brand/50 shadow-md flex flex-col justify-between cursor-pointer ${
                 isLowStock ? 'border-amber-400/50 bg-amber-500/[0.05]' : 'border-stone-200 dark:border-white/5'
               }`}
               onClick={() => navigate(`/workshop/profile/items/${item.id}`)}
@@ -295,7 +295,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                 <div className="mt-3.5 p-2.5 rounded-xl bg-stone-50 dark:bg-[#1A1A1E] border border-stone-200 dark:border-white/5 grid grid-cols-2 gap-2 text-xs">
                   <div>
                     <span className="text-[10px] text-stone-500 dark:text-gray-400 block">قیمت امانی دست‌فروش:</span>
-                    <span className="font-black text-amber-800 dark:text-[#CEAE80] font-mono">
+                    <span className="font-black text-brand-ink dark:text-brand font-mono">
                       {formatToman(item.consignmentPrice)}
                     </span>
                   </div>
@@ -349,7 +349,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                         e.stopPropagation();
                         onQuickHandoverItem(item);
                       }}
-                      className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-[#CEAE80] text-amber-800 dark:text-[#CEAE80] hover:text-black border border-amber-500/30 text-xs font-black transition-colors"
+                      className="px-2.5 py-1 rounded-lg bg-brand/10 hover:bg-brand text-brand-ink dark:text-brand hover:text-brand-on border border-brand/30 text-xs font-black transition-colors"
                     >
                       تحویل امانی
                     </button>

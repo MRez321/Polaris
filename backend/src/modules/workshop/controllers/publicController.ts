@@ -53,6 +53,8 @@ export async function getPublicCompany(_req: Request, res: Response): Promise<vo
         slogan: company.slogan,
         brandName: company.brandName,
         tagline: company.tagline,
+        logoUrl: company.logoUrl,
+        theme: company.theme,
         website: company.website,
         instagram: company.instagram,
         telegram: company.telegram,

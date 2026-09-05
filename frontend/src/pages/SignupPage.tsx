@@ -79,17 +79,17 @@ const SignupPage: React.FC = () => {
     >
       {/* Subtle Ambient Glow Light Orbs for Glassmorphism depth */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-32 right-1/4 w-96 h-96 bg-[#CEAE80] rounded-full blur-[140px] opacity-[0.14] dark:opacity-[0.12] transition-opacity" />
-        <div className="absolute top-1/3 -left-20 w-80 h-80 bg-amber-600 rounded-full blur-[130px] opacity-[0.10] dark:opacity-[0.09] transition-opacity" />
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-[#A67C38] rounded-full blur-[150px] opacity-[0.10] dark:opacity-[0.08] transition-opacity" />
+        <div className="absolute -top-32 right-1/4 w-96 h-96 bg-brand rounded-full blur-[140px] opacity-[0.14] dark:opacity-[0.12] transition-opacity" />
+        <div className="absolute top-1/3 -left-20 w-80 h-80 bg-brand-deep rounded-full blur-[130px] opacity-[0.10] dark:opacity-[0.09] transition-opacity" />
+        <div className="absolute bottom-10 right-10 w-96 h-96 bg-brand-deep rounded-full blur-[150px] opacity-[0.10] dark:opacity-[0.08] transition-opacity" />
       </div>
 
       <div className="relative z-10 w-full max-w-md">
         <div className="glass-panel rounded-3xl border border-stone-200 dark:border-white/10 shadow-2xl p-8 space-y-6">
           {/* Brand */}
           <div className="flex flex-col items-center gap-3 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-[#CEAE80] text-black flex items-center justify-center shadow-lg font-black ring-2 ring-[#CEAE80]/30">
-              <Scissors className="w-7 h-7 -rotate-45 text-black" />
+            <div className="w-14 h-14 rounded-2xl bg-brand text-brand-on flex items-center justify-center shadow-lg font-black ring-2 ring-brand/30">
+              <Scissors className="w-7 h-7 -rotate-45 text-brand-on" />
             </div>
             <div>
               <h1 className="text-xl font-black tracking-tight text-stone-900 dark:text-white">
@@ -116,7 +116,7 @@ const SignupPage: React.FC = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="مثلاً: رضا مرادی"
-                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm outline-none focus:border-[#CEAE80] transition-colors"
+                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm outline-none focus:border-brand transition-colors"
               />
             </div>
 
@@ -135,7 +135,7 @@ const SignupPage: React.FC = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 dir="ltr"
-                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm font-mono text-left outline-none focus:border-[#CEAE80] transition-colors"
+                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm font-mono text-left outline-none focus:border-brand transition-colors"
               />
             </div>
 
@@ -154,7 +154,7 @@ const SignupPage: React.FC = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 dir="ltr"
-                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm font-mono text-left outline-none focus:border-[#CEAE80] transition-colors"
+                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm font-mono text-left outline-none focus:border-brand transition-colors"
               />
             </div>
 
@@ -173,7 +173,7 @@ const SignupPage: React.FC = () => {
                 onChange={(e) => setConfirm(e.target.value)}
                 placeholder="••••••••"
                 dir="ltr"
-                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm font-mono text-left outline-none focus:border-[#CEAE80] transition-colors"
+                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm font-mono text-left outline-none focus:border-brand transition-colors"
               />
             </div>
 
@@ -186,7 +186,7 @@ const SignupPage: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] disabled:opacity-60 disabled:cursor-not-allowed text-black font-black text-sm shadow-md transition-all active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-brand hover:bg-brand-hover disabled:opacity-60 disabled:cursor-not-allowed text-brand-on font-black text-sm shadow-md transition-all active:scale-[0.98]"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -214,7 +214,7 @@ const SignupPage: React.FC = () => {
             قبلاً حساب کاربری دارید؟{' '}
             <Link
               to="/login"
-              className="text-[#A67C38] dark:text-[#CEAE80] font-black hover:underline"
+              className="text-brand-ink font-black hover:underline"
             >
               وارد شوید
             </Link>

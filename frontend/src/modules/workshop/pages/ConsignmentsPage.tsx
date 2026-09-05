@@ -41,12 +41,12 @@ const ConsignmentsPage: React.FC = () => {
               onClick={() => setActiveTab(tab.id)}
               className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
                 isActive
-                  ? 'bg-[#CEAE80] text-black shadow-md font-black'
+                  ? 'bg-brand text-brand-on shadow-md font-black'
                   : 'text-stone-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-200/60 dark:hover:bg-white/5'
               }`}
             >
               <Icon
-                className={`w-3.5 h-3.5 ${isActive ? 'text-black' : 'text-[#A67C38] dark:text-[#CEAE80]'}`}
+                className={`w-3.5 h-3.5 ${isActive ? 'text-black' : 'text-brand-ink'}`}
               />
               <span>{tab.label}</span>
               <span

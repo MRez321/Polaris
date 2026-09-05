@@ -175,10 +175,10 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
           <button
             type="button"
             onClick={() => void openGallery()}
-            className="p-6 rounded-2xl glass-card hover:border-[#CEAE80] flex flex-col items-center gap-3 transition-all hover:-translate-y-0.5"
+            className="p-6 rounded-2xl glass-card hover:border-brand flex flex-col items-center gap-3 transition-all hover:-translate-y-0.5"
           >
-            <span className="w-12 h-12 rounded-2xl bg-[#CEAE80]/20 flex items-center justify-center">
-              <Images className="w-6 h-6 text-[#CEAE80]" />
+            <span className="w-12 h-12 rounded-2xl bg-brand/20 flex items-center justify-center">
+              <Images className="w-6 h-6 text-brand" />
             </span>
             <span className="text-sm font-black">گالری سایت</span>
             <span className="text-[11px] text-stone-500 dark:text-gray-400 leading-relaxed">
@@ -190,10 +190,10 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
             type="button"
             disabled={busy}
             onClick={() => setSource('device')}
-            className="p-6 rounded-2xl glass-card hover:border-[#CEAE80] flex flex-col items-center gap-3 transition-all hover:-translate-y-0.5 disabled:opacity-50"
+            className="p-6 rounded-2xl glass-card hover:border-brand flex flex-col items-center gap-3 transition-all hover:-translate-y-0.5 disabled:opacity-50"
           >
-            <span className="w-12 h-12 rounded-2xl bg-[#CEAE80]/20 flex items-center justify-center">
-              <FolderOpen className="w-6 h-6 text-[#CEAE80]" />
+            <span className="w-12 h-12 rounded-2xl bg-brand/20 flex items-center justify-center">
+              <FolderOpen className="w-6 h-6 text-brand" />
             </span>
             <span className="text-sm font-black">از دستگاه</span>
             <span className="text-[11px] text-stone-500 dark:text-gray-400 leading-relaxed">
@@ -205,10 +205,10 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
             type="button"
             disabled={busy}
             onClick={() => void startCamera()}
-            className="p-6 rounded-2xl glass-card hover:border-[#CEAE80] flex flex-col items-center gap-3 transition-all hover:-translate-y-0.5 disabled:opacity-50"
+            className="p-6 rounded-2xl glass-card hover:border-brand flex flex-col items-center gap-3 transition-all hover:-translate-y-0.5 disabled:opacity-50"
           >
-            <span className="w-12 h-12 rounded-2xl bg-[#CEAE80]/20 flex items-center justify-center">
-              <Camera className="w-6 h-6 text-[#CEAE80]" />
+            <span className="w-12 h-12 rounded-2xl bg-brand/20 flex items-center justify-center">
+              <Camera className="w-6 h-6 text-brand" />
             </span>
             <span className="text-sm font-black">دوربین</span>
             <span className="text-[11px] text-stone-500 dark:text-gray-400 leading-relaxed">
@@ -229,8 +229,8 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
                 onClick={() => setCatFilter(c.value)}
                 className={`px-3 py-1 rounded-full text-[11px] font-bold transition-colors ${
                   catFilter === c.value
-                    ? 'bg-[#CEAE80] text-black'
-                    : 'bg-stone-100 dark:bg-white/10 text-stone-600 dark:text-gray-300 hover:bg-[#CEAE80]/30'
+                    ? 'bg-brand text-brand-on'
+                    : 'bg-stone-100 dark:bg-white/10 text-stone-600 dark:text-gray-300 hover:bg-brand/30'
                 }`}
               >
                 {c.label}
@@ -250,7 +250,7 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
 
           {galleryRows === null ? (
             <div className="py-10 flex justify-center">
-              <Loader2 className="w-6 h-6 animate-spin text-[#CEAE80]" />
+              <Loader2 className="w-6 h-6 animate-spin text-brand" />
             </div>
           ) : filtered.length === 0 ? (
             <div className="py-10 text-center space-y-2">
@@ -270,7 +270,7 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
                     onSelect([row.url]);
                     onClose();
                   }}
-                  className="relative group aspect-square rounded-xl overflow-hidden border border-[#CEAE80]/20 hover:border-[#CEAE80] hover:ring-2 hover:ring-[#CEAE80]/40 transition-all bg-black/10 dark:bg-black/30"
+                  className="relative group aspect-square rounded-xl overflow-hidden border border-brand/20 hover:border-brand hover:ring-2 hover:ring-brand/40 transition-all bg-black/10 dark:bg-black/30"
                   title={row.label || row.fileName}
                 >
                   <img src={row.url} alt={row.label} loading="lazy" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
@@ -288,10 +288,10 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
       {source === 'device' && (
         <div className="py-6 flex flex-col items-center gap-4">
           {busy ? (
-            <Loader2 className="w-8 h-8 animate-spin text-[#CEAE80]" />
+            <Loader2 className="w-8 h-8 animate-spin text-brand" />
           ) : (
             <>
-              <label className="px-6 py-3 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-black text-xs flex items-center gap-2 cursor-pointer shadow-md active:scale-95 transition-all">
+              <label className="px-6 py-3 rounded-xl bg-brand hover:bg-brand-hover text-brand-on font-black text-xs flex items-center gap-2 cursor-pointer shadow-md active:scale-95 transition-all">
                 <FolderOpen className="w-4 h-4" />
                 <span>انتخاب فایل{multiple ? '‌ها' : ''} از دستگاه</span>
                 <input
@@ -331,7 +331,7 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
                 type="button"
                 disabled={busy}
                 onClick={capturePhoto}
-                className="w-14 h-14 rounded-full bg-[#CEAE80] hover:bg-[#B59363] text-black flex items-center justify-center shadow-lg active:scale-90 transition-all disabled:opacity-50"
+                className="w-14 h-14 rounded-full bg-brand hover:bg-brand-hover text-brand-on flex items-center justify-center shadow-lg active:scale-90 transition-all disabled:opacity-50"
                 title="عکس‌برداری"
               >
                 <Camera className="w-6 h-6" />
@@ -366,7 +366,7 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
             </button>
           </div>
           {busy && (
-            <div className="flex items-center justify-center gap-2 text-xs text-[#CEAE80] font-bold">
+            <div className="flex items-center justify-center gap-2 text-xs text-brand font-bold">
               <RefreshCw className="w-4 h-4 animate-spin" />
               در حال ذخیره تصویر...
             </div>

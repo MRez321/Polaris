@@ -127,7 +127,7 @@ export const ShopManagementPage: React.FC = () => {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-base sm:text-lg font-black text-stone-900 dark:text-white flex items-center gap-2">
-            <ShoppingBag className="w-5 h-5 text-[#CEAE80]" />
+            <ShoppingBag className="w-5 h-5 text-brand" />
             مدیریت فروشگاه آنلاین
           </h2>
           <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
@@ -156,7 +156,7 @@ export const ShopManagementPage: React.FC = () => {
         </div>
         <div className="rounded-2xl glass-card border border-stone-200 dark:border-white/8 p-4">
           <p className="text-[10px] text-stone-500 dark:text-stone-400 font-bold">واحدهای تخصیص‌یافته</p>
-          <p className="text-xl font-black text-[#A67C38] dark:text-[#CEAE80] mt-1">
+          <p className="text-xl font-black text-brand-ink mt-1">
             {toPersianDigits(totalAllocatedUnits)}
           </p>
         </div>
@@ -304,7 +304,7 @@ const PoolRow: React.FC<{
   const max = (item.stockQuantity || 0) + (item.websiteQuantity || 0);
 
   return (
-    <div className="flex items-center gap-3 p-3 rounded-2xl border border-stone-200 dark:border-white/8 hover:border-[#CEAE80]/50 transition-colors">
+    <div className="flex items-center gap-3 p-3 rounded-2xl border border-stone-200 dark:border-white/8 hover:border-brand/50 transition-colors">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-mono text-[11px] font-bold text-stone-500 dark:text-gray-400">{item.code}</span>

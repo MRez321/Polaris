@@ -94,7 +94,7 @@ export const SellerProfileDrawer: React.FC<SellerProfileDrawerProps> = ({
           {/* Header */}
           <div className="p-4 sm:p-6 border-b border-stone-200 dark:border-white/10 bg-stone-50 dark:bg-[#1A1A1E] flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 dark:bg-[#1E1E22] text-amber-800 dark:text-[#CEAE80] flex items-center justify-center font-bold text-lg border border-amber-500/30 dark:border-[#CEAE80]/40 shadow-sm">
+              <div className="w-12 h-12 rounded-2xl bg-brand/10 dark:bg-[#1E1E22] text-brand-ink dark:text-brand flex items-center justify-center font-bold text-lg border border-brand/30 dark:border-brand/40 shadow-sm">
                 {seller.name.slice(0, 1)}
               </div>
               <div>
@@ -108,8 +108,8 @@ export const SellerProfileDrawer: React.FC<SellerProfileDrawerProps> = ({
                 </div>
                 <div className="flex flex-wrap items-center gap-3 text-xs text-stone-500 dark:text-gray-400 mt-1">
                   <span className="flex items-center gap-1 font-mono">
-                    <Phone className="w-3.5 h-3.5 text-[#CEAE80]" />
-                    <a href={`tel:${seller.phone}`} className="hover:underline font-mono text-amber-800 dark:text-[#CEAE80] font-bold" dir="ltr">
+                    <Phone className="w-3.5 h-3.5 text-brand" />
+                    <a href={`tel:${seller.phone}`} className="hover:underline font-mono text-brand-ink dark:text-brand font-bold" dir="ltr">
                       {seller.phone}
                     </a>
                   </span>
@@ -132,7 +132,7 @@ export const SellerProfileDrawer: React.FC<SellerProfileDrawerProps> = ({
                   className="p-2 rounded-xl text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-200 dark:hover:bg-white/10 transition-colors flex items-center gap-1 text-xs font-bold"
                   title="ویرایش اطلاعات فروشنده"
                 >
-                  <Edit2 className="w-4 h-4 text-[#CEAE80]" />
+                  <Edit2 className="w-4 h-4 text-brand" />
                   <span className="hidden sm:inline">ویرایش پرونده</span>
                 </button>
               )}
@@ -150,7 +150,7 @@ export const SellerProfileDrawer: React.FC<SellerProfileDrawerProps> = ({
             {/* Location & Guarantee Summary */}
             <div className="p-4 rounded-2xl bg-stone-50 dark:bg-[#1A1A1E] border border-stone-200 dark:border-white/5 space-y-2.5 text-xs">
               <div className="flex items-start gap-2">
-                <MapPin className="w-4 h-4 text-[#CEAE80] shrink-0 mt-0.5" />
+                <MapPin className="w-4 h-4 text-brand shrink-0 mt-0.5" />
                 <div>
                   <span className="font-semibold text-stone-500 dark:text-gray-400">محل بساط: </span>
                   <span className="text-stone-900 dark:text-white font-medium">{seller.streetLocation}</span>
@@ -158,7 +158,7 @@ export const SellerProfileDrawer: React.FC<SellerProfileDrawerProps> = ({
               </div>
 
               <div className="flex items-start gap-2 pt-2 border-t border-stone-200 dark:border-white/5">
-                <Shield className="w-4 h-4 text-[#CEAE80] shrink-0 mt-0.5" />
+                <Shield className="w-4 h-4 text-brand shrink-0 mt-0.5" />
                 <div>
                   <span className="font-semibold text-stone-500 dark:text-gray-400">
                     ضمانت ({getGuaranteeLabel(seller.guaranteeType)}):{' '}
@@ -181,7 +181,7 @@ export const SellerProfileDrawer: React.FC<SellerProfileDrawerProps> = ({
               <div className="p-4 rounded-2xl bg-stone-50 dark:bg-[#1A1A1E] border border-stone-200 dark:border-white/5 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-stone-700 dark:text-stone-200 flex items-center gap-1.5">
-                    <CreditCard className="w-4 h-4 text-[#CEAE80]" />
+                    <CreditCard className="w-4 h-4 text-brand" />
                     حساب‌های بانکی و تسویه فروشنده ({toPersianDigits(bankAccountsList.length)} حساب)
                   </span>
                   <span className="text-[10px] text-stone-400">کلیک روی هر کادر برای کپی</span>
@@ -197,10 +197,10 @@ export const SellerProfileDrawer: React.FC<SellerProfileDrawerProps> = ({
                     return (
                       <div
                         key={bIdx}
-                        className="p-3 rounded-xl bg-white dark:bg-[#141416] border border-stone-200 dark:border-white/10 space-y-2 hover:border-[#CEAE80]/40 transition-all"
+                        className="p-3 rounded-xl bg-white dark:bg-[#141416] border border-stone-200 dark:border-white/10 space-y-2 hover:border-brand/40 transition-all"
                       >
                         <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-[#CEAE80]">{acc.bankName || 'بانک'}</span>
+                          <span className="font-bold text-brand">{acc.bankName || 'بانک'}</span>
                           {acc.accountHolder && (
                             <span className="text-stone-400 text-[11px]">به نام: {acc.accountHolder}</span>
                           )}
@@ -209,14 +209,14 @@ export const SellerProfileDrawer: React.FC<SellerProfileDrawerProps> = ({
                         {acc.cardNumber && (
                           <div
                             onClick={(e) => handleCopy(acc.cardNumber, cKey, e)}
-                            className="p-2 rounded-lg bg-stone-100 dark:bg-black/40 hover:bg-[#CEAE80]/15 dark:hover:bg-[#CEAE80]/15 border border-stone-200/60 dark:border-white/5 flex items-center justify-between text-xs cursor-pointer transition-all group"
+                            className="p-2 rounded-lg bg-stone-100 dark:bg-black/40 hover:bg-brand/15 dark:hover:bg-brand/15 border border-stone-200/60 dark:border-white/5 flex items-center justify-between text-xs cursor-pointer transition-all group"
                             title="کلیک روی کل کادر برای کپی شماره کارت"
                           >
                             <div className="flex items-center gap-2 font-mono text-stone-900 dark:text-white" dir="ltr">
-                              <CreditCard className="w-3.5 h-3.5 text-[#CEAE80]" />
+                              <CreditCard className="w-3.5 h-3.5 text-brand" />
                               <span className="font-black tracking-wider">{acc.cardNumber}</span>
                             </div>
-                            <span className="text-[10px] text-[#CEAE80] font-bold flex items-center gap-1">
+                            <span className="text-[10px] text-brand font-bold flex items-center gap-1">
                               {isCardCopied ? (
                                 <>
                                   <Check className="w-3 h-3 text-emerald-500" />
@@ -235,14 +235,14 @@ export const SellerProfileDrawer: React.FC<SellerProfileDrawerProps> = ({
                         {acc.shebaNumber && (
                           <div
                             onClick={(e) => handleCopy(acc.shebaNumber, sKey, e)}
-                            className="p-2 rounded-lg bg-stone-100 dark:bg-black/40 hover:bg-[#CEAE80]/15 dark:hover:bg-[#CEAE80]/15 border border-stone-200/60 dark:border-white/5 flex items-center justify-between text-xs cursor-pointer transition-all group"
+                            className="p-2 rounded-lg bg-stone-100 dark:bg-black/40 hover:bg-brand/15 dark:hover:bg-brand/15 border border-stone-200/60 dark:border-white/5 flex items-center justify-between text-xs cursor-pointer transition-all group"
                             title="کلیک روی کل کادر برای کپی شماره شبا"
                           >
                             <div className="flex items-center gap-2 font-mono text-stone-700 dark:text-stone-300 text-[11px]" dir="ltr">
                               <span className="text-[10px] text-stone-400 font-sans">شبا:</span>
                               <span className="truncate max-w-[200px] sm:max-w-xs">{acc.shebaNumber}</span>
                             </div>
-                            <span className="text-[10px] text-[#CEAE80] font-bold flex items-center gap-1">
+                            <span className="text-[10px] text-brand font-bold flex items-center gap-1">
                               {isShebaCopied ? (
                                 <>
                                   <Check className="w-3 h-3 text-emerald-500" />
@@ -266,7 +266,7 @@ export const SellerProfileDrawer: React.FC<SellerProfileDrawerProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowAllBanks(!showAllBanks)}
-                    className="w-full py-1.5 text-center text-xs text-[#CEAE80] hover:underline font-bold flex items-center justify-center gap-1"
+                    className="w-full py-1.5 text-center text-xs text-brand hover:underline font-bold flex items-center justify-center gap-1"
                   >
                     {showAllBanks ? (
                       <>
@@ -285,7 +285,7 @@ export const SellerProfileDrawer: React.FC<SellerProfileDrawerProps> = ({
             )}
 
             {/* Financial Ledger Gauge */}
-            <div className="p-5 rounded-2xl bg-stone-50 dark:bg-[#1A1A1E] text-stone-900 dark:text-white border border-stone-200 dark:border-[#CEAE80]/30 shadow-md">
+            <div className="p-5 rounded-2xl bg-stone-50 dark:bg-[#1A1A1E] text-stone-900 dark:text-white border border-stone-200 dark:border-brand/30 shadow-md">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs text-stone-600 dark:text-gray-300 font-bold">وضعیت حساب و سقف امانت</span>
                 <Badge variant={seller.currentDebt === 0 ? 'success' : 'gold'} size="sm">
@@ -296,7 +296,7 @@ export const SellerProfileDrawer: React.FC<SellerProfileDrawerProps> = ({
               <div className="grid grid-cols-3 gap-2 text-center py-2.5 bg-white dark:bg-[#141416] rounded-xl border border-stone-200 dark:border-white/5">
                 <div>
                   <span className="text-[10px] text-stone-500 dark:text-gray-400 block">مانده بدهی جاری</span>
-                  <span className="text-xs sm:text-sm font-black text-rose-600 dark:text-[#CEAE80] font-mono">
+                  <span className="text-xs sm:text-sm font-black text-rose-600 dark:text-brand font-mono">
                     {formatToman(seller.currentDebt)}
                   </span>
                 </div>
@@ -322,7 +322,7 @@ export const SellerProfileDrawer: React.FC<SellerProfileDrawerProps> = ({
                       ? 'bg-rose-500'
                       : creditUsagePct > 60
                       ? 'bg-amber-500'
-                      : 'bg-[#CEAE80]'
+                      : 'bg-brand'
                   }`}
                   style={{ width: `${creditUsagePct}%` }}
                 />
@@ -340,13 +340,13 @@ export const SellerProfileDrawer: React.FC<SellerProfileDrawerProps> = ({
                 onClick={() => onNewHandover(seller)}
                 className="flex-1 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-[#1E1E22] dark:hover:bg-[#252525] text-stone-900 dark:text-white border border-stone-300 dark:border-white/5 font-bold text-xs sm:text-sm shadow-sm flex items-center justify-center gap-1.5 transition-all active:scale-95"
               >
-                <ArrowLeftRight className="w-4 h-4 text-[#CEAE80]" />
+                <ArrowLeftRight className="w-4 h-4 text-brand" />
                 <span>واگذاری امانی جدید</span>
               </button>
 
               <button
                 onClick={() => onNewPayment(seller)}
-                className="flex-1 py-2.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-black text-xs sm:text-sm shadow-md flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                className="flex-1 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-brand-on font-black text-xs sm:text-sm shadow-md flex items-center justify-center gap-1.5 transition-all active:scale-95"
               >
                 <Receipt className="w-4 h-4" />
                 <span>ثبت دریافت وجه و تسویه</span>
@@ -360,7 +360,7 @@ export const SellerProfileDrawer: React.FC<SellerProfileDrawerProps> = ({
                   onClick={() => setActiveTab('consignments')}
                   className={`flex-1 py-2 text-xs sm:text-sm font-bold text-center border-b-2 transition-colors ${
                     activeTab === 'consignments'
-                      ? 'border-[#CEAE80] text-amber-800 dark:text-[#CEAE80]'
+                      ? 'border-brand text-brand-ink dark:text-brand'
                       : 'border-transparent text-stone-500 dark:text-gray-400 hover:text-stone-900 dark:hover:text-white'
                   }`}
                 >
@@ -370,7 +370,7 @@ export const SellerProfileDrawer: React.FC<SellerProfileDrawerProps> = ({
                   onClick={() => setActiveTab('payments')}
                   className={`flex-1 py-2 text-xs sm:text-sm font-bold text-center border-b-2 transition-colors ${
                     activeTab === 'payments'
-                      ? 'border-[#CEAE80] text-amber-800 dark:text-[#CEAE80]'
+                      ? 'border-brand text-brand-ink dark:text-brand'
                       : 'border-transparent text-stone-500 dark:text-gray-400 hover:text-stone-900 dark:hover:text-white'
                   }`}
                 >
@@ -380,7 +380,7 @@ export const SellerProfileDrawer: React.FC<SellerProfileDrawerProps> = ({
                   onClick={() => setActiveTab('returns')}
                   className={`flex-1 py-2 text-xs sm:text-sm font-bold text-center border-b-2 transition-colors ${
                     activeTab === 'returns'
-                      ? 'border-[#CEAE80] text-amber-800 dark:text-[#CEAE80]'
+                      ? 'border-brand text-brand-ink dark:text-brand'
                       : 'border-transparent text-stone-500 dark:text-gray-400 hover:text-stone-900 dark:hover:text-white'
                   }`}
                 >
@@ -395,7 +395,7 @@ export const SellerProfileDrawer: React.FC<SellerProfileDrawerProps> = ({
                     <div
                       key={c.id}
                       onClick={() => onSelectConsignment(c)}
-                      className="p-3.5 rounded-xl border border-stone-200 dark:border-white/5 hover:border-[#CEAE80]/50 bg-stone-50 dark:bg-[#1A1A1E] cursor-pointer transition-all space-y-2 shadow-sm"
+                      className="p-3.5 rounded-xl border border-stone-200 dark:border-white/5 hover:border-brand/50 bg-stone-50 dark:bg-[#1A1A1E] cursor-pointer transition-all space-y-2 shadow-sm"
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-mono text-xs font-bold text-stone-900 dark:text-white">
@@ -467,7 +467,7 @@ export const SellerProfileDrawer: React.FC<SellerProfileDrawerProps> = ({
                           {p.allocations.map((a, idx) => (
                             <div key={idx} className="flex justify-between text-stone-700 dark:text-gray-300">
                               <span>فاکتور {a.consignmentCode}:</span>
-                              <span className="font-mono text-amber-800 dark:text-[#CEAE80] font-bold">{formatToman(a.allocatedAmount)}</span>
+                              <span className="font-mono text-brand-ink dark:text-brand font-bold">{formatToman(a.allocatedAmount)}</span>
                             </div>
                           ))}
                         </div>

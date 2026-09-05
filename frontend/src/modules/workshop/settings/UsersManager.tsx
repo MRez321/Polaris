@@ -180,10 +180,10 @@ export const UsersManager: React.FC = () => {
       <div className="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
         <div>
           <h3 className="text-base sm:text-lg font-black text-stone-900 dark:text-white flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-[#CEAE80]/20 flex items-center justify-center text-[#CEAE80]">
+            <div className="w-9 h-9 rounded-xl bg-brand/20 flex items-center justify-center text-brand">
               <UsersIcon className="w-5 h-5" />
             </div>
-            <span className="text-[#CEAE80]">مدیریت کاربران و سطوح دسترسی</span>
+            <span className="text-brand">مدیریت کاربران و سطوح دسترسی</span>
           </h3>
           <p className="text-xs text-stone-500 dark:text-gray-400 mt-1">
             ایجاد حساب کاربری برای پرسنل، تعیین نقش مدیر یا کاربر و کنترل دسترسی به سامانه
@@ -193,14 +193,14 @@ export const UsersManager: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className="text-left bg-stone-100 dark:bg-black/40 px-3.5 py-2 rounded-xl border border-black/5 dark:border-white/5">
             <span className="text-[10px] text-stone-400 block">تعداد کاربران:</span>
-            <span className="text-sm font-black text-[#CEAE80] font-mono">
+            <span className="text-sm font-black text-brand font-mono">
               {toPersianDigits(users.length)} کاربر
             </span>
           </div>
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}
-            className="px-4 py-2.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-black text-xs flex items-center gap-2 shadow-md transition-all active:scale-95"
+            className="px-4 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-brand-on font-black text-xs flex items-center gap-2 shadow-md transition-all active:scale-95"
           >
             <UserPlus className="w-4 h-4" />
             <span>افزودن کاربر جدید</span>
@@ -211,7 +211,7 @@ export const UsersManager: React.FC = () => {
       {/* Users List */}
       {isLoading ? (
         <div className="p-8 text-center glass-panel rounded-2xl text-xs text-stone-400 flex items-center justify-center gap-2">
-          <Loader2 className="w-4 h-4 animate-spin text-[#CEAE80]" />
+          <Loader2 className="w-4 h-4 animate-spin text-brand" />
           <span>در حال دریافت لیست کاربران...</span>
         </div>
       ) : (
@@ -247,10 +247,10 @@ export const UsersManager: React.FC = () => {
             return (
               <div
                 key={user.id}
-                className="p-4 rounded-xl glass-card hover:border-[#CEAE80]/40 transition-all flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 text-xs"
+                className="p-4 rounded-xl glass-card hover:border-brand/40 transition-all flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 text-xs"
               >
                 <div className="flex items-start gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-xl bg-[#CEAE80]/20 text-[#CEAE80] flex items-center justify-center shrink-0 font-black text-sm border border-[#CEAE80]/30">
+                  <div className="w-9 h-9 rounded-xl bg-brand/20 text-brand flex items-center justify-center shrink-0 font-black text-sm border border-brand/30">
                     {user.name.trim().charAt(0) || '؟'}
                   </div>
 
@@ -260,7 +260,7 @@ export const UsersManager: React.FC = () => {
                         {user.name}
                       </span>
                       {isSelf && (
-                        <span className="px-2 py-0.5 rounded-md bg-[#CEAE80]/15 text-[#CEAE80] text-[10px] font-bold">
+                        <span className="px-2 py-0.5 rounded-md bg-brand/15 text-brand text-[10px] font-bold">
                           شما
                         </span>
                       )}
@@ -362,7 +362,7 @@ export const UsersManager: React.FC = () => {
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               placeholder="مثلاً: رضا مرادی"
-              className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-[#CEAE80] outline-none"
+              className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-brand outline-none"
             />
           </div>
 
@@ -376,7 +376,7 @@ export const UsersManager: React.FC = () => {
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
               placeholder="user@example.com"
-              className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-[#CEAE80] outline-none font-mono text-left"
+              className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-brand outline-none font-mono text-left"
               dir="ltr"
             />
           </div>
@@ -392,7 +392,7 @@ export const UsersManager: React.FC = () => {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-[#CEAE80] outline-none font-mono text-left"
+              className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-brand outline-none font-mono text-left"
               dir="ltr"
             />
           </div>
@@ -415,7 +415,7 @@ export const UsersManager: React.FC = () => {
             <button
               type="submit"
               disabled={busyKey === 'create'}
-              className="px-5 py-2.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-bold text-sm shadow-md transition-all active:scale-95 disabled:opacity-60 disabled:cursor-wait flex items-center gap-2"
+              className="px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-brand-on font-bold text-sm shadow-md transition-all active:scale-95 disabled:opacity-60 disabled:cursor-wait flex items-center gap-2"
             >
               {busyKey === 'create' && <Loader2 className="w-4 h-4 animate-spin" />}
               <span>ایجاد کاربر</span>

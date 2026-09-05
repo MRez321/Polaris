@@ -33,8 +33,8 @@ export const StatsCard: React.FC<StatsCardProps> = ({
       onClick={onClick}
       className={`relative p-5 rounded-2xl transition-all duration-200 flex flex-col justify-between overflow-hidden ${
         highlight
-          ? 'glass-panel text-stone-900 dark:text-white border-[#CEAE80]/50 dark:border-[#CEAE80]/40 shadow-xl hover:border-[#CEAE80] glass-card-interactive ring-1 ring-[#CEAE80]/20'
-          : 'glass-card text-stone-900 dark:text-white hover:border-[#CEAE80]/50 glass-card-interactive'
+          ? 'glass-panel text-stone-900 dark:text-white border-brand/50 dark:border-brand/40 shadow-xl hover:border-brand glass-card-interactive ring-1 ring-brand/20'
+          : 'glass-card text-stone-900 dark:text-white hover:border-brand/50 glass-card-interactive'
       } ${onClick ? 'cursor-pointer active:scale-[0.98]' : ''}`}
     >
       {/* Subtle top light reflection line */}
@@ -47,7 +47,7 @@ export const StatsCard: React.FC<StatsCardProps> = ({
           </p>
           <h4
             className={`text-xl sm:text-2xl font-black mt-2 tracking-tight ${
-              highlight ? 'text-amber-800 dark:text-[#CEAE80]' : 'text-stone-900 dark:text-white'
+              highlight ? 'text-brand-ink dark:text-brand' : 'text-stone-900 dark:text-white'
             }`}
           >
             {value}
@@ -56,8 +56,8 @@ export const StatsCard: React.FC<StatsCardProps> = ({
         <div
           className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-transform duration-200 group-hover:scale-105 ${
             highlight
-              ? 'bg-gradient-to-br from-[#CEAE80] to-[#B59363] text-black shadow-md font-bold ring-2 ring-[#CEAE80]/30'
-              : 'bg-stone-100 dark:bg-white/5 text-[#A67C38] dark:text-[#CEAE80] border border-black/5 dark:border-white/10 backdrop-blur-md'
+              ? 'bg-gradient-to-br from-brand to-brand-hover text-brand-on shadow-md font-bold ring-2 ring-brand/30'
+              : 'bg-stone-100 dark:bg-white/5 text-brand-ink border border-black/5 dark:border-white/10 backdrop-blur-md'
           }`}
         >
           <Icon className="w-5 h-5" />

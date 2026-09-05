@@ -125,7 +125,7 @@ export const ReturnModal: React.FC<ReturnModalProps> = ({
       <form onSubmit={handleSubmit} className="space-y-4 text-stone-900 dark:text-white">
         <div className="p-3.5 rounded-xl bg-stone-50 dark:bg-[#1A1A1E] border border-stone-200 dark:border-white/10 text-xs flex flex-wrap justify-between gap-2">
           <span className="text-stone-500 dark:text-gray-400">ارزش اولیه فاکتور: {formatToman(consignment.totalAmount)}</span>
-          <span className="font-bold text-amber-800 dark:text-[#CEAE80] font-mono">
+          <span className="font-bold text-brand-ink dark:text-brand font-mono">
             مانده بدهی فعلی: {formatToman(consignment.remainingAmount)}
           </span>
         </div>
@@ -173,12 +173,12 @@ export const ReturnModal: React.FC<ReturnModalProps> = ({
                     <span className="text-[11px] text-stone-500 dark:text-gray-400 block mt-1">
                       تحویل شده: {toPersianDigits(item.quantity)} عدد | برگشتی قبلی:{' '}
                       {toPersianDigits(item.returnedQuantity || 0)} عدد | قابل مرجوع:{' '}
-                      <span className="font-bold text-amber-800 dark:text-[#CEAE80]">
+                      <span className="font-bold text-brand-ink dark:text-brand">
                         {toPersianDigits(remaining)} عدد
                       </span>
                     </span>
                   </div>
-                  <span className="text-xs font-mono font-bold text-amber-800 dark:text-[#CEAE80] whitespace-nowrap">
+                  <span className="text-xs font-mono font-bold text-brand-ink dark:text-brand whitespace-nowrap">
                     {formatToman(item.unitPrice)}
                   </span>
                 </div>
@@ -195,7 +195,7 @@ export const ReturnModal: React.FC<ReturnModalProps> = ({
                       value={currentReturnQty || ''}
                       onChange={(e) => handleQtyChange(key, remaining, e.target.value)}
                       placeholder="۰"
-                      className="w-full px-2.5 py-1.5 rounded-lg glass-input text-xs font-mono font-bold outline-none focus:border-[#CEAE80]"
+                      className="w-full px-2.5 py-1.5 rounded-lg glass-input text-xs font-mono font-bold outline-none focus:border-brand"
                     />
                   </div>
 
@@ -236,7 +236,7 @@ export const ReturnModal: React.FC<ReturnModalProps> = ({
                       value={lineState?.reason ?? ''}
                       onChange={(e) => updateLine(key, { reason: e.target.value })}
                       placeholder="عدم فروش / سایز نامناسب"
-                      className="w-full px-2 py-1.5 rounded-lg glass-input text-xs outline-none focus:border-[#CEAE80]"
+                      className="w-full px-2 py-1.5 rounded-lg glass-input text-xs outline-none focus:border-brand"
                     />
                   </div>
                 </div>
@@ -262,7 +262,7 @@ export const ReturnModal: React.FC<ReturnModalProps> = ({
             value={generalNotes}
             onChange={(e) => setGeneralNotes(e.target.value)}
             placeholder="مثلاً: تحویل گرفته شده توسط حسابدار در کارگاه"
-            className="w-full px-3 py-2 rounded-xl glass-input text-xs outline-none focus:border-[#CEAE80]"
+            className="w-full px-3 py-2 rounded-xl glass-input text-xs outline-none focus:border-brand"
           />
         </div>
 
@@ -277,7 +277,7 @@ export const ReturnModal: React.FC<ReturnModalProps> = ({
           <button
             type="submit"
             disabled={totalReturnCount === 0}
-            className="px-5 py-2.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] disabled:opacity-50 text-black font-black text-sm shadow-md transition-all active:scale-95"
+            className="px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-hover disabled:opacity-50 text-brand-on font-black text-sm shadow-md transition-all active:scale-95"
           >
             ثبت مرجوعی و اصلاح حساب
           </button>

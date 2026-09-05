@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { BrandProvider } from '@/context/BrandContext';
 
 import { NetworkProvider } from '@/context/NetworkContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
@@ -27,6 +28,7 @@ import SettingsPage from '@/modules/workshop/pages/SettingsPage';
 import EntityProfilePage from '@/modules/workshop/pages/EntityProfilePage';
 import ControlPanelLayout, { ControlPanelIndexRedirect } from '@/pages/controlpanel/ControlPanelLayout';
 import WebsiteSettingsPage from '@/pages/controlpanel/WebsiteSettingsPage';
+import ThemeSettingsPage from '@/pages/controlpanel/ThemeSettingsPage';
 import ShopManagementPage from '@/pages/controlpanel/ShopManagementPage';
 import BlogManagerPage from '@/pages/controlpanel/BlogManagerPage';
 
@@ -43,11 +45,12 @@ function RequireAdmin() {
 function App() {
   return (
     <ThemeProvider>
-      <NetworkProvider>
-        <AuthProvider>
-          <CartProvider>
-            <FavoritesProvider>
-              <BrowserRouter>
+      <BrandProvider>
+        <NetworkProvider>
+          <AuthProvider>
+            <CartProvider>
+              <FavoritesProvider>
+                <BrowserRouter>
                     <Routes>
                       {/* Public marketing site (no admin code paths) */}
                       <Route element={<PublicLayout />}>
@@ -87,6 +90,7 @@ function App() {
                       {/* Public website management (admin: settings+blog, author: blog) */}
                       <Route path="/controlpanel" element={<ControlPanelLayout />}>
                         <Route index element={<ControlPanelIndexRedirect />} />
+                        <Route path="theme" element={<ThemeSettingsPage />} />
                         <Route path="website" element={<WebsiteSettingsPage />} />
                         <Route path="shop" element={<ShopManagementPage />} />
                         <Route path="blog" element={<BlogManagerPage />} />
@@ -99,7 +103,8 @@ function App() {
                 </FavoritesProvider>
               </CartProvider>
             </AuthProvider>
-      </NetworkProvider>
+        </NetworkProvider>
+      </BrandProvider>
     </ThemeProvider>
   );
 }

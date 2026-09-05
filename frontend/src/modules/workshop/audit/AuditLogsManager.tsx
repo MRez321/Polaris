@@ -72,7 +72,7 @@ export const AuditLogsManager: React.FC = () => {
       case 'seller':
         return <User className="w-4 h-4 text-blue-500" />;
       case 'consignment':
-        return <FileText className="w-4 h-4 text-[#CEAE80]" />;
+        return <FileText className="w-4 h-4 text-brand" />;
       case 'payment':
         return <CreditCard className="w-4 h-4 text-emerald-500" />;
       case 'staff':
@@ -144,10 +144,10 @@ export const AuditLogsManager: React.FC = () => {
       <div className="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
         <div>
           <h3 className="text-base sm:text-lg font-black text-stone-900 dark:text-white flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-[#CEAE80]/20 flex items-center justify-center text-[#CEAE80]">
+            <div className="w-9 h-9 rounded-xl bg-brand/20 flex items-center justify-center text-brand">
               <HistoryIcon className="w-5 h-5" />
             </div>
-            <span className="text-[#CEAE80]">ممیزی، لاگ‌های سیستمی و ردپای تغییرات (Audit Logs)</span>
+            <span className="text-brand">ممیزی، لاگ‌های سیستمی و ردپای تغییرات (Audit Logs)</span>
           </h3>
           <p className="text-xs text-stone-500 dark:text-gray-400 mt-1">
             ثبت لحظه‌به‌لحظه تمامی ایجادها، ویرایش‌ها، حذف‌ها، واگذاری‌ها و تسویه‌ها توسط چه کسی و در چه زمانی
@@ -156,7 +156,7 @@ export const AuditLogsManager: React.FC = () => {
 
         <div className="text-left bg-stone-100 dark:bg-black/40 px-3.5 py-2 rounded-xl border border-black/5 dark:border-white/5">
           <span className="text-[10px] text-stone-400 block">کل رویدادهای مانیتور شده:</span>
-          <span className="text-sm font-black text-[#CEAE80] font-mono">
+          <span className="text-sm font-black text-brand font-mono">
             {toPersianDigits(total)} رویداد
           </span>
         </div>
@@ -212,7 +212,7 @@ export const AuditLogsManager: React.FC = () => {
       <div className="space-y-3">
         {isLoading ? (
           <div className="p-8 text-center glass-panel rounded-2xl text-xs text-stone-400 flex items-center justify-center gap-2">
-            <Loader2 className="w-4 h-4 animate-spin text-[#CEAE80]" />
+            <Loader2 className="w-4 h-4 animate-spin text-brand" />
             <span>در حال دریافت لاگ‌های سیستم...</span>
           </div>
         ) : filteredLogs.length === 0 ? (
@@ -224,7 +224,7 @@ export const AuditLogsManager: React.FC = () => {
             return (
               <div
                 key={log.id}
-                className="p-4 rounded-xl glass-card hover:border-[#CEAE80]/40 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs"
+                className="p-4 rounded-xl glass-card hover:border-brand/40 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs"
               >
                 <div className="flex items-start gap-3 min-w-0">
                   <div className="w-8 h-8 rounded-lg bg-stone-100 dark:bg-[#1E1E1E] flex items-center justify-center shrink-0 mt-0.5 border border-black/5 dark:border-white/5">
@@ -244,7 +244,7 @@ export const AuditLogsManager: React.FC = () => {
                       <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
                         {getActionLabel(log.action)}
                       </span>
-                      <span className="px-2 py-0.5 rounded-md bg-[#CEAE80]/15 text-[#CEAE80] text-[10px] font-bold">
+                      <span className="px-2 py-0.5 rounded-md bg-brand/15 text-brand text-[10px] font-bold">
                         {getEntityLabel(log.entity)}
                       </span>
                     </div>
@@ -277,7 +277,7 @@ export const AuditLogsManager: React.FC = () => {
             type="button"
             onClick={() => fetchLogs(logs.length, true)}
             disabled={isLoadingMore}
-            className="px-5 py-2.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-black text-xs flex items-center gap-2 shadow-md transition-all active:scale-95 disabled:opacity-60 disabled:cursor-wait"
+            className="px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-brand-on font-black text-xs flex items-center gap-2 shadow-md transition-all active:scale-95 disabled:opacity-60 disabled:cursor-wait"
           >
             {isLoadingMore ? (
               <Loader2 className="w-4 h-4 animate-spin" />

@@ -86,16 +86,16 @@ export const CheckoutPage: React.FC = () => {
   if (placedOrder) {
     return (
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-        <div className="rounded-3xl border border-[#CEAE80]/30 bg-white dark:bg-[#16161a] p-8 sm:p-12 text-center space-y-5 shadow-xl shadow-[#CEAE80]/10">
-          <span className="mx-auto w-16 h-16 rounded-full bg-[#CEAE80]/15 flex items-center justify-center">
-            <CheckCircle2 className="w-8 h-8 text-[#A67C38] dark:text-[#CEAE80]" />
+        <div className="rounded-3xl border border-brand/30 bg-white dark:bg-[#16161a] p-8 sm:p-12 text-center space-y-5 shadow-xl shadow-brand/10">
+          <span className="mx-auto w-16 h-16 rounded-full bg-brand/15 flex items-center justify-center">
+            <CheckCircle2 className="w-8 h-8 text-brand-ink" />
           </span>
           <h1 className="text-xl sm:text-2xl font-black text-stone-900 dark:text-white">
             سفارش شما با موفقیت ثبت شد
           </h1>
           <p className="text-sm leading-7 text-stone-600 dark:text-stone-300">
             کد پیگیری سفارش شما{' '}
-            <span className="font-black text-[#A67C38] dark:text-[#CEAE80]" dir="ltr">
+            <span className="font-black text-brand-ink" dir="ltr">
               {placedOrder.code}
             </span>{' '}
             است. وضعیت سفارش را می‌توانید از حساب کاربری خود پیگیری کنید.
@@ -107,7 +107,7 @@ export const CheckoutPage: React.FC = () => {
             </p>
           )}
           <div className="flex flex-col sm:flex-row gap-2.5 justify-center pt-2">
-            <Button size="lg" className="bg-[#CEAE80] hover:bg-[#c2a06e] text-black font-black" render={<Link to="/dashboard" />}>
+            <Button size="lg" className="bg-brand hover:bg-brand-hover text-brand-on font-black" render={<Link to="/dashboard" />}>
               پیگیری سفارش‌ها
             </Button>
             <Button size="lg" variant="outline" render={<Link to="/shop" />}>
@@ -186,7 +186,7 @@ export const CheckoutPage: React.FC = () => {
         <div className="space-y-5">
           <section className="rounded-3xl border border-stone-200/80 dark:border-white/8 bg-white dark:bg-[#16161a] p-5 sm:p-6 space-y-5">
             <h2 className="flex items-center gap-2 text-sm font-black text-stone-900 dark:text-white">
-              <UserRound className="w-4 h-4 text-[#A67C38] dark:text-[#CEAE80]" />
+              <UserRound className="w-4 h-4 text-brand-ink" />
               اطلاعات گیرنده
             </h2>
 
@@ -246,7 +246,7 @@ export const CheckoutPage: React.FC = () => {
 
           <section className="rounded-3xl border border-stone-200/80 dark:border-white/8 bg-white dark:bg-[#16161a] p-5 sm:p-6 space-y-3">
             <h2 className="flex items-center gap-2 text-sm font-black text-stone-900 dark:text-white">
-              <CreditCard className="w-4 h-4 text-[#A67C38] dark:text-[#CEAE80]" />
+              <CreditCard className="w-4 h-4 text-brand-ink" />
               روش پرداخت
             </h2>
 
@@ -259,8 +259,8 @@ export const CheckoutPage: React.FC = () => {
                   className={cn(
                     'text-right rounded-2xl border p-4 transition-all active:scale-[0.98]',
                     payment === method.value
-                      ? 'border-[#CEAE80] bg-[#CEAE80]/10 shadow-md shadow-[#CEAE80]/15'
-                      : 'border-stone-200 dark:border-white/10 hover:border-[#CEAE80]/50'
+                      ? 'border-brand bg-brand/10 shadow-md shadow-brand/15'
+                      : 'border-stone-200 dark:border-white/10 hover:border-brand/50'
                   )}
                   aria-pressed={payment === method.value}
                 >
@@ -268,7 +268,7 @@ export const CheckoutPage: React.FC = () => {
                     className={cn(
                       'flex items-center gap-2 text-sm font-black',
                       payment === method.value
-                        ? 'text-[#A67C38] dark:text-[#CEAE80]'
+                        ? 'text-brand-ink'
                         : 'text-stone-900 dark:text-white'
                     )}
                   >
@@ -318,7 +318,7 @@ export const CheckoutPage: React.FC = () => {
             </div>
             <div className="flex items-center justify-between text-stone-900 dark:text-white">
               <span className="font-black">مبلغ قابل پرداخت</span>
-              <span className="text-lg font-black text-[#A67C38] dark:text-[#CEAE80]">
+              <span className="text-lg font-black text-brand-ink">
                 {formatToman(total)}
               </span>
             </div>
@@ -328,7 +328,7 @@ export const CheckoutPage: React.FC = () => {
             type="submit"
             size="lg"
             loading={submitting}
-            className="w-full mt-5 h-12 bg-[#CEAE80] hover:bg-[#c2a06e] text-black font-black shadow-lg shadow-[#CEAE80]/25"
+            className="w-full mt-5 h-12 bg-brand hover:bg-brand-hover text-brand-on font-black shadow-lg shadow-brand/25"
           >
             ثبت نهایی سفارش
           </Button>

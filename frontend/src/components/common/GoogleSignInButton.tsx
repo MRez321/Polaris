@@ -51,7 +51,7 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({ label })
       type="button"
       onClick={handleClick}
       disabled={loading}
-      className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl glass-input hover:border-[#CEAE80] disabled:opacity-60 disabled:cursor-not-allowed text-stone-700 dark:text-gray-200 font-black text-sm shadow-sm transition-all active:scale-[0.98]"
+      className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl glass-input hover:border-brand disabled:opacity-60 disabled:cursor-not-allowed text-stone-700 dark:text-gray-200 font-black text-sm shadow-sm transition-all active:scale-[0.98]"
     >
       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <GoogleIcon />}
       <span>{loading ? 'در حال اتصال به گوگل...' : label}</span>

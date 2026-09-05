@@ -59,7 +59,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
             </button>
             <button
               onClick={this.handleReload}
-              className="px-4 py-2 rounded-xl bg-[#CEAE80] hover:bg-[#b59567] text-black text-xs font-black flex items-center gap-1.5 transition-all"
+              className="px-4 py-2 rounded-xl bg-brand hover:bg-brand-hover text-brand-on text-xs font-black flex items-center gap-1.5 transition-all"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               <span>بارگذاری مجدد صفحه</span>

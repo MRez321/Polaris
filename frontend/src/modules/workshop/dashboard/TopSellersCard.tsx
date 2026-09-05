@@ -22,10 +22,10 @@ export const TopSellersCard: React.FC<TopSellersCardProps> = ({
       <div className="flex items-center justify-between mb-4">
         <div>
           <h4 className="font-bold text-stone-900 dark:text-white text-sm sm:text-base flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#CEAE80]/20 flex items-center justify-center text-[#CEAE80]">
+            <div className="w-8 h-8 rounded-lg bg-brand/20 flex items-center justify-center text-brand">
               <TrendingUp className="w-4 h-4" />
             </div>
-            <span className="text-[#CEAE80] font-black">فروشندگان برتر و راسته بساط‌ها</span>
+            <span className="text-brand font-black">فروشندگان برتر و راسته بساط‌ها</span>
           </h4>
           <p className="text-xs text-stone-500 dark:text-gray-400 mt-1">
             رتبه‌بندی بر اساس بیشترین حجم تسویه نقدی و فروش میدانی
@@ -48,7 +48,7 @@ export const TopSellersCard: React.FC<TopSellersCardProps> = ({
           return (
             <div
               key={seller.id}
-              className="p-3.5 rounded-xl glass-card hover:border-[#CEAE80]/40 transition-all group overflow-hidden"
+              className="p-3.5 rounded-xl glass-card hover:border-brand/40 transition-all group overflow-hidden"
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 {/* Seller Info */}
@@ -57,7 +57,7 @@ export const TopSellersCard: React.FC<TopSellersCardProps> = ({
                   <div
                     className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 shadow-sm ${
                       index === 0
-                        ? 'bg-[#CEAE80] text-black ring-2 ring-[#CEAE80]/30 font-black'
+                        ? 'bg-brand text-brand-on ring-2 ring-brand/30 font-black'
                         : index === 1
                         ? 'bg-stone-300 dark:bg-[#252525] text-stone-800 dark:text-stone-200 border border-black/10 dark:border-white/10'
                         : 'bg-stone-200 dark:bg-[#1E1E1E] text-stone-600 dark:text-gray-400'
@@ -70,14 +70,14 @@ export const TopSellersCard: React.FC<TopSellersCardProps> = ({
                   <SafeImage
                     src={seller.avatarUrl}
                     alt={seller.name}
-                    className="w-9 h-9 rounded-full object-cover border border-[#CEAE80]/40 shrink-0"
+                    className="w-9 h-9 rounded-full object-cover border border-brand/40 shrink-0"
                   />
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <button
                         onClick={() => onSelectSeller(seller)}
-                        className="font-bold text-xs sm:text-sm text-stone-900 dark:text-white hover:text-[#CEAE80] dark:hover:text-[#CEAE80] transition-colors text-right truncate max-w-[140px] sm:max-w-[200px]"
+                        className="font-bold text-xs sm:text-sm text-stone-900 dark:text-white hover:text-brand transition-colors text-right truncate max-w-[140px] sm:max-w-[200px]"
                       >
                         {seller.name}
                       </button>
@@ -90,7 +90,7 @@ export const TopSellersCard: React.FC<TopSellersCardProps> = ({
                     </div>
 
                     <div className="flex items-center gap-1 text-[11px] text-stone-500 dark:text-gray-400 mt-0.5">
-                      <MapPin className="w-3 h-3 text-[#CEAE80] shrink-0" />
+                      <MapPin className="w-3 h-3 text-brand shrink-0" />
                       <span className="truncate max-w-[200px] sm:max-w-xs">{seller.streetLocation}</span>
                     </div>
                   </div>
@@ -119,7 +119,7 @@ export const TopSellersCard: React.FC<TopSellersCardProps> = ({
                           ? 'bg-rose-500'
                           : debtPercentage > 50
                           ? 'bg-amber-500'
-                          : 'bg-[#CEAE80]'
+                          : 'bg-brand'
                       }`}
                       style={{ width: `${debtPercentage}%` }}
                     />
@@ -138,7 +138,7 @@ export const TopSellersCard: React.FC<TopSellersCardProps> = ({
                   </button>
                   <button
                     onClick={() => onRecordPayment(seller.id)}
-                    className="px-3 py-1 rounded-lg bg-[#CEAE80]/20 hover:bg-[#CEAE80] text-[#CEAE80] hover:text-black border border-[#CEAE80]/40 text-[11px] font-black transition-all active:scale-95 shadow-sm"
+                    className="px-3 py-1 rounded-lg bg-brand/20 hover:bg-brand text-brand hover:text-brand-on border border-brand/40 text-[11px] font-black transition-all active:scale-95 shadow-sm"
                   >
                     دریافت وجه
                   </button>

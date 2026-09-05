@@ -290,7 +290,7 @@ export const NewPaymentModal: React.FC<NewPaymentModalProps> = ({
                       </span>
                     </span>
                   </div>
-                  <span className="text-[11px] font-mono font-bold text-amber-800 dark:text-[#CEAE80] whitespace-nowrap">
+                  <span className="text-[11px] font-mono font-bold text-brand-ink dark:text-brand whitespace-nowrap">
                     {formatToman(item.unitPrice)}
                   </span>
                 </div>
@@ -307,7 +307,7 @@ export const NewPaymentModal: React.FC<NewPaymentModalProps> = ({
                       value={currentReturnQty || ''}
                       onChange={(e) => handleQtyChange(key, remaining, e.target.value)}
                       placeholder="۰"
-                      className="w-full px-2.5 py-1.5 rounded-lg glass-input text-xs font-mono font-bold outline-none focus:border-[#CEAE80]"
+                      className="w-full px-2.5 py-1.5 rounded-lg glass-input text-xs font-mono font-bold outline-none focus:border-brand"
                     />
                   </div>
 
@@ -352,7 +352,7 @@ export const NewPaymentModal: React.FC<NewPaymentModalProps> = ({
                       value={lineState?.reason ?? ''}
                       onChange={(e) => updateLine(key, { reason: e.target.value })}
                       placeholder="عدم فروش / سایز نامناسب"
-                      className="w-full px-2 py-1.5 rounded-lg glass-input text-xs outline-none focus:border-[#CEAE80]"
+                      className="w-full px-2 py-1.5 rounded-lg glass-input text-xs outline-none focus:border-brand"
                     />
                   </div>
                 </div>
@@ -414,13 +414,13 @@ export const NewPaymentModal: React.FC<NewPaymentModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-amber-800 dark:text-[#CEAE80] mb-1 flex items-center justify-between">
+            <label className="block text-xs font-bold text-brand-ink dark:text-brand mb-1 flex items-center justify-between">
               <span>مبلغ دریافتی (تومان) *</span>
               {selectedSeller && selectedSeller.currentDebt > 0 && (
                 <button
                   type="button"
                   onClick={() => setAmount(effectiveDebt)}
-                  className="text-[11px] text-amber-800 dark:text-[#CEAE80] font-bold hover:underline"
+                  className="text-[11px] text-brand-ink dark:text-brand font-bold hover:underline"
                 >
                   {hasPendingReturns
                     ? `تسویه کل مانده پس از مرجوعی (${formatToman(effectiveDebt)})`
@@ -434,7 +434,7 @@ export const NewPaymentModal: React.FC<NewPaymentModalProps> = ({
               min={1000}
               suffix="تومان"
               placeholder="مثلاً: ۵,۰۰۰,۰۰۰"
-              className="w-full px-3 py-2 rounded-xl glass-input border-2 border-[#CEAE80] text-sm font-bold font-mono outline-none text-stone-900 dark:text-white"
+              className="w-full px-3 py-2 rounded-xl glass-input border-2 border-brand text-sm font-bold font-mono outline-none text-stone-900 dark:text-white"
             />
           </div>
 
@@ -463,7 +463,7 @@ export const NewPaymentModal: React.FC<NewPaymentModalProps> = ({
               value={trackingNumber}
               onChange={(e) => setTrackingNumber(e.target.value)}
               placeholder="کد ارجاع رسید یا شماره تراکنش"
-              className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm outline-none focus:border-[#CEAE80]"
+              className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm outline-none focus:border-brand"
             />
           </div>
         </div>
@@ -477,8 +477,8 @@ export const NewPaymentModal: React.FC<NewPaymentModalProps> = ({
             aria-expanded={returnsExpanded}
           >
             <span className="flex items-center gap-2 min-w-0">
-              <Undo2 className="w-4 h-4 text-[#CEAE80] shrink-0" />
-              <span className="text-xs sm:text-sm font-black text-amber-800 dark:text-[#CEAE80] whitespace-nowrap">
+              <Undo2 className="w-4 h-4 text-brand shrink-0" />
+              <span className="text-xs sm:text-sm font-black text-brand-ink dark:text-brand whitespace-nowrap">
                 ثبت مرجوعی همراه دریافت (اختیاری)
               </span>
               {hasPendingReturns && (
@@ -539,12 +539,12 @@ export const NewPaymentModal: React.FC<NewPaymentModalProps> = ({
         <div className="p-4 rounded-2xl glass-card border border-stone-200 dark:border-white/10 space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="font-bold text-xs sm:text-sm text-stone-900 dark:text-white flex items-center gap-1.5 flex-wrap">
-              <Sparkles className="w-4 h-4 text-[#CEAE80] shrink-0" />
-              <span className="text-amber-800 dark:text-[#CEAE80] font-black">
+              <Sparkles className="w-4 h-4 text-brand shrink-0" />
+              <span className="text-brand-ink dark:text-brand font-black">
                 پیش‌نمایش زنده تخصیص و تسویه فاکتورها
               </span>
               {hasPendingReturns && (
-                <span className="px-2 py-0.5 rounded-full bg-[#CEAE80]/15 border border-[#CEAE80]/30 text-[10px] font-bold text-amber-800 dark:text-[#CEAE80]">
+                <span className="px-2 py-0.5 rounded-full bg-brand/15 border border-brand/30 text-[10px] font-bold text-brand-ink dark:text-brand">
                   با احتساب مرجوعی‌های این فرم
                 </span>
               )}
@@ -562,7 +562,7 @@ export const NewPaymentModal: React.FC<NewPaymentModalProps> = ({
                   className="p-3 rounded-xl bg-stone-50 dark:bg-[#141416] border border-stone-200 dark:border-white/5 flex items-center justify-between gap-3 text-xs shadow-sm"
                 >
                   <div className="flex items-center gap-2.5">
-                    <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-800 dark:text-[#CEAE80] flex items-center justify-center font-black text-[10px] border border-amber-500/30">
+                    <span className="w-5 h-5 rounded-full bg-brand/20 text-brand-ink dark:text-brand flex items-center justify-center font-black text-[10px] border border-brand/30">
                       {toPersianDigits(index + 1)}
                     </span>
                     <div>
@@ -576,7 +576,7 @@ export const NewPaymentModal: React.FC<NewPaymentModalProps> = ({
                       </div>
                       <span className="text-[11px] text-stone-500 dark:text-gray-400">
                         بدهی قبل: {formatToman(alloc.remainingDebtBefore)} ➔ مانده بعد:{' '}
-                        <span className="font-black text-rose-600 dark:text-[#CEAE80]">
+                        <span className="font-black text-rose-600 dark:text-brand">
                           {formatToman(alloc.remainingDebtAfter)}
                         </span>
                       </span>
@@ -633,7 +633,7 @@ export const NewPaymentModal: React.FC<NewPaymentModalProps> = ({
               )}
               <span className="text-stone-500 dark:text-gray-400">
                 پس از دریافت وجه:{' '}
-                <span className="font-black font-mono text-amber-800 dark:text-[#CEAE80]">
+                <span className="font-black font-mono text-brand-ink dark:text-brand">
                   {formatToman(debtAfterAll)}
                 </span>
               </span>
@@ -650,7 +650,7 @@ export const NewPaymentModal: React.FC<NewPaymentModalProps> = ({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="مثلاً: تسویه نقدی بساط شب عید یا پنج‌شنبه بازار"
-            className="w-full px-3 py-2 rounded-xl glass-input text-xs outline-none focus:border-[#CEAE80]"
+            className="w-full px-3 py-2 rounded-xl glass-input text-xs outline-none focus:border-brand"
           />
         </div>
 
@@ -665,7 +665,7 @@ export const NewPaymentModal: React.FC<NewPaymentModalProps> = ({
           <button
             type="submit"
             disabled={numAmount <= 0}
-            className="px-5 py-2.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] disabled:opacity-50 text-black font-black text-sm shadow-md transition-all active:scale-95"
+            className="px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-hover disabled:opacity-50 text-brand-on font-black text-sm shadow-md transition-all active:scale-95"
           >
             {hasPendingReturns ? 'ثبت مرجوعی و دریافت وجه' : 'تایید دریافت و تسویه فاکتورها'}
           </button>

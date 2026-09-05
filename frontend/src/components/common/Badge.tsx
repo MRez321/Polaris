@@ -22,7 +22,7 @@ export const Badge: React.FC<BadgeProps> = ({
 
   const variantClasses = {
     default: 'bg-stone-100/80 dark:bg-white/10 text-stone-800 dark:text-stone-200 border border-stone-300/80 dark:border-white/10',
-    gold: 'bg-amber-500/15 text-amber-800 dark:text-[#CEAE80] border border-amber-500/30 shadow-[0_0_8px_rgba(206,174,128,0.1)]',
+    gold: 'bg-brand/15 text-brand-ink dark:text-brand border border-brand/30 shadow-brand-glow-soft',
     success: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 shadow-[0_0_8px_rgba(16,185,129,0.1)]',
     warning: 'bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.1)]',
     danger: 'bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30 shadow-[0_0_8px_rgba(244,63,94,0.1)]',

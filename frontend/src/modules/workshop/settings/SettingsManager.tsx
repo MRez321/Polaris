@@ -256,7 +256,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
       <div className="flex items-center gap-2">
         <button
           onClick={() => handleOpenEditRestore('item', item)}
-          className="px-3 py-1.5 rounded-lg bg-stone-200 dark:bg-white/10 hover:bg-[#CEAE80] hover:text-black text-xs font-bold flex items-center gap-1 transition-all"
+          className="px-3 py-1.5 rounded-lg bg-stone-200 dark:bg-white/10 hover:bg-brand hover:text-brand-on text-xs font-bold flex items-center gap-1 transition-all"
         >
           <Edit className="w-3.5 h-3.5" />
           <span>ویرایش و بازگردانی</span>
@@ -289,10 +289,10 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
       <div>
         <div className="flex items-center gap-2">
           {withTypeBadge && (
-            <span className="text-[10px] px-2 py-0.5 rounded-md bg-[#CEAE80]/15 text-[#CEAE80] font-bold">فروشنده</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-md bg-brand/15 text-brand font-bold">فروشنده</span>
           )}
           <span className="font-bold text-sm text-stone-900 dark:text-white">{seller.name}</span>
-          <span className="text-[11px] text-[#CEAE80] font-mono">{seller.phone}</span>
+          <span className="text-[11px] text-brand font-mono">{seller.phone}</span>
         </div>
         <p className="text-xs text-stone-400 mt-0.5">{seller.streetLocation}</p>
       </div>
@@ -300,7 +300,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
       <div className="flex items-center gap-2">
         <button
           onClick={() => handleOpenEditRestore('seller', seller)}
-          className="px-3 py-1.5 rounded-lg bg-stone-200 dark:bg-white/10 hover:bg-[#CEAE80] hover:text-black text-xs font-bold flex items-center gap-1 transition-all"
+          className="px-3 py-1.5 rounded-lg bg-stone-200 dark:bg-white/10 hover:bg-brand hover:text-brand-on text-xs font-bold flex items-center gap-1 transition-all"
         >
           <Edit className="w-3.5 h-3.5" />
           <span>ویرایش و بازگردانی</span>
@@ -336,7 +336,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
             <span className="text-[10px] px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-600 dark:text-purple-300 font-bold">پرسنل</span>
           )}
           <span className="font-bold text-sm text-stone-900 dark:text-white">{st.name}</span>
-          <span className="text-xs text-[#CEAE80]">{st.roleTitle}</span>
+          <span className="text-xs text-brand">{st.roleTitle}</span>
         </div>
       </div>
 
@@ -447,10 +447,10 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
       <div className="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
         <div>
           <h3 className="text-base sm:text-lg font-black text-stone-900 dark:text-white flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-[#CEAE80]/20 flex items-center justify-center text-[#CEAE80]">
+            <div className="w-9 h-9 rounded-xl bg-brand/20 flex items-center justify-center text-brand">
               <Settings className="w-5 h-5" />
             </div>
-            <span className="text-[#CEAE80]">مرکز مدیریت تنظیمات پولاریس</span>
+            <span className="text-brand">مرکز مدیریت تنظیمات پولاریس</span>
           </h3>
           <p className="text-xs text-stone-500 dark:text-gray-400 mt-1">
             نمای کلی تنظیمات، مشخصات کارگاه، بازیابی اطلاعات حذف‌شده، کاربران و اطلاع‌رسانی
@@ -471,7 +471,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           onClick={() => setActiveTab('overview')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
             activeTab === 'overview'
-              ? 'bg-[#CEAE80] text-black shadow-md font-black'
+              ? 'bg-brand text-brand-on shadow-md font-black'
               : 'text-stone-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5'
           }`}
         >
@@ -482,7 +482,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           onClick={() => setActiveTab('branding')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
             activeTab === 'branding'
-              ? 'bg-[#CEAE80] text-black shadow-md font-black'
+              ? 'bg-brand text-brand-on shadow-md font-black'
               : 'text-stone-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5'
           }`}
         >
@@ -493,7 +493,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           onClick={() => setActiveTab('gallery')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'gallery'
-              ? 'bg-[#CEAE80] text-black shadow-md font-black'
+              ? 'bg-brand text-brand-on shadow-md font-black'
               : 'text-stone-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5'
           }`}
         >
@@ -505,7 +505,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           onClick={() => setActiveTab('trash')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
             activeTab === 'trash'
-              ? 'bg-[#CEAE80] text-black shadow-md font-black'
+              ? 'bg-brand text-brand-on shadow-md font-black'
               : 'text-stone-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5'
           }`}
         >
@@ -522,7 +522,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           onClick={() => setActiveTab('system')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'system'
-              ? 'bg-[#CEAE80] text-black shadow-md font-black'
+              ? 'bg-brand text-brand-on shadow-md font-black'
               : 'text-stone-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5'
           }`}
         >
@@ -534,7 +534,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           onClick={() => setActiveTab('audit')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'audit'
-              ? 'bg-[#CEAE80] text-black shadow-md font-black'
+              ? 'bg-brand text-brand-on shadow-md font-black'
               : 'text-stone-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5'
           }`}
         >
@@ -546,7 +546,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           onClick={() => setActiveTab('users')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'users'
-              ? 'bg-[#CEAE80] text-black shadow-md font-black'
+              ? 'bg-brand text-brand-on shadow-md font-black'
               : 'text-stone-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5'
           }`}
         >
@@ -558,7 +558,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           onClick={() => setActiveTab('notifications')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'notifications'
-              ? 'bg-[#CEAE80] text-black shadow-md font-black'
+              ? 'bg-brand text-brand-on shadow-md font-black'
               : 'text-stone-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5'
           }`}
         >
@@ -573,9 +573,9 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
       {activeTab === 'overview' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Brand identity summary */}
-          <div className="glass-panel p-6 rounded-2xl shadow-xl border border-[#CEAE80]/30">
+          <div className="glass-panel p-6 rounded-2xl shadow-xl border border-brand/30">
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-[#CEAE80]/15 flex items-center justify-center text-[#CEAE80] shrink-0">
+              <div className="w-14 h-14 rounded-2xl bg-brand/15 flex items-center justify-center text-brand shrink-0">
                 {logoUrl ? (
                   <img src={logoUrl} alt={name} className="w-full h-full object-contain rounded-2xl" />
                 ) : (
@@ -599,7 +599,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTab('branding')}
-                className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black text-xs font-black shadow-md transition-all active:scale-95"
+                className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand hover:bg-brand-hover text-brand-on text-xs font-black shadow-md transition-all active:scale-95"
               >
                 <Edit className="w-4 h-4" />
                 ویرایش مشخصات برند
@@ -651,9 +651,9 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                 key={card.id}
                 type="button"
                 onClick={() => setActiveTab(card.id)}
-                className="glass-card p-5 rounded-2xl flex flex-col items-start gap-2 text-right hover:border-[#CEAE80]/50 transition-all active:scale-[0.98]"
+                className="glass-card p-5 rounded-2xl flex flex-col items-start gap-2 text-right hover:border-brand/50 transition-all active:scale-[0.98]"
               >
-                <span className="w-10 h-10 rounded-xl bg-[#CEAE80]/15 flex items-center justify-center text-[#CEAE80]">
+                <span className="w-10 h-10 rounded-xl bg-brand/15 flex items-center justify-center text-brand">
                   {card.icon}
                 </span>
                 <span className="text-sm font-black text-stone-900 dark:text-white">{card.title}</span>
@@ -671,14 +671,14 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               {isServerConnectedLive ? 'اتصال برقرار است' : 'اتصال قطع است'}
             </span>
             <span className="flex items-center gap-1.5 text-stone-500 dark:text-gray-400">
-              <HistoryIcon className="w-4 h-4 text-[#CEAE80]" />
+              <HistoryIcon className="w-4 h-4 text-brand" />
               آخرین همگام‌سازی: {lastSyncLabel}
             </span>
             {onRefreshData && (
               <button
                 type="button"
                 onClick={onRefreshData}
-                className="ms-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#CEAE80]/40 text-[#CEAE80] hover:bg-[#CEAE80]/10 text-[11px] font-black transition-colors"
+                className="ms-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-brand/40 text-brand hover:bg-brand/10 text-[11px] font-black transition-colors"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 نوسازی داده‌ها
@@ -695,10 +695,10 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
         <div className="space-y-6">
           {isEditingBranding ? (
             /* --- Edit Mode Form --- */
-            <form onSubmit={handleSaveCompanyData} className="glass-panel p-6 rounded-2xl space-y-5 shadow-xl border border-[#CEAE80]/30">
+            <form onSubmit={handleSaveCompanyData} className="glass-panel p-6 rounded-2xl space-y-5 shadow-xl border border-brand/30">
               <div className="flex items-center justify-between pb-3 border-b border-black/5 dark:border-white/5">
                 <h4 className="font-black text-sm sm:text-base text-stone-900 dark:text-white flex items-center gap-2">
-                  <Edit2 className="w-4 h-4 text-[#CEAE80]" />
+                  <Edit2 className="w-4 h-4 text-brand" />
                   <span>ویرایش مشخصات سازمانی و رسانه‌های رسمی کارگاه</span>
                 </h4>
                 <button
@@ -714,7 +714,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               {/* Logo and Logo Text Section */}
               <div className="p-4 rounded-2xl bg-stone-50 dark:bg-black/30 border border-stone-200 dark:border-white/5 space-y-3">
                 <h5 className="font-bold text-xs sm:text-sm text-stone-900 dark:text-white flex items-center gap-2">
-                  <ImageIcon className="w-4 h-4 text-[#CEAE80]" />
+                  <ImageIcon className="w-4 h-4 text-brand" />
                   <span>لوگو، نشان تجاری و متن لوگوی کارگاه</span>
                 </h5>
 
@@ -725,10 +725,10 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                       <img
                         src={logoUrl}
                         alt="لوگوی کارگاه"
-                        className="w-16 h-16 rounded-2xl object-contain bg-white dark:bg-black p-1 border-2 border-[#CEAE80] shadow-md shrink-0"
+                        className="w-16 h-16 rounded-2xl object-contain bg-white dark:bg-black p-1 border-2 border-brand shadow-md shrink-0"
                       />
                     ) : (
-                      <div className="w-16 h-16 rounded-2xl bg-amber-500/10 dark:bg-[#1E1E22] border-2 border-dashed border-[#CEAE80] flex flex-col items-center justify-center text-[#CEAE80] shrink-0">
+                      <div className="w-16 h-16 rounded-2xl bg-brand/10 dark:bg-[#1E1E22] border-2 border-dashed border-brand flex flex-col items-center justify-center text-brand shrink-0">
                         <span className="font-black text-sm tracking-wider">{logoText}</span>
                         <span className="text-[9px] text-stone-400">لوگو</span>
                       </div>
@@ -770,7 +770,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="نام رسمی کارگاه خود را وارد کنید"
-                    className="w-full px-3 py-2.5 rounded-xl glass-input text-xs sm:text-sm focus:border-[#CEAE80] outline-none font-bold"
+                    className="w-full px-3 py-2.5 rounded-xl glass-input text-xs sm:text-sm focus:border-brand outline-none font-bold"
                   />
                 </div>
 
@@ -783,14 +783,14 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                     value={slogan}
                     onChange={(e) => setSlogan(e.target.value)}
                     placeholder="شعار یا حوزه فعالیت تخصصی کارگاه"
-                    className="w-full px-3 py-2.5 rounded-xl glass-input text-xs sm:text-sm focus:border-[#CEAE80] outline-none"
+                    className="w-full px-3 py-2.5 rounded-xl glass-input text-xs sm:text-sm focus:border-brand outline-none"
                   />
                 </div>
 
                 {/* شماره ثبت - Input as requested */}
                 <div>
                   <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1 flex items-center gap-1.5">
-                    <Hash className="w-3.5 h-3.5 text-[#CEAE80]" />
+                    <Hash className="w-3.5 h-3.5 text-brand" />
                     <span>شماره ثبت کارگاه / شناسه صنفی</span>
                   </label>
                   <input
@@ -805,7 +805,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1 flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-[#CEAE80]" />
+                    <Globe className="w-3.5 h-3.5 text-brand" />
                     وب‌سایت رسمی
                   </label>
                   <input
@@ -820,7 +820,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1 flex items-center gap-1.5">
-                    <Camera className="w-3.5 h-3.5 text-[#CEAE80]" />
+                    <Camera className="w-3.5 h-3.5 text-brand" />
                     صفحه اینستاگرام کالکشن
                   </label>
                   <input
@@ -835,7 +835,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1 flex items-center gap-1.5">
-                    <Send className="w-3.5 h-3.5 text-[#CEAE80]" />
+                    <Send className="w-3.5 h-3.5 text-brand" />
                     کانال تلگرام نمونه‌کارها
                   </label>
                   <input
@@ -850,7 +850,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1 flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-[#CEAE80]" />
+                    <Phone className="w-3.5 h-3.5 text-brand" />
                     تلفن ثابت دفتر کارگاه
                   </label>
                   <input
@@ -865,7 +865,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1 flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-[#CEAE80]" />
+                    <Phone className="w-3.5 h-3.5 text-brand" />
                     تلفن همراه اضطراری / مدیریت
                   </label>
                   <input
@@ -894,7 +894,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
 
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1 flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-[#CEAE80]" />
+                    <MapPin className="w-3.5 h-3.5 text-brand" />
                     نشانی دقیق سالن دوخت و انبار مرکزی کارگاه
                   </label>
                   <input
@@ -917,7 +917,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-black text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all active:scale-95"
+                  className="px-6 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-brand-on font-black text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all active:scale-95"
                 >
                   <Save className="w-4 h-4" />
                   <span>ذخیره مشخصات کارگاه</span>
@@ -935,10 +935,10 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                       src={logoUrl}
                       alt={name}
                       referrerPolicy="no-referrer"
-                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-contain bg-white dark:bg-black p-1.5 border-2 border-[#CEAE80] shadow-md shrink-0"
+                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-contain bg-white dark:bg-black p-1.5 border-2 border-brand shadow-md shrink-0"
                     />
                   ) : (
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-amber-500/10 dark:bg-[#1E1E22] border-2 border-[#CEAE80] flex flex-col items-center justify-center text-amber-900 dark:text-[#CEAE80] shadow-md shrink-0">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-brand/10 dark:bg-[#1E1E22] border-2 border-brand flex flex-col items-center justify-center text-brand-ink dark:text-brand shadow-md shrink-0">
                       <span className="font-black text-sm sm:text-base tracking-wider">{logoText || 'POLARIS'}</span>
                       <span className="text-[10px] text-stone-500 dark:text-gray-400">استایل</span>
                     </div>
@@ -950,7 +950,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                         {name}
                       </h3>
                       {logoText && (
-                        <span className="text-xs px-2.5 py-0.5 rounded-lg bg-[#CEAE80]/20 text-amber-900 dark:text-[#CEAE80] font-black border border-[#CEAE80]/30 tracking-wider">
+                        <span className="text-xs px-2.5 py-0.5 rounded-lg bg-brand/20 text-brand-ink dark:text-brand font-black border border-brand/30 tracking-wider">
                           {logoText}
                         </span>
                       )}
@@ -963,7 +963,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
 
                 <div className="p-3 rounded-xl bg-stone-100 dark:bg-black/40 border border-stone-200 dark:border-white/10 text-xs font-mono shrink-0">
                   <span className="text-stone-500 dark:text-gray-400 text-[11px] block font-sans font-medium">شماره ثبت رسمی:</span>
-                  <span className="font-black text-sm text-amber-800 dark:text-[#CEAE80]">{registrationNumber}</span>
+                  <span className="font-black text-sm text-brand-ink dark:text-brand">{registrationNumber}</span>
                 </div>
               </div>
 
@@ -972,14 +972,14 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                 {/* Fixed Phone */}
                 <div className="p-4 rounded-2xl bg-stone-50 dark:bg-[#161618] border border-stone-200 dark:border-white/5 space-y-1.5">
                   <span className="text-[11px] text-stone-500 dark:text-gray-400 font-bold flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-[#CEAE80]" />
+                    <Phone className="w-3.5 h-3.5 text-brand" />
                     <span>تلفن ثابت دفتر کارگاه</span>
                   </span>
                   <div className="flex items-center justify-between">
                     <a
                       href={`tel:${phone}`}
                       title="تماس مستقیم با دفتر"
-                      className="font-black font-mono text-sm text-stone-900 dark:text-white hover:text-amber-800 dark:hover:text-[#CEAE80] hover:underline"
+                      className="font-black font-mono text-sm text-stone-900 dark:text-white hover:text-brand-ink dark:hover:text-brand hover:underline"
                       dir="ltr"
                     >
                       {phone}
@@ -997,14 +997,14 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                 {/* Emergency Phone */}
                 <div className="p-4 rounded-2xl bg-stone-50 dark:bg-[#161618] border border-stone-200 dark:border-white/5 space-y-1.5">
                   <span className="text-[11px] text-stone-500 dark:text-gray-400 font-bold flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-[#CEAE80]" />
+                    <Phone className="w-3.5 h-3.5 text-brand" />
                     <span>تلفن اضطراری / مدیریت</span>
                   </span>
                   <div className="flex items-center justify-between">
                     <a
                       href={`tel:${emergencyPhone}`}
                       title="تماس مستقیم با مدیریت"
-                      className="font-black font-mono text-sm text-stone-900 dark:text-white hover:text-amber-800 dark:hover:text-[#CEAE80] hover:underline"
+                      className="font-black font-mono text-sm text-stone-900 dark:text-white hover:text-brand-ink dark:hover:text-brand hover:underline"
                       dir="ltr"
                     >
                       {emergencyPhone}
@@ -1022,7 +1022,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                 {/* Postal Code */}
                 <div className="p-4 rounded-2xl bg-stone-50 dark:bg-[#161618] border border-stone-200 dark:border-white/5 space-y-1.5">
                   <span className="text-[11px] text-stone-500 dark:text-gray-400 font-bold flex items-center gap-1.5">
-                    <Building className="w-3.5 h-3.5 text-[#CEAE80]" />
+                    <Building className="w-3.5 h-3.5 text-brand" />
                     <span>کد پستی انبار مرکزی</span>
                   </span>
                   <div className="font-black font-mono text-sm text-stone-900 dark:text-white" dir="ltr">
@@ -1033,14 +1033,14 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                 {/* Website */}
                 <div className="p-4 rounded-2xl bg-stone-50 dark:bg-[#161618] border border-stone-200 dark:border-white/5 space-y-1.5">
                   <span className="text-[11px] text-stone-500 dark:text-gray-400 font-bold flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-[#CEAE80]" />
+                    <Globe className="w-3.5 h-3.5 text-brand" />
                     <span>وب‌سایت رسمی</span>
                   </span>
                   <a
                     href={website}
                     target="_blank"
                     rel="noreferrer"
-                    className="font-mono text-xs text-amber-800 dark:text-[#CEAE80] hover:underline flex items-center justify-between"
+                    className="font-mono text-xs text-brand-ink dark:text-brand hover:underline flex items-center justify-between"
                     dir="ltr"
                   >
                     <span className="truncate">{website}</span>
@@ -1051,14 +1051,14 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                 {/* Instagram */}
                 <div className="p-4 rounded-2xl bg-stone-50 dark:bg-[#161618] border border-stone-200 dark:border-white/5 space-y-1.5">
                   <span className="text-[11px] text-stone-500 dark:text-gray-400 font-bold flex items-center gap-1.5">
-                    <Camera className="w-3.5 h-3.5 text-[#CEAE80]" />
+                    <Camera className="w-3.5 h-3.5 text-brand" />
                     <span>اینستاگرام کالکشن</span>
                   </span>
                   <a
                     href={`https://instagram.com/${instagram.replace('@', '')}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="font-mono text-xs text-amber-800 dark:text-[#CEAE80] hover:underline flex items-center justify-between"
+                    className="font-mono text-xs text-brand-ink dark:text-brand hover:underline flex items-center justify-between"
                     dir="ltr"
                   >
                     <span>{instagram}</span>
@@ -1069,14 +1069,14 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                 {/* Telegram */}
                 <div className="p-4 rounded-2xl bg-stone-50 dark:bg-[#161618] border border-stone-200 dark:border-white/5 space-y-1.5">
                   <span className="text-[11px] text-stone-500 dark:text-gray-400 font-bold flex items-center gap-1.5">
-                    <Send className="w-3.5 h-3.5 text-[#CEAE80]" />
+                    <Send className="w-3.5 h-3.5 text-brand" />
                     <span>کانال تلگرام نمونه‌کارها</span>
                   </span>
                   <a
                     href={`https://${telegram.replace('@', 't.me/')}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="font-mono text-xs text-amber-800 dark:text-[#CEAE80] hover:underline flex items-center justify-between"
+                    className="font-mono text-xs text-brand-ink dark:text-brand hover:underline flex items-center justify-between"
                     dir="ltr"
                   >
                     <span>{telegram}</span>
@@ -1087,7 +1087,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                 {/* Address */}
                 <div className="p-4 rounded-2xl bg-stone-50 dark:bg-[#161618] border border-stone-200 dark:border-white/5 space-y-1.5 sm:col-span-2 lg:col-span-3">
                   <span className="text-[11px] text-stone-500 dark:text-gray-400 font-bold flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-[#CEAE80]" />
+                    <MapPin className="w-3.5 h-3.5 text-brand" />
                     <span>نشانی دقیق سالن دوخت و انبار مرکزی</span>
                   </span>
                   <p className="text-stone-900 dark:text-white font-medium text-xs sm:text-sm leading-relaxed">
@@ -1101,7 +1101,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsEditingBranding(true)}
-                  className="px-6 py-3 rounded-2xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg transition-all active:scale-95"
+                  className="px-6 py-3 rounded-2xl bg-brand hover:bg-brand-hover text-brand-on font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg transition-all active:scale-95"
                 >
                   <Edit2 className="w-4 h-4" />
                   <span>ویرایش مشخصات کارگاه</span>
@@ -1130,7 +1130,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/5 dark:border-white/5 pb-3">
             <div>
               <h4 className="font-black text-base text-stone-900 dark:text-white flex items-center gap-2">
-                <Trash2 className="w-4 h-4 text-[#CEAE80]" />
+                <Trash2 className="w-4 h-4 text-brand" />
                 <span>سطل زباله و اقلام موقتاً حذف‌شده (Soft Delete)</span>
               </h4>
               <p className="text-xs text-stone-500 dark:text-gray-400 mt-0.5">
@@ -1141,7 +1141,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
             <button
               onClick={fetchTrash}
               disabled={isLoadingTrash}
-              className="px-3.5 py-1.5 rounded-xl glass-card hover:border-[#CEAE80] text-xs font-bold flex items-center gap-1.5"
+              className="px-3.5 py-1.5 rounded-xl glass-card hover:border-brand text-xs font-bold flex items-center gap-1.5"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoadingTrash ? 'animate-spin' : ''}`} />
               <span>به‌روزرسانی سطل</span>
@@ -1154,7 +1154,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               onClick={() => setTrashCategory('all')}
               className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
                 trashCategory === 'all'
-                  ? 'bg-[#CEAE80] text-black shadow-sm'
+                  ? 'bg-brand text-brand-on shadow-sm'
                   : 'text-stone-500 hover:text-white'
               }`}
             >
@@ -1165,7 +1165,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               onClick={() => setTrashCategory('items')}
               className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
                 trashCategory === 'items'
-                  ? 'bg-[#CEAE80] text-black shadow-sm'
+                  ? 'bg-brand text-brand-on shadow-sm'
                   : 'text-stone-500 hover:text-white'
               }`}
             >
@@ -1176,7 +1176,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               onClick={() => setTrashCategory('sellers')}
               className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
                 trashCategory === 'sellers'
-                  ? 'bg-[#CEAE80] text-black shadow-sm'
+                  ? 'bg-brand text-brand-on shadow-sm'
                   : 'text-stone-500 hover:text-white'
               }`}
             >
@@ -1187,7 +1187,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               onClick={() => setTrashCategory('staff')}
               className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
                 trashCategory === 'staff'
-                  ? 'bg-[#CEAE80] text-black shadow-sm'
+                  ? 'bg-brand text-brand-on shadow-sm'
                   : 'text-stone-500 hover:text-white'
               }`}
             >
@@ -1198,7 +1198,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               onClick={() => setTrashCategory('expenses')}
               className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
                 trashCategory === 'expenses'
-                  ? 'bg-[#CEAE80] text-black shadow-sm'
+                  ? 'bg-brand text-brand-on shadow-sm'
                   : 'text-stone-500 hover:text-white'
               }`}
             >
@@ -1293,10 +1293,10 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
       {activeTab === 'system' && (
         <div className="space-y-5">
           {/* PWA & Mobile App Card */}
-          <div className="glass-panel p-6 rounded-2xl space-y-4 shadow-xl border border-[#CEAE80]/30">
+          <div className="glass-panel p-6 rounded-2xl space-y-4 shadow-xl border border-brand/30">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-black/5 dark:border-white/5 pb-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1e1e1e] to-black border border-[#CEAE80]/50 p-1.5 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1e1e1e] to-black border border-brand/50 p-1.5 flex items-center justify-center shrink-0">
                   <img src="/icons/icon.svg" alt="PWA" className="w-full h-full object-contain" />
                 </div>
                 <div>
@@ -1316,7 +1316,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                 <button
                   type="button"
                   onClick={onOpenPwaInstall}
-                  className="px-4 py-2.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-black text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all active:scale-95 shrink-0"
+                  className="px-4 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-brand-on font-black text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all active:scale-95 shrink-0"
                 >
                   <Sparkles className="w-4 h-4" />
                   <span>راهنما و نصب اپلیکیشن (PWA)</span>
@@ -1345,7 +1345,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
 
               <div className="p-3.5 rounded-xl bg-stone-50 dark:bg-[#161618] border border-stone-200 dark:border-white/5 space-y-1">
                 <span className="text-stone-500 dark:text-gray-400 font-bold block">حالت اجرا (Display Mode):</span>
-                <span className="text-amber-700 dark:text-[#CEAE80] font-bold">
+                <span className="text-brand-ink dark:text-brand font-bold">
                   {typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches
                     ? 'نصب شده (Standalone PWA)'
                     : 'درون مرورگر (Browser Mode)'}
@@ -1367,7 +1367,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                 type="button"
                 onClick={() => { void networkStatus?.checkConnection(); }}
                 disabled={isCheckingNow}
-                className="px-3.5 py-1.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-black text-xs flex items-center gap-1.5 transition-all shadow-sm active:scale-95 disabled:opacity-60 disabled:cursor-wait"
+                className="px-3.5 py-1.5 rounded-xl bg-brand hover:bg-brand-hover text-brand-on font-black text-xs flex items-center gap-1.5 transition-all shadow-sm active:scale-95 disabled:opacity-60 disabled:cursor-wait"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isCheckingNow ? 'animate-spin' : ''}`} />
                 <span>{isCheckingNow ? 'در حال بررسی…' : 'تست پینگ و برقراری ارتباط'}</span>
@@ -1388,7 +1388,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
 
               <div className="p-4 rounded-xl glass-card space-y-1">
                 <span className="text-xs text-stone-500 dark:text-gray-400 block">زمان تاخیر سرور (Latency):</span>
-                <div className="font-mono text-base font-black text-[#CEAE80]">
+                <div className="font-mono text-base font-black text-brand">
                   {networkStatus?.latency != null ? `${toPersianDigits(networkStatus.latency)} ms` : '—'}
                 </div>
                 <span className="text-[11px] text-emerald-500 font-bold">بسیار عالی و پرسرعت</span>
@@ -1500,7 +1500,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               </button>
               <button
                 type="submit"
-                className="px-5 py-2.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-black text-xs sm:text-sm shadow-md"
+                className="px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-brand-on font-black text-xs sm:text-sm shadow-md"
               >
                 ذخیره و بازیابی به سیستم
               </button>

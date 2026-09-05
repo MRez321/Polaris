@@ -74,7 +74,7 @@ export const Modal: React.FC<ModalProps> = ({
             <div className="flex items-center justify-between p-4 sm:p-5 border-b border-black/5 dark:border-white/10 bg-white/40 dark:bg-black/30 backdrop-blur-md rounded-t-3xl">
               <div>
                 <h3 className="text-base sm:text-lg font-black text-stone-900 dark:text-white flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#CEAE80] shadow-[0_0_8px_rgba(206,174,128,0.6)]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-brand shadow-brand-glow" />
                   {title}
                 </h3>
                 {subtitle && (

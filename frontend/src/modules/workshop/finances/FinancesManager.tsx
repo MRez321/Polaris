@@ -77,7 +77,7 @@ export const FinancesManager: React.FC<FinancesManagerProps> = ({
       {/* Financial Hub Unified Navigation Bar */}
       <div className="glass-panel p-2.5 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-lg border border-black/5 dark:border-white/10">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#CEAE80] to-[#B59363] text-black flex items-center justify-center font-black shadow-md shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand to-brand-hover text-brand-on flex items-center justify-center font-black shadow-md shrink-0">
             <DollarSign className="w-4 h-4" />
           </div>
           <div>
@@ -102,15 +102,15 @@ export const FinancesManager: React.FC<FinancesManagerProps> = ({
                 onClick={() => setActiveSubTab(tab.id)}
                 className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
                   isActive
-                    ? 'bg-[#CEAE80] text-black shadow-md font-black'
+                    ? 'bg-brand text-brand-on shadow-md font-black'
                     : 'text-stone-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-200/60 dark:hover:bg-white/5'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-black' : 'text-[#A67C38] dark:text-[#CEAE80]'}`} />
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-brand-on' : 'text-brand-ink'}`} />
                 <span>{tab.label}</span>
                 {tab.badge && (
                   <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-bold ${
-                    isActive ? 'bg-black/20 text-black' : 'bg-stone-200 dark:bg-white/10 text-stone-600 dark:text-stone-300'
+                    isActive ? 'bg-black/20 text-brand-on' : 'bg-stone-200 dark:bg-white/10 text-stone-600 dark:text-stone-300'
                   }`}>
                     {tab.badge}
                   </span>

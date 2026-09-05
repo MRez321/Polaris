@@ -133,7 +133,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
         {/* Photo Gallery & Upload Section */}
         <div className="p-4 rounded-xl glass-card space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-[#CEAE80] flex items-center gap-1.5">
+            <label className="text-xs font-bold text-brand flex items-center gap-1.5">
               <ImageIcon className="w-4 h-4" />
               تصاویر کالا و مدل‌ها ({toPersianDigits(imagesList.length)} تصویر)
             </label>
@@ -162,7 +162,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="مثلاً: پالتو فوتر کوبیده زمستانه"
-              className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-[#CEAE80] outline-none"
+              className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-brand outline-none"
             />
           </div>
 
@@ -190,7 +190,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsCreatingCategory(true)}
-                  className="text-[11px] text-[#CEAE80] hover:underline font-bold flex items-center gap-1"
+                  className="text-[11px] text-brand hover:underline font-bold flex items-center gap-1"
                 >
                   <Plus className="w-3 h-3" />
                   ایجاد دسته‌بندی جدید
@@ -211,7 +211,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 <button
                   type="button"
                   onClick={handleAddNewCategorySubmit}
-                  className="px-3 py-1.5 rounded-xl bg-[#CEAE80] text-black font-bold text-xs"
+                  className="px-3 py-1.5 rounded-xl bg-brand text-brand-on font-bold text-xs"
                 >
                   تایید
                 </button>
@@ -241,14 +241,14 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
               value={fabric}
               onChange={(e) => setFabric(e.target.value)}
               placeholder="مثلاً: فاستونی مطهری ۴۵/۵۵"
-              className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-[#CEAE80] outline-none"
+              className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-brand outline-none"
             />
           </div>
         </div>
 
         {/* Pricing Rows */}
-        <div className="p-4 rounded-xl bg-[#CEAE80]/10 border border-[#CEAE80]/30 space-y-3">
-          <p className="text-xs font-bold text-[#CEAE80]">
+        <div className="p-4 rounded-xl bg-brand/10 border border-brand/30 space-y-3">
+          <p className="text-xs font-bold text-brand">
             ساختار قیمت‌گذاری (به تومان)
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -260,7 +260,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 value={costPrice}
                 onChange={setCostPrice}
                 placeholder="مثلاً: ۴۵۰,۰۰۰ تومان"
-                className="w-full px-3 py-2 rounded-lg glass-input text-xs sm:text-sm font-mono outline-none focus:border-[#CEAE80]"
+                className="w-full px-3 py-2 rounded-lg glass-input text-xs sm:text-sm font-mono outline-none focus:border-brand"
               />
             </div>
 
@@ -272,7 +272,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 value={consignmentPrice}
                 onChange={setConsignmentPrice}
                 placeholder="مثلاً: ۶۸۰,۰۰۰ تومان"
-                className="w-full px-3 py-2 rounded-lg bg-white dark:bg-[#141414] border border-[#CEAE80] text-[#CEAE80] text-xs sm:text-sm font-bold font-mono outline-none"
+                className="w-full px-3 py-2 rounded-lg bg-white dark:bg-[#141414] border border-brand text-brand text-xs sm:text-sm font-bold font-mono outline-none"
               />
             </div>
 
@@ -284,7 +284,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 value={retailPrice}
                 onChange={setRetailPrice}
                 placeholder="مثلاً: ۱,۲۰۰,۰۰۰ تومان"
-                className="w-full px-3 py-2 rounded-lg glass-input text-xs sm:text-sm font-mono outline-none focus:border-[#CEAE80]"
+                className="w-full px-3 py-2 rounded-lg glass-input text-xs sm:text-sm font-mono outline-none focus:border-brand"
               />
             </div>
           </div>
@@ -300,7 +300,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 value={stockQuantity}
                 onChange={setStockQuantity}
                 placeholder="مثلاً: ۲۵ عدد"
-                className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-[#CEAE80] outline-none font-mono"
+                className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-brand outline-none font-mono"
               />
           </div>
 
@@ -312,7 +312,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 value={minStockThreshold}
                 onChange={setMinStockThreshold}
                 placeholder="مثلاً: ۸ عدد"
-                className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-[#CEAE80] outline-none font-mono"
+                className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-brand outline-none font-mono"
               />
           </div>
 
@@ -325,7 +325,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
               value={sizes}
               onChange={(e) => setSizes(e.target.value)}
               placeholder="M, L, XL, 2XL یا 38, 40, 42"
-              className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-[#CEAE80] outline-none"
+              className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-brand outline-none"
             />
           </div>
 
@@ -338,7 +338,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
               value={colors}
               onChange={(e) => setColors(e.target.value)}
               placeholder="مشکی, سرمه‌ای, طوسی"
-              className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-[#CEAE80] outline-none"
+              className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-brand outline-none"
             />
           </div>
         </div>
@@ -353,7 +353,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
           </button>
           <button
             type="submit"
-            className="px-5 py-2.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-[#0A0A0A] font-bold text-sm shadow-md transition-all active:scale-95"
+            className="px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-brand-on font-bold text-sm shadow-md transition-all active:scale-95"
           >
             {editItem ? 'ذخیره تغییرات' : 'افزودن به انبار'}
           </button>

@@ -188,7 +188,7 @@ export const BlogManagerPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setEditor(null)}
-            className="flex items-center gap-1.5 text-xs font-bold text-stone-600 dark:text-stone-300 hover:text-[#A67C38] dark:hover:text-[#CEAE80] transition-colors"
+            className="flex items-center gap-1.5 text-xs font-bold text-stone-600 dark:text-stone-300 hover:text-brand-ink transition-colors"
           >
             <ArrowRight className="w-3.5 h-3.5" />
             بازگشت به فهرست مطالب
@@ -205,7 +205,7 @@ export const BlogManagerPage: React.FC = () => {
               size="sm"
               loading={saving}
               onClick={() => void handleSave()}
-              className="bg-[#CEAE80] hover:bg-[#c2a06e] text-black font-black"
+              className="bg-brand hover:bg-brand-hover text-brand-on font-black"
             >
               ذخیره مطلب
             </Button>
@@ -376,7 +376,7 @@ export const BlogManagerPage: React.FC = () => {
           <Button
             loading={saving}
             onClick={() => void handleSave()}
-            className="bg-[#CEAE80] hover:bg-[#c2a06e] text-black font-black"
+            className="bg-brand hover:bg-brand-hover text-brand-on font-black"
           >
             ذخیره مطلب
           </Button>
@@ -406,7 +406,7 @@ export const BlogManagerPage: React.FC = () => {
           <Button
             size="sm"
             onClick={() => setEditor({ ...EMPTY_EDITOR, sections: [{ heading: '', text: '' }] })}
-            className="bg-[#CEAE80] hover:bg-[#c2a06e] text-black font-black"
+            className="bg-brand hover:bg-brand-hover text-brand-on font-black"
           >
             <Plus />
             نوشته جدید
@@ -499,7 +499,7 @@ export const BlogManagerPage: React.FC = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-stone-500 hover:text-[#A67C38] dark:hover:text-[#CEAE80]"
+                      className="text-stone-500 hover:text-brand-ink"
                       render={<Link to={`/blog/${post.slug}`} target="_blank" />}
                       aria-label="مشاهده مطلب"
                     >
@@ -509,7 +509,7 @@ export const BlogManagerPage: React.FC = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="text-stone-500 hover:text-[#A67C38] dark:hover:text-[#CEAE80]"
+                    className="text-stone-500 hover:text-brand-ink"
                     onClick={() => setEditor(toEditor(post))}
                     aria-label="ویرایش مطلب"
                   >

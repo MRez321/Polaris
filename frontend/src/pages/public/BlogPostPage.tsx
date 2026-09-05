@@ -83,7 +83,7 @@ export const BlogPostPage: React.FC = () => {
       <Reveal>
         <Link
           to="/blog"
-          className="inline-flex items-center gap-1.5 text-xs font-black text-stone-500 dark:text-stone-400 hover:text-[#A67C38] dark:hover:text-[#CEAE80] transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-black text-stone-500 dark:text-stone-400 hover:text-brand-ink transition-colors"
         >
           <ArrowRight className="w-4 h-4" />
           بازگشت به وبلاگ
@@ -95,7 +95,7 @@ export const BlogPostPage: React.FC = () => {
           {post.tags.map((tag) => (
             <span
               key={tag}
-              className="px-3 py-1 rounded-full border border-[#CEAE80]/40 bg-[#CEAE80]/10 text-[#A67C38] dark:text-[#CEAE80] text-[10px] font-black"
+              className="px-3 py-1 rounded-full border border-brand/40 bg-brand/10 text-brand-ink text-[10px] font-black"
             >
               {tag}
             </span>
@@ -106,18 +106,18 @@ export const BlogPostPage: React.FC = () => {
         </h1>
         <div className="mt-4 flex items-center gap-5 text-[11px] font-bold text-stone-500 dark:text-stone-400">
           <span className="inline-flex items-center gap-1.5">
-            <CalendarDays className="w-3.5 h-3.5 text-[#A67C38] dark:text-[#CEAE80]" />
+            <CalendarDays className="w-3.5 h-3.5 text-brand-ink" />
             {post.date}
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <Clock3 className="w-3.5 h-3.5 text-[#A67C38] dark:text-[#CEAE80]" />
+            <Clock3 className="w-3.5 h-3.5 text-brand-ink" />
             {post.readTime}
           </span>
         </div>
       </Reveal>
 
       <Reveal delay={0.12}>
-        <div className="mt-7 rounded-3xl overflow-hidden border border-[#CEAE80]/25 shadow-lg">
+        <div className="mt-7 rounded-3xl overflow-hidden border border-brand/25 shadow-lg">
           <img src={post.image} alt={post.imageAlt} className="w-full h-56 sm:h-80 object-cover" />
         </div>
       </Reveal>
@@ -140,13 +140,13 @@ export const BlogPostPage: React.FC = () => {
 
       {/* Shop CTA */}
       <Reveal className="mt-10">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 sm:p-6 rounded-3xl border border-[#CEAE80]/30 bg-gradient-to-bl from-[#CEAE80]/15 to-transparent">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 sm:p-6 rounded-3xl border border-brand/30 bg-gradient-to-bl from-brand/15 to-transparent">
           <p className="text-sm font-black text-stone-900 dark:text-white text-center sm:text-right">
             تکه‌های پایه این استایل را در فروشگاه پولاریس ببینید.
           </p>
           <Link
             to="/shop"
-            className="inline-flex items-center gap-2 h-11 px-6 rounded-2xl bg-[#CEAE80] hover:bg-[#c2a06e] text-black text-xs font-black shadow-md shadow-[#CEAE80]/25 transition-all active:scale-95 shrink-0"
+            className="inline-flex items-center gap-2 h-11 px-6 rounded-2xl bg-brand hover:bg-brand-hover text-brand-on text-xs font-black shadow-md shadow-brand/25 transition-all active:scale-95 shrink-0"
           >
             <ShoppingBag className="w-4 h-4" />
             خرید از فروشگاه
@@ -159,13 +159,13 @@ export const BlogPostPage: React.FC = () => {
         {newer && (
           <Link
             to={`/blog/${newer.slug}`}
-            className="group p-4 sm:p-5 rounded-3xl border border-stone-200/80 dark:border-white/8 bg-white dark:bg-[#16161a] hover:border-[#CEAE80]/45 transition-colors"
+            className="group p-4 sm:p-5 rounded-3xl border border-stone-200/80 dark:border-white/8 bg-white dark:bg-[#16161a] hover:border-brand/45 transition-colors"
           >
             <span className="inline-flex items-center gap-1.5 text-[10px] font-black text-stone-500 dark:text-stone-400">
               <ArrowRight className="w-3.5 h-3.5" />
               مطلب جدیدتر
             </span>
-            <span className="block mt-2 text-xs sm:text-sm font-black leading-6 text-stone-900 dark:text-white group-hover:text-[#A67C38] dark:group-hover:text-[#CEAE80] transition-colors line-clamp-2">
+            <span className="block mt-2 text-xs sm:text-sm font-black leading-6 text-stone-900 dark:text-white group-hover:text-brand-ink dark:group-hover:text-brand transition-colors line-clamp-2">
               {newer.title}
             </span>
           </Link>
@@ -173,13 +173,13 @@ export const BlogPostPage: React.FC = () => {
         {older && (
           <Link
             to={`/blog/${older.slug}`}
-            className="group p-4 sm:p-5 rounded-3xl border border-stone-200/80 dark:border-white/8 bg-white dark:bg-[#16161a] hover:border-[#CEAE80]/45 transition-colors sm:text-left"
+            className="group p-4 sm:p-5 rounded-3xl border border-stone-200/80 dark:border-white/8 bg-white dark:bg-[#16161a] hover:border-brand/45 transition-colors sm:text-left"
           >
             <span className="inline-flex items-center gap-1.5 text-[10px] font-black text-stone-500 dark:text-stone-400">
               مطلب قدیمی‌تر
               <ArrowLeft className="w-3.5 h-3.5" />
             </span>
-            <span className="block mt-2 text-xs sm:text-sm font-black leading-6 text-stone-900 dark:text-white group-hover:text-[#A67C38] dark:group-hover:text-[#CEAE80] transition-colors line-clamp-2">
+            <span className="block mt-2 text-xs sm:text-sm font-black leading-6 text-stone-900 dark:text-white group-hover:text-brand-ink dark:group-hover:text-brand transition-colors line-clamp-2">
               {older.title}
             </span>
           </Link>

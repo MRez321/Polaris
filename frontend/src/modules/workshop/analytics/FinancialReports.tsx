@@ -177,10 +177,10 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
       <div className="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
         <div>
           <h3 className="text-base sm:text-lg font-black text-stone-900 dark:text-white flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-[#CEAE80]/20 flex items-center justify-center text-[#CEAE80]">
+            <div className="w-9 h-9 rounded-xl bg-brand/20 flex items-center justify-center text-brand">
               <BarChart3 className="w-5 h-5" />
             </div>
-            <span className="text-[#CEAE80]">
+            <span className="text-brand">
               گزارش‌های جامع مالی، نمودارهای آماری و آنالیز سنی مطالبات (Aging)
             </span>
           </h3>
@@ -191,7 +191,7 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
 
         <button
           onClick={handleExportData}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-stone-200 dark:bg-[#1E1E1E] hover:bg-[#CEAE80] hover:text-black border border-[#CEAE80]/40 text-[#CEAE80] text-xs sm:text-sm font-bold shadow-md transition-all active:scale-95 self-stretch sm:self-auto justify-center"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-stone-200 dark:bg-[#1E1E1E] hover:bg-brand hover:text-brand-on border border-brand/40 text-brand text-xs sm:text-sm font-bold shadow-md transition-all active:scale-95 self-stretch sm:self-auto justify-center"
         >
           <Download className="w-4 h-4" />
           <span>دانلود گزارش اکسل / JSON</span>
@@ -202,7 +202,7 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
       <div className="glass-card p-4 rounded-2xl space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-[#CEAE80]" />
+            <Calendar className="w-4 h-4 text-brand" />
             <span className="text-xs font-bold text-stone-800 dark:text-stone-200">
               بازه زمانی تحلیل گزارش:
             </span>
@@ -214,7 +214,7 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
               onClick={() => setPeriod('this_week')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 period === 'this_week'
-                  ? 'bg-[#CEAE80] text-black shadow-sm'
+                  ? 'bg-brand text-brand-on shadow-sm'
                   : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white'
               }`}
             >
@@ -224,7 +224,7 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
               onClick={() => setPeriod('this_month')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 period === 'this_month'
-                  ? 'bg-[#CEAE80] text-black shadow-sm'
+                  ? 'bg-brand text-brand-on shadow-sm'
                   : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white'
               }`}
             >
@@ -234,7 +234,7 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
               onClick={() => setPeriod('past_months')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 period === 'past_months'
-                  ? 'bg-[#CEAE80] text-black shadow-sm'
+                  ? 'bg-brand text-brand-on shadow-sm'
                   : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white'
               }`}
             >
@@ -244,7 +244,7 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
               onClick={() => setPeriod('specific_month')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 period === 'specific_month'
-                  ? 'bg-[#CEAE80] text-black shadow-sm'
+                  ? 'bg-brand text-brand-on shadow-sm'
                   : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white'
               }`}
             >
@@ -254,7 +254,7 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
               onClick={() => setPeriod('custom_range')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 period === 'custom_range'
-                  ? 'bg-[#CEAE80] text-black shadow-sm'
+                  ? 'bg-brand text-brand-on shadow-sm'
                   : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white'
               }`}
             >
@@ -310,11 +310,11 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
 
       {/* PERIOD SUMMARY METRICS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="glass-card p-4 rounded-2xl border-l-4 border-l-amber-500 space-y-1">
+        <div className="glass-card p-4 rounded-2xl border-l-4 border-l-brand space-y-1">
           <span className="text-[11px] text-stone-500 dark:text-gray-400 block">
             کل واگذاری امانی در بازه انتخابی:
           </span>
-          <p className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400 font-mono" dir="ltr">
+          <p className="text-lg sm:text-xl font-black text-brand-ink dark:text-brand font-mono" dir="ltr">
             {formatToman(filteredHandoversTotal)}
           </p>
         </div>
@@ -328,11 +328,11 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
           </p>
         </div>
 
-        <div className="glass-card p-4 rounded-2xl border-l-4 border-l-[#CEAE80] space-y-1">
+        <div className="glass-card p-4 rounded-2xl border-l-4 border-l-brand space-y-1">
           <span className="text-[11px] text-stone-500 dark:text-gray-400 block">
             راندمان وصولی بازه:
           </span>
-          <p className="text-lg sm:text-xl font-black text-[#CEAE80] font-mono">
+          <p className="text-lg sm:text-xl font-black text-brand font-mono">
             {toPersianDigits(collectionEfficiency)}
             ٪ وصولی نقد
           </p>
@@ -346,7 +346,7 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <h4 className="font-black text-xs sm:text-sm text-stone-900 dark:text-white flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-[#CEAE80]" />
+                <TrendingUp className="w-4 h-4 text-brand" />
                 <span>نمودار مقایسه‌ای حجم تحویل امانی و تسویه نقدی</span>
               </h4>
               <p className="text-[11px] text-stone-400 mt-0.5">
@@ -395,7 +395,7 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
         <div className="glass-panel p-5 rounded-2xl shadow-xl space-y-4">
           <div>
             <h4 className="font-black text-xs sm:text-sm text-stone-900 dark:text-white flex items-center gap-2">
-              <PieIcon className="w-4 h-4 text-[#CEAE80]" />
+              <PieIcon className="w-4 h-4 text-brand" />
               <span>ترکیب ریسک سنی مطالبات</span>
             </h4>
             <p className="text-[11px] text-stone-400 mt-0.5">تفکیک ماندگاری مطالبات معوق</p>
@@ -531,8 +531,8 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
       {/* Sellers Risk & Ranking Table */}
       <div className="glass-panel rounded-2xl p-5 space-y-4 shadow-xl">
         <h4 className="font-black text-sm text-stone-900 dark:text-white flex items-center gap-2">
-          <Users className="w-4 h-4 text-[#CEAE80]" />
-          <span className="text-[#CEAE80]">جدول وضعیت اعتباری و وصولی تک‌تک فروشندگان</span>
+          <Users className="w-4 h-4 text-brand" />
+          <span className="text-brand">جدول وضعیت اعتباری و وصولی تک‌تک فروشندگان</span>
         </h4>
 
         <div className="overflow-x-auto">
@@ -563,7 +563,7 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
                     <td data-label="کل وصولی نقدی" className="p-2.5 font-mono font-bold text-emerald-600 dark:text-emerald-400 text-left" dir="ltr">
                       {formatToman(s.totalPaid || 0)}
                     </td>
-                    <td data-label="مانده بدهی" className="p-2.5 font-mono font-black text-[#CEAE80] text-left" dir="ltr">
+                    <td data-label="مانده بدهی" className="p-2.5 font-mono font-black text-brand text-left" dir="ltr">
                       {formatToman(s.currentDebt || 0)}
                     </td>
                     <td data-label="سقف اعتبار" className="p-2.5 font-mono text-stone-400 text-left" dir="ltr">

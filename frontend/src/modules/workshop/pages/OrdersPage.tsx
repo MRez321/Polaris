@@ -96,9 +96,9 @@ export const OrdersPage: React.FC = () => {
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
       {/* Header */}
-      <div className="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xl border border-[#CEAE80]/30">
+      <div className="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xl border border-brand/30">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#CEAE80]/20 flex items-center justify-center text-[#CEAE80] shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-brand/20 flex items-center justify-center text-brand shrink-0">
             <ShoppingBag className="w-5 h-5" />
           </div>
           <div>
@@ -112,7 +112,7 @@ export const OrdersPage: React.FC = () => {
           type="button"
           onClick={load}
           disabled={!orders && !error}
-          className="px-3.5 py-1.5 rounded-xl glass-card hover:border-[#CEAE80] text-xs font-bold flex items-center gap-1.5 shrink-0"
+          className="px-3.5 py-1.5 rounded-xl glass-card hover:border-brand text-xs font-bold flex items-center gap-1.5 shrink-0"
         >
           <RefreshCw className={cn('w-3.5 h-3.5', (!orders && !error) && 'animate-spin')} />
           <span>به‌روزرسانی</span>
@@ -128,8 +128,8 @@ export const OrdersPage: React.FC = () => {
             className={cn(
               'px-3 py-1.5 rounded-xl font-bold transition-all whitespace-nowrap flex items-center gap-1.5',
               filter === s
-                ? 'bg-[#CEAE80] text-black shadow-sm font-black'
-                : 'glass-card text-stone-600 dark:text-gray-300 hover:border-[#CEAE80]/60'
+                ? 'bg-brand text-brand-on shadow-sm font-black'
+                : 'glass-card text-stone-600 dark:text-gray-300 hover:border-brand/60'
             )}
           >
             <span>{s === 'all' ? 'همه' : STATUS_META[s].label}</span>
@@ -150,7 +150,7 @@ export const OrdersPage: React.FC = () => {
         <div className="glass-panel p-8 rounded-2xl text-center space-y-3">
           <p className="text-sm font-black text-rose-600 dark:text-rose-400">خطا در بارگذاری سفارش‌ها</p>
           <p className="text-xs text-stone-500 dark:text-gray-400">{error}</p>
-          <button onClick={load} className="px-4 py-2 rounded-xl glass-card text-xs font-bold hover:border-[#CEAE80]">
+          <button onClick={load} className="px-4 py-2 rounded-xl glass-card text-xs font-bold hover:border-brand">
             تلاش دوباره
           </button>
         </div>
@@ -200,7 +200,7 @@ export const OrdersPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {updatingId === order.id && <Loader2 className="w-4 h-4 animate-spin text-[#CEAE80]" />}
+                  {updatingId === order.id && <Loader2 className="w-4 h-4 animate-spin text-brand" />}
                   <SelectMenu
                     value={order.status}
                     onChange={(v) => void handleStatusChange(order, v)}
@@ -231,7 +231,7 @@ export const OrdersPage: React.FC = () => {
                 <div className="glass-card rounded-xl p-3 space-y-1">
                   <span className="text-[10px] text-stone-400 dark:text-gray-500 font-bold block">مقصد</span>
                   <span className="flex items-start gap-1 text-stone-900 dark:text-white font-black leading-5">
-                    <MapPin className="w-3 h-3 shrink-0 mt-1 text-[#A67C38] dark:text-[#CEAE80]" />
+                    <MapPin className="w-3 h-3 shrink-0 mt-1 text-brand-ink" />
                     <span className="truncate">{order.city}</span>
                   </span>
                   <span className="text-stone-500 dark:text-gray-400 block leading-5 line-clamp-2">{order.address}</span>
@@ -245,7 +245,7 @@ export const OrdersPage: React.FC = () => {
                 </div>
                 <div className="glass-card rounded-xl p-3 space-y-1">
                   <span className="text-[10px] text-stone-400 dark:text-gray-500 font-bold block">مبلغ کل</span>
-                  <span className="text-base font-black text-[#A67C38] dark:text-[#CEAE80] block">
+                  <span className="text-base font-black text-brand-ink block">
                     {formatToman(order.total)}
                   </span>
                 </div>
@@ -279,7 +279,7 @@ export const OrdersPage: React.FC = () => {
 
               {order.note && (
                 <p className="flex items-start gap-1.5 text-[11px] leading-5 text-stone-500 dark:text-gray-400 bg-black/20 border border-white/5 rounded-xl p-3">
-                  <StickyNote className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#CEAE80]" />
+                  <StickyNote className="w-3.5 h-3.5 shrink-0 mt-0.5 text-brand" />
                   <span>
                     <span className="font-black">یادداشت مشتری: </span>
                     {order.note}

@@ -120,7 +120,7 @@ export const WebsiteSettingsPage: React.FC = () => {
           className="rounded-3xl border border-stone-200/80 dark:border-white/8 bg-white dark:bg-[#16161a] p-5 sm:p-6 space-y-5"
         >
           {/* Publish toggle */}
-          <label className="flex items-start justify-between gap-4 p-4 rounded-2xl border border-stone-200 dark:border-white/10 cursor-pointer hover:border-[#CEAE80]/50 transition-colors">
+          <label className="flex items-start justify-between gap-4 p-4 rounded-2xl border border-stone-200 dark:border-white/10 cursor-pointer hover:border-brand/50 transition-colors">
             <div>
               <span className="text-sm font-black text-stone-900 dark:text-white block">
                 انتشار وب‌سایت عمومی
@@ -133,7 +133,7 @@ export const WebsiteSettingsPage: React.FC = () => {
               type="checkbox"
               checked={enabled}
               onChange={(e) => setEnabled(e.target.checked)}
-              className="w-4 h-4 accent-[#CEAE80] rounded cursor-pointer mt-1 shrink-0"
+              className="w-4 h-4 accent-brand rounded cursor-pointer mt-1 shrink-0"
             />
           </label>
 
@@ -159,10 +159,10 @@ export const WebsiteSettingsPage: React.FC = () => {
           </Field>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <label className="flex items-start justify-between gap-3 p-4 rounded-2xl border border-stone-200 dark:border-white/10 cursor-pointer hover:border-[#CEAE80]/50 transition-colors">
+            <label className="flex items-start justify-between gap-3 p-4 rounded-2xl border border-stone-200 dark:border-white/10 cursor-pointer hover:border-brand/50 transition-colors">
               <div className="flex gap-2.5">
                 {showPrices ? (
-                  <Tags className="w-4 h-4 text-[#A67C38] dark:text-[#CEAE80] shrink-0 mt-0.5" />
+                  <Tags className="w-4 h-4 text-brand-ink shrink-0 mt-0.5" />
                 ) : (
                   <EyeOff className="w-4 h-4 text-stone-400 shrink-0 mt-0.5" />
                 )}
@@ -179,13 +179,13 @@ export const WebsiteSettingsPage: React.FC = () => {
                 type="checkbox"
                 checked={showPrices}
                 onChange={(e) => setShowPrices(e.target.checked)}
-                className="w-4 h-4 accent-[#CEAE80] rounded cursor-pointer mt-0.5 shrink-0"
+                className="w-4 h-4 accent-brand rounded cursor-pointer mt-0.5 shrink-0"
               />
             </label>
 
-            <label className="flex items-start justify-between gap-3 p-4 rounded-2xl border border-stone-200 dark:border-white/10 cursor-pointer hover:border-[#CEAE80]/50 transition-colors">
+            <label className="flex items-start justify-between gap-3 p-4 rounded-2xl border border-stone-200 dark:border-white/10 cursor-pointer hover:border-brand/50 transition-colors">
               <div className="flex gap-2.5">
-                <Eye className="w-4 h-4 text-[#A67C38] dark:text-[#CEAE80] shrink-0 mt-0.5" />
+                <Eye className="w-4 h-4 text-brand-ink shrink-0 mt-0.5" />
                 <div>
                   <span className="text-xs font-black text-stone-900 dark:text-white block">
                     نمایش کالاهای ناموجود
@@ -199,7 +199,7 @@ export const WebsiteSettingsPage: React.FC = () => {
                 type="checkbox"
                 checked={showOutOfStock}
                 onChange={(e) => setShowOutOfStock(e.target.checked)}
-                className="w-4 h-4 accent-[#CEAE80] rounded cursor-pointer mt-0.5 shrink-0"
+                className="w-4 h-4 accent-brand rounded cursor-pointer mt-0.5 shrink-0"
               />
             </label>
           </div>
@@ -216,7 +216,7 @@ export const WebsiteSettingsPage: React.FC = () => {
             <Button
               type="submit"
               loading={saving}
-              className="bg-[#CEAE80] hover:bg-[#c2a06e] text-black font-black"
+              className="bg-brand hover:bg-brand-hover text-brand-on font-black"
             >
               ذخیره تنظیمات وب‌سایت
             </Button>

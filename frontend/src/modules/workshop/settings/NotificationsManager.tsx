@@ -41,7 +41,7 @@ const MaskedField: React.FC<{
     <div>
       <label className="block text-xs font-bold mb-1 text-stone-800 dark:text-stone-200">
         {label}
-        {dirty && <Loader2 className="inline w-3 h-3 ms-1.5 animate-spin text-[#CEAE80]" />}
+        {dirty && <Loader2 className="inline w-3 h-3 ms-1.5 animate-spin text-brand" />}
       </label>
       <PasswordInput
         value={draft}
@@ -130,7 +130,7 @@ export const NotificationsManager: React.FC = () => {
   if (isLoading || !settings) {
     return (
       <div className="glass-panel p-10 rounded-2xl flex items-center justify-center shadow-xl">
-        <Loader2 className="w-6 h-6 animate-spin text-[#CEAE80]" />
+        <Loader2 className="w-6 h-6 animate-spin text-brand" />
         <span className="ms-2 text-xs font-bold text-stone-500">در حال دریافت تنظیمات…</span>
       </div>
     );
@@ -163,7 +163,7 @@ export const NotificationsManager: React.FC = () => {
       <Switch
         checked={checked}
         onCheckedChange={onChange}
-        className="data-checked:bg-[#CEAE80]"
+        className="data-checked:bg-brand"
       />
     </label>
   );
@@ -184,7 +184,7 @@ export const NotificationsManager: React.FC = () => {
       <div className="glass-panel p-6 rounded-2xl space-y-4 shadow-xl">
         <div className="flex items-center justify-between gap-3 pb-3 border-b border-black/5 dark:border-white/5">
           <h4 className="font-black text-sm sm:text-base text-stone-900 dark:text-white flex items-center gap-2">
-            <Send className="w-4 h-4 text-[#CEAE80]" />
+            <Send className="w-4 h-4 text-brand" />
             <span>اطلاع‌رسانی تلگرام</span>
           </h4>
           <div className="flex items-center gap-2">
@@ -254,7 +254,7 @@ export const NotificationsManager: React.FC = () => {
             type="button"
             onClick={testTelegram}
             disabled={testingTelegram || !settings.telegramConfigured}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] disabled:opacity-40 disabled:cursor-not-allowed text-black text-xs font-black shadow-md transition-all active:scale-95"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand hover:bg-brand-hover disabled:opacity-40 disabled:cursor-not-allowed text-brand-on text-xs font-black shadow-md transition-all active:scale-95"
           >
             {testingTelegram ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             ارسال پیام آزمایشی
@@ -266,7 +266,7 @@ export const NotificationsManager: React.FC = () => {
       <div className="glass-panel p-6 rounded-2xl space-y-4 shadow-xl">
         <div className="flex items-center justify-between gap-3 pb-3 border-b border-black/5 dark:border-white/5">
           <h4 className="font-black text-sm sm:text-base text-stone-900 dark:text-white flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-[#CEAE80]" />
+            <MessageSquare className="w-4 h-4 text-brand" />
             <span>اطلاع‌رسانی پیامکی (ملی‌پیامک)</span>
           </h4>
           {configBadge(settings.smsConfigured, 'اتصال برقرار', 'کلید API تنظیم نشده')}
@@ -346,7 +346,7 @@ export const NotificationsManager: React.FC = () => {
                   type="button"
                   onClick={() => testSms(phone)}
                   disabled={testingSms || !/^09\d{9}$/.test(phone) || !settings.smsConfigured}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] disabled:opacity-40 disabled:cursor-not-allowed text-black text-xs font-black shadow-md transition-all active:scale-95 shrink-0"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-brand hover:bg-brand-hover disabled:opacity-40 disabled:cursor-not-allowed text-brand-on text-xs font-black shadow-md transition-all active:scale-95 shrink-0"
                   title="ارسال پیامک آزمایشی به این شماره"
                 >
                   {testingSms ? <Loader2 className="w-4 h-4 animate-spin" /> : <BellRing className="w-4 h-4" />}
@@ -359,7 +359,7 @@ export const NotificationsManager: React.FC = () => {
             type="button"
             onClick={() => setSmsPhones([...settings.sms.recipientPhones, ''])}
             disabled={settings.sms.recipientPhones.length >= 20}
-            className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#CEAE80]/50 text-[#CEAE80] hover:bg-[#CEAE80]/10 disabled:opacity-40 disabled:cursor-not-allowed text-[11px] font-black transition-colors"
+            className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-brand/50 text-brand hover:bg-brand/10 disabled:opacity-40 disabled:cursor-not-allowed text-[11px] font-black transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             افزودن شماره
@@ -372,7 +372,7 @@ export const NotificationsManager: React.FC = () => {
 
       <p className="text-[11px] text-stone-500 dark:text-gray-400 flex items-center gap-1.5">
         {isSaving ? (
-          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#CEAE80]" />
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-brand" />
         ) : (
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
         )}

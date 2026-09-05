@@ -4,6 +4,22 @@ import { z } from 'zod';
 import { getCompany, updateCompany } from './services/settingsService.js';
 import { logAudit } from '../../core/services/auditService.js';
 
+const hexColor = z
+    .string()
+    .trim()
+    .transform((s) => s.toLowerCase())
+    .refine((s) => /^#[0-9a-f]{6}$/.test(s), { message: 'رنگ باید به قالب #rrggbb باشد' });
+
+const themeSchema = z
+    .object({
+        defaultMode: z.enum(['dark', 'light']),
+        palette: z.discriminatedUnion('type', [
+            z.object({ type: z.literal('default') }),
+            z.object({ type: z.literal('custom'), primary: hexColor }),
+        ]),
+    })
+    .strict();
+
 const companySchema = z.object({
     name: z.string().optional(),
     slogan: z.string().optional(),
@@ -23,6 +39,7 @@ const companySchema = z.object({
     workshopPhone: z.string().optional(),
     secondaryPhone: z.string().optional(),
     establishedYear: z.string().optional(),
+    theme: themeSchema.optional(),
 });
 
 export async function getCompanyBranding(_req: Request, res: Response): Promise<void> {

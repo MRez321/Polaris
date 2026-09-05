@@ -335,13 +335,13 @@ export const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
         <div className="p-4 rounded-2xl bg-stone-50 dark:bg-black/30 border border-stone-200 dark:border-white/5 space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="font-bold text-xs sm:text-sm text-stone-900 dark:text-white flex items-center gap-1.5">
-              <Phone className="w-4 h-4 text-[#CEAE80]" />
+              <Phone className="w-4 h-4 text-brand" />
               <span>شماره‌های تماس و تلفن همراه</span>
             </h4>
             <button
               type="button"
               onClick={handleAddPhone}
-              className="text-xs font-bold text-amber-800 dark:text-[#CEAE80] hover:underline flex items-center gap-1"
+              className="text-xs font-bold text-brand-ink dark:text-brand hover:underline flex items-center gap-1"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>افزودن شماره دیگر</span>
@@ -388,13 +388,13 @@ export const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
         <div className="p-4 rounded-2xl bg-stone-50 dark:bg-black/30 border border-stone-200 dark:border-white/5 space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="font-bold text-xs sm:text-sm text-stone-900 dark:text-white flex items-center gap-1.5">
-              <CreditCard className="w-4 h-4 text-[#CEAE80]" />
+              <CreditCard className="w-4 h-4 text-brand" />
               <span>حساب‌های بانکی، کارت و شبا (جهت واریز و تسویه)</span>
             </h4>
             <button
               type="button"
               onClick={() => setShowAddBank(!showAddBank)}
-              className="text-xs font-bold text-amber-800 dark:text-[#CEAE80] hover:underline flex items-center gap-1"
+              className="text-xs font-bold text-brand-ink dark:text-brand hover:underline flex items-center gap-1"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>افزودن کارت و شبای جدید</span>
@@ -409,7 +409,7 @@ export const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
                 className="p-3 rounded-xl bg-white dark:bg-[#1A1A1E] border border-stone-200 dark:border-white/10 space-y-2 relative"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs text-amber-800 dark:text-[#CEAE80]">
+                  <span className="font-bold text-xs text-brand-ink dark:text-brand">
                     حساب {toPersianDigits(idx + 1)}: {acc.bankName || 'حساب بانکی'}
                   </span>
                   <button
@@ -471,7 +471,7 @@ export const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
 
           {/* Form to add another bank account */}
           {showAddBank && (
-            <div className="p-3.5 rounded-xl bg-amber-500/10 dark:bg-[#CEAE80]/15 border border-amber-500/30 dark:border-[#CEAE80]/30 space-y-3">
+            <div className="p-3.5 rounded-xl bg-brand/10 dark:bg-brand/15 border border-brand/30 dark:border-brand/30 space-y-3">
               <h5 className="font-bold text-xs text-stone-900 dark:text-white">
                 مشخصات کارت و شبای جدید:
               </h5>
@@ -534,7 +534,7 @@ export const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
                 <button
                   type="button"
                   onClick={handleAddNewAccount}
-                  className="px-3.5 py-1 rounded-lg bg-[#CEAE80] text-black font-bold text-xs hover:bg-[#B59363]"
+                  className="px-3.5 py-1 rounded-lg bg-brand text-brand-on font-bold text-xs hover:bg-brand-hover"
                 >
                   افزودن این حساب
                 </button>
@@ -573,7 +573,7 @@ export const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-6 py-2 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-black text-xs sm:text-sm flex items-center gap-1.5 shadow-md transition-all active:scale-95"
+              className="px-6 py-2 rounded-xl bg-brand hover:bg-brand-hover text-brand-on font-black text-xs sm:text-sm flex items-center gap-1.5 shadow-md transition-all active:scale-95"
             >
               <Check className="w-4 h-4" />
               <span>{editOwner ? 'ذخیره تغییرات' : 'ثبت هم‌بنیان‌گذار جدید'}</span>

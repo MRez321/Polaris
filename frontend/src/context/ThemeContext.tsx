@@ -20,7 +20,18 @@ let activeSwitches = 0;
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     try {
-      return localStorage.getItem('polaris_theme') !== 'light';
+      // Visitor's explicit choice wins; without one, the admin's server-side
+      // default (cached by BrandProvider) decides light vs dark.
+      const stored = localStorage.getItem('polaris_theme');
+      if (stored === 'light' || stored === 'dark') return stored === 'dark';
+      const palette = localStorage.getItem('polaris_palette');
+      if (palette) {
+        const theme = JSON.parse(palette) as { defaultMode?: string };
+        if (theme.defaultMode === 'light' || theme.defaultMode === 'dark') {
+          return theme.defaultMode === 'dark';
+        }
+      }
+      return true;
     } catch {
       return true;
     }

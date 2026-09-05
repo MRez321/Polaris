@@ -327,7 +327,18 @@ export interface CompanyBranding extends WorkshopInfo {
   workshopPhone: string;
   secondaryPhone?: string;
   establishedYear?: string;
+  theme?: CompanyTheme;
   owners: Owner[];
+}
+
+/**
+ * Site-wide appearance, mirrors backend CompanyTheme: default visitor mode
+ * plus palette choice. `custom` pins the whole site to one admin-picked
+ * primary color; derived roles are computed from it.
+ */
+export interface CompanyTheme {
+  defaultMode: 'dark' | 'light';
+  palette: { type: 'default' } | { type: 'custom'; primary: string };
 }
 
 /**
@@ -412,6 +423,8 @@ export interface PublicCompanyInfo {
   slogan: string;
   brandName: string;
   tagline: string;
+  logoUrl?: string;
+  theme?: CompanyTheme;
   website: string;
   instagram: string;
   telegram: string;

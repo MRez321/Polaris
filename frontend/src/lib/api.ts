@@ -4,6 +4,7 @@ import type {
   BlogPost,
   BlogPostStatus,
   BlogSection,
+  CompanyBranding,
   Consignment,
   ConsignmentReturn,
   DashboardStats,
@@ -213,6 +214,14 @@ export const websiteApi = {
   get: () => api.get<WebsiteSettings>('/api/website/settings').then((r) => r.data),
   update: (data: Partial<WebsiteSettings>) =>
     api.put<WebsiteSettings>('/api/website/settings', data).then((r) => r.data),
+};
+
+// --- Company Branding & Theme (admin) ---
+// Full branding row including theme; PUT is merge-patch on the server.
+export const companyApi = {
+  get: () => api.get<CompanyBranding>('/api/company').then((r) => r.data),
+  update: (data: Partial<CompanyBranding>) =>
+    api.put<CompanyBranding>('/api/company', data).then((r) => r.data),
 };
 
 // --- Audit Logs ---

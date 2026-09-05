@@ -27,7 +27,7 @@ export const SafeImage: React.FC<SafeImageProps> = ({ src, alt, className = '', 
       <div
         role="img"
         aria-label={alt}
-        className={`flex items-center justify-center bg-gradient-to-br from-[#CEAE80]/40 to-[#A67C38]/30 text-[#5b4a2f] dark:text-[#F4E8D4] font-black select-none ${className} ${fallbackClassName}`}
+        className={`flex items-center justify-center bg-gradient-to-br from-brand/40 to-brand-deep/30 text-brand-deep dark:text-brand-faint font-black select-none ${className} ${fallbackClassName}`}
       >
         <span className="text-[0.6em] leading-none">{initialsOf(alt)}</span>
       </div>

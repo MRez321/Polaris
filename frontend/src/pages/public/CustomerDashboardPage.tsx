@@ -96,7 +96,7 @@ export const CustomerDashboardPage: React.FC = () => {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       {/* Profile header */}
       <div className="rounded-3xl border border-stone-200/80 dark:border-white/8 bg-white dark:bg-[#16161a] p-5 sm:p-6 flex items-center gap-4 mb-6">
-        <span className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#CEAE80] text-black text-lg sm:text-xl font-black flex items-center justify-center shadow-lg shadow-[#CEAE80]/25">
+        <span className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-brand text-brand-on text-lg sm:text-xl font-black flex items-center justify-center shadow-lg shadow-brand/25">
           {initials(user.name)}
         </span>
         <div className="min-w-0 flex-1">
@@ -104,7 +104,7 @@ export const CustomerDashboardPage: React.FC = () => {
             <h1 className="text-base sm:text-lg font-black text-stone-900 dark:text-white truncate">
               {user.name}
             </h1>
-            <Badge variant="outline" className="border-[#CEAE80]/40 text-[#A67C38] dark:text-[#CEAE80] text-[10px]">
+            <Badge variant="outline" className="border-brand/40 text-brand-ink text-[10px]">
               {ROLE_LABELS[user.role] ?? user.role}
             </Badge>
           </div>
@@ -232,7 +232,7 @@ const OrdersTab: React.FC<{ userId: string }> = ({ userId }) => {
                   <div className="flex-1 min-w-0">
                     <Link
                       to={`/product/${line.itemId}`}
-                      className="text-xs font-bold text-stone-900 dark:text-white line-clamp-1 hover:text-[#A67C38] dark:hover:text-[#CEAE80] transition-colors"
+                      className="text-xs font-bold text-stone-900 dark:text-white line-clamp-1 hover:text-brand-ink transition-colors"
                     >
                       {line.name}
                     </Link>
@@ -252,7 +252,7 @@ const OrdersTab: React.FC<{ userId: string }> = ({ userId }) => {
               <span className="text-stone-500 dark:text-stone-400">
                 {PAYMENT_LABELS[order.paymentMethod]} · تحویل: {order.city}
               </span>
-              <span className="text-sm font-black text-[#A67C38] dark:text-[#CEAE80]">
+              <span className="text-sm font-black text-brand-ink">
                 {formatToman(order.total)}
               </span>
             </footer>
@@ -409,7 +409,7 @@ const ProfileTab: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut })
           <Input id="profile-email" value={user?.email ?? ''} disabled dir="ltr" />
         </Field>
 
-        <Button type="submit" loading={saving} className="bg-[#CEAE80] hover:bg-[#c2a06e] text-black font-black">
+        <Button type="submit" loading={saving} className="bg-brand hover:bg-brand-hover text-brand-on font-black">
           ذخیره تغییرات
         </Button>
       </form>
@@ -419,7 +419,7 @@ const ProfileTab: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut })
         <div className="rounded-3xl border border-stone-200/80 dark:border-white/8 bg-white dark:bg-[#16161a] p-5 sm:p-6 space-y-3">
           <h2 className="text-sm font-black text-stone-900 dark:text-white">نقش و دسترسی</h2>
           <div>
-            <Badge variant="outline" className="border-[#CEAE80]/40 text-[#A67C38] dark:text-[#CEAE80] text-[10px]">
+            <Badge variant="outline" className="border-brand/40 text-brand-ink text-[10px]">
               {ROLE_LABELS[user?.role ?? ''] ?? user?.role ?? '—'}
             </Badge>
           </div>
@@ -436,7 +436,7 @@ const ProfileTab: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut })
                   variant={link.primary ? 'default' : 'outline'}
                   className={cn(
                     'w-full justify-start',
-                    link.primary && 'bg-[#CEAE80] hover:bg-[#c2a06e] text-black font-black'
+                    link.primary && 'bg-brand hover:bg-brand-hover text-brand-on font-black'
                   )}
                 >
                   <link.icon className="w-4 h-4" />

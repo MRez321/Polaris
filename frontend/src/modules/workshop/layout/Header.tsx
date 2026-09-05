@@ -37,7 +37,7 @@ export const Header: React.FC = () => {
           className="flex items-center gap-3 cursor-pointer select-none"
           title="بازگشت به سایت فروشگاه"
         >
-          <div className="w-10 h-10 rounded-xl bg-[#CEAE80] text-black flex items-center justify-center shadow-lg font-black shrink-0 ring-2 ring-[#CEAE80]/30 transition-transform active:scale-95">
+          <div className="w-10 h-10 rounded-xl bg-brand text-brand-on flex items-center justify-center shadow-lg font-black shrink-0 ring-2 ring-brand/30 transition-transform active:scale-95">
             <Scissors className="w-5 h-5 -rotate-45 text-black" />
           </div>
           <div>
@@ -55,7 +55,7 @@ export const Header: React.FC = () => {
           {/* Quick Payment Button (desktop; mobile uses the bottom nav) */}
           <button
             onClick={() => openQuickPayment()}
-            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl glass-card hover:border-[#CEAE80] text-stone-900 dark:text-stone-200 text-xs font-bold transition-all active:scale-95 shadow-sm"
+            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl glass-card hover:border-brand text-stone-900 dark:text-stone-200 text-xs font-bold transition-all active:scale-95 shadow-sm"
             title="ثبت وجه دریافتی با تسویه زنجیره‌ای فاکتورها"
           >
             <Receipt className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
@@ -65,7 +65,7 @@ export const Header: React.FC = () => {
           {/* Quick Handover Button (desktop; mobile uses the bottom nav) */}
           <button
             onClick={() => openQuickHandover()}
-            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-black text-xs sm:text-sm shadow-md transition-all active:scale-95"
+            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-brand hover:bg-brand-hover text-brand-on font-black text-xs sm:text-sm shadow-md transition-all active:scale-95"
             title="تحویل بار جدید"
           >
             <Plus className="w-4 h-4 text-black" />
@@ -89,11 +89,11 @@ export const Header: React.FC = () => {
           {/* Day / Night Theme Switcher */}
           <button
             onClick={(e) => toggleTheme({ x: e.clientX, y: e.clientY })}
-            className="p-2.5 rounded-xl glass-card hover:border-[#CEAE80] transition-all text-stone-800 dark:text-gray-200 shadow-sm"
+            className="p-2.5 rounded-xl glass-card hover:border-brand transition-all text-stone-800 dark:text-gray-200 shadow-sm"
             title={isDarkMode ? 'تغییر به حالت روز (روشن)' : 'تغییر به حالت شب (تاریک)'}
           >
             {isDarkMode ? (
-              <Sun className="w-4 h-4 text-[#CEAE80]" />
+              <Sun className="w-4 h-4 text-brand" />
             ) : (
               <Moon className="w-4 h-4 text-stone-800" />
             )}
@@ -106,7 +106,7 @@ export const Header: React.FC = () => {
           <button
             type="button"
             onClick={() => setSideMenuOpen(true)}
-            className="md:hidden p-2 rounded-xl glass-card hover:border-[#CEAE80] text-stone-800 dark:text-gray-200 transition-all active:scale-95 shadow-sm"
+            className="md:hidden p-2 rounded-xl glass-card hover:border-brand text-stone-800 dark:text-gray-200 transition-all active:scale-95 shadow-sm"
             aria-label="باز کردن منوی کارگاه"
           >
             <Menu className="w-5 h-5" />

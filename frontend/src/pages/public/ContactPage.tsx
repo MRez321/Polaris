@@ -99,12 +99,12 @@ export const ContactPage: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
       {/* Page header */}
       <Reveal className="text-center mb-12">
-        <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#CEAE80]/40 bg-[#CEAE80]/10 text-[#A67C38] dark:text-[#CEAE80] text-xs font-black tracking-wide">
+        <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand/40 bg-brand/10 text-brand-ink text-xs font-black tracking-wide">
           <Phone className="w-3.5 h-3.5" />
           تماس با پولاریس استایل
         </span>
         <h1 className="mt-5 text-2xl sm:text-4xl font-black text-stone-900 dark:text-white">
-          صحبت با ما، <span className="text-[#A67C38] dark:text-[#CEAE80]">شروع هر سفارش</span>
+          صحبت با ما، <span className="text-brand-ink">شروع هر سفارش</span>
         </h1>
         <p className="mt-4 text-sm leading-7 text-stone-600 dark:text-stone-400 max-w-xl mx-auto">
           برای مشاوره خرید، استعلام قیمت یا هر پرسش دیگری، فرم را پر کنید یا مستقیم تماس بگیرید.
@@ -131,7 +131,7 @@ export const ContactPage: React.FC = () => {
                   {companyPhone && (
                     <a
                       href={phoneHref(companyPhone)}
-                      className="inline-flex items-center gap-2 h-11 px-6 rounded-2xl bg-[#CEAE80] hover:bg-[#c2a06e] text-black text-sm font-black shadow-md shadow-[#CEAE80]/25 transition-all active:scale-95"
+                      className="inline-flex items-center gap-2 h-11 px-6 rounded-2xl bg-brand hover:bg-brand-hover text-brand-on text-sm font-black shadow-md shadow-brand/25 transition-all active:scale-95"
                     >
                       <Phone className="w-4 h-4" />
                       تماس: {toPersianDigits(companyPhone)}
@@ -155,7 +155,7 @@ export const ContactPage: React.FC = () => {
             ) : (
               <form onSubmit={handleSubmit} noValidate className="space-y-5">
                 <h2 className="text-base sm:text-lg font-black text-stone-900 dark:text-white flex items-center gap-2">
-                  <Send className="w-4.5 h-4.5 text-[#A67C38] dark:text-[#CEAE80]" />
+                  <Send className="w-4.5 h-4.5 text-brand-ink" />
                   فرم تماس
                 </h2>
 
@@ -206,7 +206,7 @@ export const ContactPage: React.FC = () => {
                 <Button
                   type="submit"
                   loading={submitting}
-                  className="w-full sm:w-auto h-12 px-8 rounded-2xl bg-[#CEAE80] hover:bg-[#c2a06e] text-black text-sm font-black shadow-md shadow-[#CEAE80]/25"
+                  className="w-full sm:w-auto h-12 px-8 rounded-2xl bg-brand hover:bg-brand-hover text-brand-on text-sm font-black shadow-md shadow-brand/25"
                 >
                   {!submitting && <Send className="w-4 h-4" />}
                   {submitting ? 'در حال ثبت…' : 'ثبت پیام'}
@@ -221,7 +221,7 @@ export const ContactPage: React.FC = () => {
           <Reveal delay={0.1}>
             <div className="p-6 rounded-3xl bg-white dark:bg-[#16161a] border border-stone-200/80 dark:border-white/8 shadow-sm space-y-4">
               <h2 className="text-sm font-black text-stone-900 dark:text-white flex items-center gap-2">
-                <span className="w-1.5 h-4 rounded-full bg-[#CEAE80]" />
+                <span className="w-1.5 h-4 rounded-full bg-brand" />
                 راه‌های ارتباطی
               </h2>
 
@@ -229,12 +229,12 @@ export const ContactPage: React.FC = () => {
                 {companyPhone && (
                   <li>
                     <a href={phoneHref(companyPhone)} className="flex items-center gap-3 group">
-                      <span className="w-10 h-10 rounded-xl bg-[#CEAE80]/12 border border-[#CEAE80]/25 flex items-center justify-center shrink-0">
-                        <Phone className="w-4.5 h-4.5 text-[#A67C38] dark:text-[#CEAE80]" />
+                      <span className="w-10 h-10 rounded-xl bg-brand/12 border border-brand/25 flex items-center justify-center shrink-0">
+                        <Phone className="w-4.5 h-4.5 text-brand-ink" />
                       </span>
                       <span className="leading-tight">
                         <span className="block text-[10px] font-bold text-stone-500 dark:text-stone-400">تلفن فروشگاه</span>
-                        <span dir="ltr" className="block text-sm font-black text-stone-800 dark:text-stone-100 group-hover:text-[#A67C38] dark:group-hover:text-[#CEAE80] transition-colors">
+                        <span dir="ltr" className="block text-sm font-black text-stone-800 dark:text-stone-100 group-hover:text-brand-ink dark:group-hover:text-brand transition-colors">
                           {toPersianDigits(companyPhone)}
                         </span>
                       </span>
@@ -244,12 +244,12 @@ export const ContactPage: React.FC = () => {
                 {companySecondary && (
                   <li>
                     <a href={phoneHref(companySecondary)} className="flex items-center gap-3 group">
-                      <span className="w-10 h-10 rounded-xl bg-[#CEAE80]/12 border border-[#CEAE80]/25 flex items-center justify-center shrink-0">
-                        <Phone className="w-4.5 h-4.5 text-[#A67C38] dark:text-[#CEAE80]" />
+                      <span className="w-10 h-10 rounded-xl bg-brand/12 border border-brand/25 flex items-center justify-center shrink-0">
+                        <Phone className="w-4.5 h-4.5 text-brand-ink" />
                       </span>
                       <span className="leading-tight">
                         <span className="block text-[10px] font-bold text-stone-500 dark:text-stone-400">تلفن دوم</span>
-                        <span dir="ltr" className="block text-sm font-black text-stone-800 dark:text-stone-100 group-hover:text-[#A67C38] dark:group-hover:text-[#CEAE80] transition-colors">
+                        <span dir="ltr" className="block text-sm font-black text-stone-800 dark:text-stone-100 group-hover:text-brand-ink dark:group-hover:text-brand transition-colors">
                           {toPersianDigits(companySecondary)}
                         </span>
                       </span>
@@ -258,8 +258,8 @@ export const ContactPage: React.FC = () => {
                 )}
                 {companyAddress && (
                   <li className="flex items-start gap-3">
-                    <span className="w-10 h-10 rounded-xl bg-[#CEAE80]/12 border border-[#CEAE80]/25 flex items-center justify-center shrink-0">
-                      <MapPin className="w-4.5 h-4.5 text-[#A67C38] dark:text-[#CEAE80]" />
+                    <span className="w-10 h-10 rounded-xl bg-brand/12 border border-brand/25 flex items-center justify-center shrink-0">
+                      <MapPin className="w-4.5 h-4.5 text-brand-ink" />
                     </span>
                     <span className="leading-tight">
                       <span className="block text-[10px] font-bold text-stone-500 dark:text-stone-400 mb-1">آدرس فروشگاه</span>
@@ -268,8 +268,8 @@ export const ContactPage: React.FC = () => {
                   </li>
                 )}
                 <li className="flex items-start gap-3">
-                  <span className="w-10 h-10 rounded-xl bg-[#CEAE80]/12 border border-[#CEAE80]/25 flex items-center justify-center shrink-0">
-                    <Clock className="w-4.5 h-4.5 text-[#A67C38] dark:text-[#CEAE80]" />
+                  <span className="w-10 h-10 rounded-xl bg-brand/12 border border-brand/25 flex items-center justify-center shrink-0">
+                    <Clock className="w-4.5 h-4.5 text-brand-ink" />
                   </span>
                   <span className="leading-tight">
                     <span className="block text-[10px] font-bold text-stone-500 dark:text-stone-400 mb-1">ساعات کاری</span>
@@ -287,7 +287,7 @@ export const ContactPage: React.FC = () => {
             <Reveal delay={0.15}>
               <div className="p-6 rounded-3xl bg-white dark:bg-[#16161a] border border-stone-200/80 dark:border-white/8 shadow-sm space-y-4">
                 <h2 className="text-sm font-black text-stone-900 dark:text-white flex items-center gap-2">
-                  <span className="w-1.5 h-4 rounded-full bg-[#CEAE80]" />
+                  <span className="w-1.5 h-4 rounded-full bg-brand" />
                   ما را دنبال کنید
                 </h2>
                 <div className="flex flex-wrap gap-2.5">
@@ -296,7 +296,7 @@ export const ContactPage: React.FC = () => {
                       href={instagramHref(companyInstagram)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-stone-200 dark:border-white/10 text-xs font-black text-stone-700 dark:text-stone-200 hover:border-[#CEAE80]/60 hover:text-[#A67C38] dark:hover:text-[#CEAE80] transition-all active:scale-95"
+                      className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-stone-200 dark:border-white/10 text-xs font-black text-stone-700 dark:text-stone-200 hover:border-brand/60 hover:text-brand-ink transition-all active:scale-95"
                     >
                       <Camera className="w-4 h-4" />
                       اینستاگرام
@@ -307,7 +307,7 @@ export const ContactPage: React.FC = () => {
                       href={telegramHref(companyTelegram)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-stone-200 dark:border-white/10 text-xs font-black text-stone-700 dark:text-stone-200 hover:border-[#CEAE80]/60 hover:text-[#A67C38] dark:hover:text-[#CEAE80] transition-all active:scale-95"
+                      className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-stone-200 dark:border-white/10 text-xs font-black text-stone-700 dark:text-stone-200 hover:border-brand/60 hover:text-brand-ink transition-all active:scale-95"
                     >
                       <Send className="w-4 h-4" />
                       تلگرام
@@ -318,7 +318,7 @@ export const ContactPage: React.FC = () => {
                       href={companyWebsite.startsWith('http') ? companyWebsite : `https://${companyWebsite}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-stone-200 dark:border-white/10 text-xs font-black text-stone-700 dark:text-stone-200 hover:border-[#CEAE80]/60 hover:text-[#A67C38] dark:hover:text-[#CEAE80] transition-all active:scale-95"
+                      className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-stone-200 dark:border-white/10 text-xs font-black text-stone-700 dark:text-stone-200 hover:border-brand/60 hover:text-brand-ink transition-all active:scale-95"
                     >
                       <Globe className="w-4 h-4" />
                       وب‌سایت
@@ -331,9 +331,9 @@ export const ContactPage: React.FC = () => {
 
           {/* Map placeholder / address highlight */}
           <Reveal delay={0.2}>
-            <div className="relative overflow-hidden p-6 rounded-3xl border border-[#CEAE80]/30 bg-gradient-to-bl from-[#CEAE80]/20 via-[#CEAE80]/8 to-transparent">
-              <div className="absolute -top-10 -left-10 w-40 h-40 bg-[#CEAE80]/25 rounded-full blur-3xl" aria-hidden />
-              <p className="relative text-xs font-black text-[#A67C38] dark:text-[#CEAE80] mb-2">مراجعه حضوری</p>
+            <div className="relative overflow-hidden p-6 rounded-3xl border border-brand/30 bg-gradient-to-bl from-brand/20 via-brand/8 to-transparent">
+              <div className="absolute -top-10 -left-10 w-40 h-40 bg-brand/25 rounded-full blur-3xl" aria-hidden />
+              <p className="relative text-xs font-black text-brand-ink mb-2">مراجعه حضوری</p>
               <p className="relative text-sm font-black leading-7 text-stone-800 dark:text-stone-100">
                 {companyAddress || 'برای دریافت آدرس فروشگاه با ما تماس بگیرید.'}
               </p>

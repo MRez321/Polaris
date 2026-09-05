@@ -594,7 +594,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
       <div className="glass-panel p-4 sm:p-6 rounded-2xl shadow-xl space-y-4 border border-stone-200 dark:border-white/10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-start sm:items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#CEAE80] text-black flex items-center justify-center shadow-lg font-black shrink-0 ring-4 ring-[#CEAE80]/20">
+            <div className="w-12 h-12 rounded-2xl bg-brand text-brand-on flex items-center justify-center shadow-lg font-black shrink-0 ring-4 ring-brand/20">
               <Wrench className="w-6 h-6" />
             </div>
             <div>
@@ -602,7 +602,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                 <h2 className="text-lg sm:text-xl font-black text-stone-900 dark:text-white tracking-tight">
                   مدیریت هزینه‌ها و درآمد کارگاه
                 </h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-[#CEAE80]/20 text-[#A67C38] dark:text-[#CEAE80] text-[10px] font-black border border-[#CEAE80]/30">
+                <span className="px-2.5 py-0.5 rounded-full bg-brand/20 text-brand-ink text-[10px] font-black border border-brand/30">
                   محاسبه سود، درآمد و سهم‌بندی
                 </span>
               </div>
@@ -625,7 +625,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
 
             <button
               onClick={() => handleOpenNewExpense()}
-              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black text-xs sm:text-sm font-black flex items-center justify-center gap-2 shadow-md transition-all active:scale-95"
+              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-brand-on text-xs sm:text-sm font-black flex items-center justify-center gap-2 shadow-md transition-all active:scale-95"
             >
               <Plus className="w-4 h-4" />
               <span>ثبت هزینه جدید</span>
@@ -699,7 +699,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
           onClick={() => setActiveSubTab('expenses')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap transition-all ${
             activeSubTab === 'expenses'
-              ? 'bg-[#CEAE80] text-black shadow-md'
+              ? 'bg-brand text-brand-on shadow-md'
               : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5 font-bold'
           }`}
         >
@@ -711,7 +711,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
           onClick={() => setActiveSubTab('settlement')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap transition-all ${
             activeSubTab === 'settlement'
-              ? 'bg-[#CEAE80] text-black shadow-md'
+              ? 'bg-brand text-brand-on shadow-md'
               : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5 font-bold'
           }`}
         >
@@ -723,7 +723,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
           onClick={() => setActiveSubTab('distribution')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap transition-all ${
             activeSubTab === 'distribution'
-              ? 'bg-[#CEAE80] text-black shadow-md'
+              ? 'bg-brand text-brand-on shadow-md'
               : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5 font-bold'
           }`}
         >
@@ -735,7 +735,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
           onClick={() => setActiveSubTab('maintenance')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap transition-all ${
             activeSubTab === 'maintenance'
-              ? 'bg-[#CEAE80] text-black shadow-md'
+              ? 'bg-brand text-brand-on shadow-md'
               : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5 font-bold'
           }`}
         >
@@ -758,7 +758,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                 placeholder="جستجو در عنوان، کد یا پرداخت‌کننده..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-3 pr-9 py-2 rounded-xl glass-input text-xs outline-none focus:border-[#CEAE80]"
+                className="w-full pl-3 pr-9 py-2 rounded-xl glass-input text-xs outline-none focus:border-brand"
               />
             </div>
 
@@ -794,7 +794,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
               <p className="text-sm font-bold">هیچ هزینه‌ای با مشخصات انتخابی یافت نشد.</p>
               <button
                 onClick={() => handleOpenNewExpense()}
-                className="px-4 py-2 rounded-xl bg-[#CEAE80] text-black font-black text-xs inline-flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl bg-brand text-brand-on font-black text-xs inline-flex items-center gap-1.5"
               >
                 <Plus className="w-3.5 h-3.5" />
                 ثبت اولین هزینه کارگاه
@@ -809,13 +809,13 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                 return (
                   <div
                     key={exp.id}
-                    className="glass-card p-4 rounded-2xl hover:border-[#CEAE80]/40 transition-all flex flex-col justify-between space-y-3 border border-stone-200 dark:border-white/5 shadow-sm"
+                    className="glass-card p-4 rounded-2xl hover:border-brand/40 transition-all flex flex-col justify-between space-y-3 border border-stone-200 dark:border-white/5 shadow-sm"
                   >
                     <div>
                       {/* Header row */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-xl bg-[#CEAE80]/15 flex items-center justify-center text-[#A67C38] dark:text-[#CEAE80] shrink-0">
+                          <div className="w-8 h-8 rounded-xl bg-brand/15 flex items-center justify-center text-brand-ink shrink-0">
                             <IconComponent className="w-4 h-4" />
                           </div>
                           <div>
@@ -910,7 +910,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                           href={exp.receiptImageUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-[#A67C38] dark:text-[#CEAE80] hover:underline font-bold"
+                          className="text-brand-ink hover:underline font-bold"
                         >
                           مشاهده تصویر فاکتور
                         </a>
@@ -933,7 +933,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
             <div className="flex items-start sm:items-center justify-between gap-3 flex-wrap">
               <div>
                 <h3 className="text-base sm:text-lg font-black text-stone-900 dark:text-white flex items-center gap-2">
-                  <Scale className="w-5 h-5 text-[#A67C38] dark:text-[#CEAE80]" />
+                  <Scale className="w-5 h-5 text-brand-ink" />
                   <span>تراز مخارج بهسازی، متریال و وضعیت بدهکار/بستانکار شرکا</span>
                 </h3>
                 <p className="text-xs text-stone-600 dark:text-stone-400 mt-1 font-medium">
@@ -959,7 +959,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
 
                   handleCopy(summaryText, 'all_settlement_summary');
                 }}
-                className="px-3.5 py-2 rounded-xl bg-[#CEAE80]/20 hover:bg-[#CEAE80]/30 text-[#A67C38] dark:text-[#CEAE80] border border-[#CEAE80]/40 text-xs font-black flex items-center gap-1.5"
+                className="px-3.5 py-2 rounded-xl bg-brand/20 hover:bg-brand/30 text-brand-ink border border-brand/40 text-xs font-black flex items-center gap-1.5"
               >
                 {copiedKey === 'all_settlement_summary' ? <Check className="w-4 h-4 text-emerald-500" /> : <Share2 className="w-4 h-4" />}
                 <span>{copiedKey === 'all_settlement_summary' ? 'متن کپی شد!' : 'کپی خلاصه برای پیام‌رسان‌ها'}</span>
@@ -967,8 +967,8 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
             </div>
 
             {/* Explanation Guide Banner */}
-            <div className="p-3.5 rounded-xl bg-amber-500/10 dark:bg-[#CEAE80]/15 border border-amber-600/20 dark:border-[#CEAE80]/30 flex items-start gap-2.5 text-xs text-stone-700 dark:text-stone-200">
-              <AlertCircle className="w-4 h-4 text-[#A67C38] dark:text-[#CEAE80] shrink-0 mt-0.5" />
+            <div className="p-3.5 rounded-xl bg-brand/10 dark:bg-brand/15 border border-brand/20 dark:border-brand/30 flex items-start gap-2.5 text-xs text-stone-700 dark:text-stone-200">
+              <AlertCircle className="w-4 h-4 text-brand-ink shrink-0 mt-0.5" />
               <div>
                 <span className="font-bold">قاعده محاسبه تراز تسویه: </span>
                 <span>
@@ -1028,7 +1028,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-[#CEAE80]/15 border border-[#CEAE80]/30 text-sm font-black">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-brand/15 border border-brand/30 text-sm font-black">
                     <span className="text-stone-800 dark:text-stone-200">تراز نهایی تسویه حساب:</span>
                     <span className="text-base font-mono text-emerald-600 dark:text-emerald-400" dir="ltr">
                       {formatToman(Math.abs(settlementBalances.owner1.netBalance))}
@@ -1039,11 +1039,11 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                 {/* Bank Card Details */}
                 <div
                   onClick={() => handleCopy(settlementBalances.owner1.bankCard, 'mohammad_card')}
-                  className="p-3 rounded-xl bg-stone-100 dark:bg-black/40 border border-stone-200 dark:border-white/5 cursor-pointer hover:border-[#CEAE80] transition-colors space-y-1"
+                  className="p-3 rounded-xl bg-stone-100 dark:bg-black/40 border border-stone-200 dark:border-white/5 cursor-pointer hover:border-brand transition-colors space-y-1"
                 >
                   <div className="flex items-center justify-between text-[11px]">
                     <span className="text-stone-500 dark:text-stone-400 font-medium">شماره کارت جهت واریز تسویه:</span>
-                    <span className="text-[#A67C38] dark:text-[#CEAE80] font-bold text-[10px]">
+                    <span className="text-brand-ink font-bold text-[10px]">
                       {copiedKey === 'mohammad_card' ? 'کپی شد!' : 'کلیک برای کپی'}
                     </span>
                   </div>
@@ -1102,7 +1102,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-[#CEAE80]/15 border border-[#CEAE80]/30 text-sm font-black">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-brand/15 border border-brand/30 text-sm font-black">
                     <span className="text-stone-800 dark:text-stone-200">تراز نهایی تسویه حساب:</span>
                     <span className="text-base font-mono text-emerald-600 dark:text-emerald-400" dir="ltr">
                       {formatToman(Math.abs(settlementBalances.owner2.netBalance))}
@@ -1113,11 +1113,11 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                 {/* Bank Card Details */}
                 <div
                   onClick={() => handleCopy(settlementBalances.owner2.bankCard, 'amin_card')}
-                  className="p-3 rounded-xl bg-stone-100 dark:bg-black/40 border border-stone-200 dark:border-white/5 cursor-pointer hover:border-[#CEAE80] transition-colors space-y-1"
+                  className="p-3 rounded-xl bg-stone-100 dark:bg-black/40 border border-stone-200 dark:border-white/5 cursor-pointer hover:border-brand transition-colors space-y-1"
                 >
                   <div className="flex items-center justify-between text-[11px]">
                     <span className="text-stone-500 dark:text-stone-400 font-medium">شماره کارت جهت واریز تسویه:</span>
-                    <span className="text-[#A67C38] dark:text-[#CEAE80] font-bold text-[10px]">
+                    <span className="text-brand-ink font-bold text-[10px]">
                       {copiedKey === 'amin_card' ? 'کپی شد!' : 'کلیک برای کپی'}
                     </span>
                   </div>
@@ -1222,7 +1222,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                               {rec.role}
                             </div>
                           </div>
-                          <span className="px-2 py-0.5 rounded-md bg-[#CEAE80]/20 text-[#A67C38] dark:text-[#CEAE80] text-[10px] font-black">
+                          <span className="px-2 py-0.5 rounded-md bg-brand/20 text-brand-ink text-[10px] font-black">
                             {rec.shareUnits ? `${toPersianDigits(rec.shareUnits)} سهم (${toPersianDigits(rec.percentage)}٪)` : `${toPersianDigits(rec.percentage)}٪`}
                           </span>
                         </div>
@@ -1240,7 +1240,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                             className="text-[10px] text-stone-500 hover:text-stone-900 dark:hover:text-white flex items-center justify-between cursor-pointer font-mono pt-1 border-t border-stone-200 dark:border-white/5"
                           >
                             <span>کارت: {rec.bankCard}</span>
-                            <span className="text-[#A67C38] dark:text-[#CEAE80] font-bold">
+                            <span className="text-brand-ink font-bold">
                               {copiedKey === `rec_card_${rec.id}` ? 'کپی شد' : 'کپی'}
                             </span>
                           </div>
@@ -1349,7 +1349,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                 placeholder="مثال: خرید قیچی برقی عمودی، سرویس چرخ راسته دوز، اجاره ماه مرداد..."
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs sm:text-sm outline-none focus:border-[#CEAE80]"
+                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs sm:text-sm outline-none focus:border-brand"
               />
             </div>
 
@@ -1378,10 +1378,10 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                   value={amount}
                   onChange={setAmount}
                   placeholder="مثلاً: ۱۵,۰۰۰,۰۰۰ تومان"
-                  className="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs sm:text-sm font-mono outline-none focus:border-[#CEAE80]"
+                  className="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs sm:text-sm font-mono outline-none focus:border-brand"
                 />
                 {amount != null && amount > 0 && (
-                  <div className="text-[10px] text-[#A67C38] dark:text-[#CEAE80] font-bold mt-1">
+                  <div className="text-[10px] text-brand-ink font-bold mt-1">
                     معادل: {numberToWordsPersian(amount)} تومان
                   </div>
                 )}
@@ -1459,7 +1459,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                   required
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl glass-input text-xs font-mono outline-none focus:border-[#CEAE80]"
+                  className="w-full px-3 py-2 rounded-xl glass-input text-xs font-mono outline-none focus:border-brand"
                 />
               </div>
             </div>
@@ -1473,7 +1473,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                 placeholder="مثال: خرید از سرای دوزندگان پلاک ۸۴، شامل ۵ ماه گارانتی قطعات..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl glass-input text-xs outline-none focus:border-[#CEAE80]"
+                className="w-full px-3.5 py-2 rounded-xl glass-input text-xs outline-none focus:border-brand"
               />
             </div>
 
@@ -1485,7 +1485,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                     type="checkbox"
                     checked={isRecurring}
                     onChange={(e) => setIsRecurring(e.target.checked)}
-                    className="w-4 h-4 rounded text-[#CEAE80] focus:ring-[#CEAE80]"
+                    className="w-4 h-4 rounded text-brand focus:ring-brand"
                   />
                   <span>این هزینه به صورت ماهانه تکرار می‌شود (مانند اجاره یا قبوض)</span>
                 </label>
@@ -1524,7 +1524,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
               </button>
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-black text-xs sm:text-sm shadow-md transition-all active:scale-95"
+                className="px-6 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-brand-on font-black text-xs sm:text-sm shadow-md transition-all active:scale-95"
               >
                 {editingExpense ? 'ذخیره تغییرات' : 'ثبت هزینه در کارگاه'}
               </button>
@@ -1548,7 +1548,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
             {/* Quick Presets Bar */}
             <div className="p-3 rounded-xl bg-stone-100 dark:bg-black/40 border border-stone-200 dark:border-white/5 flex items-center justify-between gap-2 flex-wrap">
               <span className="text-xs font-black text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-[#A67C38] dark:text-[#CEAE80]" />
+                <Sparkles className="w-4 h-4 text-brand-ink" />
                 الگوهای آماده تسهیم:
               </span>
 
@@ -1556,7 +1556,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                 <button
                   type="button"
                   onClick={() => applyPreset('5_parts')}
-                  className="px-3 py-1 rounded-lg bg-[#CEAE80] text-black font-black text-xs shadow-sm hover:scale-105 transition-transform"
+                  className="px-3 py-1 rounded-lg bg-brand text-brand-on font-black text-xs shadow-sm hover:scale-105 transition-transform"
                 >
                   مدل ۵ قسمتی (۲ شریک + ۳ کادر/صندوق/سرمایه‌گذار)
                 </button>
@@ -1589,7 +1589,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                 value={periodTitle}
                 onChange={(e) => setPeriodTitle(e.target.value)}
                 placeholder="مثلاً: تسویه سود دوره تابستان"
-                className="w-full px-3.5 py-2 rounded-xl glass-input text-xs sm:text-sm outline-none focus:border-[#CEAE80]"
+                className="w-full px-3.5 py-2 rounded-xl glass-input text-xs sm:text-sm outline-none focus:border-brand"
               />
             </div>
 
@@ -1603,7 +1603,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                   value={grossRevenueInput}
                   onChange={setGrossRevenueInput}
                   placeholder="مثلاً: ۱۲۰,۰۰۰,۰۰۰ تومان"
-                  className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm font-mono outline-none focus:border-[#CEAE80]"
+                  className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm font-mono outline-none focus:border-brand"
                 />
               </div>
 
@@ -1615,7 +1615,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                   value={totalExpensesInput}
                   onChange={setTotalExpensesInput}
                   placeholder="مثلاً: ۴۵,۰۰۰,۰۰۰ تومان"
-                  className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm font-mono outline-none focus:border-[#CEAE80]"
+                  className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm font-mono outline-none focus:border-brand"
                 />
               </div>
 
@@ -1627,7 +1627,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                   value={reinvestmentReserveInput}
                   onChange={setReinvestmentReserveInput}
                   placeholder="مثلاً: ۱۵,۰۰۰,۰۰۰ تومان"
-                  className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm font-mono outline-none focus:border-[#CEAE80]"
+                  className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm font-mono outline-none focus:border-brand"
                 />
               </div>
             </div>
@@ -1656,7 +1656,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                 <button
                   type="button"
                   onClick={handleAddRecipient}
-                  className="px-3 py-1 rounded-lg bg-[#CEAE80]/20 hover:bg-[#CEAE80]/30 text-[#A67C38] dark:text-[#CEAE80] text-xs font-black flex items-center gap-1"
+                  className="px-3 py-1 rounded-lg bg-brand/20 hover:bg-brand/30 text-brand-ink text-xs font-black flex items-center gap-1"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   <span>افزودن ذی‌نفع جدید</span>
@@ -1680,7 +1680,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                           type="text"
                           value={rec.name}
                           onChange={(e) => handleUpdateRecipient(rec.id, { name: e.target.value })}
-                          className="px-2 py-1 rounded-lg glass-input text-xs font-black focus:border-[#CEAE80] w-48"
+                          className="px-2 py-1 rounded-lg glass-input text-xs font-black focus:border-brand w-48"
                         />
                         <span className="text-[10px] text-stone-400">({rec.role})</span>
                       </div>
@@ -1709,7 +1709,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                       </div>
 
                       <div className="text-left">
-                        <span className="text-[10px] text-[#A67C38] dark:text-[#CEAE80] font-bold block">
+                        <span className="text-[10px] text-brand-ink font-bold block">
                           {toPersianDigits(rec.percentage)}٪
                         </span>
                         <span className="font-black text-emerald-600 dark:text-emerald-400 font-mono text-xs" dir="ltr">
@@ -1742,7 +1742,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                 placeholder="مثال: تسویه با کسر ۱۵ میلیون تومان ذخیره خرید طاقه فوتر برای فصل زمستان..."
                 value={distributionNotes}
                 onChange={(e) => setDistributionNotes(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl glass-input text-xs outline-none focus:border-[#CEAE80]"
+                className="w-full px-3.5 py-2 rounded-xl glass-input text-xs outline-none focus:border-brand"
               />
             </div>
 

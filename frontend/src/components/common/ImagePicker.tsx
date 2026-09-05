@@ -42,11 +42,11 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
     <div className="flex flex-wrap items-center gap-3">
       {values.map((url, idx) => (
         <div key={`${url}-${idx}`} className={`relative group ${tileClassName}`}>
-          <div className="w-full h-full rounded-xl overflow-hidden border border-[#CEAE80]/40 bg-black/10 dark:bg-black/30">
+          <div className="w-full h-full rounded-xl overflow-hidden border border-brand/40 bg-black/10 dark:bg-black/30">
             <SafeImage src={url} alt={primaryLabel && idx === 0 ? primaryLabel : `تصویر ${idx + 1}`} className="w-full h-full object-cover" />
           </div>
           {primaryLabel && idx === 0 && (
-            <span className="absolute bottom-0 inset-x-0 bg-[#CEAE80] text-black text-[9px] font-black text-center py-0.5">
+            <span className="absolute bottom-0 inset-x-0 bg-brand text-brand-on text-[9px] font-black text-center py-0.5">
               {primaryLabel}
             </span>
           )}
@@ -65,9 +65,9 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className={`${tileClassName} rounded-xl border-2 border-dashed border-[#CEAE80]/40 hover:border-[#CEAE80] hover:bg-[#CEAE80]/10 flex flex-col items-center justify-center gap-1 transition-all`}
+          className={`${tileClassName} rounded-xl border-2 border-dashed border-brand/40 hover:border-brand hover:bg-brand/10 flex flex-col items-center justify-center gap-1 transition-all`}
         >
-          <ImagePlus className="w-5 h-5 text-[#CEAE80]" />
+          <ImagePlus className="w-5 h-5 text-brand" />
           <span className="text-[10px] font-bold text-stone-600 dark:text-stone-300 px-1 text-center leading-tight">
             {addLabel}
           </span>

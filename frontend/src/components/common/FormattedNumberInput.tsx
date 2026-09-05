@@ -28,7 +28,7 @@ interface FormattedNumberInputProps {
 // vendored Input primitive so these win over its shadcn defaults
 // (rounded-lg/h-8/text-base → rounded-xl/auto/sm).
 const FIELD_CLASSES =
-  "h-auto w-full rounded-xl glass-input px-3 py-2 text-sm text-left font-mono outline-none focus:border-[#CEAE80] transition-colors";
+  "h-auto w-full rounded-xl glass-input px-3 py-2 text-sm text-left font-mono outline-none focus:border-brand transition-colors";
 
 /**
  * Thin wrapper over the vendored persian-labs PriceInput with the app-wide

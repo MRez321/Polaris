@@ -243,7 +243,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
           setMatrixQty((prev) => ({ ...prev, [key]: val }));
           if (stockError) setStockError('');
         }}
-        className="w-full min-w-[44px] min-h-[40px] px-1 py-2 rounded-lg glass-input text-xs sm:text-sm font-mono text-center outline-none focus:border-[#CEAE80]"
+        className="w-full min-w-[44px] min-h-[40px] px-1 py-2 rounded-lg glass-input text-xs sm:text-sm font-mono text-center outline-none focus:border-brand"
       />
     );
   };
@@ -371,7 +371,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
           {/* SECTION 1: SELLER SELECTION & QUICK ADD */}
           <div className="p-4 rounded-xl glass-card space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <label className="text-xs font-bold text-[#CEAE80] flex items-center gap-1.5">
+              <label className="text-xs font-bold text-brand flex items-center gap-1.5">
                 <User className="w-4 h-4" />
                 انتخاب فروشنده / دست‌فروش تحویل‌گیرنده *
               </label>
@@ -381,7 +381,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsQuickSellerModalOpen(true)}
-                  className="px-3 py-1 rounded-lg bg-[#CEAE80]/20 hover:bg-[#CEAE80] text-[#CEAE80] hover:text-black border border-[#CEAE80]/40 text-xs font-bold flex items-center gap-1 transition-all active:scale-95 self-start sm:self-auto shadow-sm"
+                  className="px-3 py-1 rounded-lg bg-brand/20 hover:bg-brand text-brand hover:text-brand-on border border-brand/40 text-xs font-bold flex items-center gap-1 transition-all active:scale-95 self-start sm:self-auto shadow-sm"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   <span>ثبت فروشنده جدید در همین لحظه</span>
@@ -440,7 +440,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
                   <SafeImage
                     src={selectedSeller.avatarUrl}
                     alt={selectedSeller.name}
-                    className="w-10 h-10 rounded-full object-cover border border-[#CEAE80]"
+                    className="w-10 h-10 rounded-full object-cover border border-brand"
                   />
                   <div>
                     <div className="font-bold text-stone-900 dark:text-white flex items-center gap-2">
@@ -448,7 +448,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
                       <span className="text-[11px] text-stone-400 font-mono">({selectedSeller.phone})</span>
                     </div>
                     <div className="text-[11px] text-stone-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
-                      <MapPin className="w-3 h-3 text-[#CEAE80]" />
+                      <MapPin className="w-3 h-3 text-brand" />
                       <span>{selectedSeller.streetLocation}</span>
                     </div>
                   </div>
@@ -473,17 +473,17 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
 
             {/* Guarantee & Credit Limit Settings — synced with seller file */}
             {selectedSeller && (
-              <div className="p-4 rounded-2xl bg-[#CEAE80]/10 border border-[#CEAE80]/30 space-y-3">
+              <div className="p-4 rounded-2xl bg-brand/10 border border-brand/30 space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="flex items-center gap-2 cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={hasGuarantee}
                       onChange={(e) => setHasGuarantee(e.target.checked)}
-                      className="w-4 h-4 accent-[#CEAE80] rounded cursor-pointer"
+                      className="w-4 h-4 accent-brand rounded cursor-pointer"
                     />
-                    <span className="text-xs font-bold text-stone-900 dark:text-[#CEAE80] flex items-center gap-1.5">
-                      <Shield className="w-4 h-4 text-[#CEAE80]" />
+                    <span className="text-xs font-bold text-stone-900 dark:text-brand flex items-center gap-1.5">
+                      <Shield className="w-4 h-4 text-brand" />
                       تنظیمات ضمانت و سقف امانت مالی
                     </span>
                   </label>
@@ -493,7 +493,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
                 </div>
 
                 {hasGuarantee && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-[#CEAE80]/20">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-brand/20">
                     <div>
                       <label className="block text-[11px] text-stone-700 dark:text-stone-300 font-bold mb-1">
                         نوع مدرک ضمانتی
@@ -519,7 +519,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
                         onChange={setGuaranteeAmount}
                         suffix="تومان"
                         placeholder="مثلاً: ۵۰,۰۰۰,۰۰۰"
-                        className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm font-mono outline-none focus:border-[#CEAE80]"
+                        className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm font-mono outline-none focus:border-brand"
                       />
                     </div>
 
@@ -532,12 +532,12 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
                         value={guaranteeDetails}
                         onChange={(e) => setGuaranteeDetails(e.target.value)}
                         placeholder="مثلاً: سفته شماره ۹۸۴۵۱ به امضای ضامن"
-                        className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm outline-none focus:border-[#CEAE80]"
+                        className="w-full px-3 py-2 rounded-xl glass-input text-xs sm:text-sm outline-none focus:border-brand"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] text-[#CEAE80] font-bold mb-1">
+                      <label className="block text-[11px] text-brand font-bold mb-1">
                         سقف اعتبار امانت مجاز (تومان) *
                       </label>
                       <FormattedNumberInput
@@ -545,7 +545,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
                         onChange={setCreditLimit}
                         suffix="تومان"
                         placeholder="مثلاً: ۳۰,۰۰۰,۰۰۰"
-                        className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#141414] border border-[#CEAE80] text-[#CEAE80] text-xs sm:text-sm font-bold font-mono outline-none"
+                        className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#141414] border border-brand text-brand text-xs sm:text-sm font-bold font-mono outline-none"
                       />
                     </div>
                   </div>
@@ -556,7 +556,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
                     <button
                       type="button"
                       onClick={handleSaveGuarantee}
-                      className="px-3 py-1.5 rounded-lg bg-[#CEAE80] hover:bg-[#B59363] text-black text-[11px] font-bold flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                      className="px-3 py-1.5 rounded-lg bg-brand hover:bg-brand-hover text-brand-on text-[11px] font-bold flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
                     >
                       <Shield className="w-3.5 h-3.5" />
                       ذخیره تنظیمات ضمانت
@@ -570,7 +570,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
           {/* SECTION 2: ADD ITEMS TO CONSIGNMENT */}
           <div className="p-4 rounded-xl glass-card space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <label className="text-xs font-bold text-[#CEAE80] flex items-center gap-1.5">
+              <label className="text-xs font-bold text-brand flex items-center gap-1.5">
                 <Package className="w-4 h-4" />
                 انتخاب پوشاک از انبار دوزندگی *
               </label>
@@ -580,7 +580,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsQuickItemModalOpen(true)}
-                  className="px-3 py-1 rounded-lg bg-[#CEAE80]/20 hover:bg-[#CEAE80] text-[#CEAE80] hover:text-black border border-[#CEAE80]/40 text-xs font-bold flex items-center gap-1 transition-all active:scale-95 self-start sm:self-auto shadow-sm"
+                  className="px-3 py-1 rounded-lg bg-brand/20 hover:bg-brand text-brand hover:text-brand-on border border-brand/40 text-xs font-bold flex items-center gap-1 transition-all active:scale-95 self-start sm:self-auto shadow-sm"
                 >
                   <PackagePlus className="w-3.5 h-3.5" />
                   <span>تعریف لباس جدید در همین لحظه</span>
@@ -656,7 +656,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
                 <button
                   type="button"
                   onClick={handleAddLine}
-                  className="w-full sm:w-auto min-h-[40px] px-4 py-2 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] text-black font-bold text-xs flex items-center justify-center gap-1 transition-all active:scale-95 shadow-md"
+                  className="w-full sm:w-auto min-h-[40px] px-4 py-2 rounded-xl bg-brand hover:bg-brand-hover text-brand-on font-bold text-xs flex items-center justify-center gap-1 transition-all active:scale-95 shadow-md"
                 >
                   <Plus className="w-4 h-4" />
                   افزودن به فاکتور
@@ -679,7 +679,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
           <div className="p-4 rounded-xl glass-card space-y-3">
             <h5 className="font-bold text-xs text-stone-800 dark:text-stone-200 flex items-center justify-between">
               <span>اقلام موجود در این فاکتور واگذاری ({toPersianDigits(lines.length)} ردیف)</span>
-              <span className="text-[#CEAE80] font-mono">
+              <span className="text-brand font-mono">
                 مجموع: {toPersianDigits(totalItemsCount)} عدد لباس
               </span>
             </h5>
@@ -755,7 +755,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
                       onClick={() => setDueDays(d)}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                         dueDays === d
-                          ? 'bg-[#CEAE80] text-black shadow-sm'
+                          ? 'bg-brand text-brand-on shadow-sm'
                           : 'bg-stone-200 dark:bg-[#1E1E1E] text-stone-700 dark:text-gray-300 hover:bg-stone-300 dark:hover:bg-[#252525]'
                       }`}
                     >
@@ -771,7 +771,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-stone-500 dark:text-gray-400">موعد تسویه:</span>
-                    <span className="font-bold text-amber-800 dark:text-[#CEAE80]">
+                    <span className="font-bold text-brand-ink dark:text-brand">
                       {toJalaliDate(new Date(Date.now() + effectiveDueDays * 24 * 60 * 60 * 1000))}
                     </span>
                   </div>
@@ -787,7 +787,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
                     value={dueDays}
                     onChange={(e) => setDueDays(e.target.value)}
                     placeholder="مثلاً: ۱۲"
-                    className="w-24 px-3 py-1.5 rounded-xl glass-input text-xs font-mono text-center outline-none focus:border-[#CEAE80]"
+                    className="w-24 px-3 py-1.5 rounded-xl glass-input text-xs font-mono text-center outline-none focus:border-brand"
                   />
                   <span className="text-xs text-stone-600 dark:text-stone-400">روز</span>
                 </div>
@@ -808,7 +808,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
             </div>
 
             {/* Financial Totals Card */}
-            <div className="p-4 rounded-2xl bg-[#CEAE80]/15 border border-[#CEAE80]/30 flex flex-col justify-between space-y-3">
+            <div className="p-4 rounded-2xl bg-brand/15 border border-brand/30 flex flex-col justify-between space-y-3">
               <div className="space-y-2">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-stone-600 dark:text-stone-400">مجموع ارزش فاکتور امانی:</span>
@@ -824,7 +824,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
                   </span>
                 </div>
 
-                <div className="flex justify-between items-center text-xs pt-2 border-t border-[#CEAE80]/30">
+                <div className="flex justify-between items-center text-xs pt-2 border-t border-brand/30">
                   <span className="font-bold text-stone-900 dark:text-white">کل بدهی جدید پس از تحویل:</span>
                   <span className="font-black text-rose-500 dark:text-rose-400 text-sm font-mono" dir="ltr">
                     {formatToman((selectedSeller?.currentDebt || 0) + totalHandoverValue)}
@@ -852,7 +852,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
             <button
               type="submit"
               disabled={lines.length === 0}
-              className="px-6 py-2.5 rounded-xl bg-[#CEAE80] hover:bg-[#B59363] disabled:opacity-50 disabled:cursor-not-allowed text-[#0A0A0A] font-bold text-sm shadow-md transition-all active:scale-95"
+              className="px-6 py-2.5 rounded-xl bg-brand hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed text-brand-on font-bold text-sm shadow-md transition-all active:scale-95"
             >
               ثبت نهایی و صدور فاکتور امانی
             </button>

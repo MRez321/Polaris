@@ -77,7 +77,7 @@ export const OverdueAlertBanner: React.FC<OverdueAlertBannerProps> = ({
                 )}
                 <button
                   onClick={() => onRecordPaymentForSeller(c.sellerId)}
-                  className="px-3 py-1.5 rounded-lg bg-[#CEAE80] hover:bg-[#B59363] text-black text-xs font-black transition-colors shadow-sm active:scale-95"
+                  className="px-3 py-1.5 rounded-lg bg-brand hover:bg-brand-hover text-brand-on text-xs font-black transition-colors shadow-sm active:scale-95"
                 >
                   تسویه فوری
                 </button>

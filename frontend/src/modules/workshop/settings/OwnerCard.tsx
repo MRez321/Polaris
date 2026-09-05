@@ -42,23 +42,23 @@ export const OwnerCard: React.FC<OwnerCardProps> = ({
   const hasExtraAccounts = accounts.length > maxInitialAccounts;
 
   return (
-    <div className="glass-card p-5 rounded-2xl border border-stone-200 dark:border-[#CEAE80]/30 shadow-lg relative overflow-hidden flex flex-col justify-between space-y-4 hover:border-[#CEAE80]/50 transition-all">
+    <div className="glass-card p-5 rounded-2xl border border-stone-200 dark:border-brand/30 shadow-lg relative overflow-hidden flex flex-col justify-between space-y-4 hover:border-brand/50 transition-all">
       {/* Top Banner & Actions */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3.5">
           <SafeImage
             src={owner.avatarUrl}
             alt={owner.name}
-            className="w-14 h-14 rounded-2xl object-cover border-2 border-[#CEAE80] shadow-md shrink-0"
+            className="w-14 h-14 rounded-2xl object-cover border-2 border-brand shadow-md shrink-0"
           />
           <div>
             <div className="flex items-center gap-2">
               <h5 className="font-black text-base text-stone-900 dark:text-white">{owner.name}</h5>
-              <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/15 dark:bg-[#CEAE80]/20 text-amber-900 dark:text-[#CEAE80] font-black border border-amber-600/30 dark:border-[#CEAE80]/30">
+              <span className="text-[10px] px-2 py-0.5 rounded-md bg-brand/15 dark:bg-brand/20 text-brand-ink dark:text-brand font-black border border-brand/30 dark:border-brand/30">
                 مالک و هم‌بنیان‌گذار
               </span>
             </div>
-            <p className="text-xs text-amber-800 dark:text-[#CEAE80] font-bold mt-0.5">{owner.role}</p>
+            <p className="text-xs text-brand-ink dark:text-brand font-bold mt-0.5">{owner.role}</p>
             {owner.bio && (
               <p className="text-[11px] text-stone-600 dark:text-gray-400 mt-1 line-clamp-2 leading-relaxed font-medium">
                 {owner.bio}
@@ -89,13 +89,13 @@ export const OwnerCard: React.FC<OwnerCardProps> = ({
             return (
               <div
                 key={idx}
-                className="flex items-center rounded-xl bg-stone-100 dark:bg-black/40 border border-stone-200 dark:border-white/10 hover:border-[#CEAE80] text-xs font-mono transition-all group overflow-hidden"
+                className="flex items-center rounded-xl bg-stone-100 dark:bg-black/40 border border-stone-200 dark:border-white/10 hover:border-brand text-xs font-mono transition-all group overflow-hidden"
               >
                 {/* Direct click-to-call link */}
                 <a
                   href={`tel:${ph}`}
                   title="تماس فوری"
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-stone-800 dark:text-stone-200 hover:text-amber-800 dark:hover:text-[#CEAE80] font-bold"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-stone-800 dark:text-stone-200 hover:text-brand-ink dark:hover:text-brand font-bold"
                   dir="ltr"
                 >
                   <Phone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
@@ -125,7 +125,7 @@ export const OwnerCard: React.FC<OwnerCardProps> = ({
       <div className="space-y-2">
         <span className="text-[11px] text-stone-700 dark:text-stone-300 font-bold flex items-center justify-between">
           <span className="flex items-center gap-1.5">
-            <CreditCard className="w-3.5 h-3.5 text-[#CEAE80]" />
+            <CreditCard className="w-3.5 h-3.5 text-brand" />
             <span>حساب‌های بانکی، کارت و شبا (جهت واریز و تسویه):</span>
           </span>
           <span className="text-[10px] text-stone-400 font-normal">
@@ -143,10 +143,10 @@ export const OwnerCard: React.FC<OwnerCardProps> = ({
             return (
               <div
                 key={aIdx}
-                className="p-3 rounded-xl bg-stone-50 dark:bg-[#161616] border border-stone-200 dark:border-white/10 space-y-2 transition-all hover:border-[#CEAE80]/40"
+                className="p-3 rounded-xl bg-stone-50 dark:bg-[#161616] border border-stone-200 dark:border-white/10 space-y-2 transition-all hover:border-brand/40"
               >
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-black text-amber-800 dark:text-[#CEAE80]">{acc.bankName}</span>
+                  <span className="font-black text-brand-ink dark:text-brand">{acc.bankName}</span>
                   {acc.accountHolder && (
                     <span className="text-stone-500 dark:text-stone-400 text-[11px] font-medium">
                       به نام: {acc.accountHolder}
@@ -161,16 +161,16 @@ export const OwnerCard: React.FC<OwnerCardProps> = ({
                     className={`cursor-pointer group flex items-center justify-between gap-2 p-2.5 rounded-xl border transition-all select-none ${
                       isCardCopied
                         ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-700 dark:text-emerald-300'
-                        : 'bg-stone-100 dark:bg-black/50 border-stone-200 dark:border-white/5 hover:border-[#CEAE80] hover:bg-amber-500/10 dark:hover:bg-[#CEAE80]/15'
+                        : 'bg-stone-100 dark:bg-black/50 border-stone-200 dark:border-white/5 hover:border-brand hover:bg-brand/10 dark:hover:bg-brand/15'
                     }`}
                     title="کلیک برای کپی شماره کارت"
                   >
                     <div className="flex items-center gap-2 text-xs font-mono text-stone-900 dark:text-white" dir="ltr">
-                      <CreditCard className="w-4 h-4 text-[#CEAE80] group-hover:scale-110 transition-transform" />
+                      <CreditCard className="w-4 h-4 text-brand group-hover:scale-110 transition-transform" />
                       <span className="font-black tracking-wider text-xs sm:text-sm">{acc.cardNumber}</span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-stone-600 dark:text-stone-300 group-hover:text-amber-900 dark:group-hover:text-[#CEAE80]">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-stone-600 dark:text-stone-300 group-hover:text-brand-ink dark:group-hover:text-brand">
                       {isCardCopied ? (
                         <>
                           <Check className="w-3.5 h-3.5 text-emerald-500" />
@@ -193,7 +193,7 @@ export const OwnerCard: React.FC<OwnerCardProps> = ({
                     className={`cursor-pointer group flex items-center justify-between gap-2 p-2.5 rounded-xl border transition-all select-none ${
                       isShebaCopied
                         ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-700 dark:text-emerald-300'
-                        : 'bg-stone-100 dark:bg-black/50 border-stone-200 dark:border-white/5 hover:border-[#CEAE80] hover:bg-amber-500/10 dark:hover:bg-[#CEAE80]/15'
+                        : 'bg-stone-100 dark:bg-black/50 border-stone-200 dark:border-white/5 hover:border-brand hover:bg-brand/10 dark:hover:bg-brand/15'
                     }`}
                     title="کلیک برای کپی شماره شبا"
                   >
@@ -202,7 +202,7 @@ export const OwnerCard: React.FC<OwnerCardProps> = ({
                       <span className="truncate max-w-[190px] sm:max-w-xs font-bold">{acc.shebaNumber}</span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-stone-600 dark:text-stone-300 group-hover:text-amber-900 dark:group-hover:text-[#CEAE80]">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-stone-600 dark:text-stone-300 group-hover:text-brand-ink dark:group-hover:text-brand">
                       {isShebaCopied ? (
                         <>
                           <Check className="w-3.5 h-3.5 text-emerald-500" />
@@ -231,12 +231,12 @@ export const OwnerCard: React.FC<OwnerCardProps> = ({
           >
             {isExpanded ? (
               <>
-                <ChevronUp className="w-3.5 h-3.5 text-[#CEAE80]" />
+                <ChevronUp className="w-3.5 h-3.5 text-brand" />
                 <span>بستن حساب‌های اضافه</span>
               </>
             ) : (
               <>
-                <ChevronDown className="w-3.5 h-3.5 text-[#CEAE80]" />
+                <ChevronDown className="w-3.5 h-3.5 text-brand" />
                 <span>
                   نمایش {toPersianDigits(accounts.length - maxInitialAccounts)} حساب دیگر...
                 </span>

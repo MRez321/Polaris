@@ -97,8 +97,8 @@ export const SalesDebtChart: React.FC<ChartProps> = () => {
     if (active && payload && payload.length) {
       const creditLimit = payload[0]?.payload?.creditLimit;
       return (
-        <div className="bg-white dark:bg-[#141416] p-3.5 rounded-xl shadow-2xl border border-stone-200 dark:border-[#CEAE80]/30 text-xs text-right text-stone-900 dark:text-white">
-          <p className="font-bold text-amber-800 dark:text-[#CEAE80] mb-2">{label}</p>
+        <div className="bg-white dark:bg-[#141416] p-3.5 rounded-xl shadow-2xl border border-stone-200 dark:border-brand/30 text-xs text-right text-stone-900 dark:text-white">
+          <p className="font-bold text-brand-ink dark:text-brand mb-2">{label}</p>
           {payload.map((entry: any, index: number) => (
             <div key={`item-${index}`} className="flex items-center justify-between gap-4 py-1">
               <span className="flex items-center gap-1.5 text-stone-500 dark:text-gray-400">
@@ -129,8 +129,8 @@ export const SalesDebtChart: React.FC<ChartProps> = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
         <div>
           <h4 className="font-black text-stone-900 dark:text-white text-sm sm:text-base flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#CEAE80]" />
-            <span className="text-amber-800 dark:text-[#CEAE80]">تحلیل گردش کالا و جریان مالی وصولی‌ها</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-brand" />
+            <span className="text-brand-ink dark:text-brand">تحلیل گردش کالا و جریان مالی وصولی‌ها</span>
           </h4>
           <p className="text-xs text-stone-500 dark:text-gray-400 mt-1">
             روند هفتگی واگذاری امانی در برابر دریافتی‌های تسویه شده با دست‌فروشان
@@ -142,7 +142,7 @@ export const SalesDebtChart: React.FC<ChartProps> = () => {
             onClick={() => setChartType('flow')}
             className={`px-3 py-1.5 rounded-lg transition-all ${
               chartType === 'flow'
-                ? 'bg-[#CEAE80] text-black font-black shadow-sm'
+                ? 'bg-brand text-brand-on font-black shadow-sm'
                 : 'text-stone-600 dark:text-gray-400 hover:text-black dark:hover:text-white'
             }`}
           >
@@ -152,7 +152,7 @@ export const SalesDebtChart: React.FC<ChartProps> = () => {
             onClick={() => setChartType('sellers')}
             className={`px-3 py-1.5 rounded-lg transition-all ${
               chartType === 'sellers'
-                ? 'bg-[#CEAE80] text-black font-black shadow-sm'
+                ? 'bg-brand text-brand-on font-black shadow-sm'
                 : 'text-stone-600 dark:text-gray-400 hover:text-black dark:hover:text-white'
             }`}
           >
