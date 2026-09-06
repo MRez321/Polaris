@@ -112,11 +112,13 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
   const [role, setRole] = useState<StaffMember['role']>('tailor');
   const [roleTitle, setRoleTitle] = useState('');
   const [phone, setPhone] = useState('');
-  const [additionalPhones, setAdditionalPhones] = useState<string[]>([]);  const [nationalCode, setNationalCode] = useState('');
+  const [additionalPhones, setAdditionalPhones] = useState<string[]>([]);
+  const [nationalCode, setNationalCode] = useState('');
   const [salaryType, setSalaryType] = useState<StaffMember['salaryType']>('monthly');
   const [salaryAmount, setSalaryAmount] = useState('');
   const [status, setStatus] = useState<StaffMember['status']>('active');
   const [notes, setNotes] = useState('');
+  const [address, setAddress] = useState('');
   const [bankAccounts, setBankAccounts] = useState<BankAccountInfo[]>([]);
   const [newCardNumber, setNewCardNumber] = useState('');
   const [newShebaNumber, setNewShebaNumber] = useState('');
@@ -135,6 +137,50 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
     setTimeout(() => setCopiedId(null), 2500);
   };
 
+  const handleAdditionalPhoneChange = (index: number, value: string) => {
+    const next = [...additionalPhones];
+    next[index] = value;
+    setAdditionalPhones(next);
+  };
+
+  const handleRemoveAdditionalPhone = (index: number) => {
+    setAdditionalPhones(additionalPhones.filter((_, i) => i !== index));
+  };
+
+  const handleAccountChange = (index: number, field: keyof BankAccountInfo, value: string) => {
+    const next = [...bankAccounts];
+    next[index] = { ...next[index], [field]: value };
+    if (field === 'cardNumber') {
+      const detected = detectBankByCard(value);
+      if (detected) next[index].bankName = detected.name;
+    } else if (field === 'shebaNumber' && !next[index].bankName) {
+      const detected = detectBankBySheba(value);
+      if (detected) next[index].bankName = detected.name;
+    }
+    setBankAccounts(next);
+  };
+
+  const handleRemoveAccount = (index: number) => {
+    setBankAccounts(bankAccounts.filter((_, i) => i !== index));
+  };
+
+  const handleAddNewAccount = () => {
+    if (!newCardNumber.trim() && !newShebaNumber.trim()) return;
+    const detected = detectBankByCard(newCardNumber) || detectBankBySheba(newShebaNumber);
+    setBankAccounts([
+      ...bankAccounts,
+      {
+        id: `acc-${Date.now()}`,
+        bankName: detected ? detected.name : 'حساب بانکی',
+        accountHolder: name.trim(),
+        cardNumber: newCardNumber.trim(),
+        shebaNumber: newShebaNumber.trim(),
+      },
+    ]);
+    setNewCardNumber('');
+    setNewShebaNumber('');
+  };
+
   const handleOpenAddModal = () => {
     setEditingStaff(null);
     setName('');
@@ -147,6 +193,7 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
     setSalaryAmount('18000000');
     setStatus('active');
     setNotes('');
+    setAddress('');
     setBankAccounts([]);
     setNewCardNumber('');
     setNewShebaNumber('');
@@ -169,6 +216,7 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
     setSalaryAmount(String(stf.salaryAmount || 0));
     setStatus(stf.status);
     setNotes(stf.notes || '');
+    setAddress(stf.address || '');
     setBankAccounts(stf.bankAccounts || []);
     setNewCardNumber('');
     setNewShebaNumber('');
@@ -217,6 +265,7 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
       finalBankAccounts.push({
         id: `ba-${Date.now()}`,
         bankName: detected ? detected.name : 'حساب بانکی',
+        accountHolder: name.trim(),
         cardNumber: newCardNumber.trim(),
         shebaNumber: newShebaNumber.trim(),
       });
@@ -231,6 +280,7 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
       salaryType,
       salaryAmount: Number(salaryAmount) || 0,
       status,
+      address: address.trim(),
       bankAccounts: finalBankAccounts,
       resumeAttachmentData,
       avatarUrl: avatarUrl.trim(),
@@ -649,18 +699,70 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
                 />
               </div>
 
+              {/* Phones (multi) */}
+              <div className="p-3.5 rounded-xl glass-card space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-brand flex items-center gap-1.5">
+                    <Phone className="w-4 h-4" />
+                    <span>شماره‌های تماس</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setAdditionalPhones([...additionalPhones, ''])}
+                    className="text-xs font-bold text-brand-ink dark:text-brand hover:underline flex items-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>افزودن شماره دیگر</span>
+                  </button>
+                </div>
+                <div>
+                  <label className="block text-[11px] text-stone-600 dark:text-stone-400 mb-1">شماره اصلی *</label>
+                  <input
+                    type="tel"
+                    required
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="۰۹۱۲۳۴۵۶۷۸۹"
+                    className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-brand outline-none font-mono text-left"
+                    dir="ltr"
+                  />
+                </div>
+                {additionalPhones.map((ph, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <span className="text-[11px] text-stone-400 w-16 shrink-0">
+                      شماره {toPersianDigits(idx + 2)}:
+                    </span>
+                    <input
+                      type="tel"
+                      value={ph}
+                      onChange={(e) => handleAdditionalPhoneChange(idx, e.target.value)}
+                      placeholder="09121234567"
+                      className="flex-1 px-3 py-2 rounded-xl glass-input outline-none font-mono text-left text-sm"
+                      dir="ltr"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveAdditionalPhone(idx)}
+                      className="p-2 rounded-xl text-stone-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                      title="حذف شماره"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Address */}
               <div>
                 <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  شماره همراه اصلی *
+                  آدرس محل سکونت
                 </label>
                 <input
-                  type="tel"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="۰۹۱۲۳۴۵۶۷۸۹"
-                  className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-brand outline-none font-mono text-left"
-                  dir="ltr"
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="مثال: تهران، خیابان ولیعصر..."
+                  className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-brand outline-none"
                 />
               </div>
 
@@ -740,27 +842,109 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
               </div>
             </div>
 
-            {/* Bank Card / Sheba with Mandatory BankInput Component */}
+            {/* Bank accounts (multi, editable rows + add form) */}
             <div className="p-3.5 rounded-xl glass-card space-y-3">
-              <label className="text-xs font-bold text-brand flex items-center gap-1.5">
-                <CreditCard className="w-4 h-4" />
-                <span>اطلاعات کارت و شبای بانکی جهت واریز حقوق (تشخیص خودکار بانک)</span>
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-brand flex items-center gap-1.5">
+                  <CreditCard className="w-4 h-4" />
+                  <span>حساب‌های بانکی جهت واریز حقوق (تشخیص خودکار بانک)</span>
+                </label>
+              </div>
 
-              <div className="space-y-3">
-                <BankCardInput
-                  value={newCardNumber}
-                  onChange={(val) => setNewCardNumber(val)}
-                  placeholder="---- ---- ---- ----"
-                  label="شماره کارت ۱۶ رقمی"
-                />
+              {/* Existing accounts: editable rows */}
+              {bankAccounts.length > 0 && (
+                <div className="space-y-3">
+                  {bankAccounts.map((acc, idx) => (
+                    <div
+                      key={acc.id || idx}
+                      className="p-3 rounded-xl bg-white dark:bg-[#1A1A1E] border border-stone-200 dark:border-white/10 space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-xs text-brand-ink dark:text-brand">
+                          حساب {toPersianDigits(idx + 1)}: {acc.bankName || 'حساب بانکی'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveAccount(idx)}
+                          className="p-1 rounded-lg text-stone-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                          title="حذف این حساب"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[10px] text-stone-500 mb-0.5">نام بانک</label>
+                          <input
+                            type="text"
+                            value={acc.bankName}
+                            onChange={(e) => handleAccountChange(idx, 'bankName', e.target.value)}
+                            placeholder="مثال: بانک ملت"
+                            className="w-full px-2.5 py-1.5 rounded-lg glass-input text-xs outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-stone-500 mb-0.5">به نام صاحب حساب</label>
+                          <input
+                            type="text"
+                            value={acc.accountHolder || ''}
+                            onChange={(e) => handleAccountChange(idx, 'accountHolder', e.target.value)}
+                            placeholder="مثال: محمد رضایی"
+                            className="w-full px-2.5 py-1.5 rounded-lg glass-input text-xs outline-none"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[10px] text-stone-500 mb-0.5">شماره کارت (۱۶ رقمی)</label>
+                          <BankCardInput
+                            value={acc.cardNumber}
+                            onChange={(val) => handleAccountChange(idx, 'cardNumber', val)}
+                            placeholder="۶۱۰۴-۳۳۷۸-..."
+                            className="text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-stone-500 mb-0.5">شماره شبا (۲۴ رقمی)</label>
+                          <ShebaInput
+                            value={acc.shebaNumber}
+                            onChange={(val) => handleAccountChange(idx, 'shebaNumber', val)}
+                            placeholder="IR120120000..."
+                            className="text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-                <ShebaInput
-                  value={newShebaNumber}
-                  onChange={(val) => setNewShebaNumber(val)}
-                  placeholder="IR -- ---- ---- ---- ---- ---- --"
-                  label="شماره شبا (۲۴ رقمی)"
-                />
+              {/* Add new account form */}
+              <div className="p-3 rounded-xl bg-brand/10 dark:bg-brand/15 border border-brand/30 space-y-2">
+                <h5 className="font-bold text-[11px] text-stone-900 dark:text-white">افزودن کارت و شبای جدید:</h5>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <BankCardInput
+                    value={newCardNumber}
+                    onChange={setNewCardNumber}
+                    placeholder="---- ---- ---- ----"
+                    label="شماره کارت ۱۶ رقمی"
+                  />
+                  <ShebaInput
+                    value={newShebaNumber}
+                    onChange={setNewShebaNumber}
+                    placeholder="IR -- ---- ---- ---- ---- ---- --"
+                    label="شماره شبا (۲۴ رقمی)"
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleAddNewAccount}
+                    className="px-3.5 py-1 rounded-lg bg-brand text-brand-on font-bold text-xs hover:bg-brand-hover"
+                  >
+                    افزودن این حساب
+                  </button>
+                </div>
               </div>
             </div>
 

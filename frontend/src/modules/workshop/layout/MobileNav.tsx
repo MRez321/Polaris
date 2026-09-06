@@ -1,25 +1,36 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   ShoppingBag,
   ArrowLeftRight,
+  Package,
   Receipt,
   PackageCheck,
+  Zap,
+  Wrench,
 } from 'lucide-react';
 import { toPersianDigits } from '@/utils/persian';
 import { useData } from '@/modules/workshop/context/DataContext';
 import { useUI } from '@/modules/workshop/context/UIContext';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 
 /**
- * Workshop bottom navigation — exactly five buttons. RTL layout:
- *   [امانات] [سفارش‌ها] [داشبورد] [وجه دریافتی] [تحویل بار]
- * Dashboard is the center-elevated primary; the two end slots on the left of
- * center are routes, the two on the right open the quick-action modals.
+ * Workshop bottom navigation — exactly five slots. RTL layout:
+ *   [امانات] [سفارش‌ها] [داشبورد] [انبار] [اقدامات]
+ * Dashboard is the center-elevated primary; امانات / سفارش‌ها / انبار are
+ * routes, and اقدامات opens a dropdown with quick actions (payment / handover
+ * modals + workshop costs navigation).
  */
 export const MobileNav: React.FC = () => {
   const { consignments } = useData();
   const { openQuickHandover, openQuickPayment } = useUI();
+  const navigate = useNavigate();
 
   const overdueCount = consignments.filter(
     (c) => (c.remainingAmount || 0) > 0 && new Date(c.dueDate).getTime() < Date.now()
@@ -34,6 +45,9 @@ export const MobileNav: React.FC = () => {
 
   const actionClass =
     'relative flex flex-col items-center py-1 px-2 rounded-xl transition-all text-stone-700 dark:text-gray-400 hover:text-black dark:hover:text-white font-bold active:scale-95';
+
+  const menuItemClass =
+    'flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-stone-700 dark:text-gray-200 outline-none';
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-[#141416] border-t border-stone-200 dark:border-white/5 px-2 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] shadow-2xl">
@@ -67,17 +81,36 @@ export const MobileNav: React.FC = () => {
           </span>
         </NavLink>
 
-        {/* وجه دریافتی — opens the quick payment modal */}
-        <button type="button" onClick={() => openQuickPayment()} className={actionClass} title="ثبت وجه دریافتی">
-          <Receipt className="w-4 h-4 mb-0.5 shrink-0 text-emerald-600 dark:text-emerald-500" />
-          <span className="text-[10px] whitespace-nowrap">وجه دریافتی</span>
-        </button>
+        {/* انبار — route */}
+        <NavLink to="/workshop/inventory" className={routeClass}>
+          <Package className="w-4 h-4 mb-0.5 shrink-0" />
+          <span className="text-[10px] whitespace-nowrap">انبار</span>
+        </NavLink>
 
-        {/* تحویل بار — opens the quick handover modal */}
-        <button type="button" onClick={() => openQuickHandover()} className={actionClass} title="تحویل بار جدید">
-          <PackageCheck className="w-4 h-4 mb-0.5 shrink-0" />
-          <span className="text-[10px] whitespace-nowrap">تحویل بار</span>
-        </button>
+        {/* اقدامات — dropdown with quick actions */}
+        <DropdownMenu>
+          <DropdownMenuTrigger className={actionClass} title="اقدامات سریع">
+            <Zap className="w-4 h-4 mb-0.5 shrink-0 text-brand" />
+            <span className="text-[10px] whitespace-nowrap">اقدامات</span>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="top" align="center" className="w-48">
+            <DropdownMenuItem className={menuItemClass} onClick={() => openQuickPayment()}>
+              <Receipt className="w-4 h-4 text-emerald-600 dark:text-emerald-500 shrink-0" />
+              <span>ثبت وجه دریافتی</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem className={menuItemClass} onClick={() => openQuickHandover()}>
+              <PackageCheck className="w-4 h-4 shrink-0" />
+              <span>تحویل بار جدید</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className={menuItemClass}
+              onClick={() => navigate('/workshop/finances/costs')}
+            >
+              <Wrench className="w-4 h-4 shrink-0" />
+              <span>هزینه کارگاه</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </nav>
   );

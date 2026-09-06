@@ -44,6 +44,7 @@ export interface StaffMember {
   role: string; // 'tailor' | 'cutter' | 'buyer' | 'accountant' | 'quality_control' | 'workshop_manager' | 'driver' | 'assistant' or custom role
   roleTitle: string; // e.g. "دوزنده ارشد کت و پالتو"
   phones: string[];
+  address?: string; // آدرس محل سکونت
   nationalCode?: string;
   hireDate: string;
   salaryType: 'monthly' | 'piecework' | 'hourly'; // ماهانه، کنترات / تکه‌ای، ساعتی
@@ -67,15 +68,31 @@ export interface StaffMember {
   deletedAt?: string;
 }
 
+/**
+ * Per-size / per-color price overrides. Missing field = item's base price.
+ */
+export interface VariantPrices {
+  sizes?: Record<string, Partial<VariantPriceOverride>>;
+  colors?: Record<string, Partial<VariantPriceOverride>>;
+}
+
+export interface VariantPriceOverride {
+  costPrice?: number;
+  consignmentPrice?: number;
+  retailPrice?: number;
+}
+
 export interface GarmentItem {
   id: string;
   code: string; // e.g. "PLR-101"
   name: string; // e.g. "کت اسپرت کتان مردانه"
   category: string; // category id or custom name
   categoryLabel?: string;
-  costPrice: number; // قیمت تمام شده دوخت
+  costPrice: number; // قیمت تمام شده کارگاه
   consignmentPrice: number; // قیمت امانی به دست‌فروش
-  retailPrice: number; // قیمت فروش به مشتری نهایی
+  retailPrice: number; // قیمت فروشگاه سایت
+  description?: string; // توضیحات کالا برای فروشگاه سایت
+  variantPrices?: VariantPrices; // قیمت متغیر بر اساس سایز/رنگ؛ نبود = قیمت پایه
   stockQuantity: number; // موجودی آزاد انبار (بدون تخصیص فروشگاه و دست‌فروش)
   websiteQuantity: number; // تخصیص‌یافته به فروشگاه آنلاین
   sellerHeld?: number; // نزد دست‌فروش‌ها (واگذاری‌های فعال)

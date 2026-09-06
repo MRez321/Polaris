@@ -79,6 +79,9 @@ function App() {
                           <Route path="people/staff" element={<PeoplePage />} />
                           <Route path="finances" element={<FinancesPage />} />
                           <Route path="finances/workshop" element={<FinancesPage />} />
+                          <Route path="finances/payments" element={<FinancesPage />} />
+                          <Route path="finances/costs" element={<FinancesPage />} />
+                          <Route path="finances/income" element={<FinancesPage />} />
                           <Route path="finances/reports" element={<FinancesPage />} />
                           <Route path="settings" element={<SettingsPage />} />
                           {/* /workshop/profile/{items|sellers|staff|owners}/:id */}

@@ -15,6 +15,14 @@ export interface BankAccountInfo {
     accountHolder?: string;
 }
 
+/**
+ * Per-size / per-color price overrides. Missing field = item's base price.
+ */
+export interface VariantPrices {
+    sizes?: Record<string, Partial<{ costPrice: number; consignmentPrice: number; retailPrice: number }>>;
+    colors?: Record<string, Partial<{ costPrice: number; consignmentPrice: number; retailPrice: number }>>;
+}
+
 export interface Owner {
     id: string;
     name: string;
@@ -46,6 +54,7 @@ export interface StaffMember {
     role: string;
     roleTitle: string;
     phones: string[];
+    address?: string;
     nationalCode?: string;
     hireDate: string;
     salaryType: 'monthly' | 'piecework' | 'hourly';
@@ -81,6 +90,8 @@ export interface GarmentItem {
     fabric: string;
     imageUrl?: string;
     images?: string[];
+    description?: string; // storefront-facing listing text (website shop)
+    variantPrices?: VariantPrices; // per-size/per-color overrides; missing = base price
     createdAt: string;
     updatedAt: string;
     isDeleted?: boolean;

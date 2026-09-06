@@ -34,7 +34,7 @@ const DashboardPage: React.FC = () => {
         if (tab === 'sellers' || tab === 'staff') {
           navigate('/workshop/people');
         } else if (tab === 'payments' || tab === 'workshop' || tab === 'analytics') {
-          navigate('/workshop/finances');
+          navigate('/workshop/finances/payments');
         } else if (tab === 'audit') {
           navigate('/workshop/settings');
         } else {

@@ -12,11 +12,13 @@ const FinancesPage: React.FC = () => {
   const { quickPaymentSellerId } = useUI();
   const stats = useComputedStats();
 
-  const initialSubTab: 'payments' | 'workshop' | 'reports' = location.pathname.endsWith('/workshop')
-    ? 'workshop'
-    : location.pathname.endsWith('/reports')
-    ? 'reports'
-    : 'payments';
+  const initialSubTab: 'payments' | 'costs' | 'income' | 'reports' = location.pathname.endsWith('/payments')
+    ? 'payments'
+    : location.pathname.endsWith('/costs') || location.pathname.endsWith('/workshop')
+    ? 'costs'
+    : location.pathname.endsWith('/income')
+    ? 'income'
+    : 'reports';
 
   return (
     <FinancesManager

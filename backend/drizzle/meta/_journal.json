@@ -71,6 +71,13 @@
       "when": 1788568525337,
       "tag": "0009_giant_white_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1788642967682,
+      "tag": "0010_rare_veda",
+      "breakpoints": true
     }
   ]
 }

@@ -3,6 +3,7 @@ import { Modal } from '@/components/common/Modal';
 import { SafeImage } from '@/components/common/SafeImage';
 import type { GarmentItem, Seller } from '@/types';
 import { formatToman, toPersianDigits, toJalaliDate } from '@/utils/persian';
+import { resolveVariantPrice } from '@/utils/variantPrices';
 import {
   Plus,
   Trash2,
@@ -178,7 +179,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
         updated.push({
           itemId: currentInvItem.id,
           quantity: entry.qty,
-          unitPrice: currentInvItem.consignmentPrice,
+          unitPrice: resolveVariantPrice(currentInvItem, 'consignmentPrice', sizeToAdd, colorToAdd),
           selectedSize: sizeToAdd,
           selectedColor: colorToAdd,
         });

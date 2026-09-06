@@ -4,6 +4,7 @@ import {
   Wrench,
   BarChart3,
   DollarSign,
+  TrendingUp,
 } from 'lucide-react';
 import type {
   PaymentRecord,
@@ -33,7 +34,7 @@ interface FinancesManagerProps {
   stats: DashboardStats | null;
   items: GarmentItem[];
   preSelectedSellerId?: string;
-  initialSubTab?: 'payments' | 'workshop' | 'reports';
+  initialSubTab?: 'payments' | 'costs' | 'income' | 'reports';
 }
 
 export const FinancesManager: React.FC<FinancesManagerProps> = ({
@@ -49,11 +50,22 @@ export const FinancesManager: React.FC<FinancesManagerProps> = ({
   todayPayments,
   stats,
   items,
-  initialSubTab = 'payments',
+  initialSubTab = 'reports',
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'payments' | 'workshop' | 'reports'>(initialSubTab);
+  const [activeSubTab, setActiveSubTab] = useState<'payments' | 'costs' | 'income' | 'reports'>(initialSubTab);
+
+  // Deep links change the path while this component stays mounted; keep the
+  // active tab in sync with the route-derived initial tab.
+  React.useEffect(() => {
+    setActiveSubTab(initialSubTab);
+  }, [initialSubTab]);
 
   const subTabs = [
+    {
+      id: 'reports' as const,
+      label: 'گزارش‌های مالی',
+      icon: BarChart3,
+    },
     {
       id: 'payments' as const,
       label: 'وجه‌های دریافتی',
@@ -61,14 +73,14 @@ export const FinancesManager: React.FC<FinancesManagerProps> = ({
       badge: payments.length > 0 ? toPersianDigits(payments.length) : undefined,
     },
     {
-      id: 'workshop' as const,
-      label: 'هزینه‌ها و درآمد',
+      id: 'costs' as const,
+      label: 'هزینه‌های کارگاه',
       icon: Wrench,
     },
     {
-      id: 'reports' as const,
-      label: 'گزارش‌های مالی',
-      icon: BarChart3,
+      id: 'income' as const,
+      label: 'درآمد',
+      icon: TrendingUp,
     },
   ];
 
@@ -85,7 +97,7 @@ export const FinancesManager: React.FC<FinancesManagerProps> = ({
               مرکز یکپارچه امور مالی، دریافتی‌ها و درآمد کارگاه
             </h3>
             <p className="text-[10px] text-stone-500 dark:text-gray-400 hidden sm:block">
-              مدیریت تسویه‌ها، تحلیل بدهی‌های سنی، ثبت هزینه‌های تولید و تسهیم سود
+              گزارش‌های تحلیلی، مدیریت تسویه‌ها، ثبت هزینه‌های تولید و تسهیم سود
             </p>
           </div>
         </div>
@@ -122,6 +134,17 @@ export const FinancesManager: React.FC<FinancesManagerProps> = ({
       </div>
 
       {/* Tab Content Display */}
+      {activeSubTab === 'reports' && stats && (
+        <FinancialReports
+          stats={stats}
+          sellers={sellers}
+          consignments={consignments}
+          payments={payments}
+          items={items}
+          staff={staff}
+        />
+      )}
+
       {activeSubTab === 'payments' && (
         <PaymentsManager
           payments={payments}
@@ -133,22 +156,23 @@ export const FinancesManager: React.FC<FinancesManagerProps> = ({
         />
       )}
 
-      {activeSubTab === 'workshop' && (
+      {activeSubTab === 'costs' && (
         <WorkshopManager
           owners={owners}
           staff={staff}
           totalActiveDebt={totalActiveDebt}
           todayPayments={todayPayments}
+          scope="costs"
         />
       )}
 
-      {activeSubTab === 'reports' && stats && (
-        <FinancialReports
-          stats={stats}
-          sellers={sellers}
-          consignments={consignments}
-          payments={payments}
-          items={items}
+      {activeSubTab === 'income' && (
+        <WorkshopManager
+          owners={owners}
+          staff={staff}
+          totalActiveDebt={totalActiveDebt}
+          todayPayments={todayPayments}
+          scope="income"
         />
       )}
     </div>

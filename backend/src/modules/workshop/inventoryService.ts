@@ -67,6 +67,8 @@ export async function createItem(data: Partial<typeof items.$inferInsert>) {
             sizes: data.sizes ?? [],
             colors: data.colors ?? [],
             fabric: data.fabric ?? '',
+            ...(data.description !== undefined ? { description: data.description } : {}),
+            ...(data.variantPrices !== undefined ? { variantPrices: data.variantPrices } : {}),
             ...(data.imageUrl !== undefined ? { imageUrl: data.imageUrl } : {}),
             images: data.images ?? [],
         });
@@ -640,6 +642,7 @@ export async function createStaff(data: Partial<typeof staff.$inferInsert>) {
         role: data.role,
         roleTitle: data.roleTitle ?? '',
         phones: data.phones ?? [],
+        ...(data.address !== undefined ? { address: data.address } : {}),
         ...(data.nationalCode !== undefined ? { nationalCode: data.nationalCode } : {}),
         hireDate: data.hireDate ? new Date(data.hireDate) : new Date(),
         salaryType: data.salaryType ?? 'monthly',

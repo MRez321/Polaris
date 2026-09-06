@@ -33,7 +33,7 @@ const staffSchema = z.object({
     role: z.string().min(1),
     roleTitle: z.string().optional(),
     phones: z.array(z.string()).optional(),
-    nationalCode: z.string().optional(),
+    address: z.string().optional(),
     hireDate: z.coerce.date().optional(),
     salaryType: z.enum(['monthly', 'piecework', 'hourly']).optional(),
     salaryAmount: z.number().min(0).optional(),

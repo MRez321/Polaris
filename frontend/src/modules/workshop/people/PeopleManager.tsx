@@ -65,7 +65,7 @@ export const PeopleManager: React.FC<PeopleManagerProps> = ({
     },
     {
       id: 'staff' as const,
-      label: 'کارکنان و صاحبان کارگاه',
+      label: 'کارکنان کارگاه',
       icon: Briefcase,
       badge: staff.length + owners.length > 0 ? toPersianDigits(staff.length + owners.length) : undefined,
     },

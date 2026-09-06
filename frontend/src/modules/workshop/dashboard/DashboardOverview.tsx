@@ -140,7 +140,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           subtitle="وصول و تسویه فاکتورها"
           icon={CreditCard}
           trend={paymentTrend}
-          onClick={() => onGoToTab('finances')}
+          onClick={() => onGoToTab('finances/payments')}
         />
       </div>
 
@@ -231,7 +231,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               <span>آخرین دریافت‌های نقدی و تسویه‌ها</span>
             </h4>
             <button
-              onClick={() => onGoToTab('finances')}
+              onClick={() => onGoToTab('finances/payments')}
               className="text-xs text-brand-ink dark:text-brand hover:underline font-bold"
             >
               مشاهده همه

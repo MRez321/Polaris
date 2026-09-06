@@ -20,7 +20,27 @@ const itemSchema = z.object({
     minStockThreshold: z.number().int().min(0).optional(),
     sizes: z.array(z.string()).optional(),
     colors: z.array(z.string()).optional(),
-    fabric: z.string().optional(),
+    description: z.string().optional(),
+    variantPrices: z
+        .object({
+            sizes: z.record(
+                z.string(),
+                z.object({
+                    costPrice: z.number().min(0).optional(),
+                    consignmentPrice: z.number().min(0).optional(),
+                    retailPrice: z.number().min(0).optional(),
+                }),
+            ).optional(),
+            colors: z.record(
+                z.string(),
+                z.object({
+                    costPrice: z.number().min(0).optional(),
+                    consignmentPrice: z.number().min(0).optional(),
+                    retailPrice: z.number().min(0).optional(),
+                }),
+            ).optional(),
+        })
+        .optional(),
     imageUrl: z.string().optional(),
     images: z.array(z.string()).optional(),
 });

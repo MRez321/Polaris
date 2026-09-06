@@ -26,6 +26,15 @@ export interface BankAccountInfo {
     accountHolder?: string;
 }
 
+/**
+ * Optional per-size / per-color price overrides. Keys mirror items.sizes /
+ * items.colors entries; a missing field falls back to the item's base price.
+ * Null column or empty object = one price for all variants.
+ */
+export interface VariantPrices {
+    sizes?: Record<string, Partial<{ costPrice: number; consignmentPrice: number; retailPrice: number }>>;
+    colors?: Record<string, Partial<{ costPrice: number; consignmentPrice: number; retailPrice: number }>>;
+}
 export interface ConsignmentItemLine {
     itemId: string;
     itemName: string;
@@ -136,6 +145,10 @@ export const items = mysqlTable(
         fabric: varchar('fabric', { length: 255 }).notNull().default(''),
         imageUrl: varchar('image_url', { length: 512 }),
         images: json('images').$type<string[]>().notNull(),
+        // Storefront-facing description (future website shop listing).
+        description: text('description'),
+        // Per-size/per-color price overrides; NULL = one price for all variants.
+        variantPrices: json('variant_prices').$type<VariantPrices>(),
         createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
         updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
         isDeleted: boolean('is_deleted').notNull().default(false),
@@ -259,6 +272,7 @@ export const staff = mysqlTable(
         role: varchar('role', { length: 64 }).notNull(),
         roleTitle: varchar('role_title', { length: 255 }).notNull().default(''),
         phones: json('phones').$type<string[]>().notNull(),
+        address: varchar('address', { length: 512 }),
         nationalCode: varchar('national_code', { length: 32 }),
         hireDate: datetime('hire_date').notNull().default(sql`CURRENT_TIMESTAMP`),
         salaryType: varchar('salary_type', { length: 32 }).notNull().default('monthly'),

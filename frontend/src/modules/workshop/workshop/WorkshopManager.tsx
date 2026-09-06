@@ -38,12 +38,19 @@ interface WorkshopManagerProps {
   staff?: StaffMember[];
   totalActiveDebt?: number;
   todayPayments?: number;
+  /** Which financial scope this manager renders: workshop costs or income / profit sharing. */
+  scope?: 'costs' | 'income';
 }
 
 export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
   owners = [],
+  staff = [],
+  scope = 'costs',
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'expenses' | 'distribution' | 'settlement' | 'maintenance'>('expenses');
+  const [activeSubTab, setActiveSubTab] = useState<'expenses' | 'distribution' | 'settlement' | 'maintenance'>(
+    scope === 'costs' ? 'expenses' : 'settlement'
+  );
+
   const [expenses, setExpenses] = useState<WorkshopExpense[]>([]);
   const [profitDistributions, setProfitDistributions] = useState<ProfitShareDistribution[]>([]);
   const [, setIsLoading] = useState<boolean>(true);
@@ -600,28 +607,32 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-lg sm:text-xl font-black text-stone-900 dark:text-white tracking-tight">
-                  مدیریت هزینه‌ها و درآمد کارگاه
+                  {scope === 'costs' ? 'مدیریت هزینه‌های کارگاه' : 'درآمد، تسویه و تقسیم سود کارگاه'}
                 </h2>
                 <span className="px-2.5 py-0.5 rounded-full bg-brand/20 text-brand-ink text-[10px] font-black border border-brand/30">
-                  محاسبه سود، درآمد و سهم‌بندی
+                  {scope === 'costs' ? 'ردیابی فاکتورها و مخارج' : 'محاسبه سود، درآمد و سهم‌بندی'}
                 </span>
               </div>
               <p className="text-xs text-stone-600 dark:text-stone-300 mt-1 font-medium leading-relaxed">
-                ردیابی درآمدهای حاصل از فروش، هزینه‌های نگهداری چرخ‌ها، متریال، سهم هر شریک از هزینه‌ها و محاسبه سهم سود
+                {scope === 'costs'
+                  ? 'ردیابی هزینه‌های نگهداری چرخ‌ها، متریال، سهم هر شریک از مخارج و ثبت فاکتورهای کارگاه'
+                  : 'ردیابی درآمدهای حاصل از فروش، تراز تسویه شرکا و محاسبه سهم سود دوره‌ای'}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-            <button
-              onClick={() => {
-                setIsDistModalOpen(true);
-              }}
-              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-black flex items-center justify-center gap-2 shadow-md transition-all active:scale-95"
-            >
-              <PieChart className="w-4 h-4" />
-              <span>محاسبه و تقسیم سود</span>
-            </button>
+            {scope === 'income' && (
+              <button
+                onClick={() => {
+                  setIsDistModalOpen(true);
+                }}
+                className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-black flex items-center justify-center gap-2 shadow-md transition-all active:scale-95"
+              >
+                <PieChart className="w-4 h-4" />
+                <span>محاسبه و تقسیم سود</span>
+              </button>
+            )}
 
             <button
               onClick={() => handleOpenNewExpense()}
@@ -677,71 +688,100 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
             </div>
           </div>
 
-          {/* Card 4: 5-Part Model Status */}
-          <div className="p-3.5 rounded-xl bg-stone-100 dark:bg-black/30 border border-stone-200 dark:border-white/5 space-y-1">
-            <div className="flex items-center justify-between text-stone-500 dark:text-stone-400 text-xs">
-              <span>مدل تسهیم پیش‌فرض:</span>
-              <PieChart className="w-4 h-4 text-emerald-500" />
+          {/* Card 4: costs → staff salaries; income → default distribution model */}
+          {scope === 'costs' ? (
+            <div className="p-3.5 rounded-xl bg-stone-100 dark:bg-black/30 border border-stone-200 dark:border-white/5 space-y-1">
+              <div className="flex items-center justify-between text-stone-500 dark:text-stone-400 text-xs">
+                <span>حقوق ماهانه پرسنل:</span>
+                <Users className="w-4 h-4 text-emerald-500" />
+              </div>
+              <div className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono" dir="ltr">
+                {formatToman(
+                  (staff || []).reduce(
+                    (sum, m) =>
+                      sum + (m.status === 'active' && m.salaryType === 'monthly' ? m.salaryAmount || 0 : 0),
+                    0
+                  )
+                )}
+              </div>
+              <div className="text-[10px] text-stone-500 dark:text-stone-400 font-medium">
+                {toPersianDigits((staff || []).filter((m) => m.status === 'active').length)} پرسنل فعال
+              </div>
             </div>
-            <div className="text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400">
-              ۵ قسمتی (سهم ۲ شریک + ۳ کادر/صندوق)
+          ) : (
+            <div className="p-3.5 rounded-xl bg-stone-100 dark:bg-black/30 border border-stone-200 dark:border-white/5 space-y-1">
+              <div className="flex items-center justify-between text-stone-500 dark:text-stone-400 text-xs">
+                <span>مدل تسهیم پیش‌فرض:</span>
+                <PieChart className="w-4 h-4 text-emerald-500" />
+              </div>
+              <div className="text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400">
+                ۵ قسمتی (سهم ۲ شریک + ۳ کادر/صندوق)
+              </div>
+              <div className="text-[10px] text-stone-500 dark:text-stone-400 font-medium">
+                هر سهم معادل ۲۰٪ از سود خالص
+              </div>
             </div>
-            <div className="text-[10px] text-stone-500 dark:text-stone-400 font-medium">
-              هر سهم معادل ۲۰٪ از سود خالص
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
       {/* Main Tab Navigation Buttons */}
       <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-stone-200 dark:border-white/10">
-        <button
-          onClick={() => setActiveSubTab('expenses')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap transition-all ${
-            activeSubTab === 'expenses'
-              ? 'bg-brand text-brand-on shadow-md'
-              : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5 font-bold'
-          }`}
-        >
-          <Receipt className="w-4 h-4 shrink-0" />
-          <span>هزینه‌ها و فاکتورهای کارگاه ({toPersianDigits(expenses.length)})</span>
-        </button>
+        {scope === 'costs' && (
+          <button
+            onClick={() => setActiveSubTab('expenses')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap transition-all ${
+              activeSubTab === 'expenses'
+                ? 'bg-brand text-brand-on shadow-md'
+                : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5 font-bold'
+            }`}
+          >
+            <Receipt className="w-4 h-4 shrink-0" />
+            <span>هزینه‌ها و فاکتورهای کارگاه ({toPersianDigits(expenses.length)})</span>
+          </button>
+        )}
 
-        <button
-          onClick={() => setActiveSubTab('settlement')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap transition-all ${
-            activeSubTab === 'settlement'
-              ? 'bg-brand text-brand-on shadow-md'
-              : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5 font-bold'
-          }`}
-        >
-          <Scale className="w-4 h-4 shrink-0" />
-          <span>تراز سهم هر شریک از مخارج («چه کسی چقدر باید بدهد؟»)</span>
-        </button>
+        {scope === 'income' && (
+          <button
+            onClick={() => setActiveSubTab('settlement')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap transition-all ${
+              activeSubTab === 'settlement'
+                ? 'bg-brand text-brand-on shadow-md'
+                : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5 font-bold'
+            }`}
+          >
+            <Scale className="w-4 h-4 shrink-0" />
+            <span>تراز سهم هر شریک از مخارج («چه کسی چقدر باید بدهد؟»)</span>
+          </button>
+        )}
 
-        <button
-          onClick={() => setActiveSubTab('distribution')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap transition-all ${
-            activeSubTab === 'distribution'
-              ? 'bg-brand text-brand-on shadow-md'
-              : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5 font-bold'
-          }`}
-        >
-          <PieChart className="w-4 h-4 shrink-0" />
-          <span>تاریخچه و اسناد تقسیم سود ({toPersianDigits(profitDistributions.length)})</span>
-        </button>
+        {scope === 'income' && (
+          <button
+            onClick={() => setActiveSubTab('distribution')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap transition-all ${
+              activeSubTab === 'distribution'
+                ? 'bg-brand text-brand-on shadow-md'
+                : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5 font-bold'
+            }`}
+          >
+            <PieChart className="w-4 h-4 shrink-0" />
+            <span>تاریخچه و اسناد تقسیم سود ({toPersianDigits(profitDistributions.length)})</span>
+          </button>
+        )}
 
-        <button
-          onClick={() => setActiveSubTab('maintenance')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap transition-all ${
-            activeSubTab === 'maintenance'
-              ? 'bg-brand text-brand-on shadow-md'
-              : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5 font-bold'
-          }`}
-        >
-          <Hammer className="w-4 h-4 shrink-0" />
-          <span>بهسازی، سرویس چرخ‌ها و ملزومات</span>
-        </button>
+        {scope === 'costs' && (
+          <button
+            onClick={() => setActiveSubTab('maintenance')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap transition-all ${
+              activeSubTab === 'maintenance'
+                ? 'bg-brand text-brand-on shadow-md'
+                : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/5 font-bold'
+            }`}
+          >
+            <Hammer className="w-4 h-4 shrink-0" />
+            <span>بهسازی، سرویس چرخ‌ها و ملزومات</span>
+          </button>
+        )}
       </div>
 
       {/* ======================================================== */}
@@ -927,7 +967,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
       {/* ======================================================== */}
       {/* SUB-TAB 2: SETTLEMENT & WHO PAYS WHAT ("چه کسی چقدر باید بدهد؟") */}
       {/* ======================================================== */}
-      {activeSubTab === 'settlement' && (
+      {scope === 'income' && activeSubTab === 'settlement' && (
         <div className="space-y-6">
           <div className="glass-panel p-4 sm:p-6 rounded-2xl space-y-4 border border-stone-200 dark:border-white/10">
             <div className="flex items-start sm:items-center justify-between gap-3 flex-wrap">
@@ -1134,7 +1174,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
       {/* ======================================================== */}
       {/* SUB-TAB 3: PROFIT DISTRIBUTIONS HISTORY & VOUCHERS */}
       {/* ======================================================== */}
-      {activeSubTab === 'distribution' && (
+      {scope === 'income' && activeSubTab === 'distribution' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
@@ -1264,7 +1304,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
       {/* ======================================================== */}
       {/* SUB-TAB 4: MACHINERY & WORKSHOP IMPROVEMENTS */}
       {/* ======================================================== */}
-      {activeSubTab === 'maintenance' && (
+      {scope === 'costs' && activeSubTab === 'maintenance' && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Quick Action Box 1 */}
@@ -1324,6 +1364,57 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
               </button>
             </div>
           </div>
+
+          {/* Staff monthly salary table (costs scope) */}
+          {(staff || []).length > 0 && (
+            <div className="glass-panel p-4 sm:p-6 rounded-2xl border border-stone-200 dark:border-white/5 space-y-3">
+              <h4 className="text-sm font-black text-stone-900 dark:text-white flex items-center gap-2">
+                <Users className="w-4 h-4 text-brand" />
+                <span>حقوق و دستمزد پرسنل کارگاه</span>
+              </h4>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-stone-500 dark:text-gray-400 border-b border-black/10 dark:border-white/10">
+                      <th className="text-right py-2 px-2 font-bold">نام پرسنل</th>
+                      <th className="text-right py-2 px-2 font-bold">عنوان نقش</th>
+                      <th className="text-right py-2 px-2 font-bold">نوع حقوق</th>
+                      <th className="text-right py-2 px-2 font-bold">مبلغ حقوق</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(staff || []).map((m) => (
+                      <tr key={m.id} className="border-b border-black/5 dark:border-white/5 last:border-0">
+                        <td className="py-2 px-2 font-bold text-stone-800 dark:text-gray-200">{m.name}</td>
+                        <td className="py-2 px-2 text-stone-600 dark:text-gray-300">{m.roleTitle}</td>
+                        <td className="py-2 px-2 text-stone-600 dark:text-gray-300">
+                          {m.salaryType === 'monthly' ? 'ماهانه' : m.salaryType === 'piecework' ? 'مقطوع / توافقی' : 'ساعتی'}
+                        </td>
+                        <td className="py-2 px-2 font-mono font-black text-stone-900 dark:text-white" dir="ltr">
+                          {formatToman(m.salaryAmount)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t border-black/10 dark:border-white/10">
+                      <td colSpan={3} className="py-2 px-2 font-black text-stone-700 dark:text-gray-300 text-left">
+                        مجموع ماهانه:
+                      </td>
+                      <td className="py-2 px-2 font-mono font-black text-emerald-600 dark:text-emerald-400" dir="ltr">
+                        {formatToman(
+                          (staff || []).reduce(
+                            (sum, m) => sum + (m.status === 'active' && m.salaryType === 'monthly' ? m.salaryAmount || 0 : 0),
+                            0
+                          )
+                        )}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

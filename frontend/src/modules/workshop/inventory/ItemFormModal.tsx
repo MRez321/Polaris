@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '@/components/common/Modal';
-import type { GarmentItem } from '@/types';
-import { toPersianDigits } from '@/utils/persian';
-import { Plus, Image as ImageIcon } from 'lucide-react';
+import type { GarmentItem, VariantPrices, VariantPriceOverride } from '@/types';
+import { toPersianDigits, formatToman } from '@/utils/persian';
+import { Plus, Image as ImageIcon, Tags } from 'lucide-react';
 import { SelectMenu } from '@/components/ui/select-menu';
 import { FormattedNumberInput } from '@/components/common/FormattedNumberInput';
 import { ImagePicker } from '@/components/common/ImagePicker';
+import { Switch } from '@/components/ui/switch';
 interface ItemFormModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -44,6 +45,10 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
   const [sizes, setSizes] = useState('');
   const [colors, setColors] = useState('');
   const [fabric, setFabric] = useState('');
+  const [description, setDescription] = useState('');
+  const [variantPricingOn, setVariantPricingOn] = useState(false);
+  const [sizePriceOverrides, setSizePriceOverrides] = useState<Record<string, VariantPriceOverride>>({});
+  const [colorPriceOverrides, setColorPriceOverrides] = useState<Record<string, VariantPriceOverride>>({});
   const [imagesList, setImagesList] = useState<string[]>([]);
 
   useEffect(() => {
@@ -59,6 +64,14 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
       setSizes((editItem.sizes || []).join(', '));
       setColors((editItem.colors || []).join(', '));
       setFabric(editItem.fabric || '');
+      setDescription(editItem.description || '');
+      const overrides = editItem.variantPrices;
+      setVariantPricingOn(
+        overrides !== undefined &&
+          Object.keys(overrides.sizes ?? {}).length + Object.keys(overrides.colors ?? {}).length > 0,
+      );
+      setSizePriceOverrides({ ...(overrides?.sizes ?? {}) });
+      setColorPriceOverrides({ ...(overrides?.colors ?? {}) });
       const existingImages = editItem.images && editItem.images.length > 0
         ? editItem.images
         : editItem.imageUrl
@@ -77,6 +90,10 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
       setSizes('');
       setColors('');
       setFabric('');
+      setDescription('');
+      setVariantPricingOn(false);
+      setSizePriceOverrides({});
+      setColorPriceOverrides({});
       setImagesList([]);
     }
     setIsCreatingCategory(false);
@@ -93,6 +110,48 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
     setCategory(catLabel);
     setIsCreatingCategory(false);
     setNewCategoryName('');
+  };
+
+  const parseVariantList = (raw: string) => raw.split(',').map((s) => s.trim()).filter(Boolean);
+
+  const updateOverride = (
+    kind: 'sizes' | 'colors',
+    key: string,
+    field: keyof VariantPriceOverride,
+    value: number | null,
+  ) => {
+    const setter = kind === 'sizes' ? setSizePriceOverrides : setColorPriceOverrides;
+    setter((prev) => {
+      const next = { ...prev, [key]: { ...prev[key] } };
+      const record = next[key]!;
+      if (value === null) {
+        delete record[field];
+      } else {
+        record[field] = value;
+      }
+      if (Object.keys(record).length === 0) delete next[key];
+      return next;
+    });
+  };
+
+  // Build the variantPrices payload: only size/color keys that still exist in
+  // the (possibly edited) comma lists, and only non-empty override records.
+  const buildVariantPrices = (): VariantPrices | undefined => {
+    if (!variantPricingOn) return undefined;
+    const keep = (overrides: Record<string, VariantPriceOverride>, keys: string[]) => {
+      const filtered: Record<string, VariantPriceOverride> = {};
+      for (const key of keys) {
+        const record = overrides[key];
+        if (record && Object.keys(record).length > 0) filtered[key] = record;
+      }
+      return filtered;
+    };
+    const sizeKeys = parseVariantList(sizes);
+    const colorKeys = parseVariantList(colors);
+    const filteredSizes = keep(sizePriceOverrides, sizeKeys);
+    const filteredColors = keep(colorPriceOverrides, colorKeys);
+    if (Object.keys(filteredSizes).length === 0 && Object.keys(filteredColors).length === 0) return undefined;
+    return { ...(Object.keys(filteredSizes).length > 0 ? { sizes: filteredSizes } : {}), ...(Object.keys(filteredColors).length > 0 ? { colors: filteredColors } : {}) };
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -112,21 +171,22 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
       retailPrice: retailPrice || 0,
       stockQuantity: stockQuantity || 0,
       minStockThreshold: minStockThreshold || 10,
-      sizes: sizes.split(',').map((s) => s.trim()).filter(Boolean),
-      colors: colors.split(',').map((c) => c.trim()).filter(Boolean),
+      sizes: parseVariantList(sizes),
+      colors: parseVariantList(colors),
       fabric: fabric.trim(),
+      description: description.trim() || undefined,
+      variantPrices: buildVariantPrices(),
       imageUrl: imagesList[0] || '',
       images: imagesList,
     });
     onClose();
   };
-
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={editItem ? 'ویرایش مشخصات لباس / پارچه' : 'افزودن لباس جدید به انبار دوزندگی'}
-      subtitle="تعریف قیمت تمام شده دوخت، قیمت امانی دست‌فروش، دسته‌بندی و عکس‌های کالا"
+      subtitle="قیمت تمام شده کارگاه، قیمت امانی دست‌فروش و قیمت فروشگاه سایت"
       maxWidth="2xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4 text-stone-900 dark:text-white">
@@ -246,6 +306,19 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
           </div>
         </div>
 
+        <div>
+          <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+            توضیحات کالا <span className="text-stone-400 font-normal">(نمایش در فروشگاه سایت)</span>
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            placeholder="معرفی کالا برای صفحه فروشگاه — جنس، دوخت، کاربرد و نکات فروش..."
+            className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-brand outline-none resize-y min-h-[70px]"
+          />
+        </div>
+
         {/* Pricing Rows */}
         <div className="p-4 rounded-xl bg-brand/10 border border-brand/30 space-y-3">
           <p className="text-xs font-bold text-brand">
@@ -254,7 +327,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-[11px] text-stone-600 dark:text-stone-400 mb-1">
-                قیمت تمام شده دوخت (کارگاه)
+                قیمت تمام شده کارگاه
               </label>
               <FormattedNumberInput
                 value={costPrice}
@@ -278,7 +351,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
 
             <div>
               <label className="block text-[11px] text-stone-600 dark:text-stone-400 mb-1">
-                قیمت مصرف‌کننده نهایی
+                قیمت فروشگاه سایت
               </label>
               <FormattedNumberInput
                 value={retailPrice}
@@ -288,6 +361,82 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
               />
             </div>
           </div>
+        </div>
+
+        {/* Variant Pricing */}
+        <div className="p-4 rounded-xl glass-card space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <label className="text-xs font-bold text-brand flex items-center gap-1.5">
+              <Tags className="w-4 h-4" />
+              قیمت‌گذاری متفاوت برای سایز / رنگ
+            </label>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-stone-400">خاموش = یک قیمت برای همه</span>
+              <Switch
+                checked={variantPricingOn}
+                onCheckedChange={setVariantPricingOn}
+              />
+            </div>
+          </div>
+
+          {variantPricingOn && (
+            <div className="space-y-4">
+              <p className="text-[11px] text-stone-500 dark:text-stone-400 leading-relaxed">
+                برای هر سایز یا رنگ می‌توانید قیمت‌های متفاوتی ثبت کنید؛ هر فیلد خالی، قیمت پایه همان ردیف کالاست.
+              </p>
+              {(['sizes', 'colors'] as const).map((kind) => {
+                const keys = parseVariantList(kind === 'sizes' ? sizes : colors);
+                if (keys.length === 0) {
+                  return (
+                    <p key={kind} className="text-[11px] text-stone-400 italic">
+                      {kind === 'sizes' ? 'ابتدا سایزبندی را وارد کنید.' : 'ابتدا رنگ‌بندی را وارد کنید.'}
+                    </p>
+                  );
+                }
+                return (
+                  <div key={kind} className="space-y-2">
+                    <p className="text-[11px] font-bold text-stone-700 dark:text-stone-300">
+                      {kind === 'sizes' ? 'سایزها' : 'رنگ‌ها'}
+                    </p>
+                    <div className="space-y-2">
+                      {keys.map((key) => {
+                        const overrides = kind === 'sizes' ? sizePriceOverrides[key] : colorPriceOverrides[key];
+                        return (
+                          <div
+                            key={key}
+                            className="grid grid-cols-1 sm:grid-cols-[minmax(60px,80px)_1fr_1fr_1fr] gap-2 items-end"
+                          >
+                            <span className="text-xs font-bold text-stone-800 dark:text-stone-200 py-2 truncate">
+                              {key}
+                            </span>
+                            {(['costPrice', 'consignmentPrice', 'retailPrice'] as const).map((field) => (
+                              <div key={field}>
+                                <label className="block text-[10px] text-stone-500 dark:text-stone-400 mb-1">
+                                  {field === 'costPrice' ? 'کارگاه' : field === 'consignmentPrice' ? 'امانی' : 'فروشگاه'}
+                                </label>
+                                <FormattedNumberInput
+                                  value={overrides?.[field] ?? null}
+                                  onChange={(v) => updateOverride(kind, key, field, v)}
+                                  placeholder={
+                                    field === 'costPrice'
+                                      ? formatToman(costPrice || 0)
+                                      : field === 'consignmentPrice'
+                                      ? formatToman(consignmentPrice || 0)
+                                      : formatToman(retailPrice || 0)
+                                  }
+                                  className="w-full px-2.5 py-1.5 rounded-lg glass-input text-xs font-mono outline-none focus:border-brand"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Stock & Variations */}
