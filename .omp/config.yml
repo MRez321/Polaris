@@ -31,3 +31,9 @@ skills:
     - scaffold-exercises     # Not needed for production
     - setup-*                # Already configured
     - writing-*              # Documentation handled separately
+# -----------------------------------------------------------------------------
+# SESSION START (mandatory): read .omp/knowledge/START-HERE.md before any
+# task - it is the unified knowledge base index (stack, layout, commands,
+# gotchas + per-topic reference files). Supersedes the markdown/ docs and
+# CONTEXT.md, which were folded in and removed.
+# -----------------------------------------------------------------------------

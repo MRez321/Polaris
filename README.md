@@ -57,10 +57,10 @@ Inventory, consignment, payments, and workshop management system for the **Polar
 │       ├── components/            # shared components (ui, common, public)
 │       ├── lib/api.ts             # central axios client
 │       └── pages/                 # public storefront + controlpanel
-└── markdown/                      # API, GUIDE, STRUCTURE, CMS docs
+└── .omp/knowledge/              unified agent knowledge base (START-HERE.md index)
 ```
 
-Full tree: [markdown/STRUCTURE.md](markdown/STRUCTURE.md).
+Full tree and agent knowledge base: [.omp/knowledge/](.omp/knowledge/) (START-HERE.md is the index).
 
 ---
 
