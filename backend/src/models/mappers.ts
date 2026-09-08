@@ -50,6 +50,11 @@ export function toItemDto(row: ItemRow & { sellerHeld?: number }, categoryLabel?
         images: row.images,
         ...(row.description ? { description: row.description } : {}),
         ...(row.variantPrices ? { variantPrices: row.variantPrices } : {}),
+        ...(row.purchasePriceUsd !== null && row.purchasePriceUsd !== undefined
+            ? { purchasePriceUsd: row.purchasePriceUsd }
+            : {}),
+        ...(row.costBreakdown ? { costBreakdown: row.costBreakdown } : {}),
+        productionStatus: (row.productionStatus as GarmentItem['productionStatus']) ?? 'ready',
         createdAt: iso(row.createdAt),
         updatedAt: iso(row.updatedAt),
         isDeleted: row.isDeleted,

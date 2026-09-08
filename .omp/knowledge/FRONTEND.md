@@ -15,12 +15,13 @@ src/
   App.tsx                  route table + RequireAdmin
   pages/                   public/*, controlpanel/*, LoginPage, SignupPage
   modules/workshop/        THE admin panel
-    pages/                 Dashboard, Orders, Inventory, Consignments, People, Finances, Settings, EntityProfile
-    layout/                AppLayout, Sidebar, Header, MobileNav, SideMenu
-    context/               DataContext (workshop data), UIContext (drawers/modals)
+    pages/                 Dashboard, Orders, Inventory, Consignments, People, Finances, Returns, Analytics, Settings, EntityProfile (`profile/:type/:id` for items/sellers/staff/owners)
+    layout/                AppLayout (incl. scroll-to-top on route change), Sidebar, Header, MobileNav (bottom bar + actions popover with Plus-badged pills), SideMenu (brand-wired sheet)
+    context/               DataContext (workshop data + CompanyBranding `workshopInfo`), UIContext (drawers/modals)
     inventory/consignments/payments/staff/sellers/people/settings/audit/finances/  Manager components per domain
-    dashboard/             StatsCard, TopSellersCard, SalesDebtChart, OverdueAlertBanner
-    analytics/             FinancialReports
+    dashboard/             DashboardOverview (widget visibility panel), StatsCard, TopSellersCard, SalesDebtChart, OverdueAlertBanner
+    returns/               ReturnsPage (damage/consignment-return tracking: record → fix (restock) / dispose (write-off))
+    analytics/             AnalyticsPage (GA measurement-id save), FinancialReports
     pwa/                   PwaInstallPrompt, ConnectionGuardian
   components/
     ui/                    shadcn-style primitives (Radix-based, Persian Labs RTL)
@@ -39,6 +40,16 @@ src/
 - Workshop endpoints namespaced under `const W = '/api/workshop'` in api.ts; auth via better-auth's `authClient` (cookie session, not axios).
 - `getApiErrorMessage(err)` — Persian fallback 'خطا در ارتباط با سرور', surfaces `data.error` from `{error}` response shape.
 - Workshop data flows through `DataContext` (fetch + cache + refresh) rather than per-page hooks — check it before adding fetch logic.
+- `DataContext.workshopInfo` is typed **CompanyBranding** (server-persisted branding: name, brandName, tagline, logoUrl, addresses, `analyticsSettings`, `dashboardPrefs`); fetched via `companyApi.get()` in `fetchData`. SettingsPage saves it optimistically AND via `companyApi.update(info)` — keys unknown to the company schema (e.g. `owners`) are silently stripped by Zod, which is fine.
+
+## Workshop panel specifics (2026-09 overhaul)
+
+- **Item create/edit form** (InventoryManager modal): USD purchase price (`purchasePriceUsd`, 2-decimal, Latin digits, shown as `$25.00`-style chips on profile), cost breakdown (`costBreakdown`: fabric/sewing/accessories/transport/packaging, live sum + per-line % with >40% red warning), percent-based pricing toggle (base = workshop cost → seller/shop prices auto-compute), per-size/color variant pricing toggle, initial stock, min-stock threshold, and «این کالا سفارش است و هنوز تولید نشده» checkbox → `productionStatus='pending_production'` (hidden from handover/shop allocation until «علامت‌گذاری آماده» → `itemsApi.markReady`).
+- **EntityProfilePage** (`/workshop/profile/{items|sellers|staff|owners}/:id`): gallery at top (main image + thumb strip, `images` JSON), header summary, sales-tracking box, timeline with channel tabs (all/shop/seller) + text search. All view memos (`itemView`/`sellerView`/`staffView`/`ownerView` + `visibleEntries`) run BEFORE the not-found early return — hook-count stability is mandatory (see START-HERE gotchas).
+- **DashboardOverview**: collapsible widget-visibility panel (5 switches) → `dashboardPrefs` persisted through `companyApi.update`; KPI cards, SalesDebtChart, TopSellersCard, recent-handovers, recent-payments sections each toggle independently.
+- **ReturnsPage** (`/workshop/returns`): stat cards (damaged/fixed/disposed/consignment-returns), channel tabs (all/seller/customer/provider/in-process), damage records use `DMG-` codes (consignment returns keep `HND-`-linked rows); record flow: create (item SelectMenu + source + qty + reason) → «ترمیم» (Modal: repairer name, restocks qty) or «اسقاط» (ConfirmDialog, write-off) or delete.
+- **AnalyticsPage** (`/workshop/analytics`): reads `GET /api/workshop/analytics` (NOT `/analytics/summary` — 404); GA measurement ID persists via companyApi `analyticsSettings.gaMeasurementId`; save/reset verified round-trip.
+- **MobileNav**: bottom bar (dashboard/inventory/handover/actions); actions popover = bordered `rounded-2xl` pills each with a Plus icon (emerald = payment, brand = handover, violet = workshop expense). SideMenu sheet shows brand logo + name from `useBrand()`/CompanyBranding.
 
 ## Conventions
 

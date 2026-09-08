@@ -28,9 +28,10 @@ import {
   Users,
   Bell,
 } from 'lucide-react';
-import type { WorkshopInfo, GarmentItem, Seller, StaffMember, WorkshopExpense, Consignment } from '@/types';
+import type { CompanyBranding, GarmentItem, Seller, StaffMember, WorkshopExpense, Consignment } from '@/types';
 import { toPersianDigits, formatToman, toJalaliDate } from '@/utils/persian';
 import { Modal } from '@/components/common/Modal';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import type { NetworkStatus } from '@/hooks/useNetworkStatus';
 import { AuditLogsManager } from '../audit/AuditLogsManager';
 import { ImagePicker } from '@/components/common/ImagePicker';
@@ -41,8 +42,8 @@ import { toast } from 'sonner';
 import { normalizePhoneInput, isValidIranPhone, PHONE_ERROR } from '@/modules/workshop/utils/validation';
 
 interface SettingsManagerProps {
-  workshopInfo: WorkshopInfo;
-  onSaveWorkshopInfo: (info: WorkshopInfo) => void;
+  workshopInfo: CompanyBranding;
+  onSaveWorkshopInfo: (info: CompanyBranding) => void;
   onRefreshData?: () => void;
   networkStatus?: NetworkStatus;
   onOpenPwaInstall?: () => void;
@@ -99,6 +100,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
   } | null>(null);
   const [editRestoreName, setEditRestoreName] = useState('');
   const [editRestorePriceOrPhone, setEditRestorePriceOrPhone] = useState('');
+  const [permDeleteTarget, setPermDeleteTarget] = useState<{ type: 'item' | 'seller' | 'staff' | 'expense' | 'consignment'; id: string; label: string } | null>(null);
 
   const fetchTrash = async () => {
     try {
@@ -170,19 +172,20 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
 
   // Permanent Delete Action
   const handlePermanentDelete = async (type: 'item' | 'seller' | 'staff' | 'expense' | 'consignment', id: string, label: string) => {
-    if (
-      confirm(
-        `هشدار: آیا از حذف دائمی و غیرقابل بازگشت "${label}" از پایگاه داده اطمینان دارید؟ این عملیات قابل بازگردانی نیست.`
-      )
-    ) {
-      try {
-        const res = await fetch(`/api/workshop/trash/permanent/${type}/${id}`, { method: 'DELETE' });
-        if (res.ok) {
-          fetchTrash();
-        }
-      } catch (err) {
-        console.error('Failed to permanently delete item', err);
+    setPermDeleteTarget({ type, id, label });
+  };
+
+  const confirmPermanentDelete = async () => {
+    if (!permDeleteTarget) return;
+    const { type, id } = permDeleteTarget;
+    setPermDeleteTarget(null);
+    try {
+      const res = await fetch(`/api/workshop/trash/permanent/${type}/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        fetchTrash();
       }
+    } catch (err) {
+      console.error('Failed to permanently delete item', err);
     }
   };
 
@@ -1508,6 +1511,16 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           </form>
         </Modal>
       )}
+
+      <ConfirmDialog
+        open={permDeleteTarget !== null}
+        onOpenChange={(open) => !open && setPermDeleteTarget(null)}
+        title="حذف دائمی از پایگاه داده"
+        description={`هشدار: آیا از حذف دائمی و غیرقابل بازگشت «${permDeleteTarget?.label ?? ''}» از پایگاه داده اطمینان دارید؟ این عملیات قابل بازگردانی نیست.`}
+        confirmLabel="حذف دائمی"
+        destructive
+        onConfirm={() => void confirmPermanentDelete()}
+      />
     </div>
   );
 };

@@ -20,8 +20,8 @@ import { formatToman, toPersianDigits } from '@/utils/persian';
 import { SellerFormModal } from './SellerFormModal';
 import { SellerProfileDrawer } from './SellerProfileDrawer';
 import { SelectMenu } from '@/components/ui/select-menu';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { SafeImage } from '@/components/common/SafeImage';
-
 interface SellersManagerProps {
   sellers: Seller[];
   consignments: Consignment[];
@@ -55,6 +55,7 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSeller, setEditingSeller] = useState<Seller | null>(null);
   const [selectedProfileSeller, setSelectedProfileSeller] = useState<Seller | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Seller | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const handleCopy = (text: string, key: string, e: React.MouseEvent) => {
@@ -103,13 +104,12 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
       alert('امکان حذف فروشنده دارای مانده بدهی وجود ندارد. ابتدا فاکتورها را تسویه فرمایید.');
       return;
     }
-    if (
-      confirm(
-        `آیا از انتقال پرونده "${seller.name}" به سطل بازیافت اطمینان دارید؟ در بخش تنظیمات و سطل بازیافت قابل بازگردانی خواهد بود.`
-      )
-    ) {
-      onDeleteSeller(seller.id);
-    }
+    setDeleteTarget(seller);
+  };
+
+  const confirmDeleteSeller = () => {
+    if (deleteTarget) onDeleteSeller(deleteTarget.id);
+    setDeleteTarget(null);
   };
 
   return (
@@ -511,6 +511,15 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
           setSelectedProfileSeller(null);
           onSelectConsignment(c);
         }}
+      />
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="انتقال پرونده به سطل بازیافت"
+        description={`آیا از انتقال پرونده «${deleteTarget?.name ?? ''}» به سطل بازیافت اطمینان دارید؟ در بخش تنظیمات و سطل بازیافت قابل بازگردانی خواهد بود.`}
+        confirmLabel="انتقال به بازیافت"
+        destructive
+        onConfirm={confirmDeleteSeller}
       />
     </div>
   );

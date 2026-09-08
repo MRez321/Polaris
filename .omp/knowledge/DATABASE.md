@@ -19,15 +19,15 @@ const mysql = require('mysql2/promise');
 ```
 Always add the `.catch` — without it errors print as bare `Node.js v22.x` with no message.
 
-## Tables by domain (23, verified live 2026-09-07)
+## Tables by domain (24, verified live 2026-09-08)
 
 **better-auth** (`schema/auth.ts`): `user` (id, name, email, role varchar32, banned, …), `session`, `account` (provider rows; credential rows carry scrypt `password` = `salt:key`), `verification`.
 
-**Workshop** (`schema/workshop.ts`): `items` (code auto-gen; 3 prices cost/consignment/retail; stock + minThreshold; sizes/colors/fabric; JSON `variantPrices`), `categories`, `sellers` (guarantee, creditLimit, bankAccounts JSON, currentDebt, status), `consignments` (JSON `ConsignmentItemLine[]` incl. per-line returned/sold qty; totalAmount/netAmount/paidAmount/remainingAmount; status active→partially_settled→settled; overdue flag), `consignment_returns` (`ReturnItemLine[]`, condition healthy|damaged), `payments` (method cash|card|bank|POS; JSON `DebtAllocation[]`; unallocatedAmount), `staff` (salaryType monthly|piecework|hourly), `owners` (single row, JSON `OwnerRecord[]` — partners with share %/units + bank accounts), `expenses` (allocation mode shared_by_equity|workshop_fund|specific_payer|custom_split + costShares), `profit_distributions` (periodName, net profit, reserve, mode share_units|percentage, recipient settlements).
+**Workshop** (`schema/workshop.ts`): `items` (code auto-gen PLR-nnn; 3 prices cost/consignment/retail; `purchase_price_usd` DECIMAL(12,2) nullable; JSON `cost_breakdown` {fabric,sewing,accessories,transport,packaging}; `production_status` `ready`|`pending_production` — order-made items hidden from handover/shop until mark-ready; stock + minThreshold; sizes/colors/fabric; images JSON array for profile gallery; JSON `variantPrices`), `categories`, `sellers` (guarantee, creditLimit, bankAccounts JSON, currentDebt, status), `consignments` (JSON `ConsignmentItemLine[]` incl. per-line returned/sold qty; totalAmount/netAmount/paidAmount/remainingAmount; status active→partially_settled→settled; overdue flag), `consignment_returns` (`ReturnItemLine[]`, condition healthy|damaged), `payments` (method cash|card|bank|POS; JSON `DebtAllocation[]`; unallocatedAmount), `staff` (salaryType monthly|piecework|hourly), `owners` (single row, JSON `OwnerRecord[]` — partners with share %/units + bank accounts), `expenses` (allocation mode shared_by_equity|workshop_fund|specific_payer|custom_split), **`damage_records`** (`DMG-` codes; itemId + source customer|seller|provider|in_process + sourceName; quantity, selectedSize/Color, damageReason, currentLocation, reportedBy/At; status damaged→fixed (restocks)/disposed (write-off), fixedBy/fixedAt).
 
 **Customer orders** (`schema/orders.ts`): `orders` (status machine; mine-scoped for users), `user_addresses`.
 
-**CMS/company** (`schema/cms.ts`, `company.ts`): `blog_posts`, `website_settings` (JSON blob), `company_settings` (JSON blob — branding), `gallery_images`, `notification_settings` (JSON blob — telegram/SMS config).
+**CMS/company** (`schema/cms.ts`, `company.ts`): `blog_posts`, `website_settings` (JSON blob), `company_settings` (JSON blob — full CompanyBranding: branding fields + `analyticsSettings` {gaMeasurementId, websiteUrl} + `dashboardPrefs` {widgetId: boolean} + owners list), `gallery_images`, `notification_settings` (JSON blob — telegram/SMS config).
 
 **Infra**: `audit_logs` (`details` column — NOT `description`; 500 latest kept in UI), `__drizzle_migrations`.
 
@@ -47,6 +47,8 @@ Settings tables and workshop aggregates store JSON blobs (`data` json / typed in
 - Consignment: `netAmount = totalAmount − returnedAmount`; `remainingAmount = netAmount − paidAmount`. Return healthy → restock; damaged → debt drops but NOT restocked. Can't return more than seller still holds (qty − returned − sold).
 - Payment **chain settlement** (تسویه زنجیره‌ای): allocated across seller's open consignments **oldest-first**; leftover → `unallocatedAmount`. Full allocation breakdown stored on the payment row.
 - Handover deducts stock immediately. Low-stock alert when stock ≤ minThreshold. Shop allocation (`items.shop_allocation`) splits stock between shop/warehouse.
+- Item pricing: USD purchase price is reference-only (`purchase_price_usd`); `cost_breakdown` lines sum to workshop cost (form warns when any line >40% of total); percent-based pricing computes consignment/retail from workshop cost at form level. `pending_production` items are excluded from handover eligibility and public catalog until `mark-ready`.
+- Damage records: `fix` returns quantity to item stock (like a healthy return); `dispose` is a write-off (no restock). Both keep the record for audit.
 - Expenses: 4 allocation modes (see table list above). Profit distribution: recipient `assignedAmount` minus cost obligations already paid = net settlement; draft → approved → paid.
 
 ## Soft delete

@@ -8,6 +8,8 @@ import {
   ArrowLeftRight,
   CreditCard,
   Settings,
+  RotateCcw,
+  BarChart3,
 } from 'lucide-react';
 import { toPersianDigits } from '@/utils/persian';
 import { useData } from '@/modules/workshop/context/DataContext';
@@ -32,6 +34,8 @@ export const Sidebar: React.FC = () => {
       badge: overdueCount > 0 ? overdueCount : undefined,
     },
     { to: '/workshop/people', label: 'فروشندگان و پرسنل', icon: Users },
+    { to: '/workshop/returns', label: 'مرجوعی‌ها و خرابی‌ها', icon: RotateCcw },
+    { to: '/workshop/analytics', label: 'تحلیل فروش', icon: BarChart3 },
     { to: '/workshop/finances', label: 'امور مالی، درآمد و هزینه‌ها', icon: CreditCard },
     { to: '/workshop/settings', label: 'تنظیمات و مدیریت', icon: Settings },
   ].filter((item) => isAdmin || item.to === '/workshop');

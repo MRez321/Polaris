@@ -7,6 +7,7 @@ import type {
   CompanyBranding,
   Consignment,
   ConsignmentReturn,
+  DamageRecord,
   DashboardStats,
   GarmentItem,
   Order,
@@ -73,6 +74,48 @@ export const itemsApi = {
   remove: (id: string) => api.delete(`${W}/items/${id}`).then((r) => r.data),
   setShopAllocation: (id: string, websiteQuantity: number) =>
     api.put<GarmentItem>(`${W}/items/${id}/shop-allocation`, { websiteQuantity }).then((r) => r.data),
+  markReady: (id: string) =>
+    api.post<GarmentItem>(`${W}/items/${id}/mark-ready`, {}).then((r) => r.data),
+};
+
+// --- Damage / Returns tracking ---
+export const damageApi = {
+  list: (includeDeleted = false) =>
+    api
+      .get<DamageRecord[]>(`${W}/damage-records`, { params: includeDeleted ? { includeDeleted: 'true' } : {} })
+      .then((r) => r.data),
+  create: (data: Partial<DamageRecord>) =>
+    api.post<DamageRecord>(`${W}/damage-records`, data).then((r) => r.data),
+  update: (id: string, data: Partial<DamageRecord>) =>
+    api.put<DamageRecord>(`${W}/damage-records/${id}`, data).then((r) => r.data),
+  fix: (id: string, fixedBy?: string) =>
+    api.post<DamageRecord>(`${W}/damage-records/${id}/fix`, { fixedBy }).then((r) => r.data),
+  dispose: (id: string) =>
+    api.post<DamageRecord>(`${W}/damage-records/${id}/dispose`, {}).then((r) => r.data),
+  remove: (id: string) => api.delete(`${W}/damage-records/${id}`).then((r) => r.data),
+};
+
+// --- Analytics (cross-channel sales rankings) ---
+export interface AnalyticsResult {
+  totalSold: number;
+  totalRevenue: number;
+  sellerChannel: { totalSold: number; revenue: number; byVariant: { size?: string; color?: string; quantity: number }[] };
+  shopChannel: { totalSold: number; revenue: number; byVariant: { size?: string; color?: string; quantity: number }[] };
+  topItems: {
+    itemId: string;
+    itemName: string;
+    itemCode: string;
+    sellerSold: number;
+    shopSold: number;
+    totalSold: number;
+    revenue: number;
+    byVariant: { size?: string; color?: string; quantity: number }[];
+  }[];
+  topSellers: { sellerId: string; sellerName: string; totalSold: number; revenue: number }[];
+}
+
+export const analyticsApi = {
+  get: () => api.get<AnalyticsResult>(`${W}/analytics`).then((r) => r.data),
 };
 
 export const categoriesApi = {

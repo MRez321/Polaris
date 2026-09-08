@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 
 import { Modal } from '@/components/common/Modal';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { SelectMenu } from '@/components/ui/select-menu';
 import { galleryApi, type GalleryImage } from '@/lib/galleryApi';
 import { GALLERY_CATEGORIES, galleryCategoryLabel } from '@/components/common/ImagePickerModal';
@@ -207,6 +208,7 @@ const GalleryImageDetailModal: React.FC<DetailModalProps> = ({ image, onClose, o
   const [category, setCategory] = useState('general');
   const [tagsInput, setTagsInput] = useState('');
   const [busy, setBusy] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   useEffect(() => {
     if (image) {
@@ -240,7 +242,6 @@ const GalleryImageDetailModal: React.FC<DetailModalProps> = ({ image, onClose, o
   }
 
   async function handleDelete(): Promise<void> {
-    if (!confirm('این تصویر برای همیشه حذف شود؟')) return;
     setBusy(true);
     try {
       await galleryApi.remove(image!.id);
@@ -251,6 +252,11 @@ const GalleryImageDetailModal: React.FC<DetailModalProps> = ({ image, onClose, o
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleDeleteConfirmed(): Promise<void> {
+    setConfirmDeleteOpen(false);
+    await handleDelete();
   }
 
   return (
@@ -317,7 +323,7 @@ const GalleryImageDetailModal: React.FC<DetailModalProps> = ({ image, onClose, o
           <button
             type="button"
             disabled={busy}
-            onClick={() => void handleDelete()}
+            onClick={() => setConfirmDeleteOpen(true)}
             className="px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-500/10 text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -342,6 +348,15 @@ const GalleryImageDetailModal: React.FC<DetailModalProps> = ({ image, onClose, o
           </div>
         </div>
       </div>
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title="حذف تصویر گالری"
+        description="این تصویر برای همیشه حذف شود؟ این عملیات قابل بازگردانی نیست."
+        confirmLabel="حذف برای همیشه"
+        destructive
+        onConfirm={() => void handleDeleteConfirmed()}
+      />
     </Modal>
   );
 };

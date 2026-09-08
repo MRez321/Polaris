@@ -70,6 +70,9 @@ export async function createItem(data: Partial<typeof items.$inferInsert>) {
             ...(data.description !== undefined ? { description: data.description } : {}),
             ...(data.variantPrices !== undefined ? { variantPrices: data.variantPrices } : {}),
             ...(data.imageUrl !== undefined ? { imageUrl: data.imageUrl } : {}),
+            ...(data.purchasePriceUsd !== undefined ? { purchasePriceUsd: data.purchasePriceUsd } : {}),
+            ...(data.costBreakdown !== undefined ? { costBreakdown: data.costBreakdown } : {}),
+            ...(data.productionStatus !== undefined ? { productionStatus: data.productionStatus } : {}),
             images: data.images ?? [],
         });
     const inserted = await db.select().from(items).where(eq(items.id, id));
@@ -84,6 +87,24 @@ export async function updateItem(id: string, data: Partial<typeof items.$inferIn
     await db
         .update(items)
         .set({ ...patch, updatedAt: new Date() })
+        .where(eq(items.id, id));
+    const updated = await db.select().from(items).where(eq(items.id, id));
+    emitDataChanged('item', 'update');
+    return updated[0]!;
+}
+
+/**
+ * Flips a pending_production item to 'ready' — the made-to-order garment
+ * finished production and is now sellable through sellers and the shop.
+ */
+export async function markItemReady(id: string) {
+    const existing = await db.select().from(items).where(eq(items.id, id));
+    const row = existing[0];
+    if (!row) throw notFound('کالا یافت نشد');
+    if (row.productionStatus === 'ready') return row;
+    await db
+        .update(items)
+        .set({ productionStatus: 'ready', updatedAt: new Date() })
         .where(eq(items.id, id));
     const updated = await db.select().from(items).where(eq(items.id, id));
     emitDataChanged('item', 'update');
@@ -450,6 +471,9 @@ export async function submitReturn(input: ReturnInput, actorName: string) {
                 totalAmount: value,
                 condition: ret.condition,
                 ...(ret.reason !== undefined ? { reason: ret.reason } : {}),
+                // Preserve the matched variant so return records show size/color.
+                ...(line.selectedSize !== undefined ? { selectedSize: line.selectedSize } : {}),
+                ...(line.selectedColor !== undefined ? { selectedColor: line.selectedColor } : {}),
             });
         }
 

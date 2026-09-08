@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { toJalaliDate, toPersianDigits } from '@/utils/persian';
 import { Modal } from '@/components/common/Modal';
 import { SelectMenu } from '@/components/ui/select-menu';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 
 interface ManagedUser {
   id: string;
@@ -47,6 +48,7 @@ export const UsersManager: React.FC = () => {
   // List filters: search matches name/email; role narrows the list.
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+  const [removeTarget, setRemoveTarget] = useState<ManagedUser | null>(null);
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
@@ -142,11 +144,6 @@ export const UsersManager: React.FC = () => {
   };
 
   const handleRemoveUser = async (user: ManagedUser) => {
-    const confirmed = window.confirm(
-      `آیا از حذف کامل کاربر «${user.name}» مطمئن هستید؟ این عملیات غیرقابل بازگشت است.`
-    );
-    if (!confirmed) return;
-
     setBusyKey(`remove:${user.id}`);
     const { error } = await authClient.admin.removeUser({ userId: user.id });
     setBusyKey(null);
@@ -322,7 +319,7 @@ export const UsersManager: React.FC = () => {
 
                   <button
                     type="button"
-                    onClick={() => handleRemoveUser(user)}
+                    onClick={() => setRemoveTarget(user)}
                     disabled={isSelf || busyKey === `remove:${user.id}`}
                     title="حذف کامل کاربر"
                     className="p-2 rounded-xl bg-rose-500/15 text-rose-600 dark:text-rose-400 hover:bg-rose-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
@@ -423,6 +420,18 @@ export const UsersManager: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={removeTarget !== null}
+        onOpenChange={(open) => !open && setRemoveTarget(null)}
+        title="حذف کامل کاربر"
+        description={`آیا از حذف کامل کاربر «${removeTarget?.name ?? ''}» مطمئن هستید؟ این عملیات غیرقابل بازگشت است.`}
+        confirmLabel="حذف کاربر"
+        destructive
+        onConfirm={() => {
+          if (removeTarget) void handleRemoveUser(removeTarget);
+        }}
+      />
     </div>
   );
 };

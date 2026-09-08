@@ -1,17 +1,29 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { DashboardOverview } from '@/modules/workshop/dashboard/DashboardOverview';
 import { useData } from '@/modules/workshop/context/DataContext';
 import { useUI } from '@/modules/workshop/context/UIContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useComputedStats } from '@/modules/workshop/hooks/useComputedStats';
+import { companyApi, getApiErrorMessage } from '@/lib/api';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { sellers, consignments, payments, items } = useData();
+  const { sellers, consignments, payments, items, workshopInfo, setWorkshopInfo } = useData();
   const { openQuickHandover, openQuickPayment, setSelectedConsignment } = useUI();
   const { isDarkMode } = useTheme();
   const stats = useComputedStats();
+
+  // Persist widget-visibility toggles into company_settings.dashboardPrefs.
+  const handlePrefsChange = (prefs: { [widgetId: string]: boolean }) => {
+    setWorkshopInfo({ ...workshopInfo, dashboardPrefs: prefs });
+    companyApi
+      .update({ dashboardPrefs: prefs })
+      .catch((err) =>
+        toast.error(getApiErrorMessage(err, 'ذخیره تنظیمات نمایش داشبورد ناموفق بود'))
+      );
+  };
 
   return (
     <DashboardOverview
@@ -41,6 +53,8 @@ const DashboardPage: React.FC = () => {
           navigate(`/workshop/${tab}`);
         }
       }}
+      dashboardPrefs={workshopInfo.dashboardPrefs}
+      onDashboardPrefsChange={handlePrefsChange}
     />
   );
 };

@@ -4,8 +4,9 @@ import {
   ArrowRight,
   ArrowLeftRight,
   Boxes,
-  CalendarClock,
   CreditCard,
+  ShoppingBag,
+  CalendarClock,
   History,
   MapPin,
   PackagePlus,
@@ -16,6 +17,7 @@ import {
   Ruler,
   ScrollText,
   SearchX,
+  Search,
   ShieldCheck,
   Wallet,
 } from 'lucide-react';
@@ -27,7 +29,7 @@ import {
 } from '@/utils/persian';
 import { resolveVariantPrice, hasVariantPrices } from '@/utils/variantPrices';
 import { useData } from '@/modules/workshop/context/DataContext';
-import { auditApi } from '@/lib/api';
+import { auditApi, ordersApi } from '@/lib/api';
 import { toast } from 'sonner';
 import { Badge } from '@/components/common/Badge';
 import { SafeImage } from '@/components/common/SafeImage';
@@ -37,6 +39,7 @@ import type {
   Consignment,
   ConsignmentReturn,
   GarmentItem,
+  Order,
   PaymentRecord,
   Seller,
   StaffMember,
@@ -49,6 +52,7 @@ type TimelineKind =
   | 'consignment'
   | 'item_line'
   | 'return_line'
+  | 'shop_sale'
   | 'payment'
   | 'return'
   | 'activity'
@@ -119,6 +123,7 @@ const KIND_META: Record<
 > = {
   consignment: { Icon: ArrowLeftRight, boxCls: 'bg-brand/15 border-brand/30', iconCls: 'text-brand-ink dark:text-brand' },
   item_line: { Icon: ArrowLeftRight, boxCls: 'bg-brand/15 border-brand/30', iconCls: 'text-brand-ink dark:text-brand' },
+  shop_sale: { Icon: ShoppingBag, boxCls: 'bg-emerald-500/15 border-emerald-500/30', iconCls: 'text-emerald-600 dark:text-emerald-400' },
   payment: { Icon: Receipt, boxCls: 'bg-emerald-500/15 border-emerald-500/30', iconCls: 'text-emerald-600 dark:text-emerald-400' },
   return: { Icon: RotateCcw, boxCls: 'bg-rose-500/15 border-rose-500/30', iconCls: 'text-rose-600 dark:text-rose-400' },
   return_line: { Icon: RotateCcw, boxCls: 'bg-rose-500/15 border-rose-500/30', iconCls: 'text-rose-600 dark:text-rose-400' },
@@ -300,9 +305,29 @@ export const EntityProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const { items, sellers, consignments, payments, returns, staffMembers, owners, categories } = useData();
 
+  // Shop orders live outside DataContext; fetched directly for item sales tracking.
+  const [orders, setOrders] = useState<Order[] | null>(null);
+  const [timelineTab, setTimelineTab] = useState<'all' | 'shop' | 'seller'>('all');
+  const [historySearch, setHistorySearch] = useState('');
+
   // Expenses live outside DataContext (see WorkshopManager); fetched directly for owner profiles.
   const [ownerExpenses, setOwnerExpenses] = useState<WorkshopExpense[] | null>(null);
 
+  useEffect(() => {
+    if (type !== 'items') return;
+    let active = true;
+    ordersApi
+      .all()
+      .then((list) => {
+        if (active) setOrders(list);
+      })
+      .catch(() => {
+        if (active) setOrders([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [type]);
   useEffect(() => {
     if (type !== 'owners') return;
     let active = true;
@@ -390,16 +415,56 @@ export const EntityProfilePage: React.FC = () => {
         });
       });
     }
-    entries.push({
-      id: `${item.id}-created`,
-      at: safeTime(item.createdAt),
-      kind: 'created',
-      title: 'ثبت کالا در انبار',
-      description: `قیمت تمام‌شده کارگاه: ${formatToman(item.costPrice)}`,
-    });
+    // Shop (website) order lines for this item — timeline + sales-tracking box.
+    let shopSold = 0;
+    const shopByVariant = new Map<string, number>();
+    for (const o of orders ?? []) {
+      if (o.status === 'cancelled') continue;
+      o.items.forEach((line, idx) => {
+        if (line.itemId !== item.id) return;
+        shopSold += line.quantity;
+        const variantKey = `${line.size || '—'} / ${line.color || '—'}`;
+        shopByVariant.set(variantKey, (shopByVariant.get(variantKey) ?? 0) + line.quantity);
+        entries.push({
+          id: `${o.id}-line-${idx}`,
+          at: safeTime(o.createdAt),
+          kind: 'shop_sale',
+          title: `فروش سایت — سفارش ${o.code}`,
+          description: [
+            `${toPersianDigits(line.quantity)} عدد`,
+            line.size ? `سایز ${line.size}` : '',
+            line.color ? `رنگ ${line.color}` : '',
+            o.customerName,
+          ]
+            .filter(Boolean)
+            .join(' — '),
+          amount: line.price * line.quantity,
+        });
+      });
+    }
+    // Seller-channel sales from consignment lines.
+    let sellerSold = 0;
+    const sellerByVariant = new Map<string, number>();
+    for (const c of notDeleted<Consignment>(consignments)) {
+      c.items.forEach((line: ConsignmentItemLine) => {
+        if (line.itemId !== item.id || line.soldQuantity <= 0) return;
+        sellerSold += line.soldQuantity;
+        const variantKey = `${line.selectedSize || '—'} / ${line.selectedColor || '—'}`;
+        sellerByVariant.set(variantKey, (sellerByVariant.get(variantKey) ?? 0) + line.soldQuantity);
+      });
+    }
 
-    return { missing: false as const, item, categoryLabel, entries };
-  }, [type, id, items, consignments, returns, categories]);
+    return {
+      missing: false as const,
+      item,
+      categoryLabel,
+      entries,
+      shopSold,
+      sellerSold,
+      shopByVariant: [...shopByVariant.entries()].sort((a, b) => b[1] - a[1]),
+      sellerByVariant: [...sellerByVariant.entries()].sort((a, b) => b[1] - a[1]),
+    };
+  }, [type, id, items, consignments, returns, categories, orders]);
 
   /* ------------------------------ seller profile ----------------------------- */
 
@@ -547,6 +612,28 @@ export const EntityProfilePage: React.FC = () => {
 
   const activeView = itemView || sellerView || staffView || ownerView;
 
+  // Items only: filter timeline by channel tab + search across title/description.
+  // Computed unconditionally (before the not-found early return) so the hook
+  // count stays stable between loading and loaded renders.
+  const visibleEntries = useMemo(() => {
+    const source = activeView && !activeView.missing ? activeView.entries : [];
+    const sorted = [...source].sort((a, b) => b.at - a.at);
+    if (!activeView || !('item' in activeView)) return sorted;
+    let list = sorted;
+    if (timelineTab === 'shop') {
+      list = list.filter((e) => e.kind === 'shop_sale');
+    } else if (timelineTab === 'seller') {
+      list = list.filter((e) => e.kind === 'item_line' || e.kind === 'return_line' || e.kind === 'consignment');
+    }
+    const q = historySearch.trim();
+    if (q) {
+      list = list.filter(
+        (e) => (e.title && e.title.includes(q)) || (e.description && e.description.includes(q))
+      );
+    }
+    return list;
+  }, [activeView, timelineTab, historySearch]);
+
   if (!['items', 'sellers', 'staff', 'owners'].includes(type || '') || !activeView || activeView.missing) {
     return (
       <div className="max-w-xl mx-auto mt-10 glass-panel rounded-2xl border border-stone-200 dark:border-white/5 p-8 text-center space-y-4">
@@ -566,7 +653,7 @@ export const EntityProfilePage: React.FC = () => {
     );
   }
 
-  const sortedEntries = [...activeView.entries].sort((a, b) => b.at - a.at);
+
 
   const headerBlock = (() => {
 
@@ -604,6 +691,42 @@ export const EntityProfilePage: React.FC = () => {
             <StatBox label="جنس پارچه">{item.fabric}</StatBox>
             <StatBox label="حد هشدار کسری">{toPersianDigits(item.minStockThreshold)} عدد</StatBox>
           </div>
+
+          {/* Stock split: workshop + seller-held */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-bold text-stone-500 dark:text-gray-400 shrink-0">تفکیک موجودی:</span>
+            <Chip>کارگاه: {toPersianDigits(item.stockQuantity)} عدد</Chip>
+            {item.sellerHeld != null && item.sellerHeld > 0 && (
+              <Chip>نزد دست‌فروش‌ها: {toPersianDigits(item.sellerHeld)} عدد</Chip>
+            )}
+            {item.productionStatus === 'pending_production' && (
+              <Chip>در انتظار تولید</Chip>
+            )}
+          </div>
+
+          {/* USD purchase price + cost breakdown */}
+          {(item.purchasePriceUsd != null || item.costBreakdown) && (
+            <div className="rounded-xl bg-stone-100 dark:bg-black/40 border border-black/5 dark:border-white/5 p-3 space-y-2">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="text-[11px] font-bold text-brand">قیمت خرید و اجزای هزینه (تومان)</span>
+                {item.purchasePriceUsd != null && (
+                  <span className="text-[11px] font-mono text-stone-500 dark:text-gray-400" dir="ltr">
+                    Purchase: ${toPersianDigits(item.purchasePriceUsd.toFixed(2))}
+                  </span>
+                )}
+              </div>
+              {item.costBreakdown && (
+                <div className="flex flex-wrap gap-1.5">
+                  {item.costBreakdown.fabric > 0 && <Chip>پارچه: {formatToman(item.costBreakdown.fabric)}</Chip>}
+                  {item.costBreakdown.sewing > 0 && <Chip>دوخت: {formatToman(item.costBreakdown.sewing)}</Chip>}
+                  {item.costBreakdown.transport > 0 && <Chip>حمل: {formatToman(item.costBreakdown.transport)}</Chip>}
+                  {item.costBreakdown.accessories > 0 && <Chip>یراق‌آلات: {formatToman(item.costBreakdown.accessories)}</Chip>}
+                  {item.costBreakdown.packaging > 0 && <Chip>بسته‌بندی: {formatToman(item.costBreakdown.packaging)}</Chip>}
+                </div>
+              )}
+            </div>
+          )}
+
 
           {/* Three-column price block */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -902,30 +1025,133 @@ export const EntityProfilePage: React.FC = () => {
         <span>بازگشت</span>
       </button>
 
+      {/* Item gallery — at the top for item profiles */}
+      {'item' in activeView && <ItemGallery item={activeView.item} />}
+
       {/* Summary card */}
       <section className="glass-panel p-4 sm:p-6 rounded-2xl border border-stone-200 dark:border-brand/20 shadow-md space-y-4">
         {headerBlock}
       </section>
 
-      {'item' in activeView && <ItemGallery item={activeView.item} />}
+      {/* Sales tracking box (items only): per-channel sales by variant */}
+      {'item' in activeView && (
+        <section className="glass-panel p-4 sm:p-6 rounded-2xl border border-stone-200 dark:border-white/5 shadow-md space-y-4">
+          <h3 className="text-sm sm:text-base font-black text-stone-900 dark:text-white flex items-center gap-2">
+            <ShoppingBag className="w-5 h-5 text-brand" />
+            <span>پیگیری فروش</span>
+          </h3>
+          {activeView.shopSold === 0 && activeView.sellerSold === 0 ? (
+            <p className="text-xs text-stone-400 py-4 text-center">فروشی برای این کالا ثبت نشده است</p>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+                <StatBox label="فروش سایت (فروشگاه)">
+                  <span className="text-emerald-600 dark:text-emerald-400">
+                    {toPersianDigits(activeView.shopSold)} عدد
+                  </span>
+                </StatBox>
+                <StatBox label="فروش امانی (دست‌فروش‌ها)">
+                  <span className="text-sky-600 dark:text-sky-400">
+                    {toPersianDigits(activeView.sellerSold)} عدد
+                  </span>
+                </StatBox>
+                <StatBox label="مجموع فروش">
+                  <span>{toPersianDigits(activeView.shopSold + activeView.sellerSold)} عدد</span>
+                </StatBox>
+                <StatBox label="موجودی فعلی کارگاه">
+                  <span>{toPersianDigits(activeView.item.stockQuantity)} عدد</span>
+                </StatBox>
+              </div>
+              {(activeView.shopByVariant.length > 0 || activeView.sellerByVariant.length > 0) && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="rounded-xl bg-emerald-500/5 border border-emerald-500/20 p-3 space-y-2">
+                    <p className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">سایز/رنگ فروش‌شده در فروشگاه</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {activeView.shopByVariant.length === 0 ? (
+                        <span className="text-[11px] text-stone-400">—</span>
+                      ) : (
+                        activeView.shopByVariant.map(([variant, qty]) => (
+                          <Chip key={`shop-${variant}`}>
+                            {variant} — {toPersianDigits(qty)} عدد
+                          </Chip>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-sky-500/5 border border-sky-500/20 p-3 space-y-2">
+                    <p className="text-[11px] font-bold text-sky-600 dark:text-sky-400">سایز/رنگ فروش‌شده امانی</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {activeView.sellerByVariant.length === 0 ? (
+                        <span className="text-[11px] text-stone-400">—</span>
+                      ) : (
+                        activeView.sellerByVariant.map(([variant, qty]) => (
+                          <Chip key={`seller-${variant}`}>
+                            {variant} — {toPersianDigits(qty)} عدد
+                          </Chip>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </section>
+      )}
 
-      {/* History timeline */}
+      {/* History timeline with channel tabs + search (items only) */}
       <section className="glass-panel p-4 sm:p-6 rounded-2xl border border-stone-200 dark:border-white/5 shadow-md">
-        <h3 className="text-sm sm:text-base font-black text-stone-900 dark:text-white flex items-center gap-2 mb-4">
-          <History className="w-5 h-5 text-brand" />
-          <span>{historyTitle}</span>
-        </h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <h3 className="text-sm sm:text-base font-black text-stone-900 dark:text-white flex items-center gap-2">
+            <History className="w-5 h-5 text-brand" />
+            <span>{historyTitle}</span>
+          </h3>
+          {'item' in activeView && (
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex gap-1 p-1 rounded-xl bg-stone-200 dark:bg-black/40 border border-black/5 dark:border-white/5">
+                {([
+                  { key: 'all', label: 'همه' },
+                  { key: 'shop', label: 'فروشگاه' },
+                  { key: 'seller', label: 'دست‌فروش' },
+                ] as const).map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setTimelineTab(t.key)}
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+                      timelineTab === t.key
+                        ? 'bg-brand text-brand-on shadow-sm'
+                        : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400" />
+                <input
+                  type="text"
+                  value={historySearch}
+                  onChange={(e) => setHistorySearch(e.target.value)}
+                  placeholder="جستجو در تاریخچه…"
+                  className="w-full sm:w-44 pr-8 pl-2.5 py-1.5 rounded-xl glass-input text-[11px] outline-none"
+                />
+              </div>
+            </div>
+          )}
+        </div>
 
         {'sharesLoading' in activeView && activeView.sharesLoading ? (
           <p className="py-8 text-center text-xs text-stone-400">در حال دریافت تاریخچه هزینه‌ها…</p>
-        ) : sortedEntries.length === 0 ? (
+        ) : visibleEntries.length === 0 ? (
           <div className="py-8 text-center space-y-2">
             <CalendarClock className="w-10 h-10 text-stone-400 mx-auto" />
             <p className="text-sm font-bold text-stone-500 dark:text-gray-400">رویدادی ثبت نشده است</p>
           </div>
         ) : (
           <ol className="relative space-y-4 pr-1">
-            {sortedEntries.map((e) => {
+            {visibleEntries.map((e) => {
               const meta = KIND_META[e.kind];
               const { Icon } = meta;
               return (

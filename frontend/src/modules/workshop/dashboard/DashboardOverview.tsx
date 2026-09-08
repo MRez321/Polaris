@@ -6,6 +6,8 @@ import {
   Package,
   ArrowDownLeft,
   ArrowUpRight,
+  Settings,
+  X,
 } from 'lucide-react';
 import type {
   DashboardStats,
@@ -20,6 +22,8 @@ import { SalesDebtChart } from './SalesDebtChart';
 import { TopSellersCard } from './TopSellersCard';
 import { formatToman, toJalaliDate, toJalaliDateTime, toPersianDigits } from '@/utils/persian';
 import { Badge } from '@/components/common/Badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Switch } from '@/components/ui/switch';
 
 interface DashboardOverviewProps {
   stats: DashboardStats;
@@ -32,7 +36,9 @@ interface DashboardOverviewProps {
   onOpenPayment?: () => void;
   onSelectSeller?: (seller: Seller) => void;
   onSelectConsignment?: (c: Consignment) => void;
-  onGoToTab?: (tab: any) => void;
+  onGoToTab?: (tab: string) => void;
+  dashboardPrefs?: { [widgetId: string]: boolean };
+  onDashboardPrefsChange?: (prefs: { [widgetId: string]: boolean }) => void;
 }
 
 export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
@@ -45,8 +51,25 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   onOpenPayment = () => {},
   onSelectSeller = (_seller: Seller) => {},
   onSelectConsignment = (_c: Consignment) => {},
-  onGoToTab = (_tab: any) => {},
+  onGoToTab = (_tab: string) => {},
+  dashboardPrefs,
+  onDashboardPrefsChange = () => {},
 }) => {
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
+
+  // Widget visibility: defaults ON, overridden by persisted dashboardPrefs.
+  const isVisible = (id: string) => dashboardPrefs?.[id] !== false;
+  const toggleWidget = (id: string, checked: boolean) => {
+    onDashboardPrefsChange({ ...dashboardPrefs, [id]: checked });
+  };
+
+  const WIDGETS: { id: string; label: string }[] = [
+    { id: 'kpiCards', label: 'کارت‌های شاخص کلیدی' },
+    { id: 'salesDebtChart', label: 'نمودار فروش و بدهی' },
+    { id: 'topSellers', label: 'برترین دست‌فروشان' },
+    { id: 'recentHandovers', label: 'آخرین واگذاری‌های امانی' },
+    { id: 'recentPayments', label: 'آخرین دریافت‌ها' },
+  ];
   const safeConsignments = consignments || [];
   const safeSellers = sellers || [];
   const safePayments = payments || [];
@@ -89,6 +112,41 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Widget visibility settings (gear) */}
+      <div className="flex justify-end">
+        <Collapsible
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+          className="w-full"
+        >
+          <CollapsibleTrigger className="inline-flex items-center gap-2 text-xs font-bold px-3.5 py-2 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-stone-700 dark:text-gray-200 hover:bg-stone-100 dark:hover:bg-white/10 transition-all active:scale-95">
+            {settingsOpen ? <X className="w-4 h-4" /> : <Settings className="w-4 h-4" />}
+            تنظیمات نمایش داشبورد
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="glass-panel p-4 rounded-2xl mt-3 border border-brand/20 shadow-xl">
+              <p className="text-xs font-black text-stone-700 dark:text-gray-300 mb-3">
+                نمایش یا پنهان‌سازی بخش‌های داشبورد:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {WIDGETS.map((w) => (
+                  <label
+                    key={w.id}
+                    className="flex items-center justify-between gap-3 p-3 rounded-xl border border-black/5 dark:border-white/10 bg-white/50 dark:bg-white/5 cursor-pointer"
+                  >
+                    <span className="text-xs font-bold text-stone-800 dark:text-gray-200">{w.label}</span>
+                    <Switch
+                      checked={isVisible(w.id)}
+                      onCheckedChange={(checked: boolean) => toggleWidget(w.id, checked)}
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
+
       {/* Overdue Alert Banner */}
       <OverdueAlertBanner
         overdueConsignments={overdueConsignments}
@@ -100,6 +158,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       />
 
       {/* KPI Cards Grid */}
+      {isVisible('kpiCards') && (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
           title="کل طلب جاری از دست‌فروشان"
@@ -143,12 +202,17 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           onClick={() => onGoToTab('finances/payments')}
         />
       </div>
+      )}
 
       {/* Interactive Charts & Top Sellers */}
+      {(isVisible('salesDebtChart') || isVisible('topSellers')) && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {isVisible('salesDebtChart') && (
         <div className="lg:col-span-2">
           <SalesDebtChart darkMode={darkMode} />
         </div>
+        )}
+        {isVisible('topSellers') && (
         <div className="lg:col-span-1">
           <TopSellersCard
             sellers={safeSellers}
@@ -156,9 +220,12 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             onRecordPayment={() => onOpenPayment()}
           />
         </div>
+        )}
       </div>
+      )}
 
       {/* Recent Activity & Recent Payments */}
+      {isVisible('recentHandovers') && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Handover Consignments */}
         <div className="glass-panel p-5 rounded-2xl shadow-xl transition-all">
@@ -222,8 +289,11 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             })}
           </div>
         </div>
+      </div>
+      )}
 
-        {/* Recent Payments */}
+      {/* Recent Payments */}
+      {isVisible('recentPayments') && (
         <div className="glass-panel p-5 rounded-2xl shadow-xl transition-all">
           <div className="flex items-center justify-between mb-4">
             <h4 className="font-black text-stone-900 dark:text-white text-sm sm:text-base flex items-center gap-2">
@@ -268,7 +338,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             ))}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -24,6 +24,7 @@ import {
 import { useUI } from '@/modules/workshop/context/UIContext';
 import { useData } from '@/modules/workshop/context/DataContext';
 import { toPersianDigits } from '@/utils/persian';
+import { useBrand } from '@/context/BrandContext';
 
 interface SideMenuProps {
   open: boolean;
@@ -39,8 +40,9 @@ interface SideMenuProps {
 export const SideMenu: React.FC<SideMenuProps> = ({ open, onOpenChange }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { openQuickHandover, openQuickPayment } = useUI();
   const { consignments } = useData();
+  const { openQuickHandover, openQuickPayment } = useUI();
+  const { company } = useBrand();
 
   const overdueCount = consignments.filter(
     (c) => (c.remainingAmount || 0) > 0 && new Date(c.dueDate).getTime() < Date.now()
@@ -80,10 +82,14 @@ export const SideMenu: React.FC<SideMenuProps> = ({ open, onOpenChange }) => {
       <SheetContent side="start" showCloseButton={false} className="w-80 p-0 bg-white dark:bg-[#141416] border-e border-stone-200 dark:border-white/10">
         <SheetHeader className="p-4 pb-2 border-b border-stone-200 dark:border-white/5">
           <SheetTitle className="flex items-center gap-2.5 text-base font-black text-stone-900 dark:text-white">
-            <span className="w-9 h-9 rounded-xl bg-brand text-brand-on flex items-center justify-center shadow-md">
-              <Scissors className="w-5 h-5 -rotate-45 text-black" />
+            <span className="w-9 h-9 rounded-xl bg-brand text-brand-on flex items-center justify-center shadow-md overflow-hidden">
+            {company?.logoUrl ? (
+                <img src={company.logoUrl} alt={company.brandName || 'لوگو'} className="w-full h-full object-cover" />
+              ) : (
+                <Scissors className="w-5 h-5 -rotate-45 text-black" />
+              )}
             </span>
-            پولاریس استایل
+            {company?.brandName || company?.name || 'پولاریس استایل'}
           </SheetTitle>
           <SheetDescription className="text-[11px] font-medium text-stone-600 dark:text-gray-400">
             سیستم مدیریت کارگاه

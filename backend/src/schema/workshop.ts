@@ -8,6 +8,7 @@ import {
     int,
     bigint,
     json,
+    decimal,
     longtext,
     index,
 } from 'drizzle-orm/mysql-core';
@@ -35,6 +36,19 @@ export interface VariantPrices {
     sizes?: Record<string, Partial<{ costPrice: number; consignmentPrice: number; retailPrice: number }>>;
     colors?: Record<string, Partial<{ costPrice: number; consignmentPrice: number; retailPrice: number }>>;
 }
+
+/**
+ * Workshop cost breakdown for a single garment unit (toman). The five
+ * components sum to the total workshop cost shown on the item form.
+ */
+export interface CostBreakdown {
+    fabric: number;
+    sewing: number;
+    accessories: number;
+    transport: number;
+    packaging: number;
+}
+
 export interface ConsignmentItemLine {
     itemId: string;
     itemName: string;
@@ -56,6 +70,8 @@ export interface ReturnItemLine {
     totalAmount: number;
     condition: 'healthy' | 'damaged';
     reason?: string;
+    selectedSize?: string;
+    selectedColor?: string;
 }
 
 export interface DebtAllocation {
@@ -149,6 +165,11 @@ export const items = mysqlTable(
         description: text('description'),
         // Per-size/per-color price overrides; NULL = one price for all variants.
         variantPrices: json('variant_prices').$type<VariantPrices>(),
+        purchasePriceUsd: decimal('purchase_price_usd', { precision: 10, scale: 2, mode: 'number' }),
+        // Workshop unit-cost breakdown (toman): fabric + sewing + accessories + transport + packaging.
+        costBreakdown: json('cost_breakdown').$type<CostBreakdown>(),
+        // 'ready' = sellable through sellers/shop; 'pending_production' = order waiting to be made.
+        productionStatus: varchar('production_status', { length: 32 }).notNull().default('ready'),
         createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
         updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
         isDeleted: boolean('is_deleted').notNull().default(false),
@@ -341,3 +362,49 @@ export const profitDistributions = mysqlTable('profit_distributions', {
     notes: text('notes'),
     createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });
+
+/**
+ * Damage/returns tracking: damaged or returned goods from any source —
+ * sellers, customers, provider loads, or damage discovered in-process.
+ * Lifecycle: 'damaged' → (optionally repaired) → 'fixed', at which point
+ * the quantity re-enters warehouse stock; or 'disposed'/'written_off'.
+ */
+export const damageRecords = mysqlTable(
+    'damage_records',
+    {
+        id: varchar('id', { length: 36 }).primaryKey(),
+        code: varchar('code', { length: 32 }).notNull().unique(),
+        itemId: varchar('item_id', { length: 36 }).notNull(),
+        itemName: varchar('item_name', { length: 255 }).notNull(),
+        itemCode: varchar('item_code', { length: 32 }).notNull().default(''),
+        // Where the damage was discovered: seller / customer / provider / process.
+        source: varchar('source', { length: 32 }).notNull(),
+        // Free-form identifier of the party involved (seller/customer/staff name).
+        sourceName: varchar('source_name', { length: 255 }).notNull().default(''),
+        quantity: int('quantity').notNull().default(1),
+        selectedSize: varchar('selected_size', { length: 64 }),
+        selectedColor: varchar('selected_color', { length: 64 }),
+        // 'damaged' = needs repair/decision, 'fixed' = back in stock, 'disposed' = discarded.
+        status: varchar('status', { length: 32 }).notNull().default('damaged'),
+        // How it was damaged (free text reason).
+        damageReason: text('damage_reason'),
+        // Where the item physically is right now (workshop shelf, seller, etc.).
+        currentLocation: varchar('current_location', { length: 255 }).notNull().default(''),
+        // Who reported/recorded it.
+        reportedBy: varchar('reported_by', { length: 255 }).notNull().default(''),
+        reportedAt: datetime('reported_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+        // When (and by whom) it was repaired — set on the fix action.
+        fixedAt: datetime('fixed_at'),
+        fixedBy: varchar('fixed_by', { length: 255 }),
+        notes: text('notes'),
+        createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+        updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+        isDeleted: boolean('is_deleted').notNull().default(false),
+        deletedAt: datetime('deleted_at'),
+    },
+    (t) => [
+        index('damage_records_item_id_idx').on(t.itemId),
+        index('damage_records_status_idx').on(t.status),
+        index('damage_records_is_deleted_idx').on(t.isDeleted),
+    ],
+);

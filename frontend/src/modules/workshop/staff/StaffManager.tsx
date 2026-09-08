@@ -32,6 +32,7 @@ import {
 } from '@/modules/workshop/utils/validation';
 import { Modal } from '@/components/common/Modal';
 import { Badge } from '@/components/common/Badge';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { BankCardInput, ShebaInput, detectBankByCard, detectBankBySheba } from '@/components/common/BankInput';
 import { OwnerCard } from '../settings/OwnerCard';
 import { OwnerFormModal } from '../settings/OwnerFormModal';
@@ -59,6 +60,7 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
   const navigate = useNavigate();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<StaffMember | null>(null);
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
@@ -298,13 +300,12 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
   };
 
   const handleDeleteStaffPrompt = (stf: StaffMember) => {
-    if (
-      confirm(
-        `آیا از انتقال پرونده "${stf.name}" به سطل بازیافت اطمینان دارید؟ در بخش تنظیمات و سطل بازیافت قابل بازگردانی خواهد بود.`
-      )
-    ) {
-      onDeleteStaff(stf.id);
-    }
+    setDeleteTarget(stf);
+  };
+
+  const confirmDeleteStaff = () => {
+    if (deleteTarget) onDeleteStaff(deleteTarget.id);
+    setDeleteTarget(null);
   };
 
   const filteredStaff = (staff || []).filter((stf) => {
@@ -1043,6 +1044,16 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
           onDelete={handleDeleteOwner}
         />
       )}
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="انتقال پرونده به سطل بازیافت"
+        description={`آیا از انتقال پرونده «${deleteTarget?.name ?? ''}» به سطل بازیافت اطمینان دارید؟ در بخش تنظیمات و سطل بازیافت قابل بازگردانی خواهد بود.`}
+        confirmLabel="انتقال به بازیافت"
+        destructive
+        onConfirm={confirmDeleteStaff}
+      />
     </div>
   );
 };

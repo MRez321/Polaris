@@ -14,14 +14,16 @@ import { useTheme } from '@/context/ThemeContext';
 import { useUI } from '@/modules/workshop/context/UIContext';
 import { useData } from '@/modules/workshop/context/DataContext';
 import { UserMenu } from '@/components/common/UserMenu';
+import { useBrand } from '@/context/BrandContext';
 import { SideMenu } from './SideMenu';
 
 
 export const Header: React.FC = () => {
   const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useTheme();
-  const { openQuickHandover, openQuickPayment } = useUI();
   const { consignments } = useData();
+  const { openQuickHandover, openQuickPayment } = useUI();
+  const { company } = useBrand();
   const [sideMenuOpen, setSideMenuOpen] = React.useState(false);
 
   const overdueCount = consignments.filter(
@@ -31,18 +33,32 @@ export const Header: React.FC = () => {
   return (
     <header className="sticky top-0 z-40 glass-panel border-b border-stone-200 dark:border-white/5 shadow-sm transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
-        {/* Brand Logo & Name — links to the public storefront */}
+        {/* Hamburger FIRST in DOM — rightmost in RTL; opens the workshop side menu */}
+        <button
+          type="button"
+          onClick={() => setSideMenuOpen(true)}
+          className="md:hidden p-2.5 rounded-xl glass-card hover:border-brand text-stone-800 dark:text-gray-200 transition-all active:scale-95 shadow-sm shrink-0"
+          aria-label="باز کردن منوی کارگاه"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
+        {/* Brand Logo & Name — links to the public storefront, from company_settings */}
         <Link
           to="/"
-          className="flex items-center gap-3 cursor-pointer select-none"
+          className="flex items-center gap-3 cursor-pointer select-none min-w-0"
           title="بازگشت به سایت فروشگاه"
         >
-          <div className="w-10 h-10 rounded-xl bg-brand text-brand-on flex items-center justify-center shadow-lg font-black shrink-0 ring-2 ring-brand/30 transition-transform active:scale-95">
-            <Scissors className="w-5 h-5 -rotate-45 text-black" />
+          <div className="w-10 h-10 rounded-xl bg-brand text-brand-on flex items-center justify-center shadow-lg font-black shrink-0 ring-2 ring-brand/30 transition-transform active:scale-95 overflow-hidden">
+            {company?.logoUrl ? (
+              <img src={company.logoUrl} alt={company.brandName || 'لوگو'} className="w-full h-full object-cover" />
+            ) : (
+              <Scissors className="w-5 h-5 -rotate-45 text-black" />
+            )}
           </div>
-          <div>
-            <h1 className="text-base sm:text-lg font-black tracking-tight text-stone-900 dark:text-white">
-              پولاریس استایل
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-lg font-black tracking-tight text-stone-900 dark:text-white truncate">
+              {company?.brandName || company?.name || 'پولاریس استایل'}
             </h1>
             <p className="text-[11px] text-stone-600 dark:text-gray-400 hidden sm:block font-medium">
               سیستم مدیریت کارگاه
@@ -102,15 +118,6 @@ export const Header: React.FC = () => {
           {/* Auth: shared role-aware user menu (login chip when signed out) */}
           <UserMenu className="glass-card" />
 
-          {/* Hamburger: full workshop side menu (mobile only) */}
-          <button
-            type="button"
-            onClick={() => setSideMenuOpen(true)}
-            className="md:hidden p-2 rounded-xl glass-card hover:border-brand text-stone-800 dark:text-gray-200 transition-all active:scale-95 shadow-sm"
-            aria-label="باز کردن منوی کارگاه"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
         </div>
       </div>
 

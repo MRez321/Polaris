@@ -27,6 +27,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useFavorites } from '@/context/FavoritesContext';
 import { formatToman, toJalaliDateTime, toPersianDigits } from '@/utils/persian';
 import { SafeImage } from '@/components/common/SafeImage';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -662,6 +663,7 @@ const AddressBookSection: React.FC = () => {
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof AddressFormState, string>>>({});
   const [savingAddr, setSavingAddr] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<UserAddress | null>(null);
 
   const load = useCallback(() => {
     setError(null);
@@ -746,7 +748,13 @@ const AddressBookSection: React.FC = () => {
   };
 
   const handleDelete = async (addr: UserAddress) => {
-    if (!window.confirm(`نشانی «${addr.label || addr.city}» حذف شود؟`)) return;
+    setDeleteTarget(addr);
+  };
+
+  const confirmDeleteAddress = async () => {
+    if (!deleteTarget) return;
+    const addr = deleteTarget;
+    setDeleteTarget(null);
     setDeletingId(addr.id);
     try {
       await addressesApi.remove(addr.id);
@@ -963,6 +971,16 @@ const AddressBookSection: React.FC = () => {
           </div>
         </form>
       )}
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="حذف نشانی ارسال"
+        description={`نشانی «${deleteTarget?.label || deleteTarget?.city || ''}» حذف شود؟`}
+        confirmLabel="حذف نشانی"
+        destructive
+        onConfirm={() => void confirmDeleteAddress()}
+      />
     </section>
   );
 };

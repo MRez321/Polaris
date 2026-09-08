@@ -1,5 +1,5 @@
-import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Header } from '@/modules/workshop/layout/Header';
 import { Sidebar } from '@/modules/workshop/layout/Sidebar';
 import { MobileNav } from '@/modules/workshop/layout/MobileNav';
@@ -40,7 +40,13 @@ export const AppLayout: React.FC = () => {
 };
 
 const WorkshopShell: React.FC = () => {
-  const networkStatus = useNetwork();
+  const location = useLocation();
+
+  // Reset scroll on every route change: tab switches inside pages keep the
+  // previous scroll offset without this, landing users mid-page.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
   const {
     quickHandoverOpen,
     quickHandoverSeller,
@@ -62,6 +68,8 @@ const WorkshopShell: React.FC = () => {
     handleSubmitReturn,
     handleUpdateSeller,
   } = useData();
+
+  const networkStatus = useNetwork();
 
   return (
     <div className="relative min-h-screen flex flex-col font-sans transition-colors duration-200 overflow-x-clip" dir="rtl">

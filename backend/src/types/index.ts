@@ -23,6 +23,47 @@ export interface VariantPrices {
     colors?: Record<string, Partial<{ costPrice: number; consignmentPrice: number; retailPrice: number }>>;
 }
 
+/**
+ * Workshop cost breakdown for one garment unit (toman). Components sum to
+ * the total workshop cost (قیمت تمام شده کارگاه).
+ */
+export interface CostBreakdown {
+    fabric: number;
+    sewing: number;
+    accessories: number;
+    transport: number;
+    packaging: number;
+}
+
+/**
+ * A damage/return record: damaged goods from sellers, customers, providers,
+ * or in-process. 'fixed' records re-enter warehouse stock.
+ */
+export interface DamageRecord {
+    id: string;
+    code: string;
+    itemId: string;
+    itemName: string;
+    itemCode: string;
+    source: 'seller' | 'customer' | 'provider' | 'process';
+    sourceName: string;
+    quantity: number;
+    selectedSize?: string;
+    selectedColor?: string;
+    status: 'damaged' | 'fixed' | 'disposed';
+    damageReason?: string;
+    currentLocation: string;
+    reportedBy: string;
+    reportedAt: string;
+    fixedAt?: string;
+    fixedBy?: string;
+    notes?: string;
+    createdAt: string;
+    updatedAt: string;
+    isDeleted?: boolean;
+    deletedAt?: string;
+}
+
 export interface Owner {
     id: string;
     name: string;
@@ -92,6 +133,12 @@ export interface GarmentItem {
     images?: string[];
     description?: string; // storefront-facing listing text (website shop)
     variantPrices?: VariantPrices; // per-size/per-color overrides; missing = base price
+    // Purchase price of materials/finished goods in USD (2 decimals, e.g. 3.24).
+    purchasePriceUsd?: number;
+    // Workshop unit-cost breakdown in toman; components sum to workshop cost.
+    costBreakdown?: CostBreakdown;
+    // 'ready' = sellable now; 'pending_production' = made-to-order, not yet ready.
+    productionStatus?: 'ready' | 'pending_production';
     createdAt: string;
     updatedAt: string;
     isDeleted?: boolean;
@@ -217,7 +264,7 @@ export interface AuditLog {
     userName: string;
     userRole?: string;
     action: string;
-    entity: 'item' | 'seller' | 'consignment' | 'payment' | 'return' | 'staff' | 'settings' | 'cost' | 'profit' | 'auth' | 'notifications';
+    entity: 'item' | 'seller' | 'consignment' | 'payment' | 'return' | 'damage' | 'staff' | 'settings' | 'cost' | 'profit' | 'auth' | 'notifications' | 'analytics';
     details: string;
     ipAddress: string | null;
 }
@@ -337,6 +384,8 @@ export interface CompanyBranding extends WorkshopInfo {
     secondaryPhone?: string;
     establishedYear?: string;
     theme?: CompanyTheme;
+    analyticsSettings?: { gaMeasurementId?: string; websiteUrl?: string };
+    dashboardPrefs?: Record<string, unknown>;
     owners: Owner[];
 }
 

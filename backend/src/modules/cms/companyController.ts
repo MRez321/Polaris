@@ -19,6 +19,15 @@ const themeSchema = z
         ]),
     })
     .strict();
+const analyticsSettingsSchema = z
+    .object({
+        gaMeasurementId: z.string().optional(),
+        websiteUrl: z.string().optional(),
+    })
+    .strict();
+const dashboardPrefsSchema = z.record(z.string(), z.unknown());
+
+
 
 const companySchema = z.object({
     name: z.string().optional(),
@@ -40,7 +49,10 @@ const companySchema = z.object({
     secondaryPhone: z.string().optional(),
     establishedYear: z.string().optional(),
     theme: themeSchema.optional(),
+    analyticsSettings: analyticsSettingsSchema.optional(),
+    dashboardPrefs: dashboardPrefsSchema.optional(),
 });
+
 
 export async function getCompanyBranding(_req: Request, res: Response): Promise<void> {
     res.json(await getCompany());

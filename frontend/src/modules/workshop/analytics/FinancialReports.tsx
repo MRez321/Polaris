@@ -35,6 +35,7 @@ import type {
   Order,
 } from '@/types';
 import { SelectMenu } from '@/components/ui/select-menu';
+import { DatePicker } from '@/components/ui/date-picker';
 import { formatToman, toPersianDigits, toJalaliDate } from '@/utils/persian';
 import { ordersApi } from '@/lib/api';
 
@@ -115,8 +116,8 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
 }) => {
   const [period, setPeriod] = useState<PeriodType>('this_month');
   const [selectedMonth, setSelectedMonth] = useState<string>('بهمن ۱۴۰۳');
-  const [customStartDate, setCustomStartDate] = useState<string>('1403/10/01');
-  const [customEndDate, setCustomEndDate] = useState<string>('1403/11/30');
+  const [customStartDate, setCustomStartDate] = useState<Date | null>(null);
+  const [customEndDate, setCustomEndDate] = useState<Date | null>(null);
 
   // Workshop expenses + website orders fetched directly (fallback to empty arrays)
   const [expenses, setExpenses] = useState<WorkshopExpense[]>([]);
@@ -152,6 +153,15 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
         const threeMonthsAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
         cFiltered = consignments.filter((c) => new Date(c.date) >= threeMonthsAgo);
         pFiltered = payments.filter((p) => new Date(p.date) >= threeMonthsAgo);
+      } else if (period === 'custom_range' && (customStartDate || customEndDate)) {
+        const start = customStartDate ? new Date(customStartDate.setHours(0, 0, 0, 0)) : null;
+        const end = customEndDate ? new Date(customEndDate.setHours(23, 59, 59, 999)) : null;
+        const inRange = (d: string) => {
+          const t = new Date(d).getTime();
+          return (start ? t >= start.getTime() : true) && (end ? t <= end.getTime() : true);
+        };
+        cFiltered = consignments.filter((c) => inRange(c.date));
+        pFiltered = payments.filter((p) => inRange(p.date));
       }
 
       const hTotal = cFiltered.reduce((sum, c) => sum + (c.totalAmount || 0), 0);
@@ -163,7 +173,7 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
         filteredHandoversTotal: hTotal,
         filteredPaymentsTotal: pTotal,
       };
-    }, [period, consignments, payments]);
+    }, [period, consignments, payments, customStartDate, customEndDate]);
 
   // Filter expenses & orders by the same period window
   const { filteredExpenses, filteredOrders } = useMemo(() => {
@@ -172,18 +182,31 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
     if (period === 'this_week') cutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     else if (period === 'this_month') cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     else if (period === 'past_months') cutoff = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-
-    const exp =
-      cutoff != null
-        ? (expenses || []).filter((e) => new Date(e.date) >= (cutoff as Date))
-        : expenses;
-    const ords =
-      cutoff != null
-        ? (orders || []).filter((o) => new Date(o.createdAt || (o as any).date) >= (cutoff as Date))
-        : orders;
+    let exp: WorkshopExpense[];
+    let ords: Order[];
+    const orderDate = (o: Order): string | Date => o.createdAt ?? '';
+    if (period === 'custom_range' && (customStartDate || customEndDate)) {
+      const start = customStartDate ? new Date(customStartDate.setHours(0, 0, 0, 0)).getTime() : null;
+      const end = customEndDate ? new Date(customEndDate.setHours(23, 59, 59, 999)).getTime() : null;
+      const inRange = (d: string | Date) => {
+        const t = new Date(d).getTime();
+        return (start != null ? t >= start : true) && (end != null ? t <= end : true);
+      };
+      exp = (expenses || []).filter((e) => inRange(e.date));
+      ords = (orders || []).filter((o) => inRange(orderDate(o)));
+    } else {
+      exp =
+        cutoff != null
+          ? (expenses || []).filter((e) => new Date(e.date) >= (cutoff as Date))
+          : expenses;
+      ords =
+        cutoff != null
+          ? (orders || []).filter((o) => new Date(orderDate(o)) >= (cutoff as Date))
+          : orders;
+    }
 
     return { filteredExpenses: exp, filteredOrders: ords };
-  }, [period, expenses, orders]);
+  }, [period, expenses, orders, customStartDate, customEndDate]);
 
   // Aging analysis of debts
   const nowTime = Date.now();
@@ -527,22 +550,20 @@ export const FinancialReports: React.FC<FinancialReportsProps> = ({
           <div className="pt-2 border-t border-black/5 dark:border-white/5 flex flex-wrap items-center gap-3 text-xs">
             <div className="flex items-center gap-2">
               <span className="text-stone-500">از تاریخ:</span>
-              <input
-                type="text"
+              <DatePicker
                 value={customStartDate}
-                onChange={(e) => setCustomStartDate(e.target.value)}
-                placeholder="1403/10/01"
-                className="px-3 py-1.5 rounded-xl glass-input text-xs font-mono outline-none"
+                onValueChange={setCustomStartDate}
+                placeholder="انتخاب تاریخ شروع"
+                format="yyyy/MM/dd"
               />
             </div>
             <div className="flex items-center gap-2">
               <span className="text-stone-500">تا تاریخ:</span>
-              <input
-                type="text"
+              <DatePicker
                 value={customEndDate}
-                onChange={(e) => setCustomEndDate(e.target.value)}
-                placeholder="1403/11/30"
-                className="px-3 py-1.5 rounded-xl glass-input text-xs font-mono outline-none"
+                onValueChange={setCustomEndDate}
+                placeholder="انتخاب تاریخ پایان"
+                format="yyyy/MM/dd"
               />
             </div>
           </div>

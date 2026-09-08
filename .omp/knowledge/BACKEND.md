@@ -41,25 +41,27 @@ backend/
 Legacy `/api/workshop-legacy` inline mount was removed in Phase 5 — `/api/workshop` is the only path; smoke suites assert 404 on legacy.
 
 ## Workshop router endpoints (backend/src/modules/workshop/router.ts)
-
 ```
-GET  /dashboard/stats        GET /audit-logs
+GET  /dashboard/stats        GET /audit-logs        GET /analytics (sales/debt/expense analytics aggregation)
 GET/PUT /orders, PUT /orders/:id          (status transitions)
-GET/POST/PUT/DELETE /items, PUT /items/:id/shop-allocation (row-locked: concurrent handovers/orders can never over-allocate; websiteQuantity only moves via this endpoint, never via PUT /items/:id), GET/POST /categories
+GET/POST/PUT/DELETE /items, PUT /items/:id/shop-allocation (row-locked: concurrent handovers/orders can never over-allocate; websiteQuantity only moves via this endpoint, never via PUT /items/:id), POST /items/:id/mark-ready (pending_production → ready)
+GET/POST /categories
 GET/POST/PUT/DELETE /sellers (+GET /sellers/:id)
 GET/POST/DELETE /consignments, POST /consignments/return, GET /consignments/returns
 GET/POST /payments
 GET/POST/PUT/DELETE /staff, GET/PUT /owners
 GET/POST/PUT/DELETE /expenses, GET/POST /profit-distribution
+GET/POST /damage-records, PUT /damage-records/:id, POST /damage-records/:id/fix (repairs + restocks), (dispose = PUT status)
 GET /trash, POST /trash/restore/:type/:id, PUT /trash/edit-and-restore/:type/:id, DELETE /trash/permanent/:type/:id
 GET/PUT /notifications/settings, POST /notifications/test/{telegram,sms}
 ```
+
+`/api/company` (companyController): GET returns the full CompanyBranding JSON from `company_settings.data`; PUT validates with `companySchema` (Zod) which includes optional `analyticsSettings {gaMeasurementId, websiteUrl}` and flat `dashboardPrefs: Record<string, unknown>` — `updateCompany` shallow-merges fields into the JSON blob (nested objects replace wholesale, so callers always send the complete nested object).
 
 Notes from the old API reference:
 - **Notifications**: credentials live in the DB (JSON blob); env entries (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_PROXY_URL`, `MELIPAYAMAK_API`, `MELIPAYAMAK_USERNAME`) are **fallbacks** used only when no DB value exists. `GET settings` never touches the network; test endpoints send real messages.
 - **Migration 0005**: promotes every remaining legacy `staff`-role user to `admin`. Roles: admin / author / user; accountant/supervisor/tailor/staff are declared but unenforced — do not gate on them.
 - **Socket.io**: endpoint `/socket.io` on same origin; backend still hosts it, frontend client removed.
-```
 
 Controllers are thin (parse → service call → res.json); business logic lives in `services/inventoryService.ts` — soft-delete via trash system, consignment stock math, debt allocation (JSON `DebtAllocation[]` on payments), shop allocation splits.
 

@@ -82,6 +82,15 @@ export interface VariantPriceOverride {
   retailPrice?: number;
 }
 
+// تفکیک قیمت تمام شده کارگاه برای یک واحد کالا (تومان) — مجموع اجزا = قیمت کارگاه
+export interface CostBreakdown {
+  fabric: number; // پارچه
+  sewing: number; // دوخت و ساخت
+  accessories: number; // یراق‌آلات
+  transport: number; // حمل و نقل
+  packaging: number; // بسته‌بندی
+}
+
 export interface GarmentItem {
   id: string;
   code: string; // e.g. "PLR-101"
@@ -102,6 +111,12 @@ export interface GarmentItem {
   fabric: string; // 'کتان ترک', 'فاستونی مطهری', 'نخ پنبه'
   imageUrl?: string;
   images?: string[]; // multiple images support
+  // قیمت خرید به دلار (۲ رقم اعشار، مثلاً 3.24)
+  purchasePriceUsd?: number;
+  // تفکیک قیمت تمام شده کارگاه (تومان): پارچه، دوخت، یراق، حمل، بسته‌بندی
+  costBreakdown?: CostBreakdown;
+  // 'ready' = قابل فروش؛ 'pending_production' = سفارش در انتظار تولید
+  productionStatus?: 'ready' | 'pending_production';
   createdAt: string;
   updatedAt: string;
   isDeleted?: boolean;
@@ -161,7 +176,7 @@ export interface Consignment {
   paidAmount: number; // مبلغ پرداخت شده تا کنون
   remainingAmount: number; // مانده بدهی این واگذاری
   notes?: string;
-  handedOverBy: string;
+  handedOverBy: string; // ثبت‌کننده واگذاری
   createdAt: string;
   isDeleted?: boolean;
   deletedAt?: string;
@@ -182,10 +197,38 @@ export interface ConsignmentReturn {
     totalAmount: number;
     condition: 'healthy' | 'damaged'; // وضعیت کالا
     reason?: string;
+    selectedSize?: string; // سایز مرجوعی (اگر ثبت شده)
+    selectedColor?: string; // رنگ مرجوعی (اگر ثبت شده)
   }[];
   totalReturnAmount: number;
   processedBy: string;
   createdAt: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
+}
+
+// رکورد خرابی/مرجوعی از هر منبع (دست‌فروش، مشتری، بار تأمین‌کننده، حین کار)
+export interface DamageRecord {
+  id: string;
+  code: string; // e.g. "DMG-1"
+  itemId: string;
+  itemName: string;
+  itemCode: string;
+  source: 'seller' | 'customer' | 'provider' | 'process'; // منبع خرابی
+  sourceName: string; // چه کسی/کجا (نام دست‌فروش، مشتری، تأمین‌کننده…)
+  quantity: number;
+  selectedSize?: string;
+  selectedColor?: string;
+  status: 'damaged' | 'fixed' | 'disposed'; // خراب / ترمیم‌شده / اسقاط
+  damageReason?: string; // چگونه خراب شد
+  currentLocation: string; // کالا الان کجاست
+  reportedBy: string; // گزارش‌دهنده
+  reportedAt: string; // زمان ثبت
+  fixedAt?: string; // زمان ترمیم
+  fixedBy?: string; // ترمیم‌کننده
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
   isDeleted?: boolean;
   deletedAt?: string;
 }
@@ -345,6 +388,8 @@ export interface CompanyBranding extends WorkshopInfo {
   secondaryPhone?: string;
   establishedYear?: string;
   theme?: CompanyTheme;
+  analyticsSettings?: { gaMeasurementId?: string; websiteUrl?: string };
+  dashboardPrefs?: { [widgetId: string]: boolean };
   owners: Owner[];
 }
 

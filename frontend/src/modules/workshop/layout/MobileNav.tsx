@@ -5,10 +5,8 @@ import {
   ShoppingBag,
   ArrowLeftRight,
   Package,
-  Receipt,
-  PackageCheck,
   Zap,
-  Wrench,
+  Plus,
 } from 'lucide-react';
 import { toPersianDigits } from '@/utils/persian';
 import { useData } from '@/modules/workshop/context/DataContext';
@@ -25,7 +23,8 @@ import {
  *   [امانات] [سفارش‌ها] [داشبورد] [انبار] [اقدامات]
  * Dashboard is the center-elevated primary; امانات / سفارش‌ها / انبار are
  * routes, and اقدامات opens a dropdown with quick actions (payment / handover
- * modals + workshop costs navigation).
+ * modals + workshop costs navigation). Action items are separated by borders
+ * and lead with a gold + badge.
  */
 export const MobileNav: React.FC = () => {
   const { consignments } = useData();
@@ -39,23 +38,25 @@ export const MobileNav: React.FC = () => {
   const routeClass = ({ isActive }: { isActive: boolean }) =>
     `relative flex flex-col items-center py-1 px-2 rounded-xl transition-all ${
       isActive
-        ? 'text-brand-on dark:text-brand font-black bg-brand/20 dark:bg-brand/20 border border-brand/30 dark:border-brand/40'
-        : 'text-stone-700 dark:text-gray-400 hover:text-black dark:hover:text-white font-bold'
+        ? 'text-brand-on dark:text-brand font-black'
+        : 'text-stone-700 dark:text-gray-400 hover:text-black dark:hover:text-white font-bold active:scale-95'
     }`;
 
   const actionClass =
     'relative flex flex-col items-center py-1 px-2 rounded-xl transition-all text-stone-700 dark:text-gray-400 hover:text-black dark:hover:text-white font-bold active:scale-95';
 
+  // Dropdown items: each action is its own bordered pill, separated by gaps
+  // instead of one merged list — bigger touch targets with a leading + icon.
   const menuItemClass =
-    'flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-stone-700 dark:text-gray-200 outline-none';
+    'flex items-center gap-3 px-3.5 py-3 rounded-2xl text-sm font-bold text-stone-700 dark:text-gray-200 outline-none border border-black/5 dark:border-white/10 my-1';
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-[#141416] border-t border-stone-200 dark:border-white/5 px-2 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] shadow-2xl">
-      <div className="grid grid-cols-5 items-center justify-items-center h-14">
+      <div className="grid grid-cols-5 items-center justify-items-center h-16">
         {/* امانات — route (RTL first slot, leftmost) */}
         <NavLink to="/workshop/consignments" className={routeClass}>
           <span className="relative">
-            <ArrowLeftRight className="w-4 h-4 mb-0.5 shrink-0" />
+            <ArrowLeftRight className="w-5 h-5 mb-1 shrink-0" />
             {overdueCount > 0 && (
               <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-rose-600 text-white text-[8px] flex items-center justify-center font-black animate-pulse">
                 {toPersianDigits(overdueCount)}
@@ -67,7 +68,7 @@ export const MobileNav: React.FC = () => {
 
         {/* سفارش‌ها — route */}
         <NavLink to="/workshop/orders" className={routeClass}>
-          <ShoppingBag className="w-4 h-4 mb-0.5 shrink-0" />
+          <ShoppingBag className="w-5 h-5 mb-1 shrink-0" />
           <span className="text-[10px] whitespace-nowrap">سفارش‌ها</span>
         </NavLink>
 
@@ -83,30 +84,36 @@ export const MobileNav: React.FC = () => {
 
         {/* انبار — route */}
         <NavLink to="/workshop/inventory" className={routeClass}>
-          <Package className="w-4 h-4 mb-0.5 shrink-0" />
+          <Package className="w-5 h-5 mb-1 shrink-0" />
           <span className="text-[10px] whitespace-nowrap">انبار</span>
         </NavLink>
 
-        {/* اقدامات — dropdown with quick actions */}
+        {/* اقدامات — dropdown with quick actions (bigger, bordered items, + icon) */}
         <DropdownMenu>
           <DropdownMenuTrigger className={actionClass} title="اقدامات سریع">
-            <Zap className="w-4 h-4 mb-0.5 shrink-0 text-brand" />
+            <Zap className="w-5 h-5 mb-1 shrink-0 text-brand" />
             <span className="text-[10px] whitespace-nowrap">اقدامات</span>
           </DropdownMenuTrigger>
-          <DropdownMenuContent side="top" align="center" className="w-48">
+          <DropdownMenuContent side="top" align="center" className="w-60 p-2">
             <DropdownMenuItem className={menuItemClass} onClick={() => openQuickPayment()}>
-              <Receipt className="w-4 h-4 text-emerald-600 dark:text-emerald-500 shrink-0" />
+              <span className="w-7 h-7 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <Plus className="w-4 h-4" />
+              </span>
               <span>ثبت وجه دریافتی</span>
             </DropdownMenuItem>
             <DropdownMenuItem className={menuItemClass} onClick={() => openQuickHandover()}>
-              <PackageCheck className="w-4 h-4 shrink-0" />
+              <span className="w-7 h-7 rounded-xl bg-brand/15 text-brand-ink dark:text-brand flex items-center justify-center shrink-0">
+                <Plus className="w-4 h-4" />
+              </span>
               <span>تحویل بار جدید</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               className={menuItemClass}
               onClick={() => navigate('/workshop/finances/costs')}
             >
-              <Wrench className="w-4 h-4 shrink-0" />
+              <span className="w-7 h-7 rounded-xl bg-violet-500/15 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0">
+                <Plus className="w-4 h-4" />
+              </span>
               <span>هزینه کارگاه</span>
             </DropdownMenuItem>
           </DropdownMenuContent>

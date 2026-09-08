@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Package,
   Plus,
@@ -10,12 +10,19 @@ import {
   Globe,
   HandCoins,
   Store,
+  ArrowUpDown,
+  CheckCircle2,
+  Clock,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import type { GarmentItem } from '@/types';
 import { formatToman, toPersianDigits } from '@/utils/persian';
 import { Badge } from '@/components/common/Badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SelectMenu } from '@/components/ui/select-menu';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { analyticsApi, itemsApi, getApiErrorMessage } from '@/lib/api';
 import { ItemFormModal } from './ItemFormModal';
 
 interface InventoryManagerProps {
@@ -38,6 +45,17 @@ type GarmentPoolItem = GarmentItem & {
 type InventoryUpdatePayload = Partial<GarmentItem> & {
   websiteQuantity?: number;
 };
+
+// Sort options for the inventory grid.
+type SortKey = 'newest' | 'oldest' | 'bestseller' | 'lowstock' | 'alpha';
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: 'newest', label: 'جدیدترین' },
+  { value: 'oldest', label: 'قدیمی‌ترین' },
+  { value: 'bestseller', label: 'پرفروش‌ترین' },
+  { value: 'lowstock', label: 'کم‌موجودی‌ترین' },
+  { value: 'alpha', label: 'الفبایی (الف تا ی)' },
+];
 
 export const InventoryManager: React.FC<InventoryManagerProps> = ({
   items = [],
@@ -63,29 +81,74 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<GarmentItem | null>(null);
   const [channel, setChannel] = useState<'all' | 'handover' | 'shop' | 'warehouse'>('all');
+  const [sortBy, setSortBy] = useState<SortKey>('newest');
+  const [deleteTarget, setDeleteTarget] = useState<GarmentItem | null>(null);
+  const [readyTarget, setReadyTarget] = useState<GarmentItem | null>(null);
+  const [markingReady, setMarkingReady] = useState(false);
+  // sold counts from analytics: itemId -> { total, seller, shop }
+  const [soldStats, setSoldStats] = useState<Map<string, { total: number; seller: number; shop: number }>>(new Map());
 
   const displayCategories = [
     { id: 'all', label: 'همه دسته‌ها' },
     ...categories,
   ];
 
+  // Fetch sold counts once per mount for badges.
+  React.useEffect(() => {
+    let alive = true;
+    analyticsApi
+      .get()
+      .then((stats) => {
+        if (!alive) return;
+        const map = new Map<string, { total: number; seller: number; shop: number }>();
+        for (const it of stats.topItems) {
+          map.set(it.itemId, { total: it.totalSold, seller: it.sellerSold, shop: it.shopSold });
+        }
+        setSoldStats(map);
+      })
+      .catch(() => {
+        // Sold badges are decorative; failure is non-fatal.
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
-  const filteredItems = safeItems.filter((item) => {
-    const matchesSearch =
-      (item.name || '').toLowerCase().includes(search.toLowerCase()) ||
-      (item.code || '').toLowerCase().includes(search.toLowerCase()) ||
-      (item.fabric || '').toLowerCase().includes(search.toLowerCase());
+  const filteredItems = useMemo(() => {
+    const list = safeItems.filter((item) => {
+      const matchesSearch =
+        (item.name || '').toLowerCase().includes(search.toLowerCase()) ||
+        (item.code || '').toLowerCase().includes(search.toLowerCase()) ||
+        (item.fabric || '').toLowerCase().includes(search.toLowerCase());
 
-    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
-    const matchesLowStock = !showLowStockOnly || (item.stockQuantity || 0) <= (item.minStockThreshold || 0);
-    const matchesChannel =
-      channel === 'all' ||
-      (channel === 'handover' && (item.sellerHeld || 0) > 0) ||
-      (channel === 'shop' && (item.websiteQuantity || 0) > 0) ||
-      (channel === 'warehouse' && (item.stockQuantity || 0) > 0);
+      const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+      const matchesLowStock = !showLowStockOnly || (item.stockQuantity || 0) <= (item.minStockThreshold || 0);
+      const matchesChannel =
+        channel === 'all' ||
+        (channel === 'handover' && (item.sellerHeld || 0) > 0) ||
+        (channel === 'shop' && (item.websiteQuantity || 0) > 0) ||
+        (channel === 'warehouse' && (item.stockQuantity || 0) > 0);
 
-    return matchesSearch && matchesCategory && matchesLowStock && matchesChannel;
-  });
+      return matchesSearch && matchesCategory && matchesLowStock && matchesChannel;
+    });
+
+    const sold = (id: string) => soldStats.get(id)?.total ?? 0;
+    switch (sortBy) {
+      case 'newest':
+        return [...list].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+      case 'oldest':
+        return [...list].sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+      case 'bestseller':
+        return [...list].sort((a, b) => sold(b.id) - sold(a.id));
+      case 'lowstock':
+        return [...list].sort(
+          (a, b) => (a.stockQuantity || 0) - (a.minStockThreshold || 0) - ((b.stockQuantity || 0) - (b.minStockThreshold || 0)),
+        );
+      case 'alpha':
+        return [...list].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fa'));
+    }
+    return list;
+  }, [safeItems, search, selectedCategory, showLowStockOnly, channel, sortBy, soldStats]);
 
   const lowStockCount = safeItems.filter(
     (i) => (i.stockQuantity || 0) <= (i.minStockThreshold || 0)
@@ -109,6 +172,21 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
       onUpdateItem(editingItem.id, itemData);
     } else {
       onAddItem(itemData);
+    }
+  };
+
+  const handleMarkReady = async () => {
+    if (!readyTarget) return;
+    setMarkingReady(true);
+    try {
+      const updated = await itemsApi.markReady(readyTarget.id);
+      onUpdateItem(readyTarget.id, updated);
+      toast.success(`«${readyTarget.name}» تولید کامل شد و قابل فروش است`);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'ثبت آماده‌سازی کالا ناموفق بود'));
+    } finally {
+      setMarkingReady(false);
+      setReadyTarget(null);
     }
   };
 
@@ -165,6 +243,16 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
               <AlertTriangle className="w-3.5 h-3.5" />
               <span>فقط کالاهای رو به اتمام ({toPersianDigits(lowStockCount)})</span>
             </button>
+
+            <div className="flex items-center gap-1.5 min-w-[150px]">
+              <ArrowUpDown className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+              <SelectMenu
+                value={sortBy}
+                onChange={(v) => setSortBy(v as SortKey)}
+                options={SORT_OPTIONS}
+                className="flex-1"
+              />
+            </div>
           </div>
         </div>
 
@@ -224,6 +312,8 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredItems.map((item) => {
           const isLowStock = item.stockQuantity <= item.minStockThreshold;
+          const isPending = item.productionStatus === 'pending_production';
+          const sold = soldStats.get(item.id);
 
           return (
             <div
@@ -236,13 +326,24 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
               <div>
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-mono text-xs font-bold text-stone-500 dark:text-gray-400">
                         {item.code}
                       </span>
                       {isLowStock && (
                         <Badge variant="warning" size="sm">
                           کسری موجودی
+                        </Badge>
+                      )}
+                      {isPending && (
+                        <Badge variant="default" size="sm" className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                          <Clock className="w-3 h-3 ml-1" />
+                          در انتظار تولید
+                        </Badge>
+                      )}
+                      {sold && sold.total > 0 && (
+                        <Badge variant="default" size="sm" className="bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/25">
+                          فروش: {toPersianDigits(sold.total)}
                         </Badge>
                       )}
                     </div>
@@ -252,6 +353,18 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                   </div>
 
                   <div className="flex items-center gap-1">
+                    {isPending && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setReadyTarget(item);
+                        }}
+                        className="p-1.5 rounded-lg text-emerald-600 hover:text-emerald-500 hover:bg-emerald-500/10 transition-colors"
+                        title="علامت‌گذاری آماده (تولید کامل)"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                      </button>
+                    )}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -265,9 +378,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (confirm(`آیا از حذف "${item.name}" مطمئن هستید؟`)) {
-                          onDeleteItem(item.id);
-                        }
+                        setDeleteTarget(item);
                       }}
                       className="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
                       title="حذف کالا"
@@ -308,8 +419,8 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                 </div>
               </div>
 
-              {/* Stock Bar & Actions — remaining free units big/bold, total smaller in parentheses */}
-              <div className="mt-4 pt-3 border-t border-stone-200 dark:border-white/5 flex items-center justify-between gap-2">
+              {/* Footer: stock-split tags in a wrapped grid so badges never overlap */}
+              <div className="mt-4 pt-3 border-t border-stone-200 dark:border-white/5 space-y-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <div
                     className={`w-3 h-3 rounded-full shrink-0 ${
@@ -331,7 +442,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex flex-wrap items-center gap-1.5">
                   {(item.websiteQuantity || 0) > 0 && (
                     <Badge variant="default" size="sm" className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25">
                       فروشگاه: {toPersianDigits(item.websiteQuantity || 0)}
@@ -342,8 +453,21 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                       دست‌فروش: {toPersianDigits(item.sellerHeld || 0)}
                     </Badge>
                   )}
-
-                  {onQuickHandoverItem && (
+                  {sold && sold.total > 0 && (
+                    <>
+                      {sold.shop > 0 && (
+                        <Badge variant="default" size="sm" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                          فروش فروشگاه: {toPersianDigits(sold.shop)}
+                        </Badge>
+                      )}
+                      {sold.seller > 0 && (
+                        <Badge variant="default" size="sm" className="bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20">
+                          فروش دست‌فروش: {toPersianDigits(sold.seller)}
+                        </Badge>
+                      )}
+                    </>
+                  )}
+                  {onQuickHandoverItem && !isPending && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -361,29 +485,36 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
         })}
       </div>
 
-      {filteredItems.length === 0 && (
-        <div className="text-center py-12 glass-panel rounded-2xl border border-stone-200 dark:border-white/5 p-6">
-          <Package className="w-12 h-12 text-stone-400 mx-auto mb-3" />
-          <p className="font-bold text-stone-800 dark:text-gray-300 text-sm">
-            هیچ کالایی با فیلترهای انتخابی یافت نشد
-          </p>
-          <p className="text-xs text-stone-500 dark:text-gray-500 mt-1">
-            می‌توانید کلمه جستجو را پاک کنید یا کالای جدیدی به انبار دوزندگی اضافه نمایید.
-          </p>
-        </div>
-      )}
-
-      {/* Item Form Modal */}
+      {/* Item add/edit modal */}
       <ItemFormModal
         isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingItem(null);
-        }}
+        onClose={() => setIsModalOpen(false)}
         onSave={handleSave}
         editItem={editingItem}
         categories={categories}
         onCreateCategory={onCreateCategory}
+      />
+      {/* Delete confirmation */}
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="حذف کالا از انبار"
+        description={`آیا از حذف «${deleteTarget?.name ?? ''}» مطمئن هستید؟ کالا به سطل بازیافت منتقل می‌شود.`}
+        confirmLabel="حذف کالا"
+        destructive
+        onConfirm={() => {
+          if (deleteTarget) onDeleteItem(deleteTarget.id);
+        }}
+      />
+
+      {/* Mark-ready confirmation */}
+      <ConfirmDialog
+        open={readyTarget !== null}
+        onOpenChange={(open) => !open && setReadyTarget(null)}
+        title="علامت‌گذاری کالا به‌عنوان آماده"
+        description={`«${readyTarget?.name ?? ''}» تولید کامل شد؟ پس از تایید، این کالا برای دست‌فروش‌ها و فروشگاه قابل فروش خواهد بود.`}
+        confirmLabel={markingReady ? 'در حال ثبت…' : 'بله، آماده است'}
+        onConfirm={handleMarkReady}
       />
     </div>
   );

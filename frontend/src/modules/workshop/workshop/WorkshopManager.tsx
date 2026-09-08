@@ -31,6 +31,8 @@ import { formatToman, toPersianDigits, toJalaliDate, numberToWordsPersian } from
 import { Modal } from '@/components/common/Modal';
 import { SelectMenu, SelectBadge, SelectOptionContent } from '@/components/ui/select-menu';
 import { FormattedNumberInput } from '@/components/common/FormattedNumberInput';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { DatePicker } from '@/components/ui/date-picker';
 import { ImagePicker } from '@/components/common/ImagePicker';
 
 interface WorkshopManagerProps {
@@ -55,6 +57,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
   const [profitDistributions, setProfitDistributions] = useState<ProfitShareDistribution[]>([]);
   const [, setIsLoading] = useState<boolean>(true);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [deleteExpenseTarget, setDeleteExpenseTarget] = useState<{ id: string; title: string } | null>(null);
 
   // Search & Filters for Expenses
   const [searchTerm, setSearchTerm] = useState('');
@@ -68,7 +71,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
   const [category, setCategory] = useState<WorkshopExpense['category']>('machinery_maintenance');
   const [categoryLabel, setCategoryLabel] = useState('تعمیر و استهلاک چرخ‌ها و تجهیزات');
   const [amount, setAmount] = useState<number | null>(null);
-  const [date, setDate] = useState('');
+  const [date, setDate] = useState<Date | null>(null);
   const [paidBy, setPaidBy] = useState('صندوق کارگاه');
   const [paymentMethod, setPaymentMethod] = useState<WorkshopExpense['paymentMethod']>('card');
   const [costAllocation, setCostAllocation] = useState<WorkshopExpense['costAllocation']>('shared_by_equity');
@@ -189,12 +192,11 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
     const catObj = categoryOptions.find((c) => c.id === targetCat);
     setCategoryLabel(catObj ? catObj.label : 'هزینه کارگاه');
     setAmount(null);
-    setDate('');
     setPaidBy(owners?.[0]?.name ? `${owners[0].name} (هم‌بنیان‌گذار)` : 'صندوق کارگاه');
     setPaymentMethod('card');
     setCostAllocation('shared_by_equity');
     setReceiptImage('');
-    setDescription('');
+    setDate(new Date());
     setIsRecurring(false);
     setIsExpenseModalOpen(true);
   };
@@ -206,7 +208,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
     setCategory(exp.category);
     setCategoryLabel(exp.categoryLabel || '');
     setAmount(exp.amount);
-    setDate(exp.date);
+    setDate(exp.date ? new Date(exp.date) : null);
     setPaidBy(exp.paidBy);
     setPaymentMethod(exp.paymentMethod);
     setCostAllocation(exp.costAllocation || 'shared_by_equity');
@@ -215,7 +217,6 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
     setIsRecurring(Boolean(exp.isRecurring));
     setIsExpenseModalOpen(true);
   };
-
   const handleSaveExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !amount) return;
@@ -225,12 +226,11 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
       category,
       categoryLabel,
       amount: amount || 0,
-      date,
       paidBy,
       paymentMethod,
       costAllocation,
       receiptImageUrl: receiptImage,
-      description: description.trim(),
+      date: date ? date.toISOString() : '',
       isRecurring,
     };
 
@@ -262,17 +262,22 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
     }
   };
 
-  const handleDeleteExpense = async (id: string, expTitle: string) => {
-    if (confirm(`آیا از انتقال هزینه "${expTitle}" به سطل بازیافت اطمینان دارید؟`)) {
-      try {
-        const res = await fetch(`/api/workshop/expenses/${id}`, { method: 'DELETE' });
-        if (res.ok) {
-          setExpenses((prev) => prev.filter((e) => e.id !== id));
-        }
-      } catch (err) {
-        console.error('Failed to delete expense', err);
+  const handleDeleteExpense = async (id: string) => {
+    try {
+      const res = await fetch(`/api/workshop/expenses/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setExpenses((prev) => prev.filter((e) => e.id !== id));
       }
+    } catch (err) {
+      console.error('Failed to delete expense', err);
     }
+  };
+
+  const confirmDeleteExpense = async () => {
+    if (!deleteExpenseTarget) return;
+    const target = deleteExpenseTarget;
+    setDeleteExpenseTarget(null);
+    await handleDeleteExpense(target.id);
   };
 
 
@@ -877,7 +882,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => handleDeleteExpense(exp.id, exp.title)}
+                            onClick={() => setDeleteExpenseTarget({ id: exp.id, title: exp.title })}
                             className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 transition-colors"
                             title="حذف و انتقال به سطل بازیافت"
                           >
@@ -1545,12 +1550,12 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                   تاریخ فاکتور *{' '}
                   <span className="text-stone-400 font-normal">(الزامی — تاریخ فاکتور را انتخاب کنید)</span>
                 </label>
-                <input
-                  type="date"
-                  required
+                <DatePicker
                   value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl glass-input text-xs font-mono outline-none focus:border-brand"
+                  onValueChange={(d) => setDate(d)}
+                  placeholder="انتخاب تاریخ فاکتور"
+                  format="yyyy/MM/dd"
+                  className="w-full"
                 />
               </div>
             </div>
@@ -1855,6 +1860,16 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
           </form>
         </Modal>
       )}
+
+      <ConfirmDialog
+        open={deleteExpenseTarget !== null}
+        onOpenChange={(open) => !open && setDeleteExpenseTarget(null)}
+        title="حذف هزینه کارگاه"
+        description={`آیا از انتقال هزینه «${deleteExpenseTarget?.title ?? ''}» به سطل بازیافت اطمینان دارید؟`}
+        confirmLabel="انتقال به بازیافت"
+        destructive
+        onConfirm={() => void confirmDeleteExpense()}
+      />
     </div>
   );
 };

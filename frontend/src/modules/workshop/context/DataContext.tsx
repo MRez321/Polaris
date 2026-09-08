@@ -9,12 +9,13 @@ import type {
   PaymentRecord,
   Seller,
   StaffMember,
-  WorkshopInfo,
+  CompanyBranding,
 } from '@/types';
 import {
   categoriesApi,
-  consignmentsApi,
+  companyApi,
   dashboardApi,
+  consignmentsApi,
   getApiErrorMessage,
   itemsApi,
   ownersApi,
@@ -38,8 +39,8 @@ interface DataContextValue {
   staffMembers: StaffMember[];
   owners: Owner[];
   categories: { id: string; label: string }[];
-  workshopInfo: WorkshopInfo;
-  setWorkshopInfo: (info: WorkshopInfo) => void;
+  workshopInfo: CompanyBranding;
+  setWorkshopInfo: (info: CompanyBranding) => void;
 
   fetchData: () => Promise<void>;
 
@@ -80,7 +81,7 @@ const DEFAULT_CATEGORIES = [
   { id: 'fabrics', label: 'طاقه پارچه و ملزومات دوخت' },
 ];
 
-const DEFAULT_WORKSHOP_INFO: WorkshopInfo = {
+const DEFAULT_WORKSHOP_INFO: CompanyBranding = {
   name: '',
   slogan: '',
   website: '',
@@ -91,6 +92,11 @@ const DEFAULT_WORKSHOP_INFO: WorkshopInfo = {
   phone: '',
   emergencyPhone: '',
   registrationNumber: '',
+  brandName: '',
+  tagline: '',
+  workshopAddress: '',
+  workshopPhone: '',
+  owners: [],
 };
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -103,7 +109,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [owners, setOwners] = useState<Owner[]>([]);
   const [categories, setCategories] = useState<{ id: string; label: string }[]>(DEFAULT_CATEGORIES);
-  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo>(DEFAULT_WORKSHOP_INFO);
+  const [workshopInfo, setWorkshopInfo] = useState<CompanyBranding>(DEFAULT_WORKSHOP_INFO);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const fetchData = useCallback(async () => {
@@ -119,6 +125,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         staffRes,
         ownersRes,
         catRes,
+        companyRes,
       ] = await Promise.all([
         dashboardApi.stats().catch(() => null),
         itemsApi.list().catch(() => []),
@@ -129,6 +136,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         staffApi.list().catch(() => []),
         ownersApi.list().catch(() => []),
         categoriesApi.list().catch(() => []),
+        companyApi.get().catch(() => null),
       ]);
 
       if (statsRes) setStats(statsRes);
@@ -140,6 +148,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (staffRes) setStaffMembers(staffRes);
       if (ownersRes) setOwners(ownersRes);
       if (catRes && catRes.length > 0) setCategories(catRes);
+      if (companyRes) setWorkshopInfo(companyRes);
+
     } catch (err) {
       console.error('Failed to fetch data from server, utilizing state fallback', err);
     } finally {

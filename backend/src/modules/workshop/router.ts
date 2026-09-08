@@ -10,6 +10,8 @@ import * as expenses from './controllers/expensesController.js';
 import * as trash from './controllers/trashController.js';
 import * as dashboard from './controllers/dashboardController.js';
 import * as orders from './controllers/ordersController.js';
+import * as analytics from './controllers/analyticsController.js';
+import * as damage from './controllers/damageController.js';
 import * as notifications from '../../modules/notifications/notificationsController.js';
 
 /**
@@ -36,6 +38,8 @@ router.post('/items', items.createItem);
 router.put('/items/:id', items.updateItem);
 router.delete('/items/:id', items.deleteItem);
 router.put('/items/:id/shop-allocation', items.setShopAllocation);
+// Made-to-order item finished production → becomes sellable.
+router.post('/items/:id/mark-ready', items.markItemReady);
 router.get('/categories', items.listCategories);
 router.post('/categories', items.createCategory);
 
@@ -52,6 +56,17 @@ router.post('/consignments', consignments.createConsignment);
 router.post('/consignments/return', consignments.submitReturn);
 router.get('/consignments/returns', consignments.listReturns);
 router.delete('/consignments/:id', consignments.deleteConsignment);
+
+// Damage/returns tracking: damaged goods from sellers, customers, providers, in-process.
+router.get('/damage-records', damage.listDamageRecords);
+router.post('/damage-records', damage.createDamageRecord);
+router.put('/damage-records/:id', damage.updateDamageRecord);
+router.post('/damage-records/:id/fix', damage.fixDamageRecord);
+router.post('/damage-records/:id/dispose', damage.disposeDamageRecord);
+router.delete('/damage-records/:id', damage.deleteDamageRecord);
+
+// Analytics: cross-channel sales rankings (sellers + online shop).
+router.get('/analytics', analytics.getAnalytics);
 
 // Payments
 router.get('/payments', payments.listPayments);

@@ -14,6 +14,7 @@ import { ImagePicker } from '@/components/common/ImagePicker';
 import { BankCardInput, ShebaInput, detectBankByCard, detectBankBySheba } from '@/components/common/BankInput';
 import { toPersianDigits } from '@/utils/persian';
 import { toast } from 'sonner';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import {
   normalizePhoneInput,
   isValidIranPhone,
@@ -46,6 +47,7 @@ export const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
   const [email, setEmail] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [bio, setBio] = useState('');
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   // Phones
   const [phones, setPhones] = useState<string[]>([]);
@@ -547,13 +549,7 @@ export const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
         <div className="flex items-center justify-between pt-3 border-t border-stone-200 dark:border-white/10">
           {editOwner && onDelete ? (
             <button
-              type="button"
-              onClick={() => {
-                if (confirm(`آیا از حذف اطلاعات ${editOwner.name} اطمینان دارید؟`)) {
-                  onDelete(editOwner.id);
-                  onClose();
-                }
-              }}
+              onClick={() => setConfirmDeleteOpen(true)}
               className="px-3.5 py-2 rounded-xl text-rose-500 hover:bg-rose-500/10 text-xs font-bold flex items-center gap-1.5 transition-colors"
             >
               <Trash2 className="w-4 h-4" />
@@ -581,6 +577,20 @@ export const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
           </div>
         </div>
       </form>
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title="حذف هم‌بنیان‌گذار"
+        description={`آیا از حذف اطلاعات ${editOwner?.name ?? ''} اطمینان دارید؟`}
+        confirmLabel="حذف"
+        destructive
+        onConfirm={() => {
+          if (editOwner && onDelete) {
+            onDelete(editOwner.id);
+            onClose();
+          }
+        }}
+      />
     </Modal>
   );
 };

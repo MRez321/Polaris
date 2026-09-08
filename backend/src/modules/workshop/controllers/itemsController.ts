@@ -20,6 +20,7 @@ const itemSchema = z.object({
     minStockThreshold: z.number().int().min(0).optional(),
     sizes: z.array(z.string()).optional(),
     colors: z.array(z.string()).optional(),
+    fabric: z.string().optional(),
     description: z.string().optional(),
     variantPrices: z
         .object({
@@ -41,6 +42,20 @@ const itemSchema = z.object({
             ).optional(),
         })
         .optional(),
+    // Purchase price in USD, stored with 2 decimals (e.g. 3.24).
+    purchasePriceUsd: z.number().min(0).optional(),
+    // Workshop unit-cost breakdown in toman (fabric/sewing/accessories/transport/packaging).
+    costBreakdown: z
+        .object({
+            fabric: z.number().min(0),
+            sewing: z.number().min(0),
+            accessories: z.number().min(0),
+            transport: z.number().min(0),
+            packaging: z.number().min(0),
+        })
+        .optional(),
+    // 'ready' = sellable; 'pending_production' = order waiting to be made.
+    productionStatus: z.enum(['ready', 'pending_production']).optional(),
     imageUrl: z.string().optional(),
     images: z.array(z.string()).optional(),
 });
@@ -70,6 +85,21 @@ export async function updateItem(req: Request, res: Response): Promise<void> {
     const data = itemSchema.partial().parse(req.body);
     const row = await svc.updateItem(id, data);
     logAudit(req.auth ?? null, 'update', 'item', `کالای «${row.name}» ویرایش شد`, req.ip);
+    res.json(toItemDto(row, await categoryLabelFor(row.category)));
+}
+
+// --- Production readiness (order-made items becoming sellable) ---
+
+export async function markItemReady(req: Request, res: Response): Promise<void> {
+    const id = pathParam(req, 'id', 'شناسه کالا');
+    const row = await svc.markItemReady(id);
+    logAudit(
+        req.auth ?? null,
+        'update',
+        'item',
+        `کالای «${row.name}» با کد ${row.code} از وضعیت در حال تولید به آماده فروش تغییر کرد`,
+        req.ip,
+    );
     res.json(toItemDto(row, await categoryLabelFor(row.category)));
 }
 

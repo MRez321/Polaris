@@ -66,17 +66,17 @@ node scripts/smoke-phase2.mjs / smoke-phase3.mjs
 |---|---|---|
 | `/`, `/shop`, `/product/:id`, `/blog`, `/blog/:slug`, `/contact`, `/checkout`, `/dashboard` | Public storefront | none (checkout/dashboard need session) |
 | `/login`, `/signup` | Auth screens | none |
-| `/workshop/*` | Admin panel (Dashboard, Orders, Inventory, Consignments, People, Finances, Settings, `profile/:type/:id`) | `RequireAdmin` → non-admins → `/dashboard` |
+| `/workshop/*` | Admin panel (Dashboard, Orders, Inventory, Consignments, People, Finances, Returns (`/workshop/returns`), Analytics (`/workshop/analytics`), Settings, `profile/:type/:id`) | `RequireAdmin` → non-admins → `/dashboard` |
 | `/controlpanel/{theme,website,shop,blog}` | Website management | admin (settings+blog), author (blog) |
 
-Admin panel code: `frontend/src/modules/workshop/` — pages/, managers per domain (InventoryManager, HandoverManager, PaymentsManager, UsersManager, AuditLogsManager...), shared `context/DataContext.tsx` + `UIContext.tsx`, `layout/` (AppLayout, Sidebar, Header).
+Admin panel code: `frontend/src/modules/workshop/` — pages/, managers per domain (InventoryManager, HandoverManager, PaymentsManager, UsersManager, AuditLogsManager...), shared `context/DataContext.tsx` + `UIContext.tsx`, `layout/` (AppLayout, Sidebar, Header, MobileNav, SideMenu), `returns/` (ReturnsPage), `analytics/` (AnalyticsPage + FinancialReports), `dashboard/` (DashboardOverview + widget cards/charts).
 
 ## API surface (one mount: `/api`, `backend/src/routes/apiRoutes.ts`)
 
 Public: `/api/health`, `/api/public/{items,categories,company,blog,blog/:slug}`.
 Customer (any auth): `/api/{orders,addresses}` (mine-scoped), `/api/auth/*` (better-auth).
 Author/admin: `/api/blog*`.
-Admin-only: `/api/company`, `/api/website/settings`, `/api/uploads`, `/api/gallery*`, and everything in `/api/workshop/*` (dashboard stats, audit-logs, orders, items, categories, sellers, consignments, payments, staff, owners, expenses, profit-distribution, trash, notifications) — see `backend/src/modules/workshop/router.ts`.
+Admin-only: `/api/company` (GET/PUT — CompanyBranding blob incl. `analyticsSettings` `{gaMeasurementId, websiteUrl}` and `dashboardPrefs` `{widgetId: boolean}`), `/api/website/settings`, `/api/uploads`, `/api/gallery*`, and everything in `/api/workshop/*` (dashboard stats, audit-logs, orders, items + `POST /items/:id/mark-ready`, categories, sellers, consignments, payments, staff, owners, expenses, profit-distribution, damage-records + `POST /damage-records/:id/fix`, analytics `GET /analytics`, trash, notifications) — see `backend/src/modules/workshop/router.ts`.
 
 ## Auth in 30 seconds
 
@@ -92,6 +92,9 @@ better-auth + admin plugin. Roles: `admin`, `author`, `user` (default on signup)
 - **No frontend test infra** — `build` is the only check (`tsc -b && vite build`). Backend has smoke suites.
 - **Node 22** on this machine; backend package.json claims `>=18`.
 - **cPanel prod**: backend runs from `/PolarisStyle/` via cPanel Node.js selector; frontend build copied to `backend/public/` by `scripts/copy-public.js` at build; migrations run via `npm run db:migrate` on server or `repair-migrations.mjs` when `__drizzle_migrations` table is out of sync.
+- **React hook order (EntityProfilePage pattern)**: ALL hooks must run before any conditional early-return (`if (view.missing) return …`). The not-found early return sits AFTER every useMemo/useEffect — compute `visibleEntries` unconditionally with internal null-guarding (`source = view && !view.missing ? view.entries : []`). Violation = "Rendered more hooks than during the previous render" boundary crash when data loads after a missing/loading first render. Apply this pattern to any new profile-type page.
+- **Dashboard widget visibility**: `DashboardOverview` `WIDGETS` ids: `kpiCards`, `salesDebtChart`, `topSellers`, `recentHandovers`, `recentPayments`. Each grid child is individually wrapped in `isVisible(id)` — never wrap two widgets in one switch (topSellers was once dead-wired inside salesDebtChart). Prefs persist server-side via `companyApi.update({dashboardPrefs})` (optimistic + fire-and-forget).
+- **Edit-tool corruption risk**: this codebase repeatedly lost adjacent lines through patch edits (hook calls, import members, open JSX tags, closing grid divs). After every edit re-`read` the file; after every file run `cd frontend && npx tsc -b`. Symptoms: TS2304 for previously-imported names or TS17002 for unbalanced JSX.
 
 ## Session-start checklist (what "actual work" needs)
 
@@ -117,10 +120,10 @@ better-auth + admin plugin. Roles: `admin`, `author`, `user` (default on signup)
 | Uploads | multer → `backend/uploads/` (gitignored), gallery rows in `gallery_images` |
 | Docs | this knowledge base — `.omp/knowledge/` is the single source (markdown/ + old agent files were folded in and removed) |
 
-## DB tables (23, verified live)
+## DB tables (24, verified live)
 
 Auth: `user`, `session`, `account`, `verification`.
-Workshop: `items`, `categories`, `sellers`, `consignments`, `consignment_returns`, `payments`, `staff`, `owners`, `expenses`, `profit_distributions`.
+Workshop: `items`, `categories`, `sellers`, `consignments`, `consignment_returns`, `payments`, `staff`, `owners`, `expenses`, `profit_distributions`, `damage_records`.
 Orders: `orders`, `user_addresses`.
 CMS: `blog_posts`, `website_settings`, `company_settings`, `gallery_images`, `notification_settings`.
 Infra: `audit_logs`, `__drizzle_migrations`.

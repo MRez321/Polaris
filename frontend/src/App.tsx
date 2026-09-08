@@ -25,6 +25,8 @@ import ConsignmentsPage from '@/modules/workshop/pages/ConsignmentsPage';
 import PeoplePage from '@/modules/workshop/pages/PeoplePage';
 import FinancesPage from '@/modules/workshop/pages/FinancesPage';
 import SettingsPage from '@/modules/workshop/pages/SettingsPage';
+import ReturnsPage from '@/modules/workshop/returns/ReturnsPage';
+import AnalyticsPage from '@/modules/workshop/analytics/AnalyticsPage';
 import EntityProfilePage from '@/modules/workshop/pages/EntityProfilePage';
 import ControlPanelLayout, { ControlPanelIndexRedirect } from '@/pages/controlpanel/ControlPanelLayout';
 import WebsiteSettingsPage from '@/pages/controlpanel/WebsiteSettingsPage';
@@ -81,9 +83,10 @@ function App() {
                           <Route path="finances/workshop" element={<FinancesPage />} />
                           <Route path="finances/payments" element={<FinancesPage />} />
                           <Route path="finances/costs" element={<FinancesPage />} />
-                          <Route path="finances/income" element={<FinancesPage />} />
-                          <Route path="finances/reports" element={<FinancesPage />} />
                           <Route path="settings" element={<SettingsPage />} />
+                          <Route path="returns" element={<ReturnsPage />} />
+                          <Route path="analytics" element={<AnalyticsPage />} />
+                          <Route path="finances/reports" element={<FinancesPage />} />
                           {/* /workshop/profile/{items|sellers|staff|owners}/:id */}
                           <Route path="profile/:type/:id" element={<EntityProfilePage />} />
                         </Route>
