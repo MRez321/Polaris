@@ -39,6 +39,11 @@ export function mapAuthError(message: string): string {
   if (m.includes('already exists') || m.includes('taken')) {
     return 'این ایمیل قبلاً در سامانه ثبت شده است';
   }
+  // Credentials check must precede the plain "invalid email" check below —
+  // "invalid email or password" contains that substring.
+  if (m.includes('invalid email or password') || m.includes('invalid credentials')) {
+    return 'ایمیل یا رمز عبور اشتباه است';
+  }
   if (m.includes('invalid email') || m.includes('email is invalid')) {
     return 'ایمیل وارد شده معتبر نیست';
   }
@@ -48,10 +53,7 @@ export function mapAuthError(message: string): string {
   if (m.includes('name') && (m.includes('required') || m.includes('short') || m.includes('least'))) {
     return 'نام و نام خانوادگی را به‌طور کامل وارد کنید';
   }
-  if (m.includes('invalid email or password') || m.includes('invalid credentials')) {
-    return 'ایمیل یا رمز عبور اشتباه است';
-  }
-  if (m.includes('email is not verified') || m.includes('not verified')) {
+  if (m.includes('not verified')) {
     return 'ایمیل شما هنوز تأیید نشده است';
   }
   if (m.includes('banned')) {
