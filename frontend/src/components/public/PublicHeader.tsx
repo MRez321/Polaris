@@ -126,7 +126,7 @@ export const PublicHeader: React.FC = () => {
             </button>
 
             {/* Auth: shared role-aware user menu (login chip when signed out) */}
-            <UserMenu loginTo="/" />
+            <UserMenu loginTo="/login" />
           </div>
         </div>
       </div>
