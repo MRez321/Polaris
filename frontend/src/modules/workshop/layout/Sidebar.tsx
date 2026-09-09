@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Package,
@@ -16,12 +16,16 @@ import { useData } from '@/modules/workshop/context/DataContext';
 import { useAuth } from '@/context/AuthContext';
 
 export const Sidebar: React.FC = () => {
-  const { consignments } = useData();
+  const { consignments, items } = useData();
   const { isAdmin } = useAuth();
+  const navigate = useNavigate();
 
   const overdueCount = consignments.filter(
     (c) => (c.remainingAmount || 0) > 0 && new Date(c.dueDate).getTime() < Date.now()
   ).length;
+  // Mirrors InventoryManager's low-stock rule: at or below the threshold.
+  const lowStockCount = items.filter((i) => (i.stockQuantity || 0) <= (i.minStockThreshold || 0)).length;
+  const pendingCount = items.filter((i) => i.productionStatus === 'pending_production').length;
 
   const navItems = [
     { to: '/workshop', label: 'داشبورد', icon: LayoutDashboard, end: true },
@@ -86,14 +90,49 @@ export const Sidebar: React.FC = () => {
         })}
 
         <div className="pt-3 mt-3 border-t border-stone-200 dark:border-white/5 px-1">
-          <div className="p-3 rounded-xl bg-brand/10 dark:bg-brand/15 border border-brand/20 dark:border-brand/30 space-y-1">
-            <div className="flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-brand/10 dark:bg-brand/15 border border-brand/20 dark:border-brand/30">
+            <div className="flex items-center gap-2 mb-2">
               <span className="w-2 h-2 rounded-full bg-brand-deep dark:bg-brand animate-pulse"></span>
-              <p className="font-black text-xs text-stone-900 dark:text-white">قاعده مالی کارگاه:</p>
+              <p className="font-black text-xs text-stone-900 dark:text-white">نبض کارگاه</p>
             </div>
-            <p className="text-[10px] text-stone-700 dark:text-stone-300 leading-relaxed font-medium">
-              تسویه فاکتورها بر مبنای اصل تقدم تاریخی بدهی‌ها
-            </p>
+            <div className="divide-y divide-brand/15">
+              <button
+                type="button"
+                onClick={() => navigate('/workshop/consignments')}
+                className="w-full flex items-center justify-between gap-2 py-1.5 group cursor-pointer"
+              >
+                <span className="text-[10px] font-bold text-stone-700 dark:text-stone-300 group-hover:text-brand transition-colors">
+                  حواله‌های معوق
+                </span>
+                <span className={`text-xs font-black ${overdueCount > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-stone-400'}`}>
+                  {toPersianDigits(overdueCount)}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/workshop/inventory')}
+                className="w-full flex items-center justify-between gap-2 py-1.5 group cursor-pointer"
+              >
+                <span className="text-[10px] font-bold text-stone-700 dark:text-stone-300 group-hover:text-brand transition-colors">
+                  اجناس کم‌موجودی
+                </span>
+                <span className={`text-xs font-black ${lowStockCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-stone-400'}`}>
+                  {toPersianDigits(lowStockCount)}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/workshop/inventory')}
+                className="w-full flex items-center justify-between gap-2 py-1.5 group cursor-pointer"
+              >
+                <span className="text-[10px] font-bold text-stone-700 dark:text-stone-300 group-hover:text-brand transition-colors">
+                  در انتظار تولید
+                </span>
+                <span className={`text-xs font-black ${pendingCount > 0 ? 'text-brand-deep dark:text-brand' : 'text-stone-400'}`}>
+                  {toPersianDigits(pendingCount)}
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

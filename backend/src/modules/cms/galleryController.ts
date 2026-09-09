@@ -5,6 +5,7 @@ import { z } from 'zod';
 import {
     deleteGalleryImage,
     listGallery,
+    probeImageMeta,
     publicUrlFor,
     recordGalleryImage,
     storageFileName,
@@ -43,6 +44,7 @@ const upload = multer({
 const uploadMetaSchema = z.object({
     category: z.string().max(32).optional(),
     label: z.string().max(255).optional(),
+    alt: z.string().max(255).optional(),
     tags: z.string().optional(), // JSON-encoded string[] form field
 });
 
@@ -59,8 +61,9 @@ function parseTags(raw: unknown): string[] {
 
 /**
  * POST /api/uploads — multipart image upload(s).
- * Form fields: category?, label?, tags? (JSON array string), files: File[]
- * Returns the created gallery rows (url is a short /uploads/... path).
+ * Form fields: category?, label?, alt?, tags? (JSON array string), files: File[]
+ * Returns the created gallery rows (url is a short /uploads/... path; the
+ * client absolutizes it against the current origin for display/copy).
  */
 export async function uploadImages(req: Request, res: Response): Promise<void> {
     const files = req.files as Express.Multer.File[] | undefined;
@@ -69,17 +72,21 @@ export async function uploadImages(req: Request, res: Response): Promise<void> {
     const meta = uploadMetaSchema.parse(req.body);
     const category = meta.category?.trim() || 'general';
     const label = meta.label?.trim() || '';
+    const alt = meta.alt?.trim() || '';
     const tags = parseTags(meta.tags);
 
     const rows = [];
     for (const file of files) {
+        const metadata = probeImageMeta(file.path, file.mimetype);
         rows.push(
             await recordGalleryImage({
                 url: publicUrlFor(file.filename),
                 fileName: file.filename,
                 category,
                 label,
+                alt,
                 tags,
+                metadata,
             }),
         );
     }
@@ -95,6 +102,7 @@ export async function listImages(_req: Request, res: Response): Promise<void> {
 const patchSchema = z.object({
     category: z.string().max(32).optional(),
     label: z.string().max(255).optional(),
+    alt: z.string().max(255).optional(),
     tags: z.array(z.string().max(64)).max(20).optional(),
 });
 

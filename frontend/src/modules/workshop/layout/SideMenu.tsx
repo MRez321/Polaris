@@ -7,8 +7,8 @@ import {
   Users,
   CreditCard,
   Settings,
-  Receipt,
-  Plus,
+  RotateCcw,
+  BarChart3,
   ShoppingBag,
   Globe,
   Home,
@@ -21,7 +21,6 @@ import {
   SheetTitle,
   SheetDescription,
 } from '@/components/ui/sheet';
-import { useUI } from '@/modules/workshop/context/UIContext';
 import { useData } from '@/modules/workshop/context/DataContext';
 import { toPersianDigits } from '@/utils/persian';
 import { useBrand } from '@/context/BrandContext';
@@ -41,7 +40,6 @@ export const SideMenu: React.FC<SideMenuProps> = ({ open, onOpenChange }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { consignments } = useData();
-  const { openQuickHandover, openQuickPayment } = useUI();
   const { company } = useBrand();
 
   const overdueCount = consignments.filter(
@@ -58,15 +56,6 @@ export const SideMenu: React.FC<SideMenuProps> = ({ open, onOpenChange }) => {
     navigate(to);
   };
 
-  const triggerHandover = () => {
-    onOpenChange(false);
-    openQuickHandover();
-  };
-
-  const triggerPayment = () => {
-    onOpenChange(false);
-    openQuickPayment();
-  };
 
   const isActive = (to: string) => location.pathname === to;
 
@@ -134,15 +123,15 @@ export const SideMenu: React.FC<SideMenuProps> = ({ open, onOpenChange }) => {
             امور مالی
           </NavLink>
 
-          <button type="button" onClick={triggerPayment} className={itemClass(false)}>
-            <Receipt className="w-4.5 h-4.5 shrink-0 text-emerald-600 dark:text-emerald-500" />
-            وجه دریافتی
-          </button>
+          <NavLink to="/workshop/returns" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
+            <RotateCcw className="w-4.5 h-4.5 shrink-0" />
+            مرجوعی‌ها و خرابی‌ها
+          </NavLink>
 
-          <button type="button" onClick={triggerHandover} className={itemClass(false)}>
-            <Plus className="w-4.5 h-4.5 shrink-0" />
-            تحویل بار جدید
-          </button>
+          <NavLink to="/workshop/analytics" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
+            <BarChart3 className="w-4.5 h-4.5 shrink-0" />
+            تحلیل فروش
+          </NavLink>
 
           {/* Gold gradient separator + website section */}
           <div className="my-3 mx-1 flex items-center gap-2">

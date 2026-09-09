@@ -11,7 +11,7 @@ dotenv.config();
 
 // Vite auto-increments the dev port when 5173 is taken (5174, 5175, …),
 // so the whole local dev range is trusted, not one pinned port.
-export const LOCAL_DEV_PORTS = [5173, 5174, 5175, 3000, 3001];
+export const LOCAL_DEV_PORTS = [5173, 5174, 5175, 8090, 3000, 3001];
 
 export const localDevOrigins: string[] = ['localhost', '127.0.0.1'].flatMap((host) =>
     LOCAL_DEV_PORTS.map((port) => `http://${host}:${port}`),

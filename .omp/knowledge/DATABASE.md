@@ -3,7 +3,7 @@
 ## Connection
 
 Local: `127.0.0.1:3306`, db `polaris`, user `MRez` / `64321608`, charset utf8mb4 (persian_ci). Server: cPanel MySQL (`.env` only, differs from local — never assume prod creds).
-Schema definitions: `backend/src/schema/*.ts`; migrations: `backend/drizzle/0000…0010_*.sql` (11 files) + `meta/`; applied state in `__drizzle_migrations`.
+Schema definitions: `backend/src/schema/*.ts`; migrations: `backend/drizzle/0000…0012_*.sql` (13 files) + `meta/`; applied state in `__drizzle_migrations`. 0012 added the `gallery_images` metadata columns.
 
 **Ad-hoc DB queries** (bash, cwd `backend/` — module resolution needs it):
 
@@ -27,7 +27,7 @@ Always add the `.catch` — without it errors print as bare `Node.js v22.x` with
 
 **Customer orders** (`schema/orders.ts`): `orders` (status machine; mine-scoped for users), `user_addresses`.
 
-**CMS/company** (`schema/cms.ts`, `company.ts`): `blog_posts`, `website_settings` (JSON blob), `company_settings` (JSON blob — full CompanyBranding: branding fields + `analyticsSettings` {gaMeasurementId, websiteUrl} + `dashboardPrefs` {widgetId: boolean} + owners list), `gallery_images`, `notification_settings` (JSON blob — telegram/SMS config).
+**CMS/company** (`schema/cms.ts`, `company.ts`): `blog_posts`, `website_settings` (JSON blob), `company_settings` (JSON blob — full CompanyBranding: branding fields + `analyticsSettings` {gaMeasurementId, websiteUrl} + `dashboardPrefs` {widgetId: boolean} + owners list), `gallery_images` (url relative `/uploads/...`; fileName; category; label; `alt` varchar255 — alt text for SEO/a11y; tags JSON; **probed metadata (migration 0012)**: `width`/`height` int nullable, `file_size` int bytes, `mime_type` varchar32 — filled server-side by `probeImageMeta` at upload, backfilled via `node scripts/backfill-gallery-meta.mjs`; mime comes from the file signature, so a `.gif`-named PNG records `image/png`), `notification_settings` (JSON blob — telegram/SMS config).
 
 **Infra**: `audit_logs` (`details` column — NOT `description`; 500 latest kept in UI), `__drizzle_migrations`.
 
@@ -41,6 +41,7 @@ Settings tables and workshop aggregates store JSON blobs (`data` json / typed in
 2. `npm run db:generate` (drizzle-kit) → new `backend/drizzle/NNNN_*.sql`.
 3. Local: `npm run db:migrate` (scripts/migrate.js). Server: migrations auto-run at app startup (no CLI on prod).
 4. If prod `__drizzle_migrations` is out of sync with files (hash/order mismatch): `scripts/repair-migrations.mjs` reconciles the bookkeeping table — user's debug tool, keep.
+5. After deploying 0012 on prod, run `node scripts/backfill-gallery-meta.mjs` once to probe legacy gallery files (plain-deps ESM, safe on cPanel).
 
 ## Business math (lives in services/inventoryService.ts)
 

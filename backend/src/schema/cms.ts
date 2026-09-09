@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { mysqlTable, varchar, text, datetime, json, index } from 'drizzle-orm/mysql-core';
+import { mysqlTable, varchar, text, datetime, json, index, int } from 'drizzle-orm/mysql-core';
 
 // ---------------------------------------------------------------------------
 // CMS tables: public marketing-site content (settings, gallery, blog)
@@ -27,10 +27,17 @@ export const galleryImages = mysqlTable('gallery_images', {
     fileName: varchar('file_name', { length: 255 }).notNull(),
     category: varchar('category', { length: 32 }).notNull().default('general'),
     label: varchar('label', { length: 255 }).notNull().default(''),
+    alt: varchar('alt', { length: 255 }).notNull().default(''),
     tags: json('tags').$type<string[]>().notNull(),
+    // Probed server-side from the file header at upload time; null for
+    // legacy rows created before the metadata columns existed.
+    width: int('width'),
+    height: int('height'),
+    // Size in bytes.
+    fileSize: int('file_size'),
+    mimeType: varchar('mime_type', { length: 32 }),
     createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });
-
 export type GalleryImageRow = typeof galleryImages.$inferSelect;
 
 /** One rendered block of a blog article: optional h2 heading + paragraph. */

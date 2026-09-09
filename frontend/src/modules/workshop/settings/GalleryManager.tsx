@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import {
   Copy,
   Image as ImageIcon,
+  ImagePlus,
   Images,
   Loader2,
   Search,
@@ -13,14 +14,30 @@ import {
 import { Modal } from '@/components/common/Modal';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { SelectMenu } from '@/components/ui/select-menu';
-import { galleryApi, type GalleryImage } from '@/lib/galleryApi';
+import { galleryApi, absoluteGalleryUrl, type GalleryImage } from '@/lib/galleryApi';
 import { GALLERY_CATEGORIES, galleryCategoryLabel } from '@/components/common/ImagePickerModal';
 import { getApiErrorMessage } from '@/lib/api';
-import { toPersianDigits } from '@/utils/persian';
+import { toPersianDigits, toJalaliDate } from '@/utils/persian';
+import { GalleryUploadModal } from './GalleryUploadModal';
+
+/** "JPG" / "PNG" / "WEBP" / ... from the stored mime type, or from the filename. */
+function formatOf(image: GalleryImage): string {
+  if (image.mimeType) return image.mimeType.replace('image/', '').toUpperCase();
+  const ext = image.fileName.split('.').pop();
+  return ext ? ext.toUpperCase() : '—';
+}
+
+/** Human-readable file size: KB/MB with Persian digits. */
+function formatSize(bytes: number | null): string {
+  if (bytes === null || bytes === undefined) return '—';
+  if (bytes >= 1024 * 1024) return `${toPersianDigits((bytes / (1024 * 1024)).toFixed(1))} مگابایت`;
+  return `${toPersianDigits(Math.round(bytes / 1024))} کیلوبایت`;
+}
 
 /**
  * Settings tab listing every uploaded image: filter by category/tag, search,
- * then manage each entry (label, tags, category, copy URL, delete).
+ * upload new images, then manage each entry (label, alt text, tags, category,
+ * metadata view, full absolute URL copy, delete).
  */
 export const GalleryManager: React.FC = () => {
   const [rows, setRows] = useState<GalleryImage[] | null>(null);
@@ -28,6 +45,7 @@ export const GalleryManager: React.FC = () => {
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<GalleryImage | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   async function refresh(): Promise<void> {
     try {
@@ -55,6 +73,7 @@ export const GalleryManager: React.FC = () => {
     const matchesSearch =
       q === '' ||
       row.label.toLowerCase().includes(q) ||
+      row.alt.toLowerCase().includes(q) ||
       row.fileName.toLowerCase().includes(q) ||
       row.tags.some((t) => t.toLowerCase().includes(q));
     return matchesCat && matchesTag && matchesSearch;
@@ -76,14 +95,24 @@ export const GalleryManager: React.FC = () => {
             {rows && ` — ${toPersianDigits(rows.length)} تصویر`}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => void refresh()}
-          className="px-3 py-1.5 rounded-xl glass-card hover:border-brand text-xs font-bold flex items-center gap-1.5 transition-colors"
-        >
-          <Loader2 className={`w-3.5 h-3.5 ${rows === null ? 'animate-spin text-brand' : ''}`} />
-          <span>به‌روزرسانی</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void refresh()}
+            className="px-3 py-1.5 rounded-xl glass-card hover:border-brand text-xs font-bold flex items-center gap-1.5 transition-colors"
+          >
+            <Loader2 className={`w-3.5 h-3.5 ${rows === null ? 'animate-spin text-brand' : ''}`} />
+            <span>به‌روزرسانی</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setUploadOpen(true)}
+            className="px-3 py-1.5 rounded-xl bg-brand hover:bg-brand-hover text-brand-on text-xs font-black flex items-center gap-1.5 transition-colors shadow-md"
+          >
+            <ImagePlus className="w-3.5 h-3.5" />
+            بارگذاری تصویر
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -109,7 +138,7 @@ export const GalleryManager: React.FC = () => {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="جستجو در نام، برچسب یا تگ‌ها..."
+              placeholder="جستجو در نام، برچسب، متن جایگزین یا تگ‌ها..."
               className="w-full pr-8 pl-3 py-1.5 rounded-lg glass-input text-xs outline-none"
             />
           </div>
@@ -155,7 +184,7 @@ export const GalleryManager: React.FC = () => {
         <div className="glass-panel py-16 rounded-2xl text-center space-y-3">
           <ImageIcon className="w-12 h-12 mx-auto text-stone-300 dark:text-stone-600" />
           <p className="text-sm text-stone-500 dark:text-gray-400">
-            هنوز تصویری ثبت نشده است؛ از فرم فروشندگان، کالاها یا پرسنل تصویر اضافه کنید
+            هنوز تصویری ثبت نشده است؛ با دکمه «بارگذاری تصویر» یا از فرم فروشندگان و کالاها تصویر اضافه کنید
           </p>
         </div>
       ) : (
@@ -167,17 +196,29 @@ export const GalleryManager: React.FC = () => {
               onClick={() => setSelected(row)}
               className="group relative aspect-square rounded-xl overflow-hidden border border-brand/20 hover:border-brand hover:ring-2 hover:ring-brand/40 transition-all bg-black/10 dark:bg-black/30"
             >
-              <img src={row.url} alt={row.label} loading="lazy" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+              <img src={row.url} alt={row.alt || row.label || row.fileName} loading="lazy" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
               <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[9px] px-1.5 py-1 truncate opacity-0 group-hover:opacity-100 transition-opacity">
                 {row.label || row.fileName}
               </span>
               <span className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-full bg-black/60 text-white text-[9px] font-bold">
                 {galleryCategoryLabel(row.category)}
               </span>
+              {row.width !== null && row.height !== null && (
+                <span dir="ltr" className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-full bg-black/60 text-white text-[9px] font-bold">
+                  {row.width}×{row.height}
+                </span>
+              )}
             </button>
           ))}
         </div>
       )}
+
+      {/* Upload modal */}
+      <GalleryUploadModal
+        isOpen={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        onUploaded={(uploaded) => setRows((prev) => [...uploaded, ...(prev ?? [])])}
+      />
 
       {/* Detail / edit modal */}
       <GalleryImageDetailModal
@@ -205,6 +246,7 @@ interface DetailModalProps {
 
 const GalleryImageDetailModal: React.FC<DetailModalProps> = ({ image, onClose, onSaved, onDeleted }) => {
   const [label, setLabel] = useState('');
+  const [alt, setAlt] = useState('');
   const [category, setCategory] = useState('general');
   const [tagsInput, setTagsInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -213,12 +255,17 @@ const GalleryImageDetailModal: React.FC<DetailModalProps> = ({ image, onClose, o
   useEffect(() => {
     if (image) {
       setLabel(image.label);
+      setAlt(image.alt);
       setCategory(image.category);
       setTagsInput(image.tags.join(', '));
     }
   }, [image]);
 
   if (!image) return null;
+
+  // Full URL shown/copied: built against the current domain, so it works in
+  // dev (localhost) and prod (polarisstyle.ir) without any hardcoding.
+  const fullUrl = absoluteGalleryUrl(image.url);
 
   function tagsFromInput(): string[] {
     return tagsInput.split(/[,،]/).map((t) => t.trim()).filter(Boolean).slice(0, 20);
@@ -229,6 +276,7 @@ const GalleryImageDetailModal: React.FC<DetailModalProps> = ({ image, onClose, o
     try {
       const updated = await galleryApi.update(image!.id, {
         label: label.trim(),
+        alt: alt.trim(),
         category,
         tags: tagsFromInput(),
       });
@@ -259,27 +307,47 @@ const GalleryImageDetailModal: React.FC<DetailModalProps> = ({ image, onClose, o
     await handleDelete();
   }
 
+  /** One metadata chip: icon-less label + value row. */
+  const metaRow = (title: string, value: string, dir?: 'ltr') => (
+    <div className="flex items-center justify-between px-3 py-1.5">
+      <span className="text-[10px] font-bold text-stone-500 dark:text-gray-400">{title}</span>
+      <span dir={dir} className="text-[11px] font-bold text-stone-800 dark:text-gray-200">
+        {value}
+      </span>
+    </div>
+  );
+
   return (
     <Modal isOpen onClose={onClose} title="جزئیات تصویر گالری" maxWidth="lg">
       <div className="space-y-4">
         <div className="rounded-xl overflow-hidden bg-black/10 dark:bg-black/30 flex items-center justify-center max-h-72">
-          <img src={image.url} alt={label || image.fileName} referrerPolicy="no-referrer" className="max-h-72 w-auto object-contain" />
+          <img src={image.url} alt={alt || label || image.fileName} referrerPolicy="no-referrer" className="max-h-72 w-auto object-contain" />
         </div>
 
+        {/* Full absolute URL + copy */}
         <div className="flex items-center gap-2">
           <code dir="ltr" className="flex-1 truncate px-2.5 py-1.5 rounded-lg bg-stone-100 dark:bg-white/10 text-[11px] text-left">
-            {image.url}
+            {fullUrl}
           </code>
           <button
             type="button"
             onClick={() => {
-              void navigator.clipboard.writeText(image.url).then(() => toast.success('آدرس تصویر کپی شد'));
+              void navigator.clipboard.writeText(fullUrl).then(() => toast.success('آدرس کامل تصویر کپی شد'));
             }}
             className="p-2 rounded-xl bg-stone-100 dark:bg-white/10 hover:bg-brand hover:text-brand-on text-stone-500 dark:text-gray-300 transition-colors"
-            title="کپی آدرس"
+            title="کپی آدرس کامل"
           >
             <Copy className="w-4 h-4" />
           </button>
+        </div>
+
+        {/* Metadata panel */}
+        <div className="rounded-xl border border-black/5 dark:border-white/10 divide-y divide-black/5 dark:divide-white/5 overflow-hidden">
+          {metaRow('ابعاد', image.width !== null && image.height !== null ? `${toPersianDigits(image.width)} × ${toPersianDigits(image.height)} پیکسل` : '—', 'ltr')}
+          {metaRow('فرمت', formatOf(image))}
+          {metaRow('حجم فایل', formatSize(image.fileSize))}
+          {metaRow('نام فایل', image.fileName, 'ltr')}
+          {metaRow('تاریخ بارگذاری', toJalaliDate(image.createdAt))}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -304,6 +372,20 @@ const GalleryImageDetailModal: React.FC<DetailModalProps> = ({ image, onClose, o
               }))}
             />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+            متن جایگزین (Alt)
+            <span className="font-normal text-stone-400"> — برای سئو و دسترسی‌پذیری، توضیح تصویر برای موتورهای جستجو و صفحه‌خوان‌ها</span>
+          </label>
+          <input
+            type="text"
+            value={alt}
+            onChange={(e) => setAlt(e.target.value)}
+            placeholder="مثلاً: پالتو فوتر کوبیده مردانه به رنگ سرمه‌ای"
+            className="w-full px-3 py-2 rounded-xl glass-input text-xs outline-none"
+          />
         </div>
 
         <div>

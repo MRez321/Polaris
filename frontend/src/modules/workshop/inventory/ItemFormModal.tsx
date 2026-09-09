@@ -18,8 +18,9 @@ interface ItemFormModalProps {
   onCreateCategory?: (label: string) => void;
 }
 
-// Preset size order: free-size first, then letter sizes, then numeric sizes.
-const PRESET_SIZES = ['فری‌سایز', 'S', 'M', 'L', 'XL', '2XL', '38', '40', '42', '44', '46', '48'];
+// Preset sizes: free-size first, then letter sizes paired with their numeric
+// garment size (S - 38 … 3XL - 48), as used on Iranian size labels.
+const PRESET_SIZES = ['فری‌سایز', 'S - 38', 'M - 40', 'L - 42', 'XL - 44', '2XL - 46', '3XL - 48'];
 // Common Persian garment colors.
 const PRESET_COLORS = ['سفید', 'مشکی', 'سرمه‌ای', 'قرمز', 'آبی', 'سبز', 'زرد', 'کرم', 'قهوه‌ای', 'طوسی'];
 
@@ -462,7 +463,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 value={newSizeInput}
                 onChange={(e) => setNewSizeInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomSize())}
-                placeholder="سایز دلخواه (مثلاً: XXXL یا ۵۰)"
+                placeholder="سایز دلخواه (مثلاً: 4XL - 50 یا فقط ۵۲)"
                 className="flex-1 px-3 py-1.5 rounded-xl glass-input text-xs outline-none"
                 autoFocus
               />
