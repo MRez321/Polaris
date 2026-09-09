@@ -15,13 +15,15 @@ import {
   PackagePlus,
   MapPin,
   Shield,
+  Clock,
 } from 'lucide-react';
 import { SellerFormModal } from '../sellers/SellerFormModal';
 import { ItemFormModal } from '../inventory/ItemFormModal';
 import { SelectMenu, SelectBadge, SelectOptionContent, persianColorToCss } from '@/components/ui/select-menu';
 import { toast } from 'sonner';
-import { isValidIranPhone, PHONE_ERROR } from '@/modules/workshop/utils/validation';
 import { FormattedNumberInput } from '@/components/common/FormattedNumberInput';
+import { DatePicker } from '@/components/ui/date-picker';
+import { isValidIranPhone, PHONE_ERROR } from '@/modules/workshop/utils/validation';
 
 interface NewHandoverModalProps {
   isOpen: boolean;
@@ -32,6 +34,8 @@ interface NewHandoverModalProps {
   onSubmitHandover: (data: {
     sellerId: string;
     dueDate: string;
+    /** زمان‌بندی‌شده: تاریخ تحویل بار به فروشنده (اختیاری) */
+    deliveryDate?: string;
     itemsList: {
       itemId: string;
       quantity: number;
@@ -64,6 +68,9 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
   const [sellerSearchQuery, setSellerSearchQuery] = useState('');
   const [itemSearchQuery, setItemSearchQuery] = useState('');
   const [dueDays, setDueDays] = useState('10');
+  // حواله در انتظار تحویل: بار بعداً تحویل می‌شود؛ بدهی و سررسید از لحظه تحویل اعمال می‌شوند
+  const [isScheduled, setIsScheduled] = useState(false);
+  const [deliveryDate, setDeliveryDate] = useState<string>('');
   const [notes, setNotes] = useState('');
 
   // Modals for on-the-spot creation
@@ -351,6 +358,7 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
     onSubmitHandover({
       sellerId: selectedSellerId,
       dueDate: calculatedDueDate,
+      ...(isScheduled && deliveryDate ? { deliveryDate } : {}),
       itemsList: lines,
       notes: notes.trim(),
     });
@@ -792,6 +800,40 @@ export const NewHandoverModal: React.FC<NewHandoverModalProps> = ({
                   />
                   <span className="text-xs text-stone-600 dark:text-stone-400">روز</span>
                 </div>
+
+              {/* Schedule delivery: حواله در انتظار تحویل */}
+              <div className="p-3 rounded-xl bg-orange-500/5 border border-orange-500/25 space-y-2.5">
+                <label className="flex items-center justify-between cursor-pointer">
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-stone-800 dark:text-gray-200">
+                    <Clock className="w-4 h-4 text-orange-500" />
+                    تحویل زمان‌بندی‌شده (حواله در انتظار تحویل)
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={isScheduled}
+                    onChange={(e) => setIsScheduled(e.target.checked)}
+                    className="w-4 h-4 accent-orange-500"
+                  />
+                </label>
+                {isScheduled && (
+                  <div className="space-y-1.5">
+                    <span className="block text-[11px] text-stone-500 dark:text-gray-400">
+                      تاریخ تحویل بار به فروشنده:
+                    </span>
+                    <DatePicker
+                      value={deliveryDate ? new Date(deliveryDate) : null}
+                      onValueChange={(d) => setDeliveryDate(d ? d.toISOString() : '')}
+                      calendarType="shamsi"
+                      placeholder="انتخاب تاریخ تحویل"
+                      confirmLabel="ثبت تاریخ"
+                      cancelLabel="انصراف"
+                    />
+                    <p className="text-[10px] leading-4 text-orange-700 dark:text-orange-400">
+                      با فعال‌سازی این گزینه، موجودی کالاها رزرو می‌شود اما بدهی فروشنده و شمارش سررسید پس از ثبت «تحویل شد» اعمال می‌گردد.
+                    </p>
+                  </div>
+                )}
+              </div>
               </div>
 
               <div>

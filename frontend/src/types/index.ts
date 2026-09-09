@@ -168,6 +168,10 @@ export interface Consignment {
   sellerName: string;
   date: string; // تاریخ واگذاری
   dueDate: string; // تاریخ موعد تسویه
+  /** 'pending' = حواله در انتظار تحویل (stock reserved, debt not applied). */
+  deliveryStatus: 'delivered' | 'pending';
+  /** Date goods actually left the workshop (creation date for normal rows). */
+  deliveryDate: string | null;
   status: 'active' | 'partially_settled' | 'settled' | 'overdue';
   items: ConsignmentItemLine[];
   totalAmount: number; // مبلغ کل واگذاری
@@ -180,6 +184,21 @@ export interface Consignment {
   createdAt: string;
   isDeleted?: boolean;
   deletedAt?: string;
+}
+
+export type WorkshopNotificationType = 'critical' | 'need_action' | 'notification' | 'system';
+
+/** In-app bell-panel notification (stored events + live derived states). */
+export interface WorkshopNotification {
+  id: string;
+  type?: WorkshopNotificationType;
+  title: string;
+  body?: string;
+  entityType: string;
+  entityId: string;
+  link?: string;
+  createdAt: string;
+  readAt: string | null;
 }
 
 export interface ConsignmentReturn {
@@ -292,6 +311,12 @@ export interface DashboardStats {
   netWorkshopProfit?: number;
   totalConsignmentValue?: number;
   totalCollected?: number;
+  pendingDeliveriesCount?: number; // حواله‌های در انتظار تحویل
+  liquidBalance?: number; // موجودی صندوق کارگاه
+  weekPureIncome?: number; // درآمد خالص ۷ روز
+  weekGrossIncome?: number; // درآمد ناخالص ۷ روز
+  monthPureIncome?: number; // درآمد خالص ۳۰ روز
+  monthGrossIncome?: number; // درآمد ناخالص ۳۰ روز
 }
 
 export interface WorkshopExpense {

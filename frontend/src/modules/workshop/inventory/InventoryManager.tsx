@@ -449,7 +449,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                     </Badge>
                   )}
                   {(item.sellerHeld || 0) > 0 && (
-                    <Badge variant="default" size="sm" className="bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/25">
+                    <Badge variant="default" size="sm" className="bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/25">
                       دست‌فروش: {toPersianDigits(item.sellerHeld || 0)}
                     </Badge>
                   )}
@@ -461,7 +461,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                         </Badge>
                       )}
                       {sold.seller > 0 && (
-                        <Badge variant="default" size="sm" className="bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20">
+                        <Badge variant="default" size="sm" className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
                           فروش دست‌فروش: {toPersianDigits(sold.seller)}
                         </Badge>
                       )}

@@ -6,10 +6,13 @@ import {
   RotateCcw,
   Receipt,
   CreditCard,
+  CheckCircle,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import type { Consignment, Seller, GarmentItem } from '@/types';
 import { formatToman, toPersianDigits, toJalaliDate, toJalaliDateTime, getDaysDifference } from '@/utils/persian';
 import { Badge } from '@/components/common/Badge';
+import { consignmentsApi, getApiErrorMessage } from '@/lib/api';
 import { NewHandoverModal } from './NewHandoverModal';
 import { ReturnModal } from './ReturnModal';
 import { ConsignmentReceipt } from './ConsignmentReceipt';
@@ -26,6 +29,8 @@ interface HandoverManagerProps {
   onQuickCreateSeller?: (seller: Partial<Seller>) => void;
   onQuickCreateItem?: (item: Partial<GarmentItem>) => void;
   onUpdateSeller?: (id: string, patch: Partial<Seller>) => void;
+  /** Pull fresh data after mutations (deliver) without remounting. */
+  onDataRefresh?: () => void;
 }
 
 export const HandoverManager: React.FC<HandoverManagerProps> = ({
@@ -40,10 +45,11 @@ export const HandoverManager: React.FC<HandoverManagerProps> = ({
   onQuickCreateSeller,
   onQuickCreateItem,
   onUpdateSeller,
+  onDataRefresh,
 }) => {
   const safeConsignments = consignments || [];
   const [search, setSearch] = useState('');
-  const [tabFilter, setTabFilter] = useState<'all' | 'active' | 'overdue' | 'settled'>('all');
+  const [tabFilter, setTabFilter] = useState<'all' | 'active' | 'overdue' | 'settled' | 'pending'>('all');
   const [isHandoverModalOpen, setIsHandoverModalOpen] = useState(false);
   const [returnModalConsignment, setReturnModalConsignment] = useState<Consignment | null>(null);
   const [receiptConsignment, setReceiptConsignment] = useState<Consignment | null>(
@@ -62,18 +68,35 @@ export const HandoverManager: React.FC<HandoverManagerProps> = ({
       (c.code || '').toLowerCase().includes(search.toLowerCase());
 
     const isOverdue = (c.remainingAmount || 0) > 0 && new Date(c.dueDate).getTime() < Date.now();
+    const isPendingDelivery = c.deliveryStatus === 'pending';
 
-    if (tabFilter === 'active') return matchesSearch && (c.remainingAmount || 0) > 0 && !isOverdue;
-    if (tabFilter === 'overdue') return matchesSearch && isOverdue;
+    if (tabFilter === 'pending') return matchesSearch && isPendingDelivery;
+    if (tabFilter === 'active') return matchesSearch && !isPendingDelivery && (c.remainingAmount || 0) > 0 && !isOverdue;
+    if (tabFilter === 'overdue') return matchesSearch && !isPendingDelivery && isOverdue;
     if (tabFilter === 'settled') return matchesSearch && (c.remainingAmount || 0) === 0;
     return matchesSearch;
   });
 
   const overdueCount = safeConsignments.filter(
-    (c) => (c.remainingAmount || 0) > 0 && new Date(c.dueDate).getTime() < Date.now()
+    (c) => c.deliveryStatus !== 'pending' && (c.remainingAmount || 0) > 0 && new Date(c.dueDate).getTime() < Date.now()
   ).length;
-
+  const pendingCount = safeConsignments.filter((c) => c.deliveryStatus === 'pending').length;
   const totalActiveDebt = safeConsignments.reduce((sum, c) => sum + (c.remainingAmount || 0), 0);
+
+  // «تحویل شد»: mark a scheduled (pending) handover as delivered.
+  const [deliveringId, setDeliveringId] = useState<string | null>(null);
+  const handleDeliver = async (c: Consignment) => {
+    setDeliveringId(c.id);
+    try {
+      await consignmentsApi.deliver(c.id);
+      toast.success(`حواله ${c.code} تحویل داده شد؛ بدهی ${c.sellerName} اعمال گردید`);
+      onDataRefresh?.();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'خطا در ثبت تحویل'));
+    } finally {
+      setDeliveringId(null);
+    }
+  };
 
   return (
     <div className="space-y-6 text-stone-900 dark:text-white">
@@ -144,6 +167,16 @@ export const HandoverManager: React.FC<HandoverManagerProps> = ({
             }`}
           >
             سررسید گذشته ({toPersianDigits(overdueCount)})
+          </button>
+          <button
+            onClick={() => setTabFilter('pending')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+              tabFilter === 'pending'
+                ? 'bg-orange-500/20 text-orange-700 dark:text-orange-300 border border-orange-500/40 font-black'
+                : 'bg-stone-100 dark:bg-[#1A1A1E] text-stone-600 dark:text-gray-400 hover:text-stone-900 dark:hover:text-white border border-stone-200 dark:border-white/5'
+            }`}
+          >
+            در انتظار تحویل ({toPersianDigits(pendingCount)})
           </button>
           <button
             onClick={() => setTabFilter('settled')}
@@ -226,26 +259,30 @@ export const HandoverManager: React.FC<HandoverManagerProps> = ({
                       )}
                     </td>
                     <td data-label="وضعیت" className="p-3.5">
-                      <Badge
-                        variant={
-                          c.remainingAmount === 0
-                            ? 'success'
+                      {c.deliveryStatus === 'pending' ? (
+                        <Badge variant="orange" size="sm">در انتظار تحویل</Badge>
+                      ) : (
+                        <Badge
+                          variant={
+                            c.remainingAmount === 0
+                              ? 'success'
+                              : isOverdue
+                              ? 'danger'
+                              : c.paidAmount > 0
+                              ? 'gold'
+                              : 'warning'
+                          }
+                          size="sm"
+                        >
+                          {c.remainingAmount === 0
+                            ? 'تسویه کامل'
                             : isOverdue
-                            ? 'danger'
+                            ? 'سررسید گذشته'
                             : c.paidAmount > 0
-                            ? 'gold'
-                            : 'warning'
-                        }
-                        size="sm"
-                      >
-                        {c.remainingAmount === 0
-                          ? 'تسویه کامل'
-                          : isOverdue
-                          ? 'سررسید گذشته'
-                          : c.paidAmount > 0
-                          ? 'تسویه جزیی'
-                          : 'در انتظار پرداخت'}
-                      </Badge>
+                            ? 'تسویه جزیی'
+                            : 'در انتظار پرداخت'}
+                        </Badge>
+                      )}
                     </td>
                     <td className="p-3.5 text-center">
                       <div className="flex items-center justify-center gap-1.5 flex-wrap">
@@ -257,7 +294,17 @@ export const HandoverManager: React.FC<HandoverManagerProps> = ({
                           <Receipt className="w-3.5 h-3.5 text-brand-ink dark:text-brand" />
                           <span>رسید فاکتور</span>
                         </button>
-                        {c.remainingAmount > 0 && (
+                        {c.deliveryStatus === 'pending' ? (
+                          <button
+                            onClick={() => handleDeliver(c)}
+                            disabled={deliveringId === c.id}
+                            className="px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 text-[11px] font-black flex items-center gap-1.5 transition-all shadow-sm disabled:opacity-50"
+                            title="ثبت تحویل بار به فروشنده؛ بدهی و سررسید از همین لحظه اعمال می‌شود"
+                          >
+                            <CheckCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                            <span>{deliveringId === c.id ? 'در حال ثبت…' : 'تحویل شد'}</span>
+                          </button>
+                        ) : c.remainingAmount > 0 && (
                           <>
                             <button
                               onClick={() => setReturnModalConsignment(c)}

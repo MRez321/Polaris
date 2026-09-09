@@ -19,6 +19,7 @@ const ConsignmentsPage: React.FC = () => {
     handleUpdateSeller,
     handleAddSeller,
     handleAddItem,
+    fetchData,
   } = useData();
   const { openQuickPayment, selectedConsignment, setSelectedConsignment } = useUI();
   const [activeTab, setActiveTab] = useState<ConsignmentsTab>('invoices');
@@ -77,6 +78,7 @@ const ConsignmentsPage: React.FC = () => {
           onClearSelectedConsignment={() => setSelectedConsignment(null)}
           onQuickCreateSeller={handleAddSeller}
           onQuickCreateItem={handleAddItem}
+          onDataRefresh={() => void fetchData()}
         />
       ) : (
         <ReturnsSection

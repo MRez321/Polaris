@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, ne, sql } from 'drizzle-orm';
 import { v4 as uuid } from 'uuid';
 
 import { db } from '../../config/drizzle.js';
@@ -12,6 +12,7 @@ import {
     expenses,
     profitDistributions,
     categories,
+    orders,
 } from '../../schema/index.js';
 import type { ConsignmentItemLine, DebtAllocation, ReturnItemLine } from '../../schema/index.js';
 import type { TrashEntityType } from '../../types/index.js';
@@ -46,6 +47,12 @@ export async function listItems(includeDeleted = false) {
         }
     }
     return rows.map((r) => ({ ...r, sellerHeld: held.get(r.id) ?? 0 }));
+}
+
+/** Raw single-row read for before/after comparisons (no derived fields). */
+export async function getItemRow(id: string) {
+    const rows = await db.select().from(items).where(eq(items.id, id));
+    return rows[0] ?? null;
 }
 
 export async function createItem(data: Partial<typeof items.$inferInsert>) {
@@ -246,6 +253,8 @@ export async function softDeleteSeller(id: string) {
 export interface HandoverInput {
     sellerId: string;
     dueDate: string;
+    /** Future handover date; when set, the consignment is created pending delivery. */
+    deliveryDate?: string;
     notes?: string;
     itemsList: {
         itemId: string;
@@ -266,6 +275,17 @@ export async function createHandover(input: HandoverInput, actorName: string) {
     const due = new Date(input.dueDate);
     if (Number.isNaN(due.getTime())) throw badRequest('تاریخ سررسید معتبر نیست');
     if (!input.itemsList || input.itemsList.length === 0) throw badRequest('حداقل یک کالا برای تحویل انتخاب کنید');
+
+    // Scheduled handover («حواله در انتظار تحویل»): goods leave on a later
+    // date. Stock is reserved immediately (keeps the FOR UPDATE oversell
+    // guard + stock-split invariant), but seller debt and the due-date
+    // countdown only start when markDelivered runs.
+    const deliveryDate = input.deliveryDate;
+    const isScheduled = deliveryDate !== undefined;
+    const deliveryAt = isScheduled ? new Date(deliveryDate) : null;
+    if (deliveryAt !== null && Number.isNaN(deliveryAt.getTime())) {
+        throw badRequest('تاریخ تحویل معتبر نیست');
+    }
 
     return db.transaction(async (tx) => {
         const sellerRows = await tx
@@ -327,6 +347,9 @@ export async function createHandover(input: HandoverInput, actorName: string) {
             sellerName: seller.name,
             date: now,
             dueDate: due,
+            deliveryStatus: isScheduled ? 'pending' : 'delivered',
+            deliveredAt: isScheduled ? null : now,
+            deliveryDate: deliveryAt,
             status: 'active',
             items: lines,
             totalAmount,
@@ -338,15 +361,19 @@ export async function createHandover(input: HandoverInput, actorName: string) {
             handedOverBy: actorName,
         });
 
-        await tx
-            .update(sellers)
-            .set({
-                currentDebt: seller.currentDebt + totalAmount,
-                totalHandoversValue: seller.totalHandoversValue + totalAmount,
-                status: seller.status === 'settled' ? 'active' : seller.status,
-                updatedAt: new Date(),
-            })
-            .where(eq(sellers.id, seller.id));
+        // Debt only applies to delivered goods; a scheduled handover owes
+        // nothing until markDelivered runs.
+        if (!isScheduled) {
+            await tx
+                .update(sellers)
+                .set({
+                    currentDebt: seller.currentDebt + totalAmount,
+                    totalHandoversValue: seller.totalHandoversValue + totalAmount,
+                    status: seller.status === 'settled' ? 'active' : seller.status,
+                    updatedAt: new Date(),
+                })
+                .where(eq(sellers.id, seller.id));
+        }
 
         const created = await tx.select().from(consignments).where(eq(consignments.id, id));
         emitDataChanged('consignment', 'create');
@@ -360,8 +387,23 @@ export async function softDeleteConsignment(id: string) {
         const existing = rows[0];
         if (!existing) throw notFound('واگذاری یافت نشد');
 
-        // Release the outstanding debt back off the seller while in trash.
-        if (existing.remainingAmount > 0) {
+        if (existing.deliveryStatus === 'pending') {
+            // Goods never left: give the reserved stock back to the warehouse
+            // pool (no debt was applied, so there is nothing to release).
+            for (const line of existing.items) {
+                const out = line.quantity - line.returnedQuantity;
+                if (out <= 0) continue;
+                const itemRows = await tx.select().from(items).where(eq(items.id, line.itemId)).for('update');
+                const item = itemRows[0];
+                if (item) {
+                    await tx
+                        .update(items)
+                        .set({ stockQuantity: item.stockQuantity + out, updatedAt: new Date() })
+                        .where(eq(items.id, item.id));
+                }
+            }
+        } else if (existing.remainingAmount > 0) {
+            // Release the outstanding debt back off the seller while in trash.
             const sellerRows = await tx.select().from(sellers).where(eq(sellers.id, existing.sellerId)).for('update');
             const seller = sellerRows[0];
             if (seller) {
@@ -382,6 +424,52 @@ export async function softDeleteConsignment(id: string) {
     emitDataChanged('consignment', 'delete');
     return consignment;
 }
+
+/**
+ * «تحویل شد»: a scheduled handover physically leaves the workshop. Debt,
+ * the due-date countdown, and handover-value counters all start now —
+ * mirroring what createHandover applies immediately for on-the-spot rows.
+ */
+export async function markDelivered(id: string, actorName: string) {
+    const updated = await db.transaction(async (tx) => {
+        const rows = await tx
+            .select()
+            .from(consignments)
+            .where(and(eq(consignments.id, id), eq(consignments.isDeleted, false)))
+            .for('update');
+        const existing = rows[0];
+        if (!existing) throw notFound('واگذاری یافت نشد');
+        if (existing.deliveryStatus !== 'pending') {
+            throw badRequest('این واگذاری قبلاً تحویل شده است');
+        }
+
+        const now = new Date();
+        await tx
+            .update(consignments)
+            .set({ deliveryStatus: 'delivered', deliveredAt: now, updatedAt: now })
+            .where(eq(consignments.id, id));
+
+        const sellerRows = await tx.select().from(sellers).where(eq(sellers.id, existing.sellerId)).for('update');
+        const seller = sellerRows[0];
+        if (seller) {
+            await tx
+                .update(sellers)
+                .set({
+                    currentDebt: seller.currentDebt + existing.totalAmount,
+                    totalHandoversValue: seller.totalHandoversValue + existing.totalAmount,
+                    status: seller.status === 'settled' ? 'active' : seller.status,
+                    updatedAt: now,
+                })
+                .where(eq(sellers.id, seller.id));
+        }
+
+        const created = await tx.select().from(consignments).where(eq(consignments.id, id));
+        return created[0]!;
+    });
+    emitDataChanged('consignment', 'update');
+    return updated;
+}
+
 
 // ---------------------------------------------------------------------------
 // Returns
@@ -565,6 +653,7 @@ export async function createPayment(input: PaymentInput, actorName: string) {
         if (!seller) throw notFound('دست‌فروش یافت نشد');
 
         // Oldest outstanding consignments first (FIFO), locked for update.
+        // Pending deliveries carry no debt yet, so they are not allocatable.
         const outstanding = await tx
             .select()
             .from(consignments)
@@ -572,6 +661,7 @@ export async function createPayment(input: PaymentInput, actorName: string) {
                 and(
                     eq(consignments.sellerId, seller.id),
                     eq(consignments.isDeleted, false),
+                    ne(consignments.deliveryStatus, 'pending'),
                     gt(consignments.remainingAmount, 0),
                 ),
             )
@@ -837,11 +927,17 @@ export async function restoreEntity(type: TrashEntityType, id: string, patch?: R
 
         await tx.update(table).set(setPayload).where(eq(table.id, id));
 
-        // Restoring a consignment re-applies its outstanding debt to the seller.
+        // Restoring a consignment re-applies its outstanding debt to the
+        // seller — but pending-delivery rows never applied debt (their
+        // stock was returned to the warehouse on delete) and owe nothing.
         if (type === 'consignment') {
             const consignmentRows = await tx.select().from(consignments).where(eq(consignments.id, id));
             const consignment = consignmentRows[0];
-            if (consignment && consignment.remainingAmount > 0) {
+            if (
+                consignment &&
+                consignment.deliveryStatus === 'delivered' &&
+                consignment.remainingAmount > 0
+            ) {
                 const sellerRows = await tx.select().from(sellers).where(eq(sellers.id, consignment.sellerId)).for('update');
                 const seller = sellerRows[0];
                 if (seller) {
@@ -886,18 +982,24 @@ export async function getDashboardStats() {
     const tehranToday = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Tehran' });
     const startOfToday = new Date(Date.parse(`${tehranToday}T00:00:00Z`) - 3.5 * 3600 * 1000);
 
-    const [activeSellers, activeItems, activeConsignments, todayPaymentRows, allExpenses, allPayments] =
+    const [activeSellers, activeItems, activeConsignments, todayPaymentRows, allExpenses, allPayments, allOrders] =
         await Promise.all([
             db.select().from(sellers).where(eq(sellers.isDeleted, false)),
             db.select().from(items).where(eq(items.isDeleted, false)),
             db.select().from(consignments).where(eq(consignments.isDeleted, false)),
             db.select().from(payments).where(and(eq(payments.isDeleted, false), sql`${payments.date} >= ${startOfToday}`)),
-            db.select({ amount: expenses.amount }).from(expenses).where(eq(expenses.isDeleted, false)),
-            db.select({ amount: payments.amount }).from(payments).where(eq(payments.isDeleted, false)),
+            db
+                .select({ amount: expenses.amount, paidBy: expenses.paidBy, date: expenses.date })
+                .from(expenses)
+                .where(eq(expenses.isDeleted, false)),
+            db.select({ amount: payments.amount, date: payments.date }).from(payments).where(eq(payments.isDeleted, false)),
+            db.select({ total: orders.total, createdAt: orders.createdAt }).from(orders),
         ]);
 
+    const pendingConsignments = activeConsignments.filter((c) => c.deliveryStatus === 'pending');
+    const deliveredConsignments = activeConsignments.filter((c) => c.deliveryStatus !== 'pending');
     const totalActiveDebt = activeSellers.reduce((s, r) => s + r.currentDebt, 0);
-    const overdueConsignments = activeConsignments.filter(
+    const overdueConsignments = deliveredConsignments.filter(
         (c) => c.dueDate < now && c.status !== 'settled',
     );
     const totalOverdueDebt = overdueConsignments.reduce((s, c) => s + c.remainingAmount, 0);
@@ -906,14 +1008,38 @@ export async function getDashboardStats() {
         (s, i) => s + (i.stockQuantity + i.websiteQuantity) * i.costPrice,
         0
     );
-    const totalItemsInHands = activeConsignments
+    const totalItemsInHands = deliveredConsignments
         .filter((c) => c.status !== 'settled')
         .reduce((s, c) => s + c.items.reduce((ls, l) => ls + (l.quantity - l.returnedQuantity - l.soldQuantity), 0), 0);
-    const activeConsignmentsCount = activeConsignments.filter((c) => c.remainingAmount > 0).length;
+    const activeConsignmentsCount = deliveredConsignments.filter((c) => c.remainingAmount > 0).length;
     const lowStockItemsCount = activeItems.filter((i) => i.stockQuantity <= i.minStockThreshold).length;
     const totalWorkshopCosts = allExpenses.reduce((s, e) => s + e.amount, 0);
     const totalCollected = allPayments.reduce((s, p) => s + p.amount, 0);
-    const totalConsignmentValue = activeConsignments.reduce((s, c) => s + c.netAmount, 0);
+    const totalConsignmentValue = deliveredConsignments.reduce((s, c) => s + c.netAmount, 0);
+    // Workshop liquid balance: total collected minus expenses paid from the
+    // workshop fund (paidBy contains «صندوق»), mirroring the finances page.
+    const fundPaidExpenses = allExpenses
+        .filter((e) => e.paidBy.includes('صندوق'))
+        .reduce((s, e) => s + e.amount, 0);
+    const liquidBalance = totalCollected - fundPaidExpenses;
+
+    // Weekly/monthly income windows, aligned to Tehran calendar days (the
+    // same en-CA + 3.5h back-off used for "today" above).
+    const tehranDayStart = (offsetDays: number) => new Date(startOfToday.getTime() - offsetDays * 86400000);
+    const weekStart = tehranDayStart(6);
+    const monthStart = tehranDayStart(29);
+    const windowSums = (from: Date) => {
+        const collected = allPayments.filter((p) => p.date >= from).reduce((s, p) => s + p.amount, 0);
+        const costs = allExpenses.filter((e) => e.date >= from).reduce((s, e) => s + e.amount, 0);
+        const consignmentGross = deliveredConsignments
+            .filter((c) => c.createdAt >= from)
+            .reduce((s, c) => s + c.netAmount, 0);
+        const ordersGross = allOrders.filter((o) => o.createdAt >= from).reduce((s, o) => s + o.total, 0);
+        return { pure: collected - costs, gross: consignmentGross + ordersGross };
+    };
+    const week = windowSums(weekStart);
+    const month = windowSums(monthStart);
+
 
     return {
         totalActiveDebt,
@@ -931,5 +1057,11 @@ export async function getDashboardStats() {
         netWorkshopProfit: totalCollected - totalWorkshopCosts,
         totalConsignmentValue,
         totalCollected,
+        pendingDeliveriesCount: pendingConsignments.length,
+        liquidBalance,
+        weekPureIncome: week.pure,
+        weekGrossIncome: week.gross,
+        monthPureIncome: month.pure,
+        monthGrossIncome: month.gross,
     };
 }

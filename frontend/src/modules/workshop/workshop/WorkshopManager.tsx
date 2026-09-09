@@ -109,25 +109,25 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
       id: 'workshop_improvement',
       label: 'توسعه، بهسازی و تجهیزات سالن',
       icon: Hammer,
-      badgeColor: 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30',
+      badgeColor: 'bg-brand/15 text-brand-ink dark:text-brand border-brand/30',
     },
     {
       id: 'rent',
       label: 'اجاره سالن کارگاه و انبار',
       icon: Building,
-      badgeColor: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30',
+      badgeColor: 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30',
     },
     {
       id: 'utilities',
       label: 'قبوض آب، برق صنعتی و گاز',
       icon: TrendingUp,
-      badgeColor: 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/30',
+      badgeColor: 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30',
     },
     {
       id: 'tools_equipment',
       label: 'ابزارآلات، قیچی برقی و اتو بخار',
       icon: ScissorsIcon,
-      badgeColor: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/30',
+      badgeColor: 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30',
     },
     {
       id: 'staff_bonus',
@@ -1102,7 +1102,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
               <div className="p-4 sm:p-5 rounded-2xl glass-card border border-stone-200 dark:border-white/10 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-500 flex items-center justify-center font-black">
+                    <div className="w-10 h-10 rounded-xl bg-brand/20 text-brand-ink dark:text-brand flex items-center justify-center font-black">
                       {settlementBalances.owner2.name.slice(0, 1)}
                     </div>
                     <div>
@@ -1332,8 +1332,8 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
             </div>
 
             {/* Quick Action Box 2 */}
-            <div className="glass-card p-5 rounded-2xl space-y-3 border border-purple-500/30">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-500 flex items-center justify-center font-black">
+            <div className="glass-card p-5 rounded-2xl space-y-3 border border-brand/30">
+              <div className="w-10 h-10 rounded-xl bg-brand/20 text-brand-ink dark:text-brand flex items-center justify-center font-black">
                 <Hammer className="w-5 h-5" />
               </div>
               <h4 className="font-black text-sm text-stone-900 dark:text-white">
@@ -1344,7 +1344,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
               </p>
               <button
                 onClick={() => handleOpenNewExpense('workshop_improvement')}
-                className="w-full py-2 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-700 dark:text-purple-300 text-xs font-black transition-all"
+                className="w-full py-2 rounded-xl bg-brand/15 hover:bg-brand/25 border border-brand/30 text-brand-ink dark:text-brand text-xs font-black transition-all"
               >
                 + ثبت هزینه بهسازی کارگاه
               </button>
@@ -1522,7 +1522,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                       label: (
                         <SelectOptionContent
                           primary="سرمایه‌گذار خارج از کارگاه"
-                          badges={<SelectBadge tone="violet">سرمایه‌گذار</SelectBadge>}
+                          badges={<SelectBadge tone="neutral">سرمایه‌گذار</SelectBadge>}
                         />
                       ),
                     },

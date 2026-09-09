@@ -93,7 +93,7 @@ better-auth + admin plugin. Roles: `admin`, `author`, `user` (default on signup)
 - **Node 22** on this machine; backend package.json claims `>=18`.
 - **cPanel prod**: backend runs from `/PolarisStyle/` via cPanel Node.js selector; frontend build copied to `backend/public/` by `scripts/copy-public.js` at build; migrations run via `npm run db:migrate` on server or `repair-migrations.mjs` when `__drizzle_migrations` table is out of sync.
 - **React hook order (EntityProfilePage pattern)**: ALL hooks must run before any conditional early-return (`if (view.missing) return …`). The not-found early return sits AFTER every useMemo/useEffect — compute `visibleEntries` unconditionally with internal null-guarding (`source = view && !view.missing ? view.entries : []`). Violation = "Rendered more hooks than during the previous render" boundary crash when data loads after a missing/loading first render. Apply this pattern to any new profile-type page.
-- **Dashboard widget visibility**: `DashboardOverview` `WIDGETS` ids: `kpiCards`, `salesDebtChart`, `topSellers`, `recentHandovers`, `recentPayments`. Each grid child is individually wrapped in `isVisible(id)` — never wrap two widgets in one switch (topSellers was once dead-wired inside salesDebtChart). Prefs persist server-side via `companyApi.update({dashboardPrefs})` (optimistic + fire-and-forget).
+- **Dashboard widget visibility**: `DashboardOverview` `WIDGETS` ids (14): `clockWidget`, `kpiCards`, `salesDebtChart`, `topSellers`, `recentHandovers`, `recentPayments`, `latestShopSales`, `latestSellerIncome`, `latestReturns`, `topItems`, `scheduledDeliveries`, `pendingProduction`, `liquidBalance`, `incomeWindowStats`. Each grid child is individually wrapped in `isVisible(id)` — never wrap two widgets in one switch (topSellers was once dead-wired inside salesDebtChart). Prefs persist server-side via `companyApi.update({dashboardPrefs})` (optimistic + fire-and-forget).
 - **Edit-tool corruption risk**: this codebase repeatedly lost adjacent lines through patch edits (hook calls, import members, open JSX tags, closing grid divs). After every edit re-`read` the file; after every file run `cd frontend && npx tsc -b`. Symptoms: TS2304 for previously-imported names or TS17002 for unbalanced JSX.
 - **Windows port blocks can hit any port** (seen 2026-09-09): vite died with `EACCES ::1:5173` and even `127.0.0.1:5174` while 3016/8090 listened fine — Hyper-V/WinNAT exclusion or AV interference, not a code problem. Workaround: run vite on another port (`npx vite --host 0.0.0.0 --port 8090`), then trust the new origin in `backend/src/core/origins.ts` `LOCAL_DEV_PORTS` (8090 added) or uploads POSTs get 403 «مبدأ درخواست مجاز نیست».
 
@@ -121,10 +121,10 @@ better-auth + admin plugin. Roles: `admin`, `author`, `user` (default on signup)
 | Uploads | multer → `backend/uploads/` (gitignored), gallery rows in `gallery_images` |
 | Docs | this knowledge base — `.omp/knowledge/` is the single source (markdown/ + old agent files were folded in and removed) |
 
-## DB tables (24, verified live)
+## DB tables (25, verified live 2026-09-09)
 
 Auth: `user`, `session`, `account`, `verification`.
-Workshop: `items`, `categories`, `sellers`, `consignments`, `consignment_returns`, `payments`, `staff`, `owners`, `expenses`, `profit_distributions`, `damage_records`.
+Workshop: `items`, `categories`, `sellers`, `consignments` (incl. `delivery_status`/`delivery_date` scheduled-handover columns), `consignment_returns`, `payments`, `staff`, `owners`, `expenses`, `profit_distributions`, `damage_records`, `workshop_notifications`.
 Orders: `orders`, `user_addresses`.
 CMS: `blog_posts`, `website_settings`, `company_settings`, `gallery_images`, `notification_settings`.
 Infra: `audit_logs`, `__drizzle_migrations`.

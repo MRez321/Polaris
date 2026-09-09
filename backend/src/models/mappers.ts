@@ -97,6 +97,8 @@ export function toConsignmentDto(row: ConsignmentRow): Consignment {
         sellerName: row.sellerName,
         date: iso(row.date),
         dueDate: iso(row.dueDate),
+        deliveryStatus: (row.deliveryStatus as Consignment['deliveryStatus']) ?? 'delivered',
+        deliveryDate: row.deliveryDate ? iso(row.deliveryDate) : row.deliveredAt ? iso(row.deliveredAt) : null,
         status: row.status as Consignment['status'],
         items: row.items,
         totalAmount: row.totalAmount,

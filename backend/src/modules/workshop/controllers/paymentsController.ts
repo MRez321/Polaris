@@ -4,6 +4,7 @@ import { z } from 'zod';
 import * as svc from '../inventoryService.js';
 import { toPaymentDto } from '../../../models/mappers.js';
 import { logAudit } from '../../../core/services/auditService.js';
+import { recordWorkshopEvent } from '../services/notificationsService.js';
 
 const paymentSchema = z.object({
     sellerId: z.string().min(1),
@@ -29,5 +30,13 @@ export async function createPayment(req: Request, res: Response): Promise<void> 
         `پرداخت ${row.code} به مبلغ ${row.amount} برای ${row.sellerName} ثبت شد`,
         req.ip,
     );
+    recordWorkshopEvent({
+        type: 'notification',
+        title: 'تسویه ثبت شده',
+        body: `پرداخت ${row.code} به مبلغ ${row.amount.toLocaleString('fa-IR')} برای ${row.sellerName} ثبت شد`,
+        entityType: 'payment',
+        entityId: row.id,
+        link: '/workshop/finances/payments',
+    });
     res.status(201).json(toPaymentDto(row));
 }

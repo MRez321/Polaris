@@ -12,7 +12,7 @@ import * as dashboard from './controllers/dashboardController.js';
 import * as orders from './controllers/ordersController.js';
 import * as analytics from './controllers/analyticsController.js';
 import * as damage from './controllers/damageController.js';
-import * as notifications from '../../modules/notifications/notificationsController.js';
+import * as outboundNotifications from '../../modules/notifications/notificationsController.js';
 
 /**
  * Workshop (business-tracking) routes. Mounted at /api/workshop and, during
@@ -95,9 +95,21 @@ router.put('/trash/edit-and-restore/:type/:id', trash.editAndRestore);
 router.delete('/trash/permanent/:type/:id', trash.permanentDelete);
 
 // Outbound notifications (Telegram / Melipayamak SMS) settings + test sends
-router.get('/notifications/settings', notifications.getNotifications);
-router.put('/notifications/settings', notifications.updateNotifications);
-router.post('/notifications/test/telegram', notifications.testTelegramNotification);
-router.post('/notifications/test/sms', notifications.testSmsNotification);
+router.get('/notifications/settings', outboundNotifications.getNotifications);
+router.put('/notifications/settings', outboundNotifications.updateNotifications);
+router.post('/notifications/test/telegram', outboundNotifications.testTelegramNotification);
+router.post('/notifications/test/sms', outboundNotifications.testSmsNotification);
+
+// In-app workshop notification feed (header bell): merged stored events +
+// live derived states. Static paths above win over :id since Express matches
+// in registration order; /read-all registers before /:id/read for the same
+// reason.
+import * as inAppNotifications from './controllers/notificationsController.js';
+router.get('/notifications', inAppNotifications.getWorkshopNotifications);
+router.put('/notifications/read-all', inAppNotifications.readAllWorkshopNotifications);
+router.put('/notifications/:id/read', inAppNotifications.readWorkshopNotification);
+
+// Scheduled delivery: mark a pending handover as physically delivered.
+router.post('/consignments/:id/deliver', consignments.deliverConsignment);
 
 export default router;

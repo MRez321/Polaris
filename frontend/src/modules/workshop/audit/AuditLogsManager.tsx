@@ -76,15 +76,15 @@ export const AuditLogsManager: React.FC = () => {
       case 'payment':
         return <CreditCard className="w-4 h-4 text-emerald-500" />;
       case 'staff':
-        return <Shield className="w-4 h-4 text-purple-500" />;
+        return <Shield className="w-4 h-4 text-orange-500" />;
       case 'return':
         return <HistoryIcon className="w-4 h-4 text-rose-500" />;
       case 'cost':
-        return <Receipt className="w-4 h-4 text-orange-500" />;
+        return <Receipt className="w-4 h-4 text-amber-500" />;
       case 'profit':
-        return <TrendingUp className="w-4 h-4 text-lime-600" />;
+        return <TrendingUp className="w-4 h-4 text-emerald-500" />;
       case 'notifications':
-        return <Bell className="w-4 h-4 text-sky-500" />;
+        return <Bell className="w-4 h-4 text-blue-500" />;
       default:
         return <Clock className="w-4 h-4 text-stone-400" />;
     }
@@ -237,7 +237,7 @@ export const AuditLogsManager: React.FC = () => {
                         {log.userName}
                       </span>
                       {log.userRole && (
-                        <span className="px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-600 dark:text-purple-300 text-[10px] font-bold">
+                        <span className="px-2 py-0.5 rounded-md bg-stone-500/15 text-stone-600 dark:text-stone-300 text-[10px] font-bold">
                           {getRoleLabel(log.userRole)}
                         </span>
                       )}

@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 
 interface BadgeProps {
   children: React.ReactNode;
-  variant?: 'default' | 'gold' | 'success' | 'warning' | 'danger' | 'outline' | 'neutral';
+  variant?: 'default' | 'gold' | 'success' | 'warning' | 'danger' | 'outline' | 'neutral' | 'orange' | 'blue';
   className?: string;
   size?: 'sm' | 'md' | 'lg';
 }
@@ -26,6 +26,8 @@ export const Badge: React.FC<BadgeProps> = ({
     success: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 shadow-[0_0_8px_rgba(16,185,129,0.1)]',
     warning: 'bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.1)]',
     danger: 'bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30 shadow-[0_0_8px_rgba(244,63,94,0.1)]',
+    orange: 'bg-orange-500/15 text-orange-700 dark:text-orange-400 border border-orange-500/30 shadow-[0_0_8px_rgba(249,115,22,0.1)]',
+    blue: 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30 shadow-[0_0_8px_rgba(59,130,246,0.1)]',
     neutral: 'bg-stone-100/80 dark:bg-white/5 text-stone-600 dark:text-gray-400 border border-stone-200/80 dark:border-white/5',
     outline: 'border border-stone-300 dark:border-white/20 text-stone-700 dark:text-stone-300 bg-white/20 dark:bg-black/20',
   };

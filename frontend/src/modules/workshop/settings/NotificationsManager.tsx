@@ -336,7 +336,7 @@ export const NotificationsManager: React.FC = () => {
                   type="button"
                   onClick={() => commitSmsPhones(settings.sms.recipientPhones.filter((_, i) => i !== index))}
                   disabled={testingSms}
-                  className="p-2.5 rounded-xl text-red-500 hover:bg-red-500/10 disabled:opacity-40 transition-colors"
+                  className="p-2.5 rounded-xl text-rose-500 hover:bg-rose-500/10 disabled:opacity-40 transition-colors"
                   aria-label="حذف شماره"
                   title="حذف شماره"
                 >

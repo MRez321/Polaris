@@ -263,5 +263,68 @@ check('auth role admin', r.data.user?.role === 'admin', r.data.user?.role);
 r = await req('POST', W + '/consignments', { sellerId: 'nonexistent', dueDate: due, itemsList: [{ itemId: 'x', quantity: 1, unitPrice: 1 }] });
 check('error shape {error}', r.status >= 400 && typeof r.data.error === 'string', r);
 
+// 20. Scheduled delivery: handover with deliveryDate → pending, no debt
+// (delta-based: smoke reruns accumulate rows on the same seller/items)
+const debtBeforeSched = (await req('GET', W + `/sellers/${seller.id}`)).data.currentDebt;
+const stockBeforeSchedCreate = (await req('GET', W + '/items')).data.find((i) => i.id === item.id).stockQuantity;
+const deliveryDate = new Date(Date.now() + 7 * 86400000).toISOString();
+r = await req('POST', W + '/consignments', {
+    sellerId: seller.id,
+    dueDate: due,
+    deliveryDate,
+    itemsList: [{ itemId: item.id, quantity: 3, unitPrice: 1100000 }],
+});
+check('scheduled handover 201', r.status === 201 && r.data.deliveryStatus === 'pending', r);
+const sched = r.data;
+check('scheduled stores delivery date', sched.deliveryDate?.slice(0, 10) === deliveryDate.slice(0, 10), sched.deliveryDate);
+const stockBeforeSched = (await req('GET', W + '/items')).data.find((i) => i.id === item.id).stockQuantity;
+check('scheduled reserves stock (−3)', stockBeforeSched === stockBeforeSchedCreate - 3, stockBeforeSched);
+r = await req('GET', W + `/sellers/${seller.id}`);
+check('scheduled applies no debt', r.data.currentDebt === debtBeforeSched, r.data.currentDebt);
+
+// 21. Deliver the scheduled handover → debt applies, status flips
+r = await req('POST', W + `/consignments/${sched.id}/deliver`);
+check('deliver 200', r.status === 200 && r.data.deliveryStatus === 'delivered', r);
+r = await req('GET', W + `/sellers/${seller.id}`);
+check('deliver applies debt', r.data.currentDebt === debtBeforeSched + sched.totalAmount, r.data.currentDebt);
+
+// 22. Re-deliver → 400 (already delivered)
+r = await req('POST', W + `/consignments/${sched.id}/deliver`);
+check('re-deliver blocked 400', r.status === 400 && typeof r.data.error === 'string', r.status);
+
+// 23. Pending-delete restores stock, applies no debt
+r = await req('POST', W + '/consignments', {
+    sellerId: seller.id,
+    dueDate: due,
+    deliveryDate,
+    itemsList: [{ itemId: item.id, quantity: 2, unitPrice: 1100000 }],
+});
+const sched2 = r.data;
+check('second scheduled 201', r.status === 201 && sched2.deliveryStatus === 'pending', r);
+const stockBeforeSched2 = (await req('GET', W + '/items')).data.find((i) => i.id === item.id).stockQuantity;
+r = await req('DELETE', W + `/consignments/${sched2.id}`);
+check('delete pending consignment', r.status === 200, r);
+const stockAfterDel = (await req('GET', W + '/items')).data.find((i) => i.id === item.id).stockQuantity;
+check('pending delete restores stock (+2)', stockAfterDel === stockBeforeSched2 + 2, stockAfterDel);
+
+// 24. Notifications feed: stored events + derived states
+r = await req('GET', W + '/notifications');
+check('notifications 200', r.status === 200 && Array.isArray(r.data.notifications), r);
+check('notifications unreadCount present', typeof r.data.unreadCount === 'number', r.data.unreadCount);
+check('notification: handover event stored', r.data.notifications.some((n) => n.type === 'notification' && n.title.includes('واگذاری')), r.data.notifications.length);
+check('derived: pending-delivery gone after deliver', !r.data.notifications.some((n) => n.entityId === `pending-delivery:${sched.id}`), sched.id);
+check('derived: due-soon or overdue present', r.data.notifications.some((n) => n.type === 'need_action' || n.type === 'critical'), true);
+
+// 25. Mark one read, then read-all
+const unreadOne = r.data.notifications.find((n) => !n.readAt);
+if (unreadOne) {
+    r = await req('PUT', W + `/notifications/${encodeURIComponent(unreadOne.id)}/read`);
+    check('mark one read', r.status === 200, r);
+}
+r = await req('PUT', W + '/notifications/read-all');
+check('read-all 200', r.status === 200, r);
+r = await req('GET', W + '/notifications');
+check('all read after read-all', r.data.unreadCount === 0, r.data.unreadCount);
+
 console.log(failures === 0 ? '\n🎉 ALL SMOKE TESTS PASSED' : `\n💥 ${failures} FAILURES`);
 process.exit(failures === 0 ? 0 : 1);

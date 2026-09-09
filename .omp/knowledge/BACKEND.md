@@ -19,7 +19,7 @@ backend/
     controllers/     health, orders (customer), addresses (customer)
     schema/          drizzle table definitions — auth, workshop, orders, cms, company, notifications, audit, userAddresses, clientId
   scripts/           migrate.js, seed.js, seed-workshop.js, smoke*.mjs, copy-public.js, repair-migrations.mjs
-  drizzle/          *.sql migration files (11: 0000–0010)
+  drizzle/          *.sql migration files (15: 0000–0014)
   uploads/          multer output (gitignored)
   public/           frontend prod build copied here by copy-public.js at build
 ```
@@ -47,13 +47,14 @@ GET/PUT /orders, PUT /orders/:id          (status transitions)
 GET/POST/PUT/DELETE /items, PUT /items/:id/shop-allocation (row-locked: concurrent handovers/orders can never over-allocate; websiteQuantity only moves via this endpoint, never via PUT /items/:id), POST /items/:id/mark-ready (pending_production → ready)
 GET/POST /categories
 GET/POST/PUT/DELETE /sellers (+GET /sellers/:id)
-GET/POST/DELETE /consignments, POST /consignments/return, GET /consignments/returns
+GET/POST/DELETE /consignments, POST /consignments/return, POST /consignments/:id/deliver (scheduled → delivered: stamps deliveredAt, applies seller debt/due), GET /consignments/returns
 GET/POST /payments
 GET/POST/PUT/DELETE /staff, GET/PUT /owners
 GET/POST/PUT/DELETE /expenses, GET/POST /profit-distribution
 GET/POST /damage-records, PUT /damage-records/:id, POST /damage-records/:id/fix (repairs + restocks), (dispose = PUT status)
 GET /trash, POST /trash/restore/:type/:id, PUT /trash/edit-and-restore/:type/:id, DELETE /trash/permanent/:type/:id
 GET/PUT /notifications/settings, POST /notifications/test/{telegram,sms}
+GET /notifications/feed (+ ?limit), POST /notifications/feed/read (one), POST /notifications/feed/read-all  (workshop notifications center: derived + event notifications, per-item read marks)
 ```
 
 `/api/company` (companyController): GET returns the full CompanyBranding JSON from `company_settings.data`; PUT validates with `companySchema` (Zod) which includes optional `analyticsSettings {gaMeasurementId, websiteUrl}` and flat `dashboardPrefs: Record<string, unknown>` — `updateCompany` shallow-merges fields into the JSON blob (nested objects replace wholesale, so callers always send the complete nested object).

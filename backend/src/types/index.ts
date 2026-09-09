@@ -190,6 +190,9 @@ export interface Consignment {
     sellerName: string;
     date: string;
     dueDate: string;
+    /** 'pending' = scheduled handover (stock reserved, debt not yet applied). */
+    deliveryStatus: 'delivered' | 'pending';
+    deliveryDate: string | null;
     status: 'active' | 'partially_settled' | 'settled' | 'overdue';
     items: ConsignmentItemLine[];
     totalAmount: number;
@@ -285,6 +288,26 @@ export interface DashboardStats {
     netWorkshopProfit?: number;
     totalConsignmentValue?: number;
     totalCollected?: number;
+    pendingDeliveriesCount?: number;
+    liquidBalance?: number;
+    weekPureIncome?: number;
+    weekGrossIncome?: number;
+    monthPureIncome?: number;
+    monthGrossIncome?: number;
+}
+
+export type WorkshopNotificationType = 'critical' | 'need_action' | 'notification' | 'system';
+
+export interface WorkshopNotification {
+    id: string;
+    type?: WorkshopNotificationType;
+    title: string;
+    body?: string;
+    entityType: string;
+    entityId: string;
+    link?: string;
+    createdAt: string;
+    readAt: string | null;
 }
 
 export interface CostShare {

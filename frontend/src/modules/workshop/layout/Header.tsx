@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
   Scissors,
   Plus,
@@ -12,23 +12,34 @@ import {
 import { toPersianDigits } from '@/utils/persian';
 import { useTheme } from '@/context/ThemeContext';
 import { useUI } from '@/modules/workshop/context/UIContext';
-import { useData } from '@/modules/workshop/context/DataContext';
 import { UserMenu } from '@/components/common/UserMenu';
 import { useBrand } from '@/context/BrandContext';
 import { SideMenu } from './SideMenu';
-
+import { NotificationsPanel } from './NotificationsPanel';
+import { notificationsApi } from '@/lib/api';
 
 export const Header: React.FC = () => {
-  const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useTheme();
-  const { consignments } = useData();
   const { openQuickHandover, openQuickPayment } = useUI();
   const { company } = useBrand();
   const [sideMenuOpen, setSideMenuOpen] = React.useState(false);
+  const [bellOpen, setBellOpen] = React.useState(false);
+  const [unreadCount, setUnreadCount] = React.useState(0);
 
-  const overdueCount = consignments.filter(
-    (c) => (c.remainingAmount || 0) > 0 && new Date(c.dueDate).getTime() < Date.now()
-  ).length;
+  // Unread badge mirrors the notifications feed; refreshed with data cycle.
+  const refreshUnread = React.useCallback(async () => {
+    try {
+      const feed = await notificationsApi.listFeed();
+      setUnreadCount(feed.unreadCount);
+    } catch {
+      // badge stays at last value
+    }
+  }, []);
+  React.useEffect(() => {
+    void refreshUnread();
+    const t = setInterval(() => void refreshUnread(), 60_000);
+    return () => clearInterval(t);
+  }, [refreshUnread]);
 
   return (
     <header className="sticky top-0 z-40 glass-panel border-b border-stone-200 dark:border-white/5 shadow-sm transition-all">
@@ -88,19 +99,19 @@ export const Header: React.FC = () => {
             <span className="hidden sm:inline">تحویل بار جدید</span>
           </button>
 
-          {/* Overdue alert indicator button */}
-          {overdueCount > 0 && (
-            <button
-              onClick={() => navigate('/workshop/consignments')}
-              className="relative p-2 rounded-xl text-rose-500 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 transition-colors"
-              title={`${toPersianDigits(overdueCount)} فاکتور سررسید گذشته`}
-            >
-              <Bell className="w-4 h-4" />
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-600 text-white text-[10px] flex items-center justify-center font-black animate-pulse">
-                {toPersianDigits(overdueCount)}
+          {/* Notification center bell — always visible, opens the panel */}
+          <button
+            onClick={() => setBellOpen(true)}
+            className="relative p-2 rounded-xl text-stone-700 dark:text-gray-300 glass-card hover:border-brand transition-colors"
+            title="مرکز اعلان‌ها"
+          >
+            <Bell className="w-4 h-4" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-rose-600 text-white text-[10px] flex items-center justify-center font-black">
+                {toPersianDigits(unreadCount)}
               </span>
-            </button>
-          )}
+            )}
+          </button>
 
           {/* Day / Night Theme Switcher */}
           <button
@@ -122,6 +133,7 @@ export const Header: React.FC = () => {
       </div>
 
       <SideMenu open={sideMenuOpen} onOpenChange={setSideMenuOpen} />
+      <NotificationsPanel open={bellOpen} onOpenChange={(o) => { setBellOpen(o); if (!o) void refreshUnread(); }} />
     </header>
   );
 };

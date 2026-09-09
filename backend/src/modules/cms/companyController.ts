@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { getCompany, updateCompany } from './services/settingsService.js';
 import { logAudit } from '../../core/services/auditService.js';
+import { recordWorkshopEvent } from '../workshop/services/notificationsService.js';
 
 const hexColor = z
     .string()
@@ -62,5 +63,13 @@ export async function updateCompanyBranding(req: Request, res: Response): Promis
     const patch = companySchema.parse(req.body);
     const updated = await updateCompany(patch);
     logAudit(req.auth ?? null, 'update', 'settings', 'اطلاعات برند و کارگاه به‌روزرسانی شد', req.ip);
+    recordWorkshopEvent({
+        type: 'system',
+        title: 'تغییر تنظیمات',
+        body: 'اطلاعات برند و کارگاه به‌روزرسانی شد',
+        entityType: 'settings',
+        entityId: 'company',
+        link: '/workshop/settings',
+    });
     res.json(updated);
 }

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import * as svc from '../inventoryService.js';
 import { toItemDto } from '../../../models/mappers.js';
 import { logAudit } from '../../../core/services/auditService.js';
+import { recordWorkshopEvent } from '../services/notificationsService.js';
 import { badRequest, pathParam } from '../../../core/utils/apiError.js';
 import { clientIdSchema } from '../../../schema/clientId.js';
 
@@ -83,8 +84,31 @@ export async function createItem(req: Request, res: Response): Promise<void> {
 export async function updateItem(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه کالا');
     const data = itemSchema.partial().parse(req.body);
+    const before = await svc.getItemRow(id);
     const row = await svc.updateItem(id, data);
     logAudit(req.auth ?? null, 'update', 'item', `کالای «${row.name}» ویرایش شد`, req.ip);
+    // Stock-transition events: zero → critical, increase → notification.
+    if (before && data.stockQuantity !== undefined && data.stockQuantity !== before.stockQuantity) {
+        if (data.stockQuantity === 0) {
+            recordWorkshopEvent({
+                type: 'critical',
+                title: `موجودی ${row.name} صفر شد`,
+                body: `موجودی کالای «${row.name}» (${row.code}) به صفر رسید`,
+                entityType: 'item',
+                entityId: row.id,
+                link: '/workshop/inventory',
+            });
+        } else if (data.stockQuantity > before.stockQuantity) {
+            recordWorkshopEvent({
+                type: 'notification',
+                title: `موجودی ${row.name} افزایش یافت`,
+                body: `موجودی کالای «${row.name}» (${row.code}) از ${before.stockQuantity} به ${data.stockQuantity} رسید`,
+                entityType: 'item',
+                entityId: row.id,
+                link: '/workshop/inventory',
+            });
+        }
+    }
     res.json(toItemDto(row, await categoryLabelFor(row.category)));
 }
 

@@ -336,7 +336,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
       <div>
         <div className="flex items-center gap-2">
           {withTypeBadge && (
-            <span className="text-[10px] px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-600 dark:text-purple-300 font-bold">پرسنل</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-md bg-brand/15 text-brand-ink dark:text-brand font-bold">پرسنل</span>
           )}
           <span className="font-bold text-sm text-stone-900 dark:text-white">{st.name}</span>
           <span className="text-xs text-brand">{st.roleTitle}</span>
@@ -669,7 +669,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           <div className="glass-panel p-4 rounded-2xl flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px]">
             <span className="flex items-center gap-1.5 font-bold">
               <Activity
-                className={`w-4 h-4 ${isServerConnectedLive ? 'text-emerald-500' : 'text-red-500'}`}
+                className={`w-4 h-4 ${isServerConnectedLive ? 'text-emerald-500' : 'text-rose-500'}`}
               />
               {isServerConnectedLive ? 'اتصال برقرار است' : 'اتصال قطع است'}
             </span>

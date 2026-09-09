@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 import { db } from '../../config/drizzle.js';
 import * as schema from '../../schema/index.js';
 import { logAudit } from '../../core/services/auditService.js';
+import { recordWorkshopEvent } from '../workshop/services/notificationsService.js';
 import { trustedOrigins } from '../../core/origins.js';
 
 dotenv.config();
@@ -58,6 +59,13 @@ export const auth = betterAuth({
                                 `ورود کاربر ${u.name} (${u.email})`,
                                 typeof session.ipAddress === 'string' ? session.ipAddress : undefined,
                             );
+                            recordWorkshopEvent({
+                                type: 'system',
+                                title: 'ورود کاربر',
+                                body: `کاربر ${u.name} (${u.email}) وارد سامانه شد`,
+                                entityType: 'auth',
+                                entityId: u.id,
+                            });
                         }
                     } catch (err) {
                         console.error('⚠️ Failed to write login audit log:', err);

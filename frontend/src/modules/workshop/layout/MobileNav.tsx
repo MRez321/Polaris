@@ -111,7 +111,7 @@ export const MobileNav: React.FC = () => {
               className={menuItemClass}
               onClick={() => navigate('/workshop/finances/costs')}
             >
-              <span className="w-7 h-7 rounded-xl bg-violet-500/15 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0">
+              <span className="w-7 h-7 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                 <Plus className="w-4 h-4" />
               </span>
               <span>هزینه کارگاه</span>

@@ -129,7 +129,7 @@ const KIND_META: Record<
   return_line: { Icon: RotateCcw, boxCls: 'bg-rose-500/15 border-rose-500/30', iconCls: 'text-rose-600 dark:text-rose-400' },
   activity: { Icon: History, boxCls: 'bg-blue-500/15 border-blue-500/30', iconCls: 'text-blue-600 dark:text-blue-400' },
   audit: { Icon: ScrollText, boxCls: 'bg-stone-500/10 border-stone-400/30', iconCls: 'text-stone-500 dark:text-gray-400' },
-  cost_share: { Icon: Wallet, boxCls: 'bg-violet-500/15 border-violet-500/30', iconCls: 'text-violet-600 dark:text-violet-400' },
+  cost_share: { Icon: Wallet, boxCls: 'bg-brand/15 border-brand/30', iconCls: 'text-brand-ink dark:text-brand' },
   created: { Icon: PackagePlus, boxCls: 'bg-brand/15 border-brand/30', iconCls: 'text-brand' },
 };
 

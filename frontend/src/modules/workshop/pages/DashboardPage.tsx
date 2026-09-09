@@ -6,14 +6,31 @@ import { useData } from '@/modules/workshop/context/DataContext';
 import { useUI } from '@/modules/workshop/context/UIContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useComputedStats } from '@/modules/workshop/hooks/useComputedStats';
-import { companyApi, getApiErrorMessage } from '@/lib/api';
+import { companyApi, getApiErrorMessage, ordersApi, analyticsApi } from '@/lib/api';
+import type { AnalyticsResult } from '@/lib/api';
+import type { Order } from '@/types';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { sellers, consignments, payments, items, workshopInfo, setWorkshopInfo } = useData();
+  const { sellers, consignments, payments, items, returns, workshopInfo, setWorkshopInfo } = useData();
   const { openQuickHandover, openQuickPayment, setSelectedConsignment } = useUI();
   const { isDarkMode } = useTheme();
   const stats = useComputedStats();
+  const [orders, setOrders] = React.useState<Order[] | null>(null);
+  const [analytics, setAnalytics] = React.useState<AnalyticsResult | null>(null);
+
+  // Dashboard widgets read storefront orders + cross-channel analytics,
+  // which live outside the shared DataContext entities.
+  React.useEffect(() => {
+    ordersApi
+      .all()
+      .then(setOrders)
+      .catch(() => setOrders([]));
+    analyticsApi
+      .get()
+      .then(setAnalytics)
+      .catch(() => setAnalytics(null));
+  }, []);
 
   // Persist widget-visibility toggles into company_settings.dashboardPrefs.
   const handlePrefsChange = (prefs: { [widgetId: string]: boolean }) => {
@@ -32,6 +49,9 @@ const DashboardPage: React.FC = () => {
       consignments={consignments}
       payments={payments}
       items={items}
+      orders={orders ?? []}
+      returns={returns}
+      analytics={analytics}
       darkMode={isDarkMode}
       onOpenHandover={() => openQuickHandover()}
       onOpenPayment={() => openQuickPayment()}

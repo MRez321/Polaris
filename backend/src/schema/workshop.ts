@@ -221,6 +221,13 @@ export const consignments = mysqlTable(
         sellerName: varchar('seller_name', { length: 255 }).notNull(),
         date: datetime('date').notNull().default(sql`CURRENT_TIMESTAMP`),
         dueDate: datetime('due_date').notNull(),
+        // Delivery scheduling: 'delivered' = goods physically handed over at
+        // creation time (the pre-0013 behavior — existing rows backfill to
+        // this); 'pending' = scheduled handover whose stock is reserved but
+        // whose seller debt / due-date countdown starts only on delivery.
+        deliveryStatus: varchar('delivery_status', { length: 32 }).notNull().default('delivered'),
+        deliveredAt: datetime('delivered_at'),
+        deliveryDate: datetime('delivery_date'),
         status: varchar('status', { length: 32 }).notNull().default('active'),
         items: json('items').$type<ConsignmentItemLine[]>().notNull(),
         totalAmount: bigint('total_amount', { mode: 'number' }).notNull(),

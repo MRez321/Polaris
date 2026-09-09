@@ -25,6 +25,7 @@ import type {
   WebsiteSettings,
   NotificationSettings,
   NotificationSettingsResponse,
+  WorkshopNotification,
 } from '@/types';
 
 /**
@@ -139,6 +140,8 @@ export const sellersApi = {
 export interface HandoverPayload {
   sellerId: string;
   dueDate: string;
+  /** Set for scheduled handovers («حواله در انتظار تحویل»). */
+  deliveryDate?: string;
   notes?: string;
   itemsList: {
     itemId: string;
@@ -172,6 +175,8 @@ export const consignmentsApi = {
   list: () => api.get<Consignment[]>(`${W}/consignments`).then((r) => r.data),
   create: (data: HandoverPayload) => api.post<Consignment>(`${W}/consignments`, data).then((r) => r.data),
   remove: (id: string) => api.delete(`${W}/consignments/${id}`).then((r) => r.data),
+  /** Mark a scheduled handover as physically delivered (debt applies). */
+  deliver: (id: string) => api.post<Consignment>(`${W}/consignments/${id}/deliver`).then((r) => r.data),
   submitReturn: (data: ReturnPayload) =>
     api
       .post<{ message: string; returnRecord: ConsignmentReturn; updatedConsignment: Consignment }>(
@@ -361,6 +366,7 @@ export const addressesApi = {
 // Credential values are stored in the notification_settings row (admin-only
 // surface); .env values on the server act as fallback until overridden here.
 export const notificationsApi = {
+  // --- Outbound channels (Telegram / Melipayamak SMS settings) ---
   get: () => api.get<NotificationSettingsResponse>(`${W}/notifications/settings`).then((r) => r.data),
   update: (patch: Partial<NotificationSettings>) =>
     api.put<NotificationSettingsResponse>(`${W}/notifications/settings`, patch).then((r) => r.data),
@@ -368,4 +374,12 @@ export const notificationsApi = {
     api.post<{ success: boolean; message: string; botUsername: string | null }>(`${W}/notifications/test/telegram`).then((r) => r.data),
   testSms: (recipient: string) =>
     api.post<{ success: boolean; message: string }>(`${W}/notifications/test/sms`, { recipient }).then((r) => r.data),
+  // --- In-app bell feed (stored events + live derived states) ---
+  listFeed: () =>
+    api
+      .get<{ notifications: WorkshopNotification[]; unreadCount: number }>(`${W}/notifications`)
+      .then((r) => r.data),
+  markFeedRead: (id: string) =>
+    api.put<void>(`${W}/notifications/${encodeURIComponent(id)}/read`).then((r) => r.data),
+  markAllFeedRead: () => api.put<void>(`${W}/notifications/read-all`).then((r) => r.data),
 };

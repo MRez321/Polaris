@@ -124,12 +124,12 @@ export const AnalyticsPage: React.FC = () => {
             {formatToman(data?.shopChannel.revenue ?? 0)}
           </p>
         </div>
-        <div className="glass-card p-4 rounded-2xl space-y-1 border-r-4 border-r-sky-500/60">
+        <div className="glass-card p-4 rounded-2xl space-y-1 border-r-4 border-r-blue-500/60">
           <span className="text-[11px] text-stone-500 flex items-center gap-1">
             <Users className="w-3.5 h-3.5" />
             فروش دست‌فروش‌ها:
           </span>
-          <p className="text-xl font-black text-sky-600 dark:text-sky-400 font-mono" dir="ltr">
+          <p className="text-xl font-black text-blue-600 dark:text-blue-400 font-mono" dir="ltr">
             {toPersianDigits(data?.sellerChannel.totalSold ?? 0)}
           </p>
           <p className="text-[10px] text-stone-400 font-mono" dir="ltr">
@@ -148,7 +148,7 @@ export const AnalyticsPage: React.FC = () => {
             {formatToman(data?.totalRevenue ?? 0)}
           </p>
         </div>
-        <div className="glass-card p-4 rounded-2xl space-y-1 border-r-4 border-r-violet-500/60">
+        <div className="glass-card p-4 rounded-2xl space-y-1 border-r-4 border-r-blue-500/60">
           <span className="text-[11px] text-stone-500">پرفروش‌ترین کالا:</span>
           <p className="text-sm font-black leading-5">{topItems[0]?.itemName ?? '—'}</p>
           <p className="text-[10px] text-stone-400 font-mono" dir="ltr">
@@ -191,7 +191,7 @@ export const AnalyticsPage: React.FC = () => {
                       title={`فروشگاه: ${item.shopSold}`}
                     />
                     <div
-                      className="h-full bg-sky-500/80"
+                      className="h-full bg-blue-500/80"
                       style={{ width: `${(pct * sellerPct) / 100}%` }}
                       title={`دست‌فروش: ${item.sellerSold}`}
                     />
@@ -202,7 +202,7 @@ export const AnalyticsPage: React.FC = () => {
                       فروشگاه: {toPersianDigits(item.shopSold)}
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-sky-500/80" />
+                      <span className="w-2 h-2 rounded-full bg-blue-500/80" />
                       دست‌فروش: {toPersianDigits(item.sellerSold)}
                     </span>
                     {variantTotal(item.byVariant) > 0 && (
@@ -250,7 +250,7 @@ export const AnalyticsPage: React.FC = () => {
                   </div>
                   <div className="h-2 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-sky-500/80"
+                      className="h-full rounded-full bg-blue-500/80"
                       style={{ width: `${Math.max(4, Math.round((s.totalSold / maxSellerSold) * 100))}%` }}
                     />
                   </div>

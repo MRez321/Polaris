@@ -5,10 +5,12 @@ import * as svc from '../inventoryService.js';
 import { toConsignmentDto, toReturnDto } from '../../../models/mappers.js';
 import { logAudit } from '../../../core/services/auditService.js';
 import { badRequest, pathParam } from '../../../core/utils/apiError.js';
+import { recordWorkshopEvent } from '../services/notificationsService.js';
 
 const handoverSchema = z.object({
     sellerId: z.string().min(1),
     dueDate: z.string().min(1),
+    deliveryDate: z.string().min(1).optional(),
     notes: z.string().optional(),
     itemsList: z
         .array(
@@ -55,8 +57,33 @@ export async function createConsignment(req: Request, res: Response): Promise<vo
     const actor = req.auth?.user.name ?? 'سیستم';
     const row = await svc.createHandover(data, actor);
     logAudit(req.auth ?? null, 'create', 'consignment', `واگذاری ${row.code} برای ${row.sellerName} به مبلغ ${row.totalAmount} ثبت شد`, req.ip);
+    recordWorkshopEvent({
+        type: 'notification',
+        title: row.deliveryStatus === 'pending' ? 'حواله در انتظار تحویل ثبت شد' : 'واگذاری انجام شد',
+        body: `واگذاری ${row.code} برای ${row.sellerName} به مبلغ ${row.totalAmount.toLocaleString('fa-IR')} ثبت شد`,
+        entityType: 'consignment',
+        entityId: row.id,
+        link: '/workshop/consignments',
+    });
     res.status(201).json(toConsignmentDto(row));
 }
+
+export async function deliverConsignment(req: Request, res: Response): Promise<void> {
+    const id = pathParam(req, 'id', 'شناسه واگذاری');
+    const actor = req.auth?.user.name ?? 'سیستم';
+    const row = await svc.markDelivered(id, actor);
+    logAudit(req.auth ?? null, 'update', 'consignment', `واگذاری ${row.code} به ${row.sellerName} تحویل داده شد`, req.ip);
+    recordWorkshopEvent({
+        type: 'notification',
+        title: 'واگذاری انجام شد',
+        body: `حواله ${row.code} به ${row.sellerName} تحویل داده شد و بدهی ثبت گردید`,
+        entityType: 'consignment',
+        entityId: row.id,
+        link: '/workshop/consignments',
+    });
+    res.json(toConsignmentDto(row));
+}
+
 
 export async function deleteConsignment(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه واگذاری');

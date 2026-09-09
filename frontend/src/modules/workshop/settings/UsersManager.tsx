@@ -264,7 +264,7 @@ export const UsersManager: React.FC = () => {
                       <span
                         className={
                           user.role === 'admin'
-                            ? 'px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-600 dark:text-purple-300 text-[10px] font-bold'
+                            ? 'px-2 py-0.5 rounded-md bg-brand/15 text-brand-ink dark:text-brand text-[10px] font-bold'
                             : 'px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-600 dark:text-blue-300 text-[10px] font-bold'
                         }
                       >
