@@ -27,6 +27,7 @@ import {
   History as HistoryIcon,
   Users,
   Bell,
+  Archive,
 } from 'lucide-react';
 import type { CompanyBranding, GarmentItem, Seller, StaffMember, WorkshopExpense, Consignment } from '@/types';
 import { toPersianDigits, formatToman, toJalaliDate } from '@/utils/persian';
@@ -38,6 +39,7 @@ import { ImagePicker } from '@/components/common/ImagePicker';
 import { GalleryManager } from './GalleryManager';
 import { UsersManager } from './UsersManager';
 import { NotificationsManager } from './NotificationsManager';
+import { BackupManager } from './BackupManager';
 import { toast } from 'sonner';
 import { normalizePhoneInput, isValidIranPhone, PHONE_ERROR } from '@/modules/workshop/utils/validation';
 
@@ -64,7 +66,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
   networkStatus,
   onOpenPwaInstall,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'branding' | 'gallery' | 'trash' | 'system' | 'audit' | 'users' | 'notifications'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'branding' | 'gallery' | 'trash' | 'backups' | 'system' | 'audit' | 'users' | 'notifications'>('overview');
   const [isSavedAlert, setIsSavedAlert] = useState(false);
 
   // Form State for Workshop Info
@@ -531,6 +533,18 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
         >
           <Database className="w-3.5 h-3.5" />
           <span>وضعیت سرور</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('backups')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'backups'
+              ? 'bg-brand text-brand-on shadow-md font-black'
+              : 'text-stone-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5'
+          }`}
+        >
+          <Archive className="w-3.5 h-3.5" />
+          <span>پشتیبان‌گیری</span>
         </button>
 
         <button
@@ -1416,6 +1430,15 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               </ul>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* TAB: BACKUPS (پشتیبان‌گیری) */}
+      {/* ======================================================== */}
+      {activeTab === 'backups' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <BackupManager />
         </div>
       )}
 

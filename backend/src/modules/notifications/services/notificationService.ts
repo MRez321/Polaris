@@ -29,6 +29,7 @@ export const DEFAULT_NOTIFICATION_SETTINGS: StoredNotificationSettings = {
         botToken: '',
         chatId: '',
         proxyUrl: '',
+        relayUrl: '',
     },
     sms: {
         enabled: false,

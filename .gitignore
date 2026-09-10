@@ -8,3 +8,7 @@ dist
 A
 # Uploaded image files
 backend/uploads/
+
+# Backup files (server-generated, restored via host backup tools)
+backend/backups/
+!backend/backups/.gitkeep

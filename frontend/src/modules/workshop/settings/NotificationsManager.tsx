@@ -241,6 +241,14 @@ export const NotificationsManager: React.FC = () => {
             onCommit={(next) => patch({ telegram: { ...settings.telegram, proxyUrl: next } })}
             placeholder="http://user:pass@proxy:8080"
           />
+
+          <MaskedField
+            label="آدرس رله تلگرام (اختیاری)"
+            hint="برای دور زدن فیلترینگ تلگرام، یک Cloudflare Worker رله به عنوان آدرس پایه API تلگرام استفاده می‌شود (راهنمای استقرار در docs/telegram-relay-guide.md)؛ این آدرس بر پروکسی اولویت دارد"
+            value={settings.telegram.relayUrl}
+            onCommit={(next) => patch({ telegram: { ...settings.telegram, relayUrl: next } })}
+            placeholder="https://my-tg-relay.workers.dev"
+          />
         </div>
 
         {settings.botUsername && (

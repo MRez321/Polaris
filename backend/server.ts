@@ -9,7 +9,7 @@ import app from './src/app.js';
 import dbPool from './src/config/db.js';
 import { describeError, runMigrations } from './src/core/db/runMigrations.js';
 import { initSocket } from './src/core/services/socketService.js';
-
+import { initBackups, runScheduledBackupIfDue } from './src/modules/backups/controllers/backupController.js';
 const PORT = process.env.PORT || 3016;
 
 // Create raw HTTP server so socket.io can attach alongside Express
@@ -63,6 +63,21 @@ void (async () => {
                     err instanceof Error ? err.message : err,
                 ),
             );
+
+        // Backup system: storage dir init + scheduled automatic backups.
+        // The tick is deliberately lazy (default 15 min): it reads the
+        // settings blob each time, so interval changes from the admin UI
+        // apply without a restart.
+        try {
+            initBackups();
+        } catch (err: unknown) {
+            console.error('⚠️ Backup dir init failed:', err instanceof Error ? err.message : err);
+        }
+        const BACKUP_TICK_MS = 15 * 60 * 1000;
+        setInterval(() => {
+            void runScheduledBackupIfDue();
+        }, BACKUP_TICK_MS);
+        console.log('🗂️  Backup scheduler armed (15m tick)');
 
         console.log(`📦 Process ID: ${process.pid}`);
         console.log(`⏰ Started at: ${new Date().toISOString()}`);

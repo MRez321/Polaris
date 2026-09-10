@@ -415,3 +415,30 @@ export const damageRecords = mysqlTable(
         index('damage_records_is_deleted_idx').on(t.isDeleted),
     ],
 );
+
+/**
+ * Workshop todos — the admin's own task list, rendered as the colorful
+ * dashboard widget. Soft-delete pattern like every other workshop entity.
+ */
+export const workshopTodos = mysqlTable(
+    'workshop_todos',
+    {
+        id: varchar('id', { length: 36 }).primaryKey(),
+        text: varchar('text', { length: 512 }).notNull(),
+        done: boolean('done').notNull().default(false),
+        // low / medium / high / urgent — drives widget color coding.
+        priority: varchar('priority', { length: 16 }).notNull().default('medium'),
+        // Optional deadline (date only); NULL = no deadline.
+        dueDate: datetime('due_date'),
+        createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+        updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+        // Set when toggled to done; cleared when un-toggled.
+        doneAt: datetime('done_at'),
+        isDeleted: boolean('is_deleted').notNull().default(false),
+        deletedAt: datetime('deleted_at'),
+    },
+    (t) => [
+        index('workshop_todos_is_deleted_idx').on(t.isDeleted),
+        index('workshop_todos_created_at_idx').on(t.createdAt),
+    ],
+);

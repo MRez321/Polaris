@@ -25,6 +25,11 @@ import type {
   WebsiteSettings,
   NotificationSettings,
   NotificationSettingsResponse,
+  BackupFileMeta,
+  BackupKind,
+  BackupSettings,
+  WorkshopTodo,
+  WorkshopTodoInput,
   WorkshopNotification,
 } from '@/types';
 
@@ -94,6 +99,21 @@ export const damageApi = {
   dispose: (id: string) =>
     api.post<DamageRecord>(`${W}/damage-records/${id}/dispose`, {}).then((r) => r.data),
   remove: (id: string) => api.delete(`${W}/damage-records/${id}`).then((r) => r.data),
+};
+
+// --- Workshop Todos (dashboard task list widget) ---
+export const todoApi = {
+  list: (includeDeleted = false) =>
+    api
+      .get<WorkshopTodo[]>(`${W}/todos`, { params: includeDeleted ? { includeDeleted: 'true' } : {} })
+      .then((r) => r.data),
+  create: (data: WorkshopTodoInput) => api.post<WorkshopTodo>(`${W}/todos`, data).then((r) => r.data),
+  update: (id: string, data: Partial<WorkshopTodoInput>) =>
+    api.put<WorkshopTodo>(`${W}/todos/${id}`, data).then((r) => r.data),
+  toggle: (id: string) => api.post<WorkshopTodo>(`${W}/todos/${id}/toggle`, {}).then((r) => r.data),
+  clearDone: () =>
+    api.post<{ cleared: number }>(`${W}/todos/clear-done`, {}).then((r) => r.data),
+  remove: (id: string) => api.delete(`${W}/todos/${id}`).then((r) => r.data),
 };
 
 // --- Analytics (cross-channel sales rankings) ---
@@ -382,4 +402,18 @@ export const notificationsApi = {
   markFeedRead: (id: string) =>
     api.put<void>(`${W}/notifications/${encodeURIComponent(id)}/read`).then((r) => r.data),
   markAllFeedRead: () => api.put<void>(`${W}/notifications/read-all`).then((r) => r.data),
+};
+
+// --- Backup System (Settings → پشتیبان‌گیری) ---
+export const backupApi = {
+  getSettings: () => api.get<BackupSettings>(`${W}/backups/settings`).then((r) => r.data),
+  updateSettings: (patch: Partial<BackupSettings>) =>
+    api.put<BackupSettings>(`${W}/backups/settings`, patch).then((r) => r.data),
+  list: () => api.get<BackupFileMeta[]>(`${W}/backups`).then((r) => r.data),
+  runNow: (kind: BackupKind | 'cpanel') =>
+    api
+      .post<BackupFileMeta | { message: string }>(`${W}/backups/run`, { kind })
+      .then((r) => r.data),
+  download: (id: string) => `${W}/backups/${encodeURIComponent(id)}/download`,
+  remove: (id: string) => api.delete<{ message: string }>(`${W}/backups/${id}`).then((r) => r.data),
 };

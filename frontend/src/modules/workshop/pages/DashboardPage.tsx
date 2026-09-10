@@ -8,7 +8,8 @@ import { useTheme } from '@/context/ThemeContext';
 import { useComputedStats } from '@/modules/workshop/hooks/useComputedStats';
 import { companyApi, getApiErrorMessage, ordersApi, analyticsApi } from '@/lib/api';
 import type { AnalyticsResult } from '@/lib/api';
-import type { Order } from '@/types';
+import type { DashboardLayout, Order } from '@/types';
+import { normalizeLayout } from '@/modules/workshop/dashboard/dashboardLayout';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -32,8 +33,11 @@ const DashboardPage: React.FC = () => {
       .catch(() => setAnalytics(null));
   }, []);
 
-  // Persist widget-visibility toggles into company_settings.dashboardPrefs.
-  const handlePrefsChange = (prefs: { [widgetId: string]: boolean }) => {
+  // Persist the v2 dashboard layout (order/hidden/collapsed/cols/presets)
+  // into company_settings.dashboardPrefs. normalizeLayout already migrated
+  // any legacy flat visibility map, so `prefs` is always a complete object
+  // and the server-side shallow merge is safe.
+  const handlePrefsChange = (prefs: DashboardLayout) => {
     setWorkshopInfo({ ...workshopInfo, dashboardPrefs: prefs });
     companyApi
       .update({ dashboardPrefs: prefs })
@@ -73,7 +77,7 @@ const DashboardPage: React.FC = () => {
           navigate(`/workshop/${tab}`);
         }
       }}
-      dashboardPrefs={workshopInfo.dashboardPrefs}
+      dashboardPrefs={normalizeLayout(workshopInfo.dashboardPrefs)}
       onDashboardPrefsChange={handlePrefsChange}
     />
   );

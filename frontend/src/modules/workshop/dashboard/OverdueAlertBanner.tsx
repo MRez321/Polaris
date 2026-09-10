@@ -21,18 +21,18 @@ export const OverdueAlertBanner: React.FC<OverdueAlertBannerProps> = ({
   const totalOverdue = safeOverdues.reduce((sum, c) => sum + (c.remainingAmount || 0), 0);
 
   return (
-    <div className="rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/20 p-4 sm:p-5 text-stone-900 dark:text-stone-100 shadow-md">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-amber-300 dark:border-amber-500/20">
+    <div className="rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-300 dark:border-rose-500/20 p-4 sm:p-5 text-stone-900 dark:text-stone-100 shadow-md">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-rose-300 dark:border-rose-500/20">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/30">
+          <div className="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-700 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-500/30">
             <AlertTriangle className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="font-black text-sm sm:text-base text-amber-900 dark:text-amber-300">
+            <h4 className="font-black text-sm sm:text-base text-rose-900 dark:text-rose-300">
               هشدار سررسید تسویه {toPersianDigits(overdueConsignments.length)} فاکتور امانی
             </h4>
-            <p className="text-xs text-amber-800/80 dark:text-amber-400/80">
-              مجموع طلب‌های سررسید گذشته: <span className="font-bold text-amber-900 dark:text-amber-200">{formatToman(totalOverdue)}</span>
+            <p className="text-xs text-rose-800/80 dark:text-rose-400/80">
+              مجموع طلب‌های سررسید گذشته: <span className="font-bold text-rose-900 dark:text-rose-200">{formatToman(totalOverdue)}</span>
             </p>
           </div>
         </div>
@@ -45,14 +45,14 @@ export const OverdueAlertBanner: React.FC<OverdueAlertBannerProps> = ({
           return (
             <div
               key={c.id}
-              className="bg-white dark:bg-[#141416] p-3.5 rounded-xl border border-amber-200 dark:border-white/5 flex items-center justify-between gap-3 shadow-sm"
+              className="bg-white dark:bg-[#141416] p-3.5 rounded-xl border border-rose-200 dark:border-white/5 flex items-center justify-between gap-3 shadow-sm"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-xs sm:text-sm text-stone-900 dark:text-white truncate">
                     {c.sellerName}
                   </span>
-                  <span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-800 dark:text-amber-300 font-mono border border-amber-500/20">
+                  <span className="text-[11px] px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-800 dark:text-rose-300 font-mono border border-rose-500/20">
                     {c.code}
                   </span>
                 </div>

@@ -15,6 +15,8 @@ import {
   Receipt,
   TrendingUp,
   Bell,
+  ClipboardList,
+  Archive,
 } from 'lucide-react';
 import type { AuditLog } from '@/types';
 import { auditApi, getApiErrorMessage } from '@/lib/api';
@@ -85,6 +87,10 @@ export const AuditLogsManager: React.FC = () => {
         return <TrendingUp className="w-4 h-4 text-emerald-500" />;
       case 'notifications':
         return <Bell className="w-4 h-4 text-blue-500" />;
+      case 'todo':
+        return <ClipboardList className="w-4 h-4 text-sky-500" />;
+      case 'backup':
+        return <Archive className="w-4 h-4 text-violet-500" />;
       default:
         return <Clock className="w-4 h-4 text-stone-400" />;
     }
@@ -104,12 +110,14 @@ export const AuditLogsManager: React.FC = () => {
         return 'پرسنل و هم‌بنیان‌گذاران';
       case 'return':
         return 'مرجوعی کالا';
-      case 'cost':
-        return 'هزینه‌های کارگاه';
-      case 'profit':
-        return 'توزیع سود';
       case 'notifications':
         return 'اطلاع‌رسانی';
+      case 'todo':
+        return 'کارهای کارگاه';
+      case 'backup':
+        return 'پشتیبان‌گیری';
+      case 'profit':
+        return 'توزیع سود';
       case 'settings':
         return 'تنظیمات و برند';
       case 'auth':
@@ -190,6 +198,8 @@ export const AuditLogsManager: React.FC = () => {
             { value: 'cost', label: 'هزینه‌های کارگاه' },
             { value: 'profit', label: 'توزیع سود' },
             { value: 'notifications', label: 'اطلاع‌رسانی' },
+            { value: 'todo', label: 'کارهای کارگاه' },
+            { value: 'backup', label: 'پشتیبان‌گیری' },
             { value: 'settings', label: 'تنظیمات و برندینگ' },
             { value: 'auth', label: 'ورود و امنیت' },
           ]}

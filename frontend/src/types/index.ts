@@ -290,7 +290,7 @@ export interface AuditLog {
   userName: string;
   userRole?: string;
   action: string;
-  entity: 'item' | 'seller' | 'consignment' | 'payment' | 'return' | 'staff' | 'settings' | 'cost' | 'profit' | 'notifications' | 'auth';
+  entity: 'item' | 'seller' | 'consignment' | 'payment' | 'return' | 'damage' | 'staff' | 'settings' | 'cost' | 'profit' | 'auth' | 'notifications' | 'analytics' | 'todo' | 'backup';
   details: string;
   ipAddress?: string | null;
 }
@@ -414,9 +414,39 @@ export interface CompanyBranding extends WorkshopInfo {
   establishedYear?: string;
   theme?: CompanyTheme;
   analyticsSettings?: { gaMeasurementId?: string; websiteUrl?: string };
-  dashboardPrefs?: { [widgetId: string]: boolean };
+  dashboardPrefs?: DashboardLayout | LegacyDashboardPrefs;
   owners: Owner[];
 }
+
+// ---------------------------------------------------------------------------
+// Dashboard layout customization (v2, persisted in company_settings.data)
+// ---------------------------------------------------------------------------
+
+/** Desktop column span of a widget inside the 3-col dashboard grid. */
+export type DashboardWidgetCols = 1 | 2 | 3;
+/** A saved, shareable named arrangement of the dashboard widgets. */
+export interface DashboardPreset {
+  id: string;
+  name: string;
+  data: Omit<DashboardLayout, 'presets'>;
+}
+
+/**
+ * Dashboard arrangement, version 2: widget order, hidden/collapsed ids,
+ * per-widget desktop column spans and named presets. Legacy prod data is a
+ * flat `{ widgetId: boolean }` visibility map — migrated on read client-side.
+ */
+export interface DashboardLayout {
+  version: 2;
+  order: string[];
+  hidden: string[];
+  collapsed: string[];
+  cols: { [widgetId: string]: DashboardWidgetCols };
+  presets: DashboardPreset[];
+}
+
+/** Legacy flat `{ widgetId: boolean }` visibility map (pre-v2 dashboards). */
+export type LegacyDashboardPrefs = { [widgetId: string]: boolean };
 
 /**
  * Site-wide appearance, mirrors backend CompanyTheme: default visitor mode
@@ -457,6 +487,7 @@ export interface TelegramNotificationSettings {
   chatId: string;
   /** HTTP(S) proxy URL for api.telegram.org (blocked in Iran). '' → direct. */
   proxyUrl: string;
+  relayUrl: string;
 }
 
 export interface SmsNotificationSettings {
@@ -637,4 +668,68 @@ export interface CartLine {
   imageUrl?: string;
 }
 
+
+// ---------------------------------------------------------------------------
+// Workshop todo list (dashboard widget, admin's own tasks)
+// Mirrors backend workshop_todos table + todoController DTO
+// ---------------------------------------------------------------------------
+
+export type TodoPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+export interface WorkshopTodo {
+  id: string;
+  text: string;
+  done: boolean;
+  priority: TodoPriority;
+  /** ISO date string or empty when the task has no deadline. */
+  dueDate: string;
+  createdAt: string;
+  updatedAt: string;
+  doneAt: string;
+  isDeleted: boolean;
+  deletedAt: string;
+}
+
+export interface WorkshopTodoInput {
+  text: string;
+  priority?: TodoPriority;
+  dueDate?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Backup system (Settings → پشتیبان‌گیری)
+// Mirrors backend/src/modules/backups + backup_settings JSON blob
+// ---------------------------------------------------------------------------
+
+export type BackupKind = 'database' | 'website' | 'full';
+
+export interface BackupSettings {
+  autoEnabled: boolean;
+  /** Interval between automatic backups, in hours. */
+  scheduleHours: number;
+  /** Keep at most N backup files on disk; older ones pruned. 0 = keep all. */
+  retention: number;
+  /** What a scheduled backup includes. */
+  autoKind: BackupKind;
+  cpanelHost: string;
+  cpanelUser: string;
+  cpanelToken: string;
+  /** Send a Telegram message when a backup finishes. */
+  notifyTelegram: boolean;
+  /** ISO timestamp of the last completed backup (read-only, server-managed). */
+  lastBackupAt: string;
+}
+
+export interface BackupFileMeta {
+  id: string;
+  /** File name on disk, e.g. polaris-db-20260909-153000.sql.gz. */
+  filename: string;
+  kind: BackupKind;
+  /** Bytes. */
+  size: number;
+  /** ISO creation time. */
+  createdAt: string;
+  /** True when the file was produced by the scheduler (not run-now). */
+  automatic: boolean;
+}
 

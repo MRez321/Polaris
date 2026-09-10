@@ -267,7 +267,7 @@ export interface AuditLog {
     userName: string;
     userRole?: string;
     action: string;
-    entity: 'item' | 'seller' | 'consignment' | 'payment' | 'return' | 'damage' | 'staff' | 'settings' | 'cost' | 'profit' | 'auth' | 'notifications' | 'analytics';
+    entity: 'item' | 'seller' | 'consignment' | 'payment' | 'return' | 'damage' | 'staff' | 'settings' | 'cost' | 'profit' | 'auth' | 'notifications' | 'analytics' | 'todo' | 'backup';
     details: string;
     ipAddress: string | null;
 }
@@ -539,6 +539,12 @@ export interface TelegramNotificationSettings {
      * Empty → direct connection (or env TELEGRAM_PROXY_URL).
      */
     proxyUrl: string;
+    /**
+     * Cloudflare Worker relay base URL (https://…workers.dev) that replaces
+     * api.telegram.org in all bot API calls — a proxy-less bypass for Iran
+     * blocking. Empty → direct connection (or proxy, or env TELEGRAM_RELAY_URL).
+     */
+    relayUrl: string;
 }
 
 export interface SmsNotificationSettings {

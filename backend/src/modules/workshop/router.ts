@@ -12,6 +12,8 @@ import * as dashboard from './controllers/dashboardController.js';
 import * as orders from './controllers/ordersController.js';
 import * as analytics from './controllers/analyticsController.js';
 import * as damage from './controllers/damageController.js';
+import * as todos from './controllers/todoController.js';
+import * as backups from '../backups/controllers/backupController.js';
 import * as outboundNotifications from '../../modules/notifications/notificationsController.js';
 
 /**
@@ -64,6 +66,22 @@ router.put('/damage-records/:id', damage.updateDamageRecord);
 router.post('/damage-records/:id/fix', damage.fixDamageRecord);
 router.post('/damage-records/:id/dispose', damage.disposeDamageRecord);
 router.delete('/damage-records/:id', damage.deleteDamageRecord);
+
+// Todos: the admin's own dashboard task list.
+router.get('/todos', todos.listTodos);
+router.post('/todos', todos.createTodo);
+router.put('/todos/:id', todos.updateTodo);
+router.post('/todos/:id/toggle', todos.toggleTodo);
+router.post('/todos/clear-done', todos.clearDoneTodos);
+router.delete('/todos/:id', todos.deleteTodo);
+
+// Backup system: settings, run-now, list, download, delete.
+router.get('/backups/settings', backups.getBackupSettings);
+router.put('/backups/settings', backups.updateBackupSettings);
+router.get('/backups', backups.listBackups);
+router.post('/backups/run', backups.runBackupNow);
+router.get('/backups/:id/download', backups.downloadBackup);
+router.delete('/backups/:id', backups.deleteBackup);
 
 // Analytics: cross-channel sales rankings (sellers + online shop).
 router.get('/analytics', analytics.getAnalytics);

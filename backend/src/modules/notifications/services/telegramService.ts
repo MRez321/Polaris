@@ -7,9 +7,11 @@
  * (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID / TELEGRAM_PROXY_URL) so existing
  * deployments keep working until values are saved from the UI.
  *
- * api.telegram.org is blocked in Iran: when a proxy URL is configured, every
- * request to the API is routed through it via an undici ProxyAgent
- * dispatcher (HTTP/HTTPS CONNECT proxies only — SOCKS is not supported).
+ * api.telegram.org is blocked in Iran. Two workarounds, in priority order:
+ *  1. relayUrl — a Cloudflare Worker (or any HTTPS mirror) that relays
+ *     requests to api.telegram.org. The base URL is swapped; connection is
+ *     direct (no proxy agent). See docs/telegram-relay-guide.md.
+ *  2. proxyUrl — an HTTP(S) CONNECT proxy routed through undici ProxyAgent.
  * The proxy applies to Telegram traffic only; Melipayamak is domestic and
  * stays direct.
  *
@@ -27,6 +29,8 @@ export interface TelegramCredentials {
     chatId: string;
     /** HTTP(S) proxy URL or '' for a direct connection. */
     proxyUrl: string;
+    /** Cloudflare-Worker relay base URL or '' — swapped in for api.telegram.org. */
+    relayUrl: string;
 }
 
 /** Throw when no credentials for the Telegram bot are configured. */
@@ -42,12 +46,13 @@ export class TelegramNotConfiguredError extends Error {
  * `botToken`/`chatId` must be non-empty; `proxyUrl` may be ''.
  */
 export function resolveTelegramCredentials(
-    stored?: Partial<{ botToken: string; chatId: string; proxyUrl: string }>,
+    stored?: Partial<{ botToken: string; chatId: string; proxyUrl: string; relayUrl: string }>,
 ): TelegramCredentials {
     return {
         botToken: (stored?.botToken || process.env.TELEGRAM_BOT_TOKEN || '').trim(),
         chatId: (stored?.chatId || process.env.TELEGRAM_CHAT_ID || '').trim(),
         proxyUrl: (stored?.proxyUrl || process.env.TELEGRAM_PROXY_URL || '').trim(),
+        relayUrl: (stored?.relayUrl || process.env.TELEGRAM_RELAY_URL || '').trim(),
     };
 }
 
@@ -94,17 +99,23 @@ async function telegramApi<T>(
     body?: Record<string, unknown>,
     timeoutMs = 10_000,
 ): Promise<T> {
-    const { botToken, chatId, proxyUrl } = credentials;
+    const { botToken, chatId, proxyUrl, relayUrl } = credentials;
     if (!botToken || !chatId) throw new TelegramNotConfiguredError();
 
-    const dispatcher = proxyDispatcher(proxyUrl);
-    if (proxyUrl && !dispatcher) {
+    // A relay takes precedence over a proxy: it swaps the API base URL and
+    // connects directly to the (Cloudflare-fronted) relay host.
+    const baseUrl = relayUrl
+        ? relayUrl.replace(/\/+$/, '')
+        : API_BASE;
+
+    const dispatcher = relayUrl ? undefined : proxyDispatcher(proxyUrl);
+    if (!relayUrl && proxyUrl && !dispatcher) {
         throw new Error('آدرس پروکسی معتبر نیست (باید با http:// یا https:// شروع شود)');
     }
 
     let response: { statusCode: number; body: { json: () => Promise<unknown> } };
     try {
-        response = await undiciRequest(`${API_BASE}/bot${botToken}/${method}`, {
+        response = await undiciRequest(`${baseUrl}/bot${botToken}/${method}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body ?? {}),
@@ -118,9 +129,11 @@ async function telegramApi<T>(
                 ? err.message
                 : 'خطای شبکه';
         throw new Error(
-            proxyUrl
-                ? `ارتباط با تلگرام از طریق پروکسی برقرار نشد (${reason})`
-                : `ارتباط با تلگرام برقرار نشد (${reason})`,
+            relayUrl
+                ? `ارتباط با رله تلگرام برقرار نشد (${reason})`
+                : proxyUrl
+                  ? `ارتباط با تلگرام از طریق پروکسی برقرار نشد (${reason})`
+                  : `ارتباط با تلگرام برقرار نشد (${reason})`,
         );
     }
 
@@ -148,7 +161,7 @@ async function telegramApi<T>(
  */
 export async function sendTelegramMessage(
     text: string,
-    stored?: Partial<{ botToken: string; chatId: string; proxyUrl: string }>,
+    stored?: Partial<{ botToken: string; chatId: string; proxyUrl: string; relayUrl: string }>,
 ): Promise<TelegramSendResult> {
     const credentials = resolveTelegramCredentials(stored);
     const result = await telegramApi<{ message_id?: number }>('sendMessage', credentials, {
@@ -167,7 +180,7 @@ export async function sendTelegramMessage(
  * Returns null when the bot is unreachable — the UI then hides the link.
  */
 export async function resolveTelegramBotUsername(
-    stored?: Partial<{ botToken: string; chatId: string; proxyUrl: string }>,
+    stored?: Partial<{ botToken: string; chatId: string; proxyUrl: string; relayUrl: string }>,
     timeoutMs = 10_000,
 ): Promise<TelegramBotIdentity | null> {
     try {

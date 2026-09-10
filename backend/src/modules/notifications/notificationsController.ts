@@ -22,6 +22,7 @@ const notificationSettingsSchema = z.object({
             botToken: z.string().max(128).optional(),
             chatId: z.string().max(64).optional(),
             proxyUrl: z.string().max(512).optional(),
+            relayUrl: z.string().max(512).optional(),
         })
         .optional(),
     sms: z
@@ -62,6 +63,7 @@ export async function getNotifications(_req: Request, res: Response): Promise<vo
             botToken: settings.telegram.botToken || telegramEnv.botToken,
             chatId: settings.telegram.chatId || telegramEnv.chatId,
             proxyUrl: settings.telegram.proxyUrl || telegramEnv.proxyUrl,
+            relayUrl: settings.telegram.relayUrl || telegramEnv.relayUrl,
         },
         sms: {
             ...settings.sms,
