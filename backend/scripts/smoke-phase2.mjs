@@ -106,6 +106,7 @@ if (!item) {
         body: {
             customerName: 'مشتری تست',
             phone,
+            province: 'تهران',
             city: 'تهران',
             address: 'خیابان ولیعصر، پلاک ۱۲',
             paymentMethod: 'cod',
