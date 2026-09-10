@@ -159,5 +159,5 @@ Infra: `audit_logs`, `backup_settings` (backup schedule/retention config), `__dr
 Full history: `CHANGELOG.md` (repo root) — newest first, updated on every version bump (see the Changelog rule above). Snapshot:
 
 - `v0.5.6` = `f1e0df8` 2026-09-09 (scheduled handovers + notification center).
-- `3097142` backup system + `9e4ead9` telegram relay docs — post-v0.5.6, unreleased; also under `[Unreleased]` in CHANGELOG.md.
+- Post-v0.5.6 unreleased (all under `[Unreleased]` in CHANGELOG.md): `9e4ead9` telegram relay docs, `3097142` backup system + todos + dashboard v2, `647b322` drag reorder in layout settings, `bda78f9` smoke phase2/3 province fix, `42121c5` changelog + knowledge updates.
 - Branches: `main` (active), `backup-20260823`, `backup-20260824`.
