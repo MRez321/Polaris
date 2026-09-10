@@ -16,6 +16,7 @@ import {
   Play,
   Trash2,
   Columns3,
+  GripVertical,
 } from 'lucide-react';
 import type {
   DashboardStats,
@@ -121,6 +122,38 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [now, setNow] = React.useState(() => new Date());
   const [presetName, setPresetName] = React.useState('');
+
+  // ---- Drag reorder (HTML5 DnD, works alongside the up/down buttons) ----
+  const [dragId, setDragId] = React.useState<string | null>(null);
+  const [dragOverId, setDragOverId] = React.useState<string | null>(null);
+  // Ref mirror: the drop handler must read the live value even when dragstart→drop
+  // land in the same React render (synthetic tests, fast sequences).
+  const dragIdRef = React.useRef<string | null>(null);
+
+  const clearDrag = () => {
+    dragIdRef.current = null;
+    setDragId(null);
+    setDragOverId(null);
+  };
+
+  const handleDrop = (targetId: string) => {
+    const sourceId = dragIdRef.current;
+    if (!sourceId || sourceId === targetId) {
+      clearDrag();
+      return;
+    }
+    const order = [...layout.order];
+    const from = order.indexOf(sourceId);
+    const to = order.indexOf(targetId);
+    if (from < 0 || to < 0) {
+      clearDrag();
+      return;
+    }
+    order.splice(from, 1);
+    order.splice(to, 0, sourceId);
+    updateLayout({ order });
+    clearDrag();
+  };
 
   // Live Jalali clock — one tick per second.
   React.useEffect(() => {
@@ -682,7 +715,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             <div className="glass-panel p-4 rounded-2xl mt-3 border border-brand/20 shadow-xl space-y-4">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <p className="text-xs font-black text-stone-700 dark:text-gray-300">
-                  ترتیب، نمایش و ستون‌های بخش‌های داشبورد (رابط کاربری RTL — دکمه‌های جهت با چیدمان منطقی کار می‌کنند):
+                  ترتیب، نمایش و ستون‌های بخش‌های داشبورد (برای جابه‌جایی، ردیف را بکشید یا از دکمه‌های بالا و پایین استفاده کنید):
                 </p>
                 <button
                   onClick={resetLayout}
@@ -699,13 +732,36 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                   return (
                     <div
                       key={id}
-                      className={`flex items-center justify-between gap-2 p-2.5 rounded-xl border ${
-                        isVisible(id)
-                          ? 'border-black/5 dark:border-white/10 bg-white/50 dark:bg-white/5'
-                          : 'border-black/5 dark:border-white/10 bg-white/30 dark:bg-white/[0.02] opacity-60'
+                      draggable
+                      onDragStart={(e) => {
+                        dragIdRef.current = id;
+                        setDragId(id);
+                        e.dataTransfer.effectAllowed = 'move';
+                        try { e.dataTransfer.setData('text/plain', id); } catch { /* IE quirk guard */ }
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        setDragOverId(id);
+                      }}
+                      onDragLeave={() => setDragOverId((prev) => (prev === id ? null : prev))}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        handleDrop(id);
+                      }}
+                      onDragEnd={clearDrag}
+                      className={`flex items-center justify-between gap-2 p-2.5 rounded-xl border cursor-grab active:cursor-grabbing transition-colors ${
+                        dragId === id
+                          ? 'opacity-40 border-brand/50'
+                          : dragOverId === id
+                            ? 'border-brand bg-brand/5'
+                            : isVisible(id)
+                              ? 'border-black/5 dark:border-white/10 bg-white/50 dark:bg-white/5'
+                              : 'border-black/5 dark:border-white/10 bg-white/30 dark:bg-white/[0.02] opacity-60'
                       }`}
                     >
                       <div className="flex items-center gap-2 min-w-0">
+                        <GripVertical className="w-3.5 h-3.5 text-stone-300 dark:text-gray-600 shrink-0" />
                         <span className="text-[10px] font-black text-stone-400 dark:text-gray-500 font-mono w-5 text-center">
                           {toPersianDigits(idx + 1)}
                         </span>
