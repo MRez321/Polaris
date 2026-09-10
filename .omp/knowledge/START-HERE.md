@@ -39,7 +39,20 @@ backend/            Express API (src/modules + src/controllers + src/schema + dr
 frontend/           React SPA (src/pages + src/modules/workshop + src/context + src/lib)
 .omp/knowledge/     this knowledge base — THE unified doc home (supersedes markdown/ + PolarisStyle.md)
 .github/workflows/  deploy.yml — tag push → FTP to cPanel
+CHANGELOG.md        version history — REQUIRED update on every version bump (see rule below)
 ```
+
+## Changelog rule (MANDATORY on version bump)
+
+`CHANGELOG.md` (repo root, [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/) format) is the canonical version history, newest version first. On **every version bump** — `git tag v*` or any release — the agent session MUST:
+
+1. Move `[Unreleased]` entries into a new `## [vX.Y.Z] - YYYY-MM-DD` section directly under the header (never delete the Unreleased heading itself — keep it empty for the next cycle).
+2. Derive the entry from `git log <previousTag>..<tag> --oneline` + file diffs — honest per-version content, grouped `### Added` / `### Changed` / `### Fixed` / `### Removed`; only groups that have entries.
+3. Never rewrite or delete older sections — the file retains everything from previous updates, newest → oldest top to bottom.
+4. Add the compare link at the bottom (`[vX.Y.Z]: https://github.com/MRez321/Polaris/compare/vPREV...vX.Y.Z`) and update the `[Unreleased]` link's base.
+5. Also update the "Version tags / recent history" section at the end of this file.
+
+Small iterative work (not a version bump) appends bullets under `[Unreleased]` instead of creating a section.
 
 ## Dev commands
 
@@ -69,14 +82,14 @@ node scripts/smoke-phase2.mjs / smoke-phase3.mjs
 | `/workshop/*` | Admin panel (Dashboard, Orders, Inventory, Consignments, People, Finances, Returns (`/workshop/returns`), Analytics (`/workshop/analytics`), Settings, `profile/:type/:id`) | `RequireAdmin` → non-admins → `/dashboard` |
 | `/controlpanel/{theme,website,shop,blog}` | Website management | admin (settings+blog), author (blog) |
 
-Admin panel code: `frontend/src/modules/workshop/` — pages/, managers per domain (InventoryManager, HandoverManager, PaymentsManager, UsersManager, AuditLogsManager...), shared `context/DataContext.tsx` + `UIContext.tsx`, `layout/` (AppLayout, Sidebar, Header, MobileNav, SideMenu), `returns/` (ReturnsPage), `analytics/` (AnalyticsPage + FinancialReports), `dashboard/` (DashboardOverview + widget cards/charts).
+Admin panel code: `frontend/src/modules/workshop/` — pages/, managers per domain (InventoryManager, HandoverManager, PaymentsManager, UsersManager, AuditLogsManager...), shared `context/DataContext.tsx` + `UIContext.tsx`, `layout/` (AppLayout, Sidebar, Header, MobileNav, SideMenu), `returns/` (ReturnsPage), `analytics/` (AnalyticsPage + FinancialReports), `dashboard/` (DashboardOverview + `dashboardLayout.ts` layout registry + TodoWidget + widget cards/charts), `settings/` (SettingsManager tabs incl. BackupManager + NotificationsManager).
 
 ## API surface (one mount: `/api`, `backend/src/routes/apiRoutes.ts`)
 
 Public: `/api/health`, `/api/public/{items,categories,company,blog,blog/:slug}`.
 Customer (any auth): `/api/{orders,addresses}` (mine-scoped), `/api/auth/*` (better-auth).
 Author/admin: `/api/blog*`.
-Admin-only: `/api/company` (GET/PUT — CompanyBranding blob incl. `analyticsSettings` `{gaMeasurementId, websiteUrl}` and `dashboardPrefs` `{widgetId: boolean}`), `/api/website/settings`, `/api/uploads` (multipart; accepts `alt` field; probes width/height/fileSize/mime from the file signature via `probeImageMeta`), `/api/gallery*` (PATCH accepts `alt`; rows carry probed metadata), and everything in `/api/workshop/*` (dashboard stats, audit-logs, orders, items + `POST /items/:id/mark-ready`, categories, sellers, consignments, payments, staff, owners, expenses, profit-distribution, damage-records + `POST /damage-records/:id/fix`, analytics `GET /analytics`, trash, notifications) — see `backend/src/modules/workshop/router.ts`.
+Admin-only: `/api/company` (GET/PUT — CompanyBranding blob incl. `analyticsSettings` `{gaMeasurementId, websiteUrl}` and `dashboardPrefs` — v2 layout object, see the Dashboard layout v2 gotcha), `/api/website/settings`, `/api/uploads` (multipart; accepts `alt` field; probes width/height/fileSize/mime from the file signature via `probeImageMeta`), `/api/gallery*` (PATCH accepts `alt`; rows carry probed metadata), and everything in `/api/workshop/*` (dashboard stats, audit-logs, orders, items + `POST /items/:id/mark-ready`, categories, sellers, consignments, payments, staff, owners, expenses, profit-distribution, damage-records + `POST /damage-records/:id/fix`, todos CRUD + `POST /todos/clear-done`, backups `GET/POST /backups` + `POST /backups/run/:kind` + `GET /backups/download/:id` + `DELETE /backups/:id` + settings, analytics `GET /analytics`, trash, notifications) — see `backend/src/modules/workshop/router.ts`. Telegram settings accept `relayUrl` (Cloudflare-Worker base-URL relay, takes precedence over `proxyUrl` — see `docs/telegram-relay-guide.md`).
 
 ## Auth in 30 seconds
 
@@ -93,9 +106,11 @@ better-auth + admin plugin. Roles: `admin`, `author`, `user` (default on signup)
 - **Node 22** on this machine; backend package.json claims `>=18`.
 - **cPanel prod**: backend runs from `/PolarisStyle/` via cPanel Node.js selector; frontend build copied to `backend/public/` by `scripts/copy-public.js` at build; migrations run via `npm run db:migrate` on server or `repair-migrations.mjs` when `__drizzle_migrations` table is out of sync.
 - **React hook order (EntityProfilePage pattern)**: ALL hooks must run before any conditional early-return (`if (view.missing) return …`). The not-found early return sits AFTER every useMemo/useEffect — compute `visibleEntries` unconditionally with internal null-guarding (`source = view && !view.missing ? view.entries : []`). Violation = "Rendered more hooks than during the previous render" boundary crash when data loads after a missing/loading first render. Apply this pattern to any new profile-type page.
-- **Dashboard widget visibility**: `DashboardOverview` `WIDGETS` ids (14): `clockWidget`, `kpiCards`, `salesDebtChart`, `topSellers`, `recentHandovers`, `recentPayments`, `latestShopSales`, `latestSellerIncome`, `latestReturns`, `topItems`, `scheduledDeliveries`, `pendingProduction`, `liquidBalance`, `incomeWindowStats`. Each grid child is individually wrapped in `isVisible(id)` — never wrap two widgets in one switch (topSellers was once dead-wired inside salesDebtChart). Prefs persist server-side via `companyApi.update({dashboardPrefs})` (optimistic + fire-and-forget).
+- **Dashboard layout v2** (`dashboardLayout.ts`): `DASHBOARD_WIDGETS` registry of 16 ids (adds `todoWidget`, `overdueAlerts` to the old 14). Prefs live in `company_settings.dashboardPrefs` as a v2 object `{version: 2, order[], hidden{}, cols{}, collapsed{}, presets[]}` — the server shallow-merges, so ALWAYS send the COMPLETE v2 object, never a partial. Legacy flat `{widgetId: boolean}` shapes migrate client-side via `normalizeLayout()`. Every widget renders through `WidgetShell` (collapsible header) — except `todoWidget`, which owns its shell, and `overdueAlerts`, which returns `null` when there are no overdue consignments (never render an empty shell). Reorder in the settings panel via HTML5 drag (rows are `draggable`, `dragIdRef` guards against same-tick dragstart→drop stale closures) AND up/down buttons.
 - **Edit-tool corruption risk**: this codebase repeatedly lost adjacent lines through patch edits (hook calls, import members, open JSX tags, closing grid divs). After every edit re-`read` the file; after every file run `cd frontend && npx tsc -b`. Symptoms: TS2304 for previously-imported names or TS17002 for unbalanced JSX.
 - **Windows port blocks can hit any port** (seen 2026-09-09): vite died with `EACCES ::1:5173` and even `127.0.0.1:5174` while 3016/8090 listened fine — Hyper-V/WinNAT exclusion or AV interference, not a code problem. Workaround: run vite on another port (`npx vite --host 0.0.0.0 --port 8090`), then trust the new origin in `backend/src/core/origins.ts` `LOCAL_DEV_PORTS` (8090 added) or uploads POSTs get 403 «مبدأ درخواست مجاز نیست».
+- **Browser-driving the workshop UI** (puppeteer `run`, learned 2026-09-10): React 19 delegates `onBlur` via focusout — a synthetic `new Event('blur')` is IGNORED; commit masked/settings fields with `new FocusEvent('focusout', {bubbles:true})`. Switch components render as `span[role=switch]` + `aria-checked` (not buttons); Radix select options live in a portal as `[role=option]`/`li`. Locate MaskedField inputs by unique `placeholder` (label text matches several elements). Backup schedule/retention number inputs only render when `autoEnabled` is on. In-page `fetch()` of a `Content-Disposition: attachment` URL returns 204/empty body (benign) — verify downloads via bash curl with the session cookie. `tab.click('text/…')` often fails; prefer `tab.evaluate(() => [...document.querySelectorAll('button')].find(b => b.textContent.includes('…')).click())`.
+- **Smoke suites must track order schema**: `POST /api/orders` requires `province` (CheckoutPage CitySelector sends it). `smoke-phase2.mjs` + `smoke-phase3.mjs` were fixed for this on 2026-09-10 (were failing `create order`). When adding a required field to `createOrderSchema`, update all three suites (`smoke.mjs`, phase2, phase3) in the same change.
 
 ## Session-start checklist (what "actual work" needs)
 
@@ -113,21 +128,22 @@ better-auth + admin plugin. Roles: `admin`, `author`, `user` (default on signup)
 | Business logic / complex queries | `backend/src/modules/workshop/services/inventoryService.ts` (39KB — the big one) |
 | Auth config | `backend/src/modules/auth/service.ts` (betterAuth config), `middleware.ts` (requireAuth/requireRole) |
 | CORS / trusted origins | `backend/src/core/origins.ts` — single source shared by Express + better-auth + socket.io |
-| DB schema | `backend/src/schema/*.ts` — auth, workshop, orders, cms, company, notifications, audit, userAddresses, clientId |
+| DB schema | `backend/src/schema/*.ts` — auth, workshop, orders, cms, company, notifications, backups, audit, userAddresses, clientId |
 | Frontend API client | `frontend/src/lib/api.ts` (workshop), `frontend/src/lib/auth.ts` (better-auth client + error mapping) |
 | Frontend state | `frontend/src/context/` — AuthContext (session), DataContext (workshop data), ThemeContext, BrandContext, CartContext, FavoritesContext, NetworkContext |
 | Admin UI managers | `frontend/src/modules/workshop/{inventory,consignments,payments,staff,sellers,settings,audit,people,finances}/` |
 | Public UI | `frontend/src/pages/public/*` + `frontend/src/components/public/` + `components/ui/` (shadcn-style) |
 | Uploads | multer → `backend/uploads/` (gitignored), gallery rows in `gallery_images` |
-| Docs | this knowledge base — `.omp/knowledge/` is the single source (markdown/ + old agent files were folded in and removed) |
+| Backups | `backend/src/modules/backups/` — backupService (mysqldump/tar/cPanel UAPI), backupSettingsService, 15-min scheduler in `server.ts`; UI: `frontend/src/modules/workshop/settings/BackupManager.tsx` |
+| Docs | this knowledge base — `.omp/knowledge/` is the single source (markdown/ + old agent files were folded in and removed); version history: `CHANGELOG.md` (repo root, changelog rule applies) |
 
-## DB tables (25, verified live 2026-09-09)
+## DB tables (26, verified live 2026-09-09)
 
 Auth: `user`, `session`, `account`, `verification`.
-Workshop: `items`, `categories`, `sellers`, `consignments` (incl. `delivery_status`/`delivery_date` scheduled-handover columns), `consignment_returns`, `payments`, `staff`, `owners`, `expenses`, `profit_distributions`, `damage_records`, `workshop_notifications`.
+Workshop: `items`, `categories`, `sellers`, `consignments` (incl. `delivery_status`/`delivery_date` scheduled-handover columns), `consignment_returns`, `payments`, `staff`, `owners`, `expenses`, `profit_distributions`, `damage_records`, `workshop_notifications`, `workshop_todos` (workshop todo list).
 Orders: `orders`, `user_addresses`.
 CMS: `blog_posts`, `website_settings`, `company_settings`, `gallery_images`, `notification_settings`.
-Infra: `audit_logs`, `__drizzle_migrations`.
+Infra: `audit_logs`, `backup_settings` (backup schedule/retention config), `__drizzle_migrations`.
 
 ## Conventions (enforced, from project rules + observed)
 
@@ -140,6 +156,8 @@ Infra: `audit_logs`, `__drizzle_migrations`.
 
 ## Version tags / recent history
 
-- `v0.5.2` = `16fb090` deployed 2026-09-05 (workshop overhaul).
-- `0c1222e` fixed auth problem (mapAuthError ordering) — post-v0.5.2, not yet tagged/deployed.
+Full history: `CHANGELOG.md` (repo root) — newest first, updated on every version bump (see the Changelog rule above). Snapshot:
+
+- `v0.5.6` = `f1e0df8` 2026-09-09 (scheduled handovers + notification center).
+- `3097142` backup system + `9e4ead9` telegram relay docs — post-v0.5.6, unreleased; also under `[Unreleased]` in CHANGELOG.md.
 - Branches: `main` (active), `backup-20260823`, `backup-20260824`.

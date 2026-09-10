@@ -55,14 +55,17 @@ GET/POST /damage-records, PUT /damage-records/:id, POST /damage-records/:id/fix 
 GET /trash, POST /trash/restore/:type/:id, PUT /trash/edit-and-restore/:type/:id, DELETE /trash/permanent/:type/:id
 GET/PUT /notifications/settings, POST /notifications/test/{telegram,sms}
 GET /notifications/feed (+ ?limit), POST /notifications/feed/read (one), POST /notifications/feed/read-all  (workshop notifications center: derived + event notifications, per-item read marks)
+GET/POST/PUT/DELETE /todos (workshop todo list: id, text, priority low|medium|high|urgent, dueDate, done, doneAt), POST /todos/clear-done (returns {cleared: n})
+GET /backups (list), POST /backups/run/:kind (kind: database|website|full|cpanel), GET /backups/download/:id (base64url id, traversal-guarded), DELETE /backups/:id, GET/PUT /backups/settings (scheduleHours, retention, autoKind, autoEnabled, notifyTelegram, cpanel creds)
 ```
 
-`/api/company` (companyController): GET returns the full CompanyBranding JSON from `company_settings.data`; PUT validates with `companySchema` (Zod) which includes optional `analyticsSettings {gaMeasurementId, websiteUrl}` and flat `dashboardPrefs: Record<string, unknown>` — `updateCompany` shallow-merges fields into the JSON blob (nested objects replace wholesale, so callers always send the complete nested object).
+`/api/company` (companyController): GET returns the full CompanyBranding JSON from `company_settings.data`; PUT validates with `companySchema` (Zod) which includes optional `analyticsSettings {gaMeasurementId, websiteUrl}` and `dashboardPrefs` (v2 layout object `{version: 2, order, hidden, cols, collapsed, presets}` — see FRONTEND.md) — `updateCompany` shallow-merges fields into the JSON blob (nested objects replace wholesale, so callers always send the complete nested object).
 
 Notes from the old API reference:
 - **Notifications**: credentials live in the DB (JSON blob); env entries (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_PROXY_URL`, `MELIPAYAMAK_API`, `MELIPAYAMAK_USERNAME`) are **fallbacks** used only when no DB value exists. `GET settings` never touches the network; test endpoints send real messages.
 - **Migration 0005**: promotes every remaining legacy `staff`-role user to `admin`. Roles: admin / author / user; accountant/supervisor/tailor/staff are declared but unenforced — do not gate on them.
-- **Socket.io**: endpoint `/socket.io` on same origin; backend still hosts it, frontend client removed.
+- **Telegram relay**: `relayUrl` (DB) / `TELEGRAM_RELAY_URL` (env fallback) is a Cloudflare-Worker base-URL relay — the api.telegram.org base is swapped, connection is DIRECT (no proxy agent). It takes precedence over `proxyUrl` (CONNECT proxy via undici ProxyAgent). Guide: `docs/telegram-relay-guide.md`, worker example: `docs/telegram-proxy-worker.js`.
+- **Backups** (`src/modules/backups/`): backupService runs mysqldump → tar-czipped `.sql.gz` (database), tar of backend root (website), or both (full); binary resolution is env override (`MYSQLDUMP_PATH`/`TAR_PATH`) → PATH → common install dirs (Windows System32 tar.exe included). cPanel full backup triggers UAPI `POST https://<host>:2083/execute/Backup/fullbackup` with `Authorization: cpanel <user>:<token>`. Files stored in `backend/backups/` (gitignored) named `<kind>-YYYYMMDD-HHmmss.*`; ids are base64url of the filename — download route guards path traversal; prune enforces retention. `BackupKind` is defined locally in backupService.ts AND mirrored in backupSettingsService.ts (no circular import) — NOT in shared types. Scheduler: 15-min `setInterval` in `server.ts` (`BACKUP_TICK_MS`); automatic backups get an `auto-` filename prefix.
 
 Controllers are thin (parse → service call → res.json); business logic lives in `services/inventoryService.ts` — soft-delete via trash system, consignment stock math, debt allocation (JSON `DebtAllocation[]` on payments), shop allocation splits.
 

@@ -19,7 +19,7 @@ const mysql = require('mysql2/promise');
 ```
 Always add the `.catch` — without it errors print as bare `Node.js v22.x` with no message.
 
-## Tables by domain (25, verified live 2026-09-09)
+## Tables by domain (26, verified live 2026-09-09)
 
 **better-auth** (`schema/auth.ts`): `user` (id, name, email, role varchar32, banned, …), `session`, `account` (provider rows; credential rows carry scrypt `password` = `salt:key`), `verification`.
 
@@ -27,9 +27,11 @@ Always add the `.catch` — without it errors print as bare `Node.js v22.x` with
 
 **Customer orders** (`schema/orders.ts`): `orders` (status machine; mine-scoped for users), `user_addresses`.
 
-**CMS/company** (`schema/cms.ts`, `company.ts`): `blog_posts`, `website_settings` (JSON blob), `company_settings` (JSON blob — full CompanyBranding: branding fields + `analyticsSettings` {gaMeasurementId, websiteUrl} + `dashboardPrefs` {widgetId: boolean} + owners list), `gallery_images` (url relative `/uploads/...`; fileName; category; label; `alt` varchar255 — alt text for SEO/a11y; tags JSON; **probed metadata (migration 0012)**: `width`/`height` int nullable, `file_size` int bytes, `mime_type` varchar32 — filled server-side by `probeImageMeta` at upload, backfilled via `node scripts/backfill-gallery-meta.mjs`; mime comes from the file signature, so a `.gif`-named PNG records `image/png`), `notification_settings` (JSON blob — telegram/SMS config).
+**CMS/company** (`schema/cms.ts`, `company.ts`): `blog_posts`, `website_settings` (JSON blob), `company_settings` (JSON blob — full CompanyBranding: branding fields + `analyticsSettings` {gaMeasurementId, websiteUrl} + `dashboardPrefs` **v2 layout object** `{version: 2, order[], hidden{}, cols{}, collapsed{}, presets[]}` (legacy flat `{widgetId: boolean}` migrates client-side via `normalizeLayout`) + owners list), `gallery_images` (url relative `/uploads/...`; fileName; category; label; `alt` varchar255 — alt text for SEO/a11y; tags JSON; **probed metadata (migration 0012)**: `width`/`height` int nullable, `file_size` int bytes, `mime_type` varchar32 — filled server-side by `probeImageMeta` at upload, backfilled via `node scripts/backfill-gallery-meta.mjs`; mime comes from the file signature, so a `.gif`-named PNG records `image/png`), `notification_settings` (JSON blob — telegram/SMS config incl. `relayUrl`).
 
-**Infra**: `audit_logs` (`details` column — NOT `description`; 500 latest kept in UI), `__drizzle_migrations`.
+**Workshop todos** (`schema/workshop.ts`, migration 0015): `workshop_todos` (id uuid, text, priority low|medium|high|urgent, dueDate datetime nullable, done boolean, doneAt, createdAt).
+
+**Infra**: `audit_logs` (`details` column — NOT `description`; 500 latest kept in UI), `backup_settings` (`schema/backups.ts`, migration 0015 — JSON blob: autoEnabled, scheduleHours, retention, autoKind database|website|full, notifyTelegram, lastBackupAt, cpanelHost/User/Token), `__drizzle_migrations`.
 
 ## JSON-in-column pattern
 
