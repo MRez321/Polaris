@@ -9,8 +9,7 @@ import * as schema from '../../schema/index.js';
 import { logAudit } from '../../core/services/auditService.js';
 import { recordWorkshopEvent } from '../workshop/services/notificationsService.js';
 import { trustedOrigins } from '../../core/origins.js';
-
-dotenv.config();
+import { isProduction } from '../../config/env.js';
 
 export const auth = betterAuth({
     secret: process.env.BETTER_AUTH_SECRET,
@@ -29,6 +28,22 @@ export const auth = betterAuth({
     }),
     emailAndPassword: {
         enabled: true,
+        // Reject weak passwords at the better-auth boundary (min length 8,
+        // matching the frontend signup validation).
+        minPasswordLength: 8,
+    },
+    // Built-in per-IP rate limiting for auth endpoints (better-auth applies
+    // 3 requests / 10s window per IP on /sign-in, /sign-up and the
+    // two-factor routes when enabled). NODE_ENV is unset in the cPanel
+    // deployment, so enable explicitly rather than relying on the default.
+    rateLimit: {
+        enabled: true,
+    },
+    advanced: {
+        // Secure/authenticated cookies over TLS. With NODE_ENV unset on
+        // cPanel, better-auth's internal isProduction is false — force the
+        // secure flag from our own deployment heuristic.
+        useSecureCookies: isProduction(),
     },
     // Link a social sign-in to the existing credential user when the emails
     // match, so both methods point to a single unique user. The app has no
