@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { requireRole } from '../../modules/auth/middleware.js';
+import { requirePermission } from '../../modules/auth/permissions.js';
 import * as items from './controllers/itemsController.js';
 import * as sellers from './controllers/sellersController.js';
 import * as consignments from './controllers/consignmentsController.js';
@@ -75,13 +75,17 @@ router.post('/todos/:id/toggle', todos.toggleTodo);
 router.post('/todos/clear-done', todos.clearDoneTodos);
 router.delete('/todos/:id', todos.deleteTodo);
 
-// Backup system: settings, run-now, list, download, delete.
-router.get('/backups/settings', backups.getBackupSettings);
-router.put('/backups/settings', backups.updateBackupSettings);
-router.get('/backups', backups.listBackups);
-router.post('/backups/run', backups.runBackupNow);
-router.get('/backups/:id/download', backups.downloadBackup);
-router.delete('/backups/:id', backups.deleteBackup);
+// Backup system: settings, run-now, list, download, delete. Defense in depth —
+// the whole /api/workshop chain is already admin-only; these capability gates
+// document the intent per route and keep it true if the mount point widens.
+// `backup.restore` is intentionally not mounted: restore is a manual
+// server-side operation (documented in docs/backups).
+router.get('/backups/settings', requirePermission('backup.read'), backups.getBackupSettings);
+router.put('/backups/settings', requirePermission('backup.read'), backups.updateBackupSettings);
+router.get('/backups', requirePermission('backup.read'), backups.listBackups);
+router.post('/backups/run', requirePermission('backup.run'), backups.runBackupNow);
+router.get('/backups/:id/download', requirePermission('backup.download'), backups.downloadBackup);
+router.delete('/backups/:id', requirePermission('backup.delete'), backups.deleteBackup);
 
 // Analytics: cross-channel sales rankings (sellers + online shop).
 router.get('/analytics', analytics.getAnalytics);

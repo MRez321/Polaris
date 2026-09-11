@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
 import { requireAuth, requireRole } from '../modules/auth/middleware.js';
+import { requirePermission } from '../modules/auth/permissions.js';
 import { health } from '../controllers/healthController.js';
 import * as pub from '../modules/workshop/controllers/publicController.js';
 import * as blog from '../modules/cms/blogController.js';
@@ -39,11 +40,11 @@ router.post('/addresses', addresses.createAddress);
 router.put('/addresses/:id', addresses.updateAddress);
 router.delete('/addresses/:id', addresses.deleteAddress);
 
-// Blog CMS: admin + author roles only.
-router.get('/blog', requireRole('admin', 'author'), blog.listPosts);
-router.post('/blog', requireRole('admin', 'author'), blog.createPost);
-router.put('/blog/:id', requireRole('admin', 'author'), blog.updatePost);
-router.delete('/blog/:id', requireRole('admin', 'author'), blog.deletePost);
+// Blog CMS: capability gate (admin + author via ROLE_PERMISSIONS).
+router.get('/blog', requirePermission('blog.manage'), blog.listPosts);
+router.post('/blog', requirePermission('blog.manage'), blog.createPost);
+router.put('/blog/:id', requirePermission('blog.manage'), blog.updatePost);
+router.delete('/blog/:id', requirePermission('blog.manage'), blog.deletePost);
 
 // Everything below is admin-only.
 router.use(requireRole('admin'));
