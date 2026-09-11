@@ -5,6 +5,7 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "target": "ES2022",
+    "lib": ["es2024"],
     "types": ["node"],
     "sourceMap": true,
     "declaration": false,

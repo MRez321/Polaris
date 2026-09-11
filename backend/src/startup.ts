@@ -8,6 +8,26 @@ import path from 'path';
 
 dotenv.config();
 
+import { isProduction } from './config/env.js';
+
+/**
+ * Fail-closed secret gate for production. In production the auth secret
+ * MUST be present and strong (>= 32 chars — better-auth signs/encrypts
+ * sessions and 2FA secrets with it); a weak or missing secret would leave
+ * every token forgeable. Dev keeps running so the local environment is
+ * never blocked by this check.
+ */
+function assertProductionSecrets(): void {
+    if (!isProduction()) return;
+
+    const secret = process.env.BETTER_AUTH_SECRET ?? '';
+    if (secret.length < 32) {
+        throw new Error(
+            'Required production secret is not configured: BETTER_AUTH_SECRET must be set to a random value of at least 32 characters (generate with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))")',
+        );
+    }
+}
+
 /**
  * Logs deployment-critical configuration (names only, never secrets) so the
  * cPanel Node app log shows exactly what is missing when startup fails.
@@ -25,6 +45,7 @@ function logStartupDiagnostics(): void {
     console.log(
         `🗄️  DB target: ${process.env.DB_HOST ?? '127.0.0.1'}:${process.env.DB_PORT || '3306'}/${process.env.DB_NAME ?? 'polaris'} as "${process.env.DB_USER ?? 'root'}"`,
     );
+    console.log(`🔐 Deployment mode: ${isProduction() ? 'production' : 'development'}`);
 }
 
 // Crash guards: on cPanel shared hosting a dead process becomes an opaque 503
@@ -39,4 +60,5 @@ process.on('uncaughtException', (err) => {
     process.exit(1);
 });
 
+assertProductionSecrets();
 logStartupDiagnostics();

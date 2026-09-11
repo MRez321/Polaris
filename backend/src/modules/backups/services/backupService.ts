@@ -103,41 +103,61 @@ function resolveOnPath(binary: string): string | null {
 // Spawn helpers
 // ---------------------------------------------------------------------------
 interface SpawnResult {
-    code: number;
+    code: number | null;
     stderr: string;
 }
 
-function runCommand(bin: string, args: string[], opts?: { cwd?: string }): Promise<SpawnResult> {
-    return new Promise((resolve, reject) => {
-        const child = spawn(bin, args, { shell: false, cwd: opts?.cwd });
-        let stderr = '';
-        child.stderr.on('data', (chunk: Buffer) => {
-            stderr += chunk.toString('utf8');
-        });
-        child.on('error', reject);
-        child.on('close', (code) => resolve({ code: code ?? -1, stderr }));
+/**
+ * Spawns a command without a shell. `env` replaces the child environment, so
+ * callers can pass secrets (e.g. MYSQL_PWD) without them ever landing in
+ * argv, process listings, or error messages.
+ */
+function runCommand(bin: string, args: string[], opts?: { cwd?: string; env?: NodeJS.ProcessEnv }): Promise<SpawnResult> {
+    const { promise, resolve, reject } = Promise.withResolvers<SpawnResult>();
+    const child = spawn(bin, args, { shell: false, ...(opts?.env ? { env: opts.env } : {}) });
+    let stderr = '';
+    child.stderr.on('data', (chunk: Buffer) => {
+        stderr += chunk.toString('utf8');
     });
+    child.on('error', reject);
+    child.on('close', (code) => resolve({ code, stderr }));
+    return promise;
 }
 
 /** Runs a command, piping stdout into a file stream; rejects on spawn errors. */
 function runCommandToFile(bin: string, args: string[], outFile: string): Promise<SpawnResult> {
-    return new Promise((resolve, reject) => {
-        const out = fs.createWriteStream(outFile);
-        const child = spawn(bin, args, { shell: false });
-        let stderr = '';
-        child.stdout.pipe(out);
-        child.stderr.on('data', (chunk: Buffer) => {
-            stderr += chunk.toString('utf8');
-        });
-        out.on('error', reject);
-        child.on('error', (err: Error) => {
-            out.destroy();
-            reject(err);
-        });
-        child.on('close', (code) => {
-            out.end(() => resolve({ code: code ?? -1, stderr }));
-        });
+    const { promise, resolve, reject } = Promise.withResolvers<SpawnResult>();
+    const out = fs.createWriteStream(outFile);
+    const child = spawn(bin, args, { shell: false });
+    let stderr = '';
+    child.stdout.pipe(out);
+    child.stderr.on('data', (chunk: Buffer) => {
+        stderr += chunk.toString('utf8');
     });
+    out.on('error', reject);
+    child.on('error', (err: Error) => {
+        out.destroy();
+        reject(err);
+    });
+    child.on('close', (code) => {
+        out.end(() => resolve({ code: code ?? -1, stderr }));
+    });
+    return promise;
+}
+
+/**
+ * Strips anything that could leak credentials out of a child process's
+ * stderr before it reaches a client-facing error message: MySQL/MariaDB
+ * echoes the DSN (and older builds the password) on connection failures.
+ */
+function sanitizeStderr(stderr: string): string {
+    return stderr
+        .replace(/--password=\S+/gi, '--password=***')
+        .replace(/\bpassword\s*=\s*\S+/gi, 'password=***')
+        .replace(/\bpwd\s*=\s*\S+/gi, 'pwd=***')
+        .replace(/\buser\s*=\s*\S+/gi, 'user=***')
+        .trim()
+        .slice(0, 300);
 }
 
 
@@ -155,11 +175,13 @@ async function buildDatabaseBackup(): Promise<BackupFileMeta> {
     const filename = `db-${timestampName()}.sql`;
     const outFile = path.join(BACKUPS_DIR, filename);
 
+    // DB password travels via the MYSQL_PWD environment variable, never as a
+    // --password= argv entry: argv is visible in `ps`/process listings and can
+    // leak into error logs (mysqldump echoes its arguments on failure).
     const args = [
         `--host=${process.env.DB_HOST ?? '127.0.0.1'}`,
         `--port=${process.env.DB_PORT ?? '3306'}`,
         `--user=${process.env.DB_USER ?? 'root'}`,
-        `--password=${process.env.DB_PASSWORD ?? ''}`,
         '--single-transaction',
         '--routines',
         '--triggers',
@@ -167,17 +189,19 @@ async function buildDatabaseBackup(): Promise<BackupFileMeta> {
         '--result-file',
         outFile,
     ];
-    const { code, stderr } = await runCommand(mysqldump, [
-        ...args,
-        process.env.DB_NAME ?? 'polaris',
-    ]);
+    const { code, stderr } = await runCommand(mysqldump, [...args, process.env.DB_NAME ?? 'polaris'], {
+        env: { ...process.env, MYSQL_PWD: process.env.DB_PASSWORD ?? '' },
+    });
     if (code !== 0) {
         try {
             fs.unlinkSync(outFile);
         } catch {
             /* best effort */
         }
-        throw badRequest(`mysqldump خطا داد: ${stderr.trim().slice(0, 300)}`);
+        // Windows mysqldump also prints a MYSQL_PWD deprecation warning; the
+        // sanitized tail keeps the failure reason without the noise/secrets.
+        const detail = sanitizeStderr(stderr.split('\n').filter((l) => !l.includes('MYSQL_PWD')).join('\n'));
+        throw badRequest(`mysqldump خطا داد: ${detail}`);
     }
     // gzip the dump (mysqldump --result-file can't compress on Windows builds)
     const { code: gzCode, stderr: gzErr } = await runCommand(resolveTar(), [
@@ -193,7 +217,7 @@ async function buildDatabaseBackup(): Promise<BackupFileMeta> {
         } catch {
             /* best effort */
         }
-        throw badRequest(`فشرده‌سازی پشتیبان دیتابیس شکست خورد: ${gzErr.trim().slice(0, 300)}`);
+        throw badRequest(`فشرده‌سازی پشتیبان دیتابیس شکست خورد: ${sanitizeStderr(gzErr)}`);
     }
     fs.unlinkSync(outFile);
 
@@ -233,7 +257,7 @@ async function buildWebsiteBackup(): Promise<BackupFileMeta> {
         } catch {
             /* best effort */
         }
-        throw badRequest(`ساخت پشتیبان فایل‌های سایت شکست خورد: ${stderr.trim().slice(0, 300)}`);
+        throw badRequest(`ساخت پشتیبان فایل‌های سایت شکست خورد: ${sanitizeStderr(stderr)}`);
     }
     return metaFromFile(filename, 'website', false);
 }
@@ -264,7 +288,7 @@ async function buildFullBackup(): Promise<BackupFileMeta> {
         } catch {
             /* best effort */
         }
-        throw badRequest(`ساخت پشتیبان کامل شکست خورد: ${stderr.trim().slice(0, 300)}`);
+        throw badRequest(`ساخت پشتیبان کامل شکست خورد: ${sanitizeStderr(stderr)}`);
     }
     return metaFromFile(filename, 'full', false);
 }
