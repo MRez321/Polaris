@@ -1,0 +1,809 @@
+# Polaris — P0-A Security & Access
+
+## Coding Agent Execution Brief
+
+### Mission
+
+Implement **P0-A — Security & Access, items 3 through 10** in the existing Polaris codebase.
+
+Items:
+
+* P0-A-03 — Secrets / Credentials Security
+* P0-A-04 — RBAC / Permissions
+* P0-A-05 — Login / Session / OAuth Hardening
+* P0-A-06 — MFA / 2FA
+* P0-A-07 — Rate Limiting
+* P0-A-08 — Security Headers / Cookies / CORS / CSP / Production Hardening
+* P0-A-09 — Sensitive Data Masking / Logging / Error Handling
+* P0-A-10 — Backup / Recovery Security
+
+### Non-negotiable rules
+
+1. Do NOT redesign Polaris.
+2. Do NOT create a second authentication system.
+3. Preserve the existing `better-auth` architecture.
+4. Reuse existing middleware, services, schema, routes and conventions wherever possible.
+5. Do NOT blindly replace entire files before inspecting their current contents.
+6. Do NOT remove existing functionality unless it is demonstrably insecure or conflicts with P0-A.
+7. Do NOT expose secrets, tokens, passwords, OAuth credentials, backup credentials or MFA secrets to the frontend.
+8. Do NOT log passwords, tokens, cookies, authorization headers, OAuth tokens or backup codes.
+9. Do NOT store real credentials in source code, `.env.example`, migrations or documentation.
+10. Do NOT weaken CSRF/origin validation.
+11. Do NOT claim completion until TypeScript/build/tests/migrations have been checked.
+12. If an assumption is required, inspect the repository first. Never invent filenames, schemas or APIs when the actual repository can answer the question.
+
+---
+
+# PHASE 0 — Repository Audit
+
+Before changing anything:
+
+1. Inspect the repository structure.
+2. Locate:
+
+   * backend entrypoint
+   * frontend entrypoint
+   * Better Auth configuration
+   * auth middleware
+   * auth routes
+   * user schema
+   * session schema
+   * account schema
+   * verification schema
+   * existing RBAC/role logic
+   * audit logging
+   * error handling
+   * CORS configuration
+   * trusted origins
+   * backup controllers
+   * backup services
+   * backup settings
+   * environment configuration
+   * existing rate limiting
+   * existing security middleware
+   * frontend auth client
+   * routing
+   * existing MFA implementation, if any
+3. Inspect `package.json` files and existing dependencies.
+4. Inspect database/schema conventions.
+5. Inspect migration tooling.
+6. Inspect existing tests.
+7. Search globally for:
+
+   * `requireAuth`
+   * `requireRole`
+   * `role`
+   * `betterAuth`
+   * `signIn`
+   * `signUp`
+   * `session`
+   * `oauth`
+   * `accountLinking`
+   * `twoFactor`
+   * `backup`
+   * `console.log`
+   * `console.error`
+   * `password`
+   * `token`
+   * `secret`
+   * `authorization`
+   * `cookie`
+   * `cors`
+
+### Audit output
+
+Create an internal implementation map:
+
+```text
+P0-A-03 -> affected files
+P0-A-04 -> affected files
+P0-A-05 -> affected files
+P0-A-06 -> affected files
+P0-A-07 -> affected files
+P0-A-08 -> affected files
+P0-A-09 -> affected files
+P0-A-10 -> affected files
+```
+
+Do not modify code during this audit phase.
+
+---
+
+# PHASE 1 — P0-A-03 Secrets / Credentials
+
+## Objective
+
+Ensure credentials are never hardcoded, committed, logged or exposed through APIs.
+
+### Requirements
+
+1. Audit all environment variables.
+2. Ensure production secrets come exclusively from environment/secret storage.
+3. Ensure `BETTER_AUTH_SECRET` is mandatory in production.
+4. Ensure database credentials are environment-based.
+5. Ensure OAuth client secrets are environment-based.
+6. Ensure backup/cPanel/Telegram credentials are environment-based or stored through the existing secure configuration mechanism.
+7. Remove real credentials from `.env.example`.
+8. Never return secret values through API responses.
+9. Never include secrets in error messages.
+10. Sanitize logs.
+
+### Production invariant
+
+If a mandatory secret is absent in production:
+
+```ts
+throw new Error('Required production secret is not configured');
+```
+
+Do not silently generate or fallback to insecure defaults.
+
+---
+
+# PHASE 2 — P0-A-04 RBAC / Permissions
+
+## Objective
+
+Move from coarse role-only authorization toward explicit permissions while preserving compatibility with existing roles.
+
+Expected roles should be derived from the actual repository. Do not invent new roles if equivalent roles already exist.
+
+Expected permission categories:
+
+```text
+dashboard.view
+
+products.view
+products.create
+products.update
+products.delete
+
+inventory.view
+inventory.create
+inventory.update
+inventory.delete
+
+sales.view
+sales.create
+sales.update
+sales.delete
+
+finance.view
+finance.create
+finance.update
+finance.delete
+
+users.view
+users.create
+users.update
+users.delete
+
+settings.view
+settings.update
+
+backup.create
+backup.restore
+
+audit.view
+
+workshop.view
+workshop.manage
+```
+
+### Implementation
+
+Create/reuse a centralized permission map:
+
+```ts
+type Permission = /* repository-compatible permission union */;
+
+const ROLE_PERMISSIONS = {
+    // actual Polaris roles
+};
+```
+
+Create:
+
+```ts
+requirePermission(permission)
+```
+
+Authorization must happen server-side.
+
+Frontend visibility is NOT authorization.
+
+Sensitive operations must verify permissions on the API.
+
+At minimum:
+
+* backup creation -> `backup.create`
+* backup restore -> `backup.restore`
+* user administration -> user permissions
+* financial operations -> finance permissions
+* settings -> settings permissions
+
+Preserve `requireAuth` and `requireRole` if existing code still depends on them.
+
+---
+
+# PHASE 3 — P0-A-05 Authentication / Session / OAuth
+
+## Objective
+
+Harden the existing Better Auth implementation.
+
+### Requirements
+
+1. Keep Better Auth.
+2. Do not create custom password authentication.
+3. Production requires a strong `BETTER_AUTH_SECRET`.
+4. Password policy must be enforced through Better Auth.
+5. Password reset must revoke existing sessions.
+6. Session lifetime must be explicit and reasonable.
+7. Cookies must be:
+
+   * HttpOnly
+   * Secure in production
+   * SameSite=Lax or stricter where compatible
+8. Do not expose session tokens to frontend JavaScript.
+9. OAuth credentials must come from environment variables.
+10. OAuth account linking must require verified local email where applicable.
+11. Do not automatically link accounts based only on an unverified email.
+12. OAuth tokens must not be returned to the client.
+13. Preserve existing OAuth providers that are intentionally configured.
+14. Preserve existing trusted-origin validation.
+
+Audit every login, logout, password reset and OAuth callback path.
+
+---
+
+# PHASE 4 — P0-A-06 MFA / 2FA
+
+## Objective
+
+Implement MFA using Better Auth's supported two-factor functionality if compatible with the installed version.
+
+### Requirements
+
+1. Inspect the installed Better Auth version first.
+2. Verify the exact plugin/API names before coding.
+3. Add TOTP MFA.
+4. Generate backup codes.
+5. Store MFA secrets using the supported Better Auth storage model.
+6. Never return raw MFA secrets after setup.
+7. Never log MFA secrets or backup codes.
+8. Protect verification against brute force.
+9. Lock or throttle repeated failed MFA attempts.
+10. Owner and other high-privilege accounts must be capable of requiring MFA.
+11. Existing normal users must not be unexpectedly locked out by deployment.
+12. Provide frontend verification flow if the repository uses a frontend-managed login flow.
+13. Handle the “MFA required” state cleanly.
+14. Add tests for:
+
+    * valid TOTP
+    * invalid TOTP
+    * repeated failures
+    * backup code
+    * already-used backup code
+    * MFA-enabled privileged user
+    * MFA-disabled normal user
+
+Do not assume table names or client methods. Inspect the installed Better Auth package and current schema first.
+
+---
+
+# PHASE 5 — P0-A-07 Rate Limiting
+
+## Objective
+
+Prevent brute force, credential stuffing and abuse.
+
+Use the project's existing infrastructure if one exists.
+
+If no production-capable distributed solution exists, implement a safe temporary limiter and document that multi-instance deployments require shared storage.
+
+### Separate limits
+
+At minimum distinguish:
+
+```text
+authentication
+password reset
+MFA verification
+general API
+sensitive operations
+backup operations
+```
+
+Example starting values, subject to repository architecture:
+
+```text
+login:
+10 attempts / 15 minutes / IP + normalized identifier
+
+password reset:
+5 / minute / IP + identifier
+
+MFA:
+10 / minute / session or IP
+
+general API:
+~180 / minute / IP
+
+sensitive operations:
+~20 / minute / authenticated identity
+```
+
+Do not rely exclusively on frontend throttling.
+
+Return HTTP:
+
+```text
+429 Too Many Requests
+```
+
+and an appropriate `Retry-After`.
+
+Avoid rate-limit bypass through trivial header spoofing.
+
+If Polaris runs behind a proxy, configure `trust proxy` correctly rather than blindly trusting arbitrary forwarding headers.
+
+---
+
+# PHASE 6 — P0-A-08 Production Security
+
+## Security Headers
+
+At minimum evaluate:
+
+```text
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy
+Strict-Transport-Security (production HTTPS only)
+Content-Security-Policy
+```
+
+Do not deploy a CSP that breaks Polaris.
+
+Inspect frontend assets, API endpoints, fonts, images, WebSocket connections and OAuth before finalizing CSP.
+
+## CORS
+
+1. Allow only configured trusted origins.
+2. Do not use wildcard origin with credentials.
+3. Preserve local development support only where explicitly required.
+4. Reject unauthorized origins.
+5. Keep `credentials: true` only where actually required.
+
+## Cookies
+
+Production authentication cookies must be:
+
+```text
+HttpOnly
+Secure
+SameSite=Lax (or stricter if compatible)
+```
+
+## Production
+
+Disable unnecessary:
+
+```text
+x-powered-by
+verbose stack traces
+debug output
+secret-bearing errors
+```
+
+---
+
+# PHASE 7 — P0-A-09 Sensitive Data
+
+Create/reuse a central sanitizer.
+
+It must redact keys such as:
+
+```text
+password
+secret
+token
+accessToken
+refreshToken
+idToken
+apiKey
+authorization
+cookie
+set-cookie
+privateKey
+backupCodes
+twoFactorSecret
+databasePassword
+cpanelToken
+telegramBotToken
+googleClientSecret
+githubClientSecret
+```
+
+Use recursive sanitization.
+
+Example:
+
+```ts
+export function sanitizeForLog(value: unknown): unknown {
+    // recursively clone and redact sensitive keys
+}
+```
+
+### Logging
+
+Audit all:
+
+```text
+console.log
+console.error
+logger.*
+audit logs
+request logging
+authentication logging
+backup logging
+OAuth logging
+```
+
+No sensitive values may appear.
+
+### Error responses
+
+Production responses must never expose:
+
+```text
+stack traces
+filesystem paths
+SQL errors
+database credentials
+tokens
+internal implementation details
+```
+
+Return safe user-facing errors.
+
+Detailed errors may remain in protected server logs, after sanitization.
+
+---
+
+# PHASE 8 — P0-A-10 Backup / Recovery Security
+
+## Authorization
+
+Backup operations must require explicit permissions.
+
+At minimum:
+
+```text
+backup.create
+backup.restore
+```
+
+Restoration must be more privileged than normal backup creation.
+
+Prefer:
+
+```text
+owner -> restore
+admin -> create/list/download/delete
+```
+
+unless actual Polaris role requirements dictate otherwise.
+
+## Backup API
+
+Never return:
+
+```text
+cPanel token
+database password
+Telegram bot token
+raw backup credentials
+```
+
+Mask them in administrative UI responses.
+
+If a masked value is submitted back unchanged:
+
+```text
+••••••••••••••••
+```
+
+do not overwrite the stored secret.
+
+## Path traversal
+
+Backup IDs must never directly become filesystem paths.
+
+Validate:
+
+```text
+basename
+expected filename format
+resolved path
+backup directory boundary
+```
+
+Reject:
+
+```text
+..
+/
+\
+absolute paths
+unexpected extensions
+unexpected filenames
+```
+
+## Backup contents
+
+Do not recursively include:
+
+```text
+backups
+node_modules
+.env
+.env.*
+temporary files
+generated secrets
+```
+
+unless explicitly required and securely encrypted.
+
+## Concurrent backups
+
+Prevent accidental simultaneous backup jobs if the current architecture cannot safely handle concurrency.
+
+## Delete / download
+
+Require authentication and appropriate permission for:
+
+```text
+list
+download
+delete
+restore
+```
+
+Log these operations to the audit system.
+
+---
+
+# PHASE 9 — Database / Migration Safety
+
+Before changing schema:
+
+1. Inspect current schema.
+2. Check whether MFA/2FA tables already exist.
+3. Check existing column names/types.
+4. Check migration history.
+5. Generate the smallest required migration.
+6. Never manually duplicate an existing table.
+7. Run migration against a test database first.
+8. Verify migration is reversible where project conventions support rollback.
+
+Never overwrite an existing production database manually.
+
+---
+
+# PHASE 10 — Tests
+
+Add/update tests for all eight P0-A items.
+
+Minimum security tests:
+
+### Authentication
+
+```text
+unauthenticated -> 401
+authenticated -> allowed
+expired session -> rejected
+invalid session -> rejected
+```
+
+### RBAC
+
+```text
+allowed role + permission -> 200
+authenticated but missing permission -> 403
+unknown role -> 403
+```
+
+### MFA
+
+```text
+valid code -> success
+invalid code -> failure
+too many attempts -> throttled/locked
+backup code -> success
+used backup code -> failure
+```
+
+### Rate limiting
+
+```text
+within limit -> success
+over limit -> 429
+Retry-After exists
+```
+
+### CORS
+
+```text
+trusted origin -> allowed
+untrusted origin -> rejected
+wildcard credentials -> impossible
+```
+
+### Secrets
+
+Assert that logs/API responses do NOT contain:
+
+```text
+password
+accessToken
+refreshToken
+apiKey
+OAuth secret
+backup token
+MFA secret
+backup codes
+```
+
+### Backup
+
+Test:
+
+```text
+unauthenticated -> 401
+unauthorized role -> 403
+authorized create -> allowed
+unauthorized restore -> 403
+path traversal -> rejected
+invalid backup ID -> rejected
+masked credential -> does not overwrite secret
+```
+
+---
+
+# PHASE 11 — Static Verification
+
+Run the repository's actual commands, determined from `package.json`.
+
+At minimum:
+
+```bash
+npm run typecheck
+npm run lint
+npm test
+npm run build
+```
+
+Only run commands that actually exist in the repository.
+
+Also run:
+
+```bash
+npm audit
+```
+
+and inspect high/critical findings.
+
+Do not blindly upgrade dependencies as part of this task unless required for the security implementation.
+
+---
+
+# PHASE 12 — Final Security Audit
+
+Search the complete repository again for:
+
+```text
+password=
+password:
+secret=
+secret:
+token=
+token:
+clientSecret
+accessToken
+refreshToken
+idToken
+authorization
+cookie
+console.log
+console.error
+process.env
+```
+
+Verify every occurrence.
+
+Then verify:
+
+```text
+No production secret is committed.
+No auth token is exposed to frontend JS.
+No backup credential is returned by API.
+No MFA secret is logged.
+No backup code is logged.
+No unauthorized API operation succeeds.
+No privileged operation relies only on frontend checks.
+No wildcard credentialed CORS exists.
+No production stack trace is exposed.
+No backup path traversal exists.
+```
+
+---
+
+# Execution protocol
+
+Work in this exact order:
+
+```text
+1. Audit repository
+2. Produce implementation map
+3. Implement P0-A-03
+4. Test P0-A-03
+5. Implement P0-A-04
+6. Test P0-A-04
+7. Implement P0-A-05
+8. Test P0-A-05
+9. Implement P0-A-06
+10. Run migration/schema tests
+11. Test P0-A-06
+12. Implement P0-A-07
+13. Test P0-A-07
+14. Implement P0-A-08
+15. Test CORS/cookies/security headers
+16. Implement P0-A-09
+17. Test logs/errors/API responses
+18. Implement P0-A-10
+19. Test backup security
+20. Run full typecheck/lint/test/build
+21. Run final repository security audit
+22. Produce final change report
+```
+
+For every implementation step report:
+
+```text
+ITEM: P0-A-XX
+
+FILES INSPECTED:
+...
+
+FILES CHANGED:
+...
+
+CHANGES:
+...
+
+DATABASE CHANGES:
+...
+
+SECURITY IMPACT:
+...
+
+TESTS:
+...
+
+RESULT:
+PASS / FAIL
+
+REMAINING RISK:
+...
+```
+
+### Critical instruction
+
+Do not make speculative changes.
+
+If an API, Better Auth plugin, schema field, route, dependency or function differs from the assumptions above, use the actual repository implementation as the source of truth and adapt the implementation accordingly.
+
+The final result must be **production-oriented, type-safe, compatible with the existing Polaris architecture, and fully tested**.

@@ -1,0 +1,873 @@
+# P0-C — تأمین و موجودی: 14 تا 16
+
+## هدف
+
+منطق Polaris را از تولیدمحوری خارج کن و فقط روی **تأمین، خرید، دریافت کالا، ثبت موجودی و محاسبه هزینه واقعی تأمین** تمرکز کن.
+
+قبل از هر تغییر:
+
+1. فایل‌ها و کد فعلی پروژه را بررسی کن.
+2. این منابع را مبنا قرار بده:
+
+   * «بررسی کامل سایت پولاریس»
+   * «موارد اصلاح فاز صفر»
+   * «بررسی سایت Polaris»
+3. موارد 14، 15 و 16 را دقیقاً با معماری فعلی تطبیق بده.
+4. چیزی را که از قبل درست و قابل استفاده است دوباره‌سازی نکن.
+5. اگر مدل/جدول/کامپوننت موجود است، آن را توسعه بده؛ ساخت موازی و duplicate ممنوع.
+6. هیچ بخش مرتبط با تولید را به‌عنوان هسته این ماژول توسعه نده.
+7. قبل از تغییرات مخرب، dependency و مصرف فعلی هر مدل/API/page را بررسی کن.
+
+---
+
+# 14 — Supplier Module
+
+## هدف
+
+یک ماژول یکپارچه برای مدیریت تأمین‌کنندگان ایجاد/تکمیل کن.
+
+### Backend / Database
+
+Supplier باید حداقل قابلیت نگهداری این اطلاعات را داشته باشد:
+
+* نام تأمین‌کننده
+* کد/شناسه داخلی
+* شخص تماس
+* شماره تماس
+* اطلاعات ارتباطی
+* آدرس
+* وضعیت فعال/غیرفعال
+* توضیحات
+* شرایط همکاری
+* شرایط پرداخت
+* مهلت پرداخت
+* حداقل سفارش در صورت وجود
+* کالاهای تأمین‌شده
+* قیمت‌های خرید
+* سابقه خرید
+* بدهی/طلب مرتبط
+* تاریخ ایجاد/به‌روزرسانی
+
+اگر مدل Supplier از قبل وجود دارد، همان را migrate/extend کن.
+
+### روابط
+
+Supplier باید بتواند به این موجودیت‌ها متصل شود:
+
+`Supplier -> Purchase Orders`
+
+`Supplier -> Purchase Receipts`
+
+`Supplier -> Purchase Items`
+
+`Supplier -> Supplier Prices`
+
+`Supplier -> Supplier Transactions / Payables`
+
+`Supplier -> Purchase History`
+
+رابطه مستقیم و قابل گزارش بین تأمین‌کننده و کالا حفظ شود.
+
+### قیمت تأمین‌کننده
+
+قیمت را فقط روی Supplier ذخیره نکن.
+
+برای قیمت‌های تأمین‌کننده یک ساختار مستقل داشته باش که حداقل این اطلاعات را نگه دارد:
+
+* supplier
+* product
+* unit
+* purchase price
+* currency در صورت وجود
+* effective date
+* optional expiration date
+* minimum quantity در صورت وجود
+* notes
+* created_at
+* updated_at
+
+قیمت‌های قبلی نباید با تغییر قیمت فعلی از بین بروند.
+
+### API / Service
+
+CRUD کامل Supplier ایجاد/تکمیل کن:
+
+* list
+* detail
+* create
+* update
+* deactivate/activate
+
+لیست باید امکان موارد زیر را داشته باشد:
+
+* search
+* filter
+* sort
+* pagination
+
+Detail Supplier باید حداقل این بخش‌ها را نمایش دهد:
+
+* اطلاعات اصلی
+* کالاهای تأمین‌شده
+* آخرین قیمت‌ها
+* سابقه خرید
+* سفارش‌های باز
+* دریافت‌های انجام‌شده
+* مانده بدهی/طلب
+* تاریخچه فعالیت
+
+### UI
+
+یک بخش مشخص برای:
+
+`Suppliers`
+
+و صفحه جزئیات:
+
+`Supplier Detail`
+
+ایجاد/تکمیل کن.
+
+در UI امکان مشاهده سریع وضعیت تأمین‌کننده و سابقه خرید او وجود داشته باشد.
+
+---
+
+# 15 — Purchase / تأمین کالا
+
+## هدف
+
+فرآیند زیر را به‌صورت قابل ردیابی پیاده‌سازی کن:
+
+`Purchase Request → Purchase Order → Goods Receipt → Inventory → Supply Cost`
+
+هیچ مرحله‌ای نباید باعث شود وضعیت مرحله قبلی از بین برود.
+
+---
+
+## Purchase Request
+
+در صورت نبودن، ایجاد کن.
+
+اطلاعات حداقلی:
+
+* request number
+* requested by
+* date
+* supplier پیشنهادی در صورت وجود
+* items
+* quantity
+* requested unit
+* notes
+* status
+* created_at
+* updated_at
+
+Status حداقل:
+
+`draft`
+
+`submitted`
+
+`approved`
+
+`rejected`
+
+`converted`
+
+`cancelled`
+
+---
+
+## Purchase Order
+
+Purchase Order باید به Supplier متصل باشد.
+
+اطلاعات:
+
+* PO number
+* supplier
+* order date
+* expected delivery date
+* items
+* ordered quantity
+* unit
+* purchase unit price
+* subtotal
+* additional costs
+* total
+* payment terms
+* notes
+* status
+
+Status حداقل:
+
+`draft`
+
+`ordered`
+
+`partially_received`
+
+`received`
+
+`cancelled`
+
+Purchase Order باید از Purchase Request قابل ایجاد باشد.
+
+---
+
+## Purchase Items
+
+هر Purchase باید itemهای مستقل داشته باشد.
+
+هر item حداقل:
+
+* product
+* quantity
+* unit
+* unit price
+* subtotal
+* received quantity
+* remaining quantity
+
+مقدار دریافتی نباید صرفاً با quantity سفارش جایگزین شود.
+
+فرمول:
+
+`remaining_quantity = ordered_quantity - received_quantity`
+
+از دریافت بیشتر از مقدار سفارش جلوگیری کن، مگر اینکه business rule فعلی پروژه explicitly اجازه over-receipt بدهد.
+
+---
+
+# Goods Receipt / دریافت کالا
+
+بعد از ثبت سفارش، دریافت کالا باید به‌صورت مستقل ثبت شود.
+
+Receipt حداقل شامل:
+
+* receipt number
+* purchase order
+* supplier
+* warehouse
+* received date
+* received by
+* items
+* received quantity
+* unit
+* notes
+* status
+
+هر Receipt باید قابل ردیابی به Purchase Order باشد.
+
+در دریافت جزئی:
+
+`PO status = partially_received`
+
+در دریافت کامل:
+
+`PO status = received`
+
+---
+
+# Inventory Integration
+
+ثبت Receipt نباید فقط یک رکورد متنی باشد.
+
+وقتی کالا واقعاً دریافت شد:
+
+1. Receipt ثبت شود.
+2. موجودی انبار افزایش یابد.
+3. movement مربوط به ورود کالا ثبت شود.
+4. منبع movement مشخص باشد.
+5. Purchase و Receipt قابل ردیابی باشند.
+
+Inventory movement باید حداقل بتواند این رابطه را نگه دارد:
+
+`source_type = purchase_receipt`
+
+`source_id = receipt_id`
+
+از افزایش مستقیم موجودی بدون Inventory Movement معتبر جلوگیری کن.
+
+موجودی باید از transaction/movementهای واقعی قابل بازسازی باشد.
+
+---
+
+# Transaction / Atomicity
+
+عملیات تأیید دریافت کالا باید transactional باشد.
+
+یعنی:
+
+`Create Receipt`
+
+*
+
+`Create Inventory Movement`
+
+*
+
+`Update Inventory`
+
+*
+
+`Update Purchase Item Received Quantity`
+
+*
+
+`Update Purchase Status`
+
+باید یا همگی موفق شوند یا هیچ‌کدام اعمال نشوند.
+
+اگر معماری پروژه transaction mechanism دارد، همان را استفاده کن.
+
+---
+
+# 16 — ثبت هزینه واقعی تأمین
+
+## هدف
+
+قیمت خرید کالا به‌تنهایی نباید به‌عنوان هزینه واقعی تأمین در نظر گرفته شود.
+
+سیستم باید بتواند هزینه‌های جانبی مرتبط با تأمین را ثبت و به Purchase تخصیص دهد.
+
+نمونه:
+
+* حمل
+* بسته‌بندی
+* بارگیری
+* تخلیه
+* گمرک
+* کارمزد
+* سایر هزینه‌های مرتبط
+
+---
+
+# Supply Cost Model
+
+یک ساختار هزینه مرتبط با Purchase ایجاد/تکمیل کن.
+
+حداقل:
+
+* purchase
+* cost type
+* description
+* amount
+* currency در صورت وجود
+* date
+* supplier/party در صورت نیاز
+* notes
+* created_by
+* created_at
+* updated_at
+
+Cost Type حداقل:
+
+`shipping`
+
+`packaging`
+
+`loading`
+
+`unloading`
+
+`customs`
+
+`commission`
+
+`other`
+
+اگر پروژه enum convention مشخصی دارد، همان convention را رعایت کن.
+
+---
+
+# Cost Allocation
+
+هزینه جانبی باید قابلیت تخصیص به کالاهای Purchase را داشته باشد.
+
+حداقل روش‌های قابل پشتیبانی:
+
+### By Value
+
+تخصیص بر اساس ارزش خرید هر item.
+
+### By Quantity
+
+تخصیص بر اساس مقدار.
+
+اگر معماری فعلی پروژه روش allocation مشخصی دارد، همان را استفاده کن؛ روش جدید موازی نساز.
+
+---
+
+# Landed Cost
+
+برای هر Purchase Item امکان محاسبه داشته باش:
+
+`purchase_cost = quantity × unit_purchase_price`
+
+`allocated_supply_cost = allocated additional costs`
+
+`landed_cost = purchase_cost + allocated_supply_cost`
+
+و:
+
+`landed_unit_cost = landed_cost / received_quantity`
+
+در محاسبه واقعی، مقدار **دریافت‌شده** را در نظر بگیر و مراقب تقسیم بر صفر باش.
+
+---
+
+# Accounting / Payable Separation
+
+هزینه تأمین را با بدهی Supplier اشتباه نکن.
+
+این دو مفهوم جدا هستند:
+
+`Supplier Payable`
+
+و
+
+`Supply Cost`
+
+پرداخت به Supplier یک جریان مالی است؛ هزینه حمل یا بسته‌بندی ممکن است به شخص/شرکت دیگری پرداخت شود.
+
+مدل را طوری طراحی کن که این دو قابل تفکیک باشند.
+
+---
+
+# Inventory Cost
+
+پس از دریافت کالا، هزینه واقعی تأمین باید بتواند در محاسبه ارزش موجودی و حاشیه سود مورد استفاده قرار گیرد.
+
+اما روش valuation فعلی پروژه را بدون بررسی تغییر نده.
+
+اگر پروژه از یکی از این روش‌ها استفاده می‌کند:
+
+* weighted average
+* FIFO
+* مشخصه دیگر
+
+همان روش را حفظ کن و landed cost را مطابق همان معماری وارد کن.
+
+---
+
+# API Requirements
+
+APIهای موردنیاز را ایجاد/تکمیل کن:
+
+## Suppliers
+
+`GET /suppliers`
+
+`GET /suppliers/:id`
+
+`POST /suppliers`
+
+`PATCH /suppliers/:id`
+
+`POST /suppliers/:id/activate`
+
+`POST /suppliers/:id/deactivate`
+
+## Purchases
+
+`GET /purchase-requests`
+
+`POST /purchase-requests`
+
+`GET /purchase-requests/:id`
+
+`PATCH /purchase-requests/:id`
+
+`POST /purchase-requests/:id/approve`
+
+`POST /purchase-requests/:id/reject`
+
+`GET /purchase-orders`
+
+`POST /purchase-orders`
+
+`GET /purchase-orders/:id`
+
+`PATCH /purchase-orders/:id`
+
+## Receipts
+
+`POST /purchase-orders/:id/receipts`
+
+`GET /purchase-orders/:id/receipts`
+
+`GET /receipts/:id`
+
+## Supply Costs
+
+`POST /purchases/:id/costs`
+
+`GET /purchases/:id/costs`
+
+`PATCH /purchases/:id/costs/:costId`
+
+`DELETE /purchases/:id/costs/:costId`
+
+این URLها را فقط در صورتی استفاده کن که با routing convention فعلی پروژه سازگار باشند؛ در غیر این صورت naming convention فعلی را حفظ کن.
+
+---
+
+# Permissions
+
+دسترسی‌ها را به نقش‌های موجود پروژه متصل کن.
+
+حداقل permissionهای منطقی:
+
+* view suppliers
+* manage suppliers
+* create purchase request
+* approve purchase request
+* create purchase order
+* receive purchase
+* manage supply costs
+* view purchase financial data
+
+از hard-code کردن role names خودداری کن اگر پروژه permission/role system موجود دارد.
+
+---
+
+# Validation
+
+حداقل این validationها را اعمال کن:
+
+* Supplier name required
+* Product required
+* quantity > 0
+* unit price >= 0
+* cost amount >= 0
+* received quantity > 0
+* received quantity <= remaining quantity مگر business rule موجود خلاف آن باشد
+* Purchase Order بدون Supplier معتبر نشود
+* Receipt بدون Purchase Order معتبر نشود
+* cost بدون Purchase معتبر نشود
+* currency/unit مطابق convention پروژه validate شود
+
+---
+
+# Audit Trail
+
+برای عملیات حساس audit ثبت کن:
+
+* Supplier create/update
+* Purchase Request approval/rejection
+* Purchase Order creation/update
+* Receipt creation
+* Inventory adjustment caused by receipt
+* Supply Cost create/update/delete
+
+از audit mechanism موجود پروژه استفاده کن.
+
+---
+
+# Migration
+
+اگر database تغییر می‌کند:
+
+1. migrationهای versioned ایجاد کن.
+2. foreign keyها را تعریف کن.
+3. indexهای لازم را اضافه کن.
+4. uniquenessهای لازم را اعمال کن.
+5. migration را روی دیتابیس تست کن.
+6. rollback strategy را بررسی کن.
+7. داده‌های موجود را بدون دلیل حذف نکن.
+8. migration destructive بدون تأیید صریح انجام نده.
+
+Indexهای مهم را متناسب با schema موجود بررسی کن؛ مخصوصاً:
+
+* supplier_id
+* product_id
+* purchase_id
+* purchase_order_id
+* receipt_id
+* status
+* dates
+
+---
+
+# Frontend
+
+صفحات/کامپوننت‌های مرتبط را با design system فعلی Polaris پیاده‌سازی کن.
+
+حداقل:
+
+### Suppliers
+
+* Supplier List
+* Supplier Detail
+* Create/Edit Supplier
+
+### Purchasing
+
+* Purchase Request List
+* Purchase Request Detail
+* Purchase Order List
+* Purchase Order Detail
+* Create Purchase Order
+* Receive Goods
+
+### Supply Costs
+
+* Purchase Costs section
+* Add Cost
+* Edit Cost
+* Cost Breakdown
+
+### Purchase Detail
+
+در Purchase Detail یک timeline واضح نمایش بده:
+
+`Request → Order → Partial/Full Receipt → Inventory → Costs → Landed Cost`
+
+---
+
+# Reporting
+
+حداقل اطلاعات قابل استخراج:
+
+* خرید از هر Supplier
+* آخرین قیمت خرید
+* میانگین قیمت خرید در صورت پشتیبانی معماری
+* مقدار خرید
+* مقدار دریافت‌شده
+* هزینه جانبی تأمین
+* هزینه تمام‌شده
+* مانده بدهی
+* خریدهای باز
+* سفارش‌های در انتظار دریافت
+
+---
+
+# مهم: عدم ایجاد تناقض با Polaris
+
+این تغییرات باید با تصمیم معماری P0-B سازگار باشند:
+
+`Supply → Purchase → Receipt → Inventory → Sale`
+
+تولید نباید dependency اصلی این flow باشد.
+
+Purchase باید مستقل از Production قابل استفاده باشد.
+
+---
+
+# Step-by-Step Execution
+
+## Phase 1 — Audit
+
+ابتدا فقط بررسی کن:
+
+1. ساختار repository
+2. ORM/database
+3. Product model
+4. Inventory model
+5. Warehouse model
+6. Supplier model
+7. Purchase/Order models
+8. Financial/Payable models
+9. Permission system
+10. Audit system
+11. Routing
+12. UI design system
+
+خروجی این مرحله باید مشخص کند چه چیزهایی وجود دارند و چه چیزهایی باید extend/create شوند.
+
+## Phase 2 — Architecture
+
+یک dependency map بساز:
+
+`Supplier`
+
+↓
+
+`Purchase Request`
+
+↓
+
+`Purchase Order`
+
+↓
+
+`Purchase Item`
+
+↓
+
+`Goods Receipt`
+
+↓
+
+`Inventory Movement`
+
+↓
+
+`Inventory`
+
+و:
+
+`Purchase`
+
+↓
+
+`Supply Costs`
+
+↓
+
+`Cost Allocation`
+
+↓
+
+`Landed Cost`
+
+↓
+
+`Inventory Cost / Margin`
+
+قبل از coding، conflictهای schema را پیدا کن.
+
+## Phase 3 — Database
+
+به‌ترتیب:
+
+1. Supplier extensions
+2. Supplier Product/Price relation
+3. Purchase Request
+4. Purchase Order
+5. Purchase Items
+6. Goods Receipt
+7. Receipt Items
+8. Supply Costs
+9. Cost Allocation
+
+سپس migration و indexes.
+
+## Phase 4 — Backend
+
+به‌ترتیب:
+
+1. Supplier services
+2. Supplier APIs
+3. Purchase Request services
+4. Purchase Order services
+5. Receipt services
+6. Inventory integration
+7. Supply Cost services
+8. Landed Cost calculation
+9. Permissions
+10. Audit
+
+## Phase 5 — Frontend
+
+به‌ترتیب:
+
+1. Supplier List
+2. Supplier Detail
+3. Purchase Request
+4. Purchase Order
+5. Receive Goods
+6. Supply Costs
+7. Landed Cost display
+8. Loading/error/empty states
+9. Permission-based UI
+
+## Phase 6 — Testing
+
+حداقل این سناریوها را تست کن:
+
+### Supplier
+
+* create
+* update
+* deactivate
+* supplier/product relation
+* supplier price history
+
+### Purchase
+
+* create request
+* approve
+* convert to PO
+* create PO
+* partial receipt
+* full receipt
+* cancellation
+
+### Inventory
+
+* receipt increases inventory
+* inventory movement created
+* duplicate receipt does not duplicate stock
+* failed transaction rolls back
+
+### Costs
+
+* add shipping cost
+* add multiple costs
+* allocate costs
+* calculate landed cost
+* zero/invalid quantity protection
+
+### Security
+
+* unauthorized user cannot approve
+* unauthorized user cannot receive
+* unauthorized user cannot alter costs
+* financial data respects permissions
+
+## Phase 7 — Regression
+
+بعد از پیاده‌سازی:
+
+1. تست تمام flowهای موجود مرتبط با Product
+2. تست Inventory
+3. تست Warehouse
+4. تست Sales
+5. تست Financial
+6. تست Authentication/Authorization
+7. بررسی migration
+8. بررسی API contracts
+9. بررسی frontend routes
+10. بررسی duplicate models/components
+
+---
+
+# Acceptance Criteria
+
+کار فقط زمانی کامل است که:
+
+* Supplier یک موجودیت واقعی و قابل مدیریت باشد.
+* سابقه قیمت Supplier حفظ شود.
+* Purchase Request تا Purchase Order قابل ردیابی باشد.
+* Purchase Order تا Receipt قابل ردیابی باشد.
+* Receipt موجودی را به‌صورت transactional افزایش دهد.
+* Inventory Movement منبع Receipt را ثبت کند.
+* هزینه‌های جانبی تأمین قابل ثبت باشند.
+* هزینه‌ها به Purchase/Items قابل تخصیص باشند.
+* Landed Cost قابل محاسبه باشد.
+* قیمت خرید و هزینه واقعی تأمین از هم تفکیک باشند.
+* Supplier Payable با Supply Cost اشتباه نشود.
+* permissionها اعمال شوند.
+* audit trail وجود داشته باشد.
+* duplicate logic ایجاد نشود.
+* migrationها امن و قابل rollback باشند.
+* flow بدون وابستگی به Production کار کند.
+* تست‌های مرتبط موفق باشند.
+
+## قانون نهایی
+
+بدون بررسی کد موجود، مدل جدید نساز.
+
+بدون بررسی dependencyها، مدل قبلی را حذف نکن.
+
+بدون transaction، موجودی را مستقیماً تغییر نده.
+
+بدون audit، عملیات حساس مالی/موجودی را نهایی نکن.
+
+بدون permission، endpoint حساس ایجاد نکن.
+
+و قبل از اعلام completion، کل flow زیر را end-to-end اجرا و تست کن:
+
+`Supplier → Purchase Request → Purchase Order → Receipt → Inventory → Supply Costs → Landed Cost → Margin`

@@ -5,6 +5,7 @@ import {
     boolean,
     datetime,
     text,
+    int,
     index,
 } from 'drizzle-orm/mysql-core';
 
@@ -20,6 +21,7 @@ export const user = mysqlTable('user', {
     image: varchar('image', { length: 512 }),
     role: varchar('role', { length: 32 }),
     banned: boolean('banned').notNull().default(false),
+    twoFactorEnabled: boolean('two_factor_enabled').notNull().default(false),
     banReason: varchar('ban_reason', { length: 255 }),
     banExpires: datetime('ban_expires'),
     createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -73,4 +75,29 @@ export const verification = mysqlTable(
         updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
     },
     (t) => [index('verification_identifier_idx').on(t.identifier)],
+);
+
+// ---------------------------------------------------------------------------
+// better-auth two-factor plugin tables
+// One row per user with 2FA enrolled. `secret` (TOTP shared key) and
+// `backupCodes` (JSON array) are stored as better-auth encrypted payloads —
+// the plugin encrypts both with BETTER_AUTH_SECRET before writing and never
+// returns them in responses. `verified` flips true when the user completes
+// the enable flow with a valid TOTP code.
+// ---------------------------------------------------------------------------
+
+export const twoFactor = mysqlTable(
+    'two_factor',
+    {
+        id: varchar('id', { length: 36 }).primaryKey(),
+        userId: varchar('user_id', { length: 36 }).notNull(),
+        // Encrypted TOTP secret; never exposed via API responses.
+        secret: varchar('secret', { length: 512 }).notNull(),
+        // Encrypted JSON array of backup codes; never exposed via API responses.
+        backupCodes: varchar('backup_codes', { length: 1024 }).notNull(),
+        verified: boolean('verified').notNull().default(true),
+        failedVerificationCount: int('failed_verification_count').notNull().default(0),
+        lockedUntil: datetime('locked_until'),
+    },
+    (t) => [index('two_factor_user_id_idx').on(t.userId)],
 );

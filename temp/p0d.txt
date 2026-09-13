@@ -1,0 +1,1160 @@
+# P0-D — Sales & Channels (17–25)
+
+## Mission
+
+Implement P0-D for Polaris as a unified sales architecture covering:
+
+17. Seller
+18. Sales Channel
+19. Wholesale Sales
+20. Consignment Sales
+21. Seller Sales
+22. Customer
+23. Unified Order
+24. Order Lifecycle / Status
+25. Payment & Settlement
+
+Do not redesign unrelated modules. Do not delete the existing website checkout/order system prematurely. Preserve backward compatibility and integrate the new model safely.
+
+The target architecture is:
+
+Channel → Unified Sales Order → Customer / Seller → Order Lines → Payment → Inventory Movement / Settlement
+
+For consignment:
+
+Warehouse → Consignment Handover → Seller Inventory → Seller Sale → Commission → Settlement / Return
+
+---
+
+# STEP 1 — Inspect Before Editing
+
+First inspect the existing repository completely enough to identify:
+
+* current Drizzle schema
+* existing `sellers`
+* existing `consignments`
+* `ConsignmentItemLine`
+* existing `orders`
+* existing order controllers/services/routes
+* existing inventory service / ledger
+* existing payment logic
+* existing customer/user/address models
+* existing audit service
+* existing migration numbering
+* existing `nextCode` utility
+* actual `db` export path
+* existing authentication types (`req.auth`)
+* existing frontend sales/order pages
+
+Do not assume paths from this brief are correct. Resolve them from the actual repository before writing code.
+
+Do not duplicate an existing entity, service, utility, or route.
+
+---
+
+# STEP 2 — Preserve Existing Architecture
+
+The current website `orders` system must remain functional.
+
+Do NOT:
+
+* delete existing `orders`
+* replace checkout immediately
+* bypass existing inventory ledger
+* directly mutate stock quantities from sales code
+* duplicate payment/accounting logic unnecessarily
+* break existing APIs
+* remove existing consignment workflow
+
+Instead, introduce the new unified sales model beside the existing system and make integration points explicit.
+
+---
+
+# STEP 3 — Create Unified Sales Schema
+
+Create:
+
+`backend/src/schema/sales.ts`
+
+Add these entities.
+
+## `sales_channels`
+
+Fields:
+
+* id
+* code
+* name
+* type
+* description
+* isActive
+* sortOrder
+* createdAt
+* updatedAt
+
+Supported channel types:
+
+```text
+website
+instagram
+telegram
+bale
+eitaa
+basalam
+wholesale
+consignment
+manual_retail
+```
+
+Add unique index on `code` and useful indexes on type/active.
+
+---
+
+## `customers`
+
+Create a business Customer entity independent from website User.
+
+Fields:
+
+* id
+* code
+* name
+* phone
+* email
+* province
+* city
+* address
+* postalCode
+* creditLimit
+* currentDebt
+* totalPurchases
+* orderCount
+* firstOrderAt
+* lastOrderAt
+* acquisitionChannelId
+* tags
+* notes
+* isActive
+* createdAt
+* updatedAt
+* isDeleted
+* deletedAt
+
+Index:
+
+* code unique
+* phone
+* name
+* active
+* deleted
+
+Customer must be usable for:
+
+* website
+* Instagram
+* Telegram
+* Bale
+* Eitaa
+* Basalam
+* wholesale
+* manual retail
+* future CRM
+
+---
+
+## `sales_orders`
+
+Create the unified order entity.
+
+Required fields:
+
+* id
+* code
+* orderType
+* channelId
+* customerId nullable
+* sellerId nullable
+* customerName
+* customerPhone
+* customerAddress
+* status
+* paymentStatus
+* subtotal
+* discountAmount
+* shippingAmount
+* taxAmount
+* totalAmount
+* paidAmount
+* remainingAmount
+* currency
+* sourceReference
+* utmSource
+* utmMedium
+* utmCampaign
+* trackingCode
+* note
+* confirmedAt
+* paidAt
+* shippedAt
+* deliveredAt
+* cancelledAt
+* createdBy
+* createdAt
+* updatedAt
+* isDeleted
+* deletedAt
+
+Order types:
+
+```text
+retail
+wholesale
+consignment
+manual
+```
+
+Payment statuses:
+
+```text
+pending
+partial
+paid
+refunded
+voided
+```
+
+Do not calculate financial totals from client-provided totals. Calculate them server-side.
+
+---
+
+## `sales_order_lines`
+
+Fields:
+
+* id
+* orderId
+* itemId
+* sku
+* itemCode
+* itemName
+* size
+* color
+* quantity
+* unitPrice
+* discountAmount
+* lineTotal
+* snapshot
+* createdAt
+
+Store item name/code/variant information as a snapshot so historical orders remain readable after catalog changes.
+
+---
+
+# STEP 4 — Extend Seller
+
+Do not recreate the existing Seller entity if it already exists.
+
+Extend the current seller model with:
+
+```text
+commissionType
+commissionRate
+settlementCycleDays
+lastSettlementAt
+```
+
+Commission type:
+
+```text
+percentage
+fixed
+none
+```
+
+Preserve existing Seller fields and existing consignment functionality.
+
+Seller must support:
+
+* identity
+* active/inactive state
+* credit
+* handovers
+* inventory
+* sales
+* commission
+* settlement
+* returns
+
+---
+
+# STEP 5 — Seller Sales
+
+Create:
+
+`backend/src/modules/workshop/sellerSalesService.ts`
+
+Create:
+
+```text
+seller_sales
+seller_sale_lines
+```
+
+` seller_sales`:
+
+* id
+* code
+* sellerId
+* channelId
+* saleDate
+* status
+* subtotal
+* commissionAmount
+* netSettlementAmount
+* settledAmount
+* remainingSettlement
+* note
+* submittedBy
+* confirmedBy
+* confirmedAt
+* createdAt
+* updatedAt
+* isDeleted
+* deletedAt
+
+Statuses:
+
+```text
+draft
+submitted
+confirmed
+settled
+cancelled
+```
+
+` seller_sale_lines`:
+
+* id
+* sellerSaleId
+* itemId
+* itemCode
+* itemName
+* size
+* color
+* quantity
+* unitPrice
+* lineTotal
+* createdAt
+
+Server must calculate:
+
+```text
+subtotal
+commissionAmount
+netSettlementAmount
+remainingSettlement
+```
+
+Never trust these values from the frontend.
+
+---
+
+# STEP 6 — Seller Sales Service
+
+Implement:
+
+```text
+createSellerSale()
+listSellerSales()
+getSellerSale()
+```
+
+Validation:
+
+* seller exists
+* seller is active
+* channel exists and is active
+* lines are non-empty
+* quantity is positive integer
+* price is non-negative
+* commission rate is between 0 and 100
+* item exists and is not deleted
+
+Calculation:
+
+```text
+subtotal = Σ(quantity × unitPrice)
+
+commission =
+    percentage commission:
+        subtotal × commissionRate / 100
+
+netSettlement =
+    subtotal - commission
+
+settledAmount = 0
+
+remainingSettlement =
+    netSettlement
+```
+
+Use database transactions.
+
+---
+
+# STEP 7 — Unified Sales Service
+
+Create:
+
+`backend/src/modules/workshop/salesService.ts`
+
+Implement:
+
+```text
+createSalesOrder()
+listSalesOrders()
+getSalesOrder()
+```
+
+Input:
+
+```text
+orderType
+channelId
+customerId?
+sellerId?
+customerName?
+customerPhone?
+customerAddress?
+discountAmount?
+shippingAmount?
+taxAmount?
+sourceReference?
+utmSource?
+utmMedium?
+utmCampaign?
+note?
+lines[]
+```
+
+For every line:
+
+1. Verify item exists.
+2. Read item data from database.
+3. Determine unit price server-side unless an explicitly permitted sales price is supplied.
+4. Validate quantity.
+5. Validate discount.
+6. Calculate line total.
+7. Snapshot item identity.
+8. Calculate order subtotal.
+
+Then:
+
+```text
+total =
+    subtotal
+    - discount
+    + shipping
+    + tax
+```
+
+Initial state:
+
+```text
+status = draft
+paymentStatus = pending
+paidAmount = 0
+remainingAmount = total
+```
+
+Use a database transaction.
+
+---
+
+# STEP 8 — Inventory Integration Rule
+
+Sales creation must NOT directly decrement stock.
+
+Inventory changes must go through the existing inventory/ledger architecture from P0-C.
+
+The agent must inspect the existing inventory service and identify the correct transaction/event for:
+
+```text
+sale confirmed
+sale fulfilled
+sale returned
+consignment handover
+seller sale
+```
+
+Then integrate with that mechanism.
+
+Do not introduce a second stock calculation system.
+
+---
+
+# STEP 9 — Order Lifecycle
+
+Create:
+
+`backend/src/modules/workshop/salesOrderStatus.ts`
+
+Statuses:
+
+```text
+draft
+pending
+confirmed
+paid
+picking
+packed
+shipped
+delivered
+returned
+refunded
+cancelled
+```
+
+Allowed transitions:
+
+```text
+draft      → pending, cancelled
+pending    → confirmed, cancelled
+confirmed  → paid, picking, cancelled
+paid       → picking, cancelled
+picking    → packed, cancelled
+packed     → shipped, cancelled
+shipped    → delivered, returned
+delivered  → returned
+returned   → refunded
+refunded   → none
+cancelled  → none
+```
+
+Implement:
+
+```text
+canTransition(from, to)
+```
+
+Never allow arbitrary status mutation from the frontend.
+
+Every status transition must be validated server-side.
+
+---
+
+# STEP 10 — Payment / Settlement
+
+Create:
+
+`backend/src/modules/workshop/salesPaymentService.ts`
+
+Create:
+
+```text
+sales_payments
+```
+
+Fields:
+
+* id
+* code
+* orderId nullable
+* sellerSaleId nullable
+* customerId nullable
+* sellerId nullable
+* amount
+* paymentMethod
+* paymentDate
+* trackingNumber
+* status
+* note
+* createdBy
+* createdAt
+* updatedAt
+* isDeleted
+* deletedAt
+
+A payment must reference exactly one primary financial target:
+
+```text
+orderId
+OR
+sellerSaleId
+```
+
+Reject:
+
+```text
+neither
+both
+```
+
+Validate amount > 0.
+
+---
+
+# STEP 11 — Customer Order Payment
+
+For an Order:
+
+```text
+newPaidAmount =
+    currentPaidAmount + paymentAmount
+
+remaining =
+    totalAmount - newPaidAmount
+```
+
+Reject overpayment unless the existing financial architecture explicitly supports overpayment.
+
+Set:
+
+```text
+remainingAmount
+paymentStatus
+paidAt
+```
+
+When fully paid:
+
+```text
+paymentStatus = paid
+```
+
+If partially paid:
+
+```text
+paymentStatus = partial
+```
+
+All updates and payment insertion must happen inside one database transaction.
+
+---
+
+# STEP 12 — Seller Settlement
+
+For Seller Sale:
+
+```text
+newSettledAmount =
+    currentSettledAmount + paymentAmount
+
+remainingSettlement =
+    netSettlementAmount - newSettledAmount
+```
+
+Reject settlement above the outstanding amount.
+
+When zero:
+
+```text
+status = settled
+```
+
+Otherwise preserve the current valid seller-sale status.
+
+Do not fake settlement by simply changing a status. Store every actual payment/settlement transaction.
+
+---
+
+# STEP 13 — Controllers
+
+Create:
+
+```text
+backend/src/modules/workshop/controllers/salesController.ts
+backend/src/modules/workshop/controllers/sellerSalesController.ts
+backend/src/modules/workshop/controllers/salesPaymentsController.ts
+```
+
+Routes:
+
+```text
+GET    /sales-orders
+GET    /sales-orders/:id
+POST   /sales-orders
+
+GET    /seller-sales
+GET    /seller-sales/:id
+POST   /seller-sales
+
+POST   /sales-payments
+```
+
+Use the project's existing:
+
+* auth middleware
+* validation conventions
+* error handling
+* audit logging
+* response conventions
+
+Do not invent a second controller pattern.
+
+---
+
+# STEP 14 — Audit
+
+For all financial/sales mutations, write audit records using the existing audit service.
+
+At minimum audit:
+
+```text
+sales order creation
+seller sale creation
+payment creation
+status transitions
+settlement
+cancellation
+refund
+```
+
+Never log sensitive payment credentials.
+
+---
+
+# STEP 15 — Database Migration
+
+Create the next available migration after inspecting existing migrations.
+
+Do NOT blindly use `0016`.
+
+Create tables:
+
+```text
+sales_channels
+customers
+sales_orders
+sales_order_lines
+seller_sales
+seller_sale_lines
+sales_payments
+```
+
+Alter existing `sellers` with:
+
+```text
+commission_type
+commission_rate
+settlement_cycle_days
+last_settlement_at
+```
+
+Add all required indexes.
+
+Do not add destructive migrations.
+
+Do not delete or rename existing production tables.
+
+---
+
+# STEP 16 — Schema Barrel
+
+Inspect:
+
+`backend/src/schema/index.ts`
+
+Add:
+
+```ts
+export * from './sales.js';
+```
+
+Only if the file does not already export it.
+
+---
+
+# STEP 17 — Seed Sales Channels
+
+Create or extend the project's existing seed mechanism.
+
+Do not create a duplicate seed system if one already exists.
+
+Seed these records idempotently:
+
+```text
+website       | فروشگاه سایت
+instagram     | اینستاگرام
+telegram      | تلگرام
+bale          | بله
+eitaa         | ایتا
+basalam       | باسلام
+wholesale     | فروش عمده
+consignment   | فروش امانی
+manual_retail | فروش مستقیم
+```
+
+Use `code` as the unique stable identifier.
+
+Running seed multiple times must not duplicate channels.
+
+---
+
+# STEP 18 — Consignment Integration
+
+Do not replace existing consignment.
+
+Keep:
+
+```text
+Consignment
+ConsignmentItemLine
+Handover
+Return
+Seller Inventory
+```
+
+Add the missing distinction:
+
+```text
+handover ≠ sale
+```
+
+A handover means inventory moved into seller custody.
+
+A seller sale means seller actually sold the item.
+
+A return means unsold/returned inventory comes back.
+
+A settlement means money owed to/from seller is financially settled.
+
+These events must not be collapsed into one record.
+
+---
+
+# STEP 19 — Wholesale
+
+Wholesale must use the same `sales_orders` model.
+
+Example:
+
+```text
+orderType = wholesale
+channel = wholesale
+customer = business customer
+```
+
+Do not create a completely separate wholesale order system.
+
+Wholesale-specific pricing can be introduced through the pricing layer, but the resulting transaction must still become a unified sales order.
+
+---
+
+# STEP 20 — Manual / Social Sales
+
+Instagram, Telegram, Bale, Eitaa, Basalam and manual retail must all use:
+
+```text
+sales_channels
++
+sales_orders
++
+sales_order_lines
++
+sales_payments
+```
+
+Do not create separate order tables per channel.
+
+Use:
+
+```text
+sourceReference
+utmSource
+utmMedium
+utmCampaign
+trackingCode
+```
+
+where applicable.
+
+---
+
+# STEP 21 — Existing Website Compatibility
+
+The current website checkout must continue working after migration.
+
+Do not switch checkout to `sales_orders` until:
+
+1. new tables exist
+2. service works
+3. payment works
+4. inventory integration works
+5. existing checkout tests pass
+6. migration/backfill strategy is verified
+
+If an adapter is required, create an explicit adapter rather than duplicating checkout business logic.
+
+---
+
+# STEP 22 — Frontend Integration
+
+First inspect the existing frontend architecture.
+
+Do not invent a new UI framework.
+
+Add the minimum P0-D management capabilities needed for:
+
+```text
+Sales Orders
+Customers
+Sellers
+Seller Sales
+Channels
+Payments / Settlements
+```
+
+The UI must use the new APIs.
+
+Important:
+
+* no financial totals calculated only in frontend
+* no arbitrary status mutation
+* no direct stock mutation
+* no hardcoded channel IDs
+* show payment status
+* show remaining amount
+* show seller settlement status
+* show order channel
+
+---
+
+# STEP 23 — API Examples
+
+Create Sales Order:
+
+```json
+{
+  "orderType": "wholesale",
+  "channelId": "CHANNEL_ID",
+  "customerId": "CUSTOMER_ID",
+  "customerName": "بوتیک آریا",
+  "customerPhone": "09120000000",
+  "lines": [
+    {
+      "itemId": "ITEM_ID",
+      "quantity": 20,
+      "unitPrice": 850000
+    }
+  ]
+}
+```
+
+Instagram:
+
+```json
+{
+  "orderType": "retail",
+  "channelId": "INSTAGRAM_CHANNEL_ID",
+  "customerId": "CUSTOMER_ID",
+  "utmSource": "instagram",
+  "utmMedium": "story",
+  "lines": [
+    {
+      "itemId": "ITEM_ID",
+      "quantity": 1
+    }
+  ]
+}
+```
+
+Seller Sale:
+
+```json
+{
+  "sellerId": "SELLER_ID",
+  "channelId": "CONSIGNMENT_CHANNEL_ID",
+  "commissionRate": 10,
+  "lines": [
+    {
+      "itemId": "ITEM_ID",
+      "quantity": 2,
+      "unitPrice": 1200000,
+      "size": "L",
+      "color": "مشکی"
+    }
+  ]
+}
+```
+
+Payment:
+
+```json
+{
+  "orderId": "ORDER_ID",
+  "amount": 1000000,
+  "paymentMethod": "bank_transfer",
+  "trackingNumber": "TRACKING_NUMBER"
+}
+```
+
+Seller Settlement:
+
+```json
+{
+  "sellerSaleId": "SELLER_SALE_ID",
+  "amount": 500000,
+  "paymentMethod": "bank_transfer",
+  "trackingNumber": "TRACKING_NUMBER"
+}
+```
+
+---
+
+# STEP 24 — Validation
+
+Before considering P0-D complete, test at minimum:
+
+### Channels
+
+* duplicate channel code rejected
+* inactive channel rejected
+
+### Customer
+
+* customer can be attached to order
+* customer can exist without website User
+* customer purchase totals remain consistent
+
+### Order
+
+* empty order rejected
+* invalid item rejected
+* zero/negative quantity rejected
+* invalid price rejected
+* excessive discount rejected
+* total calculated server-side
+* remaining amount calculated server-side
+
+### Status
+
+* invalid transition rejected
+* valid transition accepted
+* cancelled order cannot receive payment
+
+### Seller
+
+* inactive seller rejected
+* invalid commission rejected
+* seller sale subtotal calculated server-side
+* commission calculated server-side
+* settlement cannot exceed outstanding amount
+
+### Payment
+
+* zero payment rejected
+* negative payment rejected
+* payment without target rejected
+* payment with two targets rejected
+* overpayment rejected
+* partial payment produces `partial`
+* full payment produces `paid`
+* full seller settlement produces `settled`
+
+### Inventory
+
+* sales code does not directly mutate stock
+* inventory changes use existing inventory/ledger mechanism
+
+### Audit
+
+* sales creation audited
+* payment audited
+* settlement audited
+* status transition audited
+
+---
+
+# STEP 25 — Build / Type / Migration Verification
+
+After implementation run the project's actual commands for:
+
+```text
+TypeScript typecheck
+Lint
+Unit tests
+Integration tests
+Migration validation
+Database migration
+Seed
+Backend build
+Frontend build
+```
+
+Resolve all errors.
+
+Do not suppress errors with:
+
+```text
+any
+@ts-ignore
+@ts-nocheck
+eslint-disable
+```
+
+unless the existing project convention genuinely requires it and the reason is documented.
+
+---
+
+# STEP 26 — Final Repository Review
+
+Before reporting completion:
+
+1. Search for duplicate sales/channel/customer/payment implementations.
+2. Search for direct stock mutation inside sales code.
+3. Search for client-controlled financial totals.
+4. Search for arbitrary order status updates.
+5. Search for hardcoded channel IDs.
+6. Verify all new imports against actual project paths.
+7. Verify migration number.
+8. Verify schema exports.
+9. Verify routes are registered.
+10. Verify auth and audit middleware conventions.
+11. Verify existing checkout still works.
+12. Verify existing consignment still works.
+13. Run typecheck/build again after all fixes.
+
+---
+
+# Definition of Done
+
+P0-D is complete only when Polaris has:
+
+```text
+Unified Sales Channels
+        ↓
+Unified Sales Orders
+        ↓
+Customers / Sellers
+        ↓
+Order Lines
+        ↓
+Payment
+        ↓
+Inventory Ledger
+        ↓
+Delivery / Return
+        ↓
+Seller Settlement
+```
+
+and supports:
+
+```text
+Website
+Instagram
+Telegram
+Bale
+Eitaa
+Basalam
+Wholesale
+Consignment
+Manual Retail
+```
+
+without creating separate order systems for each channel.
+
+The implementation must be transactional, auditable, server-validated, inventory-ledger compatible, backward-compatible with existing checkout/consignment, and free of TypeScript/build/migration errors.
+
+Do not stop after creating the schema. Execute the entire implementation, test it, fix errors, and only then report the changed files, migration, tests, and any remaining blockers.

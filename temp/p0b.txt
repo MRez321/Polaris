@@ -1,0 +1,514 @@
+# P0-B — Architecture & Database
+
+## هدف
+
+Polaris را از منطق Production خارج کن و هسته سیستم را بر پایه تأمین، خرید، ورود کالا، موجودی، فروش، پرداخت و تسویه بازسازی کن.
+
+**Scope فقط این موارد است:**
+1, 2, 11, 12, 13, 26, 27, 28, 37
+
+---
+
+## مرحله 0 — قبل از هر تغییر
+
+1. کل Codebase را بررسی کن.
+2. تمام مدل‌های دیتابیس، Schema، ORM، Migrationها، Seedها، APIها، Serviceها و Repositoryهای مرتبط را پیدا کن.
+3. هیچ فایل موجودی را بدون بررسی وابستگی‌های آن حذف یا بازنویسی نکن.
+4. مدل‌های فعلی Production را شناسایی کن و مشخص کن کدام بخش باید حذف، Deprecated یا با مدل جدید جایگزین شود.
+5. Migrationهای اجراشده و Migrationهای pending را بررسی کن.
+6. قبل از تغییر Schema، dependency graph موجودیت‌ها را مشخص کن.
+7. اگر ساختار فعلی با این معماری ناسازگار است، معماری جدید را مبنا قرار بده؛ نه اینکه مدل جدید را روی مدل غلط فعلی وصله‌پینه کنی.
+
+---
+
+# 1 — تغییر Business Model
+
+مدل اصلی سیستم باید:
+
+**Supplier → Purchase → Receiving → Warehouse/Location → Inventory → Order → Payment/Settlement**
+
+باشد.
+
+Production نباید جزء جریان اصلی سیستم باشد.
+
+این موارد را پیدا و اصلاح کن:
+
+* Production models
+* Production routes
+* Production services
+* Production UI
+* Production-related business logic
+* روابط دیتابیس وابسته به Production
+
+Production را فقط در صورتی نگه دار که حذف آن باعث شکستن داده یا dependency موجود شود؛ در این حالت آن را از Core Workflow خارج و Deprecated کن.
+
+هیچ Workflow جدیدی نباید برای انجام عملیات اصلی Polaris به Production وابسته باشد.
+
+---
+
+# 2 — معماری Core Database
+
+موجودیت‌های اصلی را به شکل منطقی و مستقل تعریف کن:
+
+* Product
+* Variant
+* SKU
+* Supplier
+* Customer
+* Seller
+* Warehouse
+* Location
+* Channel
+* Purchase
+* PurchaseItem
+* Order
+* OrderItem
+* Payment
+* Settlement
+* InventoryLedger
+* AuditLog
+
+روابط باید طوری طراحی شوند که:
+
+**Product**
+→ چند Variant
+
+**Variant**
+→ یک یا چند SKU در صورت نیاز معماری
+
+**SKU**
+→ واحد واقعی قابل خرید، فروش و نگهداری موجودی
+
+**Supplier**
+→ Purchase
+
+**Purchase**
+→ PurchaseItem
+→ Receiving
+→ InventoryLedger
+
+**Warehouse**
+→ Location
+
+**SKU + Location**
+→ موجودی قابل محاسبه از Ledger
+
+**Order**
+→ Customer / Seller / Channel
+→ OrderItem
+→ SKU
+
+**Payment / Settlement**
+→ به Actor و Transaction مربوط متصل باشند.
+
+از ایجاد Foreign Keyهای تکراری، رابطه‌های مبهم و ذخیره یک مفهوم در چند مدل مختلف جلوگیری کن.
+
+---
+
+# 11 — Product / Variant / SKU
+
+مدل Product را از Variant و SKU جدا کن.
+
+مثال:
+
+Product:
+Shirt A
+
+Variant:
+
+* Black / M
+* Black / L
+* White / M
+* White / L
+
+SKU:
+برای هر کالای قابل ردیابی یک شناسه یکتا داشته باشد.
+
+حداقل:
+
+```text
+Product
+- id
+- name
+- description
+- category_id
+- status
+- created_at
+- updated_at
+
+Variant
+- id
+- product_id
+- attributes
+- status
+- created_at
+- updated_at
+
+SKU
+- id
+- variant_id
+- code
+- barcode
+- cost_price
+- sale_price
+- status
+- created_at
+- updated_at
+```
+
+اگر پروژه Attribute/Option system دارد، به‌جای ذخیره JSON غیرقابل‌کنترل از همان معماری استاندارد موجود استفاده کن.
+
+`SKU.code` باید Unique باشد.
+
+Barcode در صورت وجود باید Unique باشد.
+
+موجودی را داخل Product ذخیره نکن.
+
+موجودی را داخل Variant ذخیره نکن.
+
+SKU باید مرجع عملیات Inventory، Purchase و OrderItem باشد.
+
+---
+
+# 12 — Inventory Ledger
+
+موجودی فعلی را Source of Truth قرار نده.
+
+Source of Truth باید Ledger باشد.
+
+هر تغییر موجودی باید یک InventoryLedger Entry ایجاد کند.
+
+ساختار پایه:
+
+```text
+InventoryLedger
+- id
+- sku_id
+- warehouse_id
+- location_id
+- quantity
+- movement_type
+- reference_type
+- reference_id
+- occurred_at
+- created_by
+- metadata
+```
+
+`movement_type` باید حداقل قابلیت این موارد را داشته باشد:
+
+```text
+PURCHASE_RECEIPT
+SALE
+RETURN_IN
+RETURN_OUT
+TRANSFER_IN
+TRANSFER_OUT
+ADJUSTMENT_IN
+ADJUSTMENT_OUT
+```
+
+موجودی فعلی:
+
+```text
+current_stock =
+SUM(all inventory ledger quantities)
+```
+
+یا با یک Projection/Materialized balance سریع‌تر محاسبه شود، اما Projection نباید جای Ledger را بگیرد.
+
+هر عملیات Inventory باید:
+
+1. Transaction ایجاد کند.
+2. Ledger entry ایجاد کند.
+3. Reference قابل ردیابی داشته باشد.
+4. Actor انجام‌دهنده را ثبت کند.
+
+از تغییر مستقیم `stock` بدون Ledger جلوگیری کن.
+
+برای Transfer:
+
+```text
+TRANSFER_OUT
++
+TRANSFER_IN
+```
+
+باید به‌صورت یک عملیات اتمیک انجام شود.
+
+---
+
+# 13 — Warehouse / Location
+
+Warehouse و Location را از هم جدا کن.
+
+ساختار:
+
+```text
+Warehouse
+- id
+- name
+- code
+- status
+- created_at
+- updated_at
+
+Location
+- id
+- warehouse_id
+- name
+- code
+- type
+- status
+- created_at
+- updated_at
+```
+
+Location همیشه متعلق به یک Warehouse باشد.
+
+اگر موجودی در Location نگهداری می‌شود، Warehouse از روی Location قابل تعیین باشد و داده متناقض ایجاد نشود.
+
+Inventory Ledger باید بتواند محل دقیق موجودی را مشخص کند.
+
+Transfer بین Locationها باید Ledger-based باشد.
+
+از ذخیره موجودی فقط در سطح Warehouse خودداری کن اگر Location فعال است.
+
+---
+
+# 26 — Operational Accounting
+
+Accounting کامل نساز.
+
+یک Accounting/Financial Transaction layer استاندارد بساز که فازهای بعدی بتوانند روی آن توسعه پیدا کنند.
+
+مفاهیم پایه:
+
+```text
+FinancialTransaction
+- id
+- type
+- amount
+- currency
+- direction
+- status
+- account_id
+- reference_type
+- reference_id
+- occurred_at
+- created_by
+- metadata
+```
+
+حداقل Transaction Typeها:
+
+```text
+INCOME
+EXPENSE
+RECEIVABLE
+PAYABLE
+PAYMENT
+REFUND
+SETTLEMENT
+```
+
+هر جریان مالی باید Reference داشته باشد.
+
+مثلاً:
+
+Purchase
+→ Expense / Payable
+
+Customer Payment
+→ Payment / Receivable settlement
+
+Seller Settlement
+→ Settlement
+
+Supplier Payment
+→ Payable settlement
+
+هیچ عدد مالی حیاتی را فقط در UI یا یک ستون دستی مثل `balance` به‌عنوان Source of Truth نگه ندار.
+
+Balanceها باید از Transactionها قابل محاسبه باشند یا Projection باشند.
+
+---
+
+# 27 — Audit Log
+
+برای عملیات حساس Audit Log اجباری کن.
+
+ساختار پایه:
+
+```text
+AuditLog
+- id
+- actor_id
+- action
+- entity_type
+- entity_id
+- before
+- after
+- created_at
+- ip_address
+- user_agent
+- metadata
+```
+
+حداقل این عملیات باید Log شوند:
+
+* Create
+* Update
+* Archive
+* Restore
+* Delete در صورت وجود
+* Price change
+* Inventory adjustment
+* Inventory transfer
+* Order status change
+* Payment creation/change
+* Settlement
+* Permission/RBAC changes
+
+Secret، Password، Token و اطلاعات حساس را داخل Audit Log ذخیره نکن.
+
+برای Updateهای حساس `before` و `after` ثبت کن.
+
+Audit Log نباید توسط کاربر عادی قابل ویرایش باشد.
+
+---
+
+# 28 — Delete / Restore
+
+برای Entityهای عملیاتی و تاریخی از Hard Delete مستقیم استفاده نکن.
+
+برای موارد مناسب:
+
+```text
+deleted_at
+deleted_by
+```
+
+یا:
+
+```text
+status = ARCHIVED
+```
+
+تعریف کن.
+
+حداقل این موارد باید قابلیت Archive/Restore داشته باشند:
+
+* Product
+* Variant
+* SKU
+* Supplier
+* Customer
+* Seller
+* Warehouse
+* Location
+* Channel
+
+برای Transactionهای مالی، Inventory Ledger و Audit Log:
+
+**Hard Delete ممنوع.**
+
+برای Orderهای دارای سابقه عملیاتی نیز حذف فیزیکی انجام نده.
+
+Archive نباید تاریخچه تراکنش‌ها را حذف کند.
+
+Restore باید Audit Log تولید کند.
+
+---
+
+# 37 — Database Migration Strategy
+
+Migrationها را بررسی و یک Strategy واحد تثبیت کن.
+
+قواعد:
+
+1. Schema فقط از طریق Migration تغییر کند.
+2. Migrationها versioned و ordered باشند.
+3. هر Migration فقط یک تغییر منطقی مشخص داشته باشد.
+4. Migration اجراشده نباید ویرایش شود.
+5. تغییرات بعدی با Migration جدید انجام شوند.
+6. Seed از Migration جدا باشد.
+7. Seed باید repeatable/idempotent باشد.
+8. Production نباید به Seed آزمایشی وابسته باشد.
+9. Migration Production باید قابل اجرای deterministic باشد.
+10. قبل از deploy، Migration روی یک database مشابه Production تست شود.
+11. Rollback strategy برای Migrationهای خطرناک مشخص شود.
+12. برای Migrationهای destructive، قبل از اجرا backup/snapshot گرفته شود.
+13. Schema drift بین development و production بررسی شود.
+14. Migration status باید قابل مشاهده باشد.
+15. Deployment باید ترتیب مشخص داشته باشد:
+
+```text
+Backup
+→ Migration validation
+→ Migration
+→ Application deployment
+→ Verification
+```
+
+اگر Migration فعلی خراب، duplicate یا متناقض است، آن را کورکورانه حذف نکن.
+
+ابتدا dependency و وضعیت واقعی Database را بررسی کن و سپس Safe Migration Path ایجاد کن.
+
+---
+
+# اجرای نهایی
+
+ترتیب اجرای کار:
+
+```text
+1. Audit current database
+2. Audit current code dependencies
+3. Freeze existing schema assumptions
+4. Design target domain model
+5. Remove/deprecate production dependency
+6. Implement Product / Variant / SKU
+7. Implement Warehouse / Location
+8. Implement Inventory Ledger
+9. Implement operational financial transactions
+10. Implement Audit Log
+11. Implement Archive / Restore
+12. Consolidate Migration strategy
+13. Update affected services/API
+14. Update affected UI only where required
+15. Update Seed/Demo data
+16. Run migrations on test database
+17. Run automated tests
+18. Run business-flow tests
+19. Verify data integrity
+20. Verify no direct stock mutation exists
+21. Verify financial transactions are traceable
+22. Verify audit coverage
+23. Verify archive/restore
+24. Verify production migration procedure
+```
+
+---
+
+# Acceptance Criteria
+
+کار فقط زمانی کامل است که:
+
+* Polaris برای عملیات اصلی به Production وابسته نباشد.
+* Product / Variant / SKU از هم تفکیک شده باشند.
+* SKU واحد اصلی خرید/فروش/موجودی باشد.
+* موجودی بدون Ledger قابل تغییر نباشد.
+* Inventory Transfer اتمیک و قابل ردیابی باشد.
+* Warehouse و Location مستقل باشند.
+* جریان‌های مالی Transaction-based باشند.
+* عملیات حساس Audit شوند.
+* Entityهای حیاتی قابل Archive/Restore باشند.
+* Inventory Ledger، Financial Transaction و Audit Log حذف فیزیکی نشوند.
+* Migrationها versioned و deterministic باشند.
+* Seed از Migration جدا باشد.
+* Production deployment برای Database قابل تکرار باشد.
+* هیچ Migration اجراشده‌ای برای اصلاح اشتباهات دوباره دستکاری نشود.
+* تست‌ها برای Purchase → Receiving → Inventory → Sale → Payment → Settlement قابل اجرا باشند.
+* هیچ موجودی، بدهی، طلب یا تراکنش مهمی صرفاً از روی مقدار دستی و بدون تاریخچه قابل اعتماد نباشد.
+
+**مهم:** قبل از پایان کار، کل Codebase را برای referenceهای مدل‌های قدیمی، direct stock updates، hard delete روی داده‌های حیاتی، migrationهای متناقض و financial fields غیرقابل‌ردیابی Search کن و همه موارد باقی‌مانده را اصلاح یا صریحاً Deprecated کن.

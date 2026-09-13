@@ -1,0 +1,465 @@
+P0-E — MANAGEMENT EXPERIENCE
+Scope: items 29–35, 39, 40
+
+MISSION
+Improve Polaris management UX so the application behaves like an operations/management system:
+- clear operational navigation
+- action-oriented dashboard
+- consistent forms/tables/states
+- responsive desktop/mobile experience
+- global search
+- activity/audit timeline
+
+DO NOT:
+- change backend/domain architecture
+- invent entities that do not exist
+- create fake suppliers/customers/orders/data
+- break existing routes or APIs
+- replace working P0-B/C/D functionality
+- rewrite the existing dashboard unnecessarily
+- remove existing MobileNav
+- introduce a second design system
+
+==================================================
+PHASE 0 — INSPECT BEFORE CODING
+==================================================
+
+1. Read the existing Polaris source tree.
+2. Inspect:
+   - frontend/src/modules/workshop/
+   - frontend/src/components/
+   - frontend/src/lib/api.ts
+   - frontend/src/types/
+   - AuthContext
+   - DataContext
+   - DashboardOverview
+   - DashboardPage
+   - Header
+   - Sidebar
+   - MobileNav
+   - dashboardLayout
+   - existing CSS/design tokens
+3. Inspect existing routes before adding navigation targets.
+4. Inspect existing Audit API and AuditLog type.
+5. Run the existing frontend build BEFORE modifications.
+6. Record baseline errors/warnings.
+
+Use existing project conventions wherever possible.
+
+==================================================
+PHASE 1 — MANAGEMENT NAVIGATION
+==================================================
+
+Implement item 29.
+
+Refactor Sidebar information architecture to:
+
+مدیریت
+  داشبورد
+
+تأمین و موجودی
+  کالا و موجودی
+  فروش امانی و حواله‌ها
+
+فروش و مشتری
+  سفارش‌های فروشگاه
+  فروشندگان و مشتریان
+  مرجوعی و خرابی
+
+مالی و گزارش
+  امور مالی
+  گزارش و تحلیل
+
+سیستم
+  تنظیمات و مدیریت
+
+Requirements:
+- use existing React Router routes
+- use existing icons/library
+- preserve active-state behavior
+- preserve RTL
+- preserve dark/light mode
+- do not expose routes that do not actually exist
+- show useful operational badges where real data exists:
+  - low stock
+  - overdue consignments
+- never manufacture badge data
+- preserve mobile navigation
+
+If existing RBAC is available, navigation visibility must respect it.
+Do not hard-code admin-only behavior if the current RBAC supports more granular permissions.
+
+==================================================
+PHASE 2 — GLOBAL SEARCH
+==================================================
+
+Implement item 39.
+
+Create:
+
+frontend/src/modules/workshop/search/GlobalSearch.tsx
+
+Search real existing frontend data/API only.
+
+Search at minimum:
+- کالا
+- سفارش
+- مشتری
+- فروشنده
+- فروش امانی
+- پرداخت
+- پرسنل
+
+Capabilities:
+- Persian text
+- code/ID
+- phone where available
+- relevant entity fields
+- minimum 2-character query before searching
+- max ~12 visible results
+- result type label
+- keyboard shortcut Ctrl/Cmd + K
+- Escape closes search
+- clicking result navigates to existing route
+- empty state
+- no-result state
+- loading/error behavior where remote data is used
+- keyboard/focus accessibility
+- mobile must not break because of desktop-only search layout
+
+IMPORTANT:
+Supplier must NOT be fabricated if Supplier is not yet represented by the current domain/API.
+Add Supplier search only after the actual P0-B/C supplier entity/API exists.
+
+Integrate GlobalSearch into Header without breaking utility actions.
+
+==================================================
+PHASE 3 — DASHBOARD / MANAGEMENT ACTION CENTER
+==================================================
+
+Implement item 30.
+
+Create:
+
+frontend/src/modules/workshop/dashboard/ManagerActionCenter.tsx
+
+Dashboard should prioritize:
+- what requires attention now
+- operational exceptions
+- actionable navigation
+
+Use real data to calculate:
+1. overdue consignments
+2. low-stock items
+3. pending/attention-needed orders
+4. other real operational exceptions available in current domain
+
+Each item:
+- count
+- short Persian label
+- icon
+- severity
+- click → existing relevant route
+
+Show an explicit healthy/empty state when there are no urgent items.
+
+Integrate this ABOVE the existing dashboard widget grid.
+
+Do not remove existing KPI/chart/todo/widget functionality.
+
+==================================================
+PHASE 4 — DESIGN SYSTEM PRIMITIVES
+==================================================
+
+Implement item 31.
+
+Create:
+
+frontend/src/components/common/FormField.tsx
+frontend/src/components/common/DataTable.tsx
+
+FormField:
+- label
+- htmlFor
+- required marker
+- error
+- hint
+- accessible error state
+- RTL compatible
+- dark mode compatible
+
+DataTable:
+- typed generic rows
+- typed columns
+- render function
+- optional sorting
+- loading state
+- empty state
+- optional row click
+- responsive wrapper
+- preserve current Polaris table conventions
+
+Do NOT force migration of every existing table.
+Use these primitives for new/refactored P0-E surfaces first.
+
+==================================================
+PHASE 5 — FORMS / VALIDATION
+==================================================
+
+Implement item 33.
+
+Standardize new/refactored forms:
+
+FormField
+  ↓
+label
+required
+input
+hint/error
+
+Submission:
+- disabled when invalid where appropriate
+- loading state
+- success toast
+- error toast
+- API errors through existing getApiErrorMessage()
+- no silent failures
+
+Use existing Button/Input/Select/toast infrastructure.
+
+Do not introduce another notification library.
+
+==================================================
+PHASE 6 — TABLE EXPERIENCE
+==================================================
+
+Implement item 34.
+
+New/refactored management tables should support:
+- search
+- filter
+- sorting
+- empty state
+- loading state
+- responsive behavior
+- row actions where appropriate
+
+Use DataTable.
+
+Do not implement client-side pagination where the dataset/API is not designed for it.
+When server-side pagination becomes available through P0-B/C/D APIs, connect pagination there rather than faking it locally.
+
+Preserve existing mobile stacked-table behavior where available.
+
+==================================================
+PHASE 7 — ERROR / LOADING / EMPTY UX
+==================================================
+
+Implement item 35.
+
+Every new/refactored management surface must explicitly handle:
+
+LOADING
+  "در حال بارگذاری…"
+
+ERROR
+  - understandable Persian message
+  - retry action
+  - role="alert"
+
+EMPTY
+  - explain that there is no data
+  - optionally provide relevant next action
+
+SUCCESS
+  - existing toast mechanism
+  - concise Persian confirmation
+
+Never leave blank panels because data failed to load.
+
+==================================================
+PHASE 8 — RESPONSIVE MANAGEMENT UX
+==================================================
+
+Implement item 32.
+
+Validate:
+- desktop
+- tablet
+- mobile
+
+Requirements:
+- no horizontal overflow
+- touch targets approximately >= 40px
+- forms collapse cleanly
+- action buttons wrap
+- tables become stacked/mobile-friendly where appropriate
+- dashboard cards collapse from multi-column to single column
+- search/header controls do not overflow
+- Sidebar remains desktop-only if that is current architecture
+- MobileNav remains the mobile navigation mechanism
+
+Do not redesign the entire visual language.
+
+==================================================
+PHASE 9 — ACTIVITY / AUDIT TIMELINE
+==================================================
+
+Implement item 40.
+
+Create:
+
+frontend/src/modules/workshop/activity/ActivityTimeline.tsx
+
+Use the EXISTING Audit API and AuditLog type.
+
+Current audit structure includes fields such as:
+- id
+- timestamp
+- userId
+- userName
+- userRole
+- action
+- entity
+- details
+- ipAddress
+
+Timeline must show:
+- action
+- description/details
+- actor
+- timestamp
+- optional amount when genuinely available
+- severity/type based on action
+
+Create visual states:
+- success
+- warning
+- danger
+- info
+- neutral
+
+Sort newest first.
+
+No fake activity records.
+
+Integrate latest audit activity into Dashboard.
+
+Use the existing auditApi.list(...) endpoint.
+
+==================================================
+PHASE 10 — DASHBOARD LAYOUT
+==================================================
+
+If dashboardLayout supports widgets, add:
+
+{
+  id: 'activityTimeline',
+  label: 'آخرین فعالیت‌ها',
+  cols: 2
+}
+
+Do not break existing saved dashboard layouts.
+
+If the current DashboardOverview architecture cannot safely add the widget through its existing system, implement the timeline in the safest compatible location rather than rewriting dashboard layout persistence.
+
+==================================================
+PHASE 11 — HEADER INTEGRATION
+==================================================
+
+Add GlobalSearch to Header.
+
+Existing structure should remain conceptually:
+
+Header
+├── brand/navigation
+├── GlobalSearch
+└── utility actions
+
+Search must not push utility actions off-screen.
+
+Use responsive visibility appropriately.
+
+==================================================
+PHASE 12 — MOBILE NAVIGATION
+==================================================
+
+Do NOT delete MobileNav.
+
+Align labels/routes with the new IA where existing routes support them.
+
+Suggested conceptual priorities:
+
+داشبورد
+انبار
+سفارش‌ها
+امانی
+اقدامات
+
+Do not add routes that do not exist.
+
+==================================================
+PHASE 13 — VALIDATION
+==================================================
+
+After implementation:
+
+1. Run TypeScript/build.
+2. Fix ALL compile errors.
+3. Fix ALL import/path errors.
+4. Check unused imports.
+5. Check route validity.
+6. Check existing dashboard functionality.
+7. Check authentication/RBAC behavior.
+8. Check dark mode.
+9. Check RTL.
+10. Check mobile layout.
+11. Check search keyboard behavior:
+    - Ctrl+K
+    - Cmd+K
+    - Escape
+12. Check empty/error/loading states.
+13. Check Audit timeline with real audit data.
+14. Check no fake data was introduced.
+15. Re-run build.
+
+Then inspect the changed files line-by-line for:
+- TypeScript errors
+- incorrect entity fields
+- nonexistent routes
+- incorrect API signatures
+- stale imports
+- broken JSX
+- accessibility regressions
+- responsive overflow
+- accidental changes to P0-B/C/D behavior.
+
+==================================================
+ACCEPTANCE CRITERIA
+==================================================
+
+P0-E is complete only when:
+
+[29] Navigation clearly represents Polaris operations rather than production/workshop-first IA.
+
+[30] Dashboard answers:
+     "What needs my attention now?"
+
+[31] Shared FormField/DataTable primitives exist and follow Polaris conventions.
+
+[32] Desktop/tablet/mobile layouts work without overflow.
+
+[33] Forms have consistent labels, validation, loading, success and error behavior.
+
+[34] Management tables support appropriate search/filter/sort/responsive/empty/loading states.
+
+[35] Errors are actionable and never silently disappear.
+
+[39] Global search works against real available entities and supports Ctrl/Cmd+K.
+
+[40] Dashboard exposes recent real Audit activity through a reusable timeline.
+
+FINAL RULE:
+Prefer the smallest safe change that achieves the requirement.
+Reuse existing Polaris components, APIs, types, styles and architecture.
+If a requirement depends on an entity/API that does not yet exist, DO NOT fake it—leave that integration for the relevant P0-B/C/D implementation.

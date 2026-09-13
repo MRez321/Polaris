@@ -1,0 +1,410 @@
+# P0-F — Technical Cleanup: 36 & 38
+
+## Mission
+
+Implement only:
+
+* **36 — Codebase Cleanup / Consolidation**
+* **38 — Standard Demo / Seed Data**
+
+Do not redesign business architecture or implement P0-A/B/C/D/E.
+
+Use the existing Polaris repository and current schema as the source of truth. Do not invent Product/SKU/Supplier/Warehouse tables if they do not yet exist.
+
+---
+
+# STEP 1 — Inspect Before Editing
+
+1. Inspect:
+
+   * root `package.json`
+   * `backend/package.json`
+   * `.gitignore`
+   * `frontend/.gitignore`
+   * `backend/scripts/*`
+   * `backend/drizzle/*`
+   * `backend/src/routes/*`
+   * `frontend/src/*`
+2. Identify:
+
+   * temporary/generated files
+   * duplicate source files
+   * duplicate routes
+   * broken imports
+   * broken scripts
+   * migration inconsistencies
+   * existing Seed scripts
+3. Do not delete or consolidate legitimate compatibility modules merely because names look duplicated.
+4. Preserve existing business behavior.
+
+---
+
+# STEP 2 — Remove Temporary Artifact
+
+Delete:
+
+```text
+frontend/.tmp-dp.js
+```
+
+Do not replace it with another generated JS artifact.
+
+Ensure temporary/build files are ignored by Git.
+
+---
+
+# STEP 3 — Add Codebase Audit
+
+Create:
+
+```text
+backend/scripts/codebase-audit.mjs
+```
+
+The script must be **read-only** and must check:
+
+1. forbidden temporary/generated artifacts
+2. broken relative imports
+3. broken `@/` imports
+4. duplicate HTTP routes within the same router
+5. migration numbering continuity
+6. migration journal ↔ migration-file consistency
+7. missing migration snapshots as warnings only
+8. broken root test script
+9. exact duplicate source files as warnings
+10. workshop route mount consistency
+
+Exit:
+
+```text
+0 = no errors
+1 = one or more errors
+```
+
+Never modify source files or database data.
+
+---
+
+# STEP 4 — Fix Root Test Script
+
+The current root test command contains an invalid exit expression.
+
+Replace:
+
+```json
+"test": "echo \"Error: no test specified\" && exit temp/1"
+```
+
+with:
+
+```json
+"test": "npm run check"
+```
+
+Add:
+
+```json
+"check": "npm --prefix backend run codebase:audit"
+```
+
+Do not leave a fake/broken test command.
+
+---
+
+# STEP 5 — Add Backend Audit Script
+
+In:
+
+```text
+backend/package.json
+```
+
+add:
+
+```json
+"codebase:audit": "node scripts/codebase-audit.mjs"
+```
+
+---
+
+# STEP 6 — Standardize Ignore Rules
+
+Ensure root `.gitignore` and `frontend/.gitignore` ignore:
+
+```gitignore
+node_modules/
+dist/
+build/
+coverage/
+
+.env
+.env.*
+!.env.example
+
+*.log
+*.tmp
+*.temp
+.tmp/
+.tmp-*
+temp/
+temp-*
+
+.DS_Store
+.idea/
+.vscode/*
+*.swp
+*.swo
+*~
+```
+
+Also ignore runtime/generated Polaris files such as:
+
+```gitignore
+backend/uploads/
+backend/backups/
+```
+
+Do not ignore real source, migration, configuration-template, or documentation files.
+
+---
+
+# STEP 7 — Audit Existing Seed System
+
+Inspect:
+
+```text
+backend/scripts/seed.js
+backend/scripts/seed-workshop.js
+```
+
+Do not blindly merge them.
+
+Preserve existing production/business seed behavior.
+
+Create a separate deterministic demo seed:
+
+```text
+backend/scripts/seed-demo.mjs
+```
+
+---
+
+# STEP 8 — Demo Seed Safety Requirements
+
+The demo seed must:
+
+1. require:
+
+```text
+POLARIS_DEMO_SEED=true
+```
+
+2. fail safely if that flag is absent
+3. use deterministic IDs
+4. be idempotent
+5. never overwrite real records
+6. never delete real records
+7. mark demo records clearly with:
+
+```text
+DEMO-
+```
+
+8. use the current database schema
+9. fail clearly when required tables are missing
+10. never fabricate tables that belong to later P0 phases.
+
+---
+
+# STEP 9 — Seed Current Existing Domains
+
+Using only tables that currently exist, seed representative data for:
+
+* categories
+* items/products represented by current `items`
+* sellers
+* consignments
+* consignment returns
+* payments
+* staff
+* expenses
+* damage records
+* workshop todos
+* orders
+
+The demo dataset must contain enough variation to test:
+
+* normal stock
+* multiple sizes
+* multiple colors
+* low-stock behavior
+* seller handover
+* partial sales
+* return
+* partial settlement
+* remaining seller debt
+* staff activity
+* expense records
+* damaged inventory
+* pending task
+* customer order
+
+Use realistic but obviously synthetic Persian data.
+
+Never use real credentials, tokens, customer information, bank information, or secrets.
+
+---
+
+# STEP 10 — Future Domains
+
+Do NOT create fake implementations for:
+
+```text
+Product
+Variant
+SKU
+Supplier
+Warehouse
+Channel
+Inventory Ledger
+```
+
+unless those entities already exist in the actual current schema.
+
+These belong to the architectural/data-model work of P0-B/C/D.
+
+The Demo Seed must follow the current schema rather than bypass it.
+
+---
+
+# STEP 11 — Add Backend Seed Command
+
+In:
+
+```text
+backend/package.json
+```
+
+add:
+
+```json
+"db:seed:demo": "node scripts/seed-demo.mjs"
+```
+
+Run with:
+
+### Linux/macOS
+
+```bash
+POLARIS_DEMO_SEED=true npm --prefix backend run db:seed:demo
+```
+
+### PowerShell
+
+```powershell
+$env:POLARIS_DEMO_SEED="true"
+npm --prefix backend run db:seed:demo
+```
+
+---
+
+# STEP 12 — Validate Seed Idempotency
+
+Run the demo seed twice.
+
+Expected:
+
+```text
+first run  → creates demo records
+second run → does not create duplicate demo records
+```
+
+Verify that real/non-DEMO records are untouched.
+
+---
+
+# STEP 13 — Validate Codebase
+
+Run:
+
+```bash
+npm --prefix backend run codebase:audit
+```
+
+Then:
+
+```bash
+npm run test
+```
+
+Then:
+
+```bash
+npm run build
+```
+
+If dependencies are missing, install/restore the project's declared dependencies first.
+
+Do not interpret a missing dependency as a source-code failure.
+
+---
+
+# STEP 14 — Migration Safety
+
+Do not fabricate missing migration snapshots.
+
+If audit detects historical snapshot inconsistencies:
+
+* report them
+* classify them
+* do not silently rewrite migration history
+* do not renumber existing migrations
+* do not delete migrations
+
+Migration-history correction belongs to P0-B / item 37 unless explicitly requested.
+
+---
+
+# STEP 15 — Final Verification
+
+Before declaring P0-F complete, verify:
+
+```text
+[ ] frontend/.tmp-dp.js removed
+[ ] no new temporary artifacts
+[ ] broken imports = 0
+[ ] duplicate routes = 0
+[ ] root test command works
+[ ] backend audit command works
+[ ] demo seed is guarded
+[ ] demo seed is deterministic
+[ ] demo seed is idempotent
+[ ] demo records are clearly DEMO-* marked
+[ ] real data is never overwritten
+[ ] existing migrations remain unchanged
+[ ] build completes successfully
+```
+
+If any check fails, fix it before completion.
+
+---
+
+# Scope Boundary
+
+Do NOT:
+
+* redesign the database architecture
+* implement RBAC
+* implement MFA
+* redesign authentication
+* build Supplier/Purchase modules
+* build Warehouse architecture
+* redesign Order architecture
+* redesign Seller/Channel architecture
+* implement accounting
+* redesign Dashboard/UI
+* modify unrelated business workflows
+* rewrite migration history
+* remove legitimate duplicate/compatibility modules without proof
+
+P0-F is a **cleanup + deterministic demo-data layer**, not a new architecture phase.

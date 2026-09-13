@@ -1,5 +1,5 @@
 import { betterAuth } from 'better-auth';
-import { admin, bearer } from 'better-auth/plugins';
+import { admin, bearer, twoFactor } from 'better-auth/plugins';
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { eq } from 'drizzle-orm';
 import dotenv from 'dotenv';
@@ -24,6 +24,7 @@ export const auth = betterAuth({
             session: schema.session,
             account: schema.account,
             verification: schema.verification,
+            twoFactor: schema.twoFactor,
         },
     }),
     emailAndPassword: {
@@ -115,6 +116,14 @@ export const auth = betterAuth({
             adminRoles: ['admin'],
         }),
         bearer(),
+        // TOTP + backup-code 2FA (Settings → امنیت). Explicit issuer so the
+        // authenticator app label is stable regardless of appName fallback;
+        // skipVerificationOnEnable stays false: enabling always ends with a
+        // verified TOTP code. Built-in accountLockout defaults apply
+        // (10 failed attempts / 15 min).
+        twoFactor({
+            issuer: 'Polaris Style',
+        }),
     ],
 });
 
