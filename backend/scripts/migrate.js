@@ -86,6 +86,18 @@ try {
     // 4. Switch to the database and run the drizzle migrations.
     await pool.end();
     pool = mysql.createPool({ ...baseConfig, database: DB_NAME, charset: 'utf8mb4_persian_ci' });
+
+    // P0-A-06: user.two_factor_enabled may already exist (created out-of-band
+    // on deployments that predate the schema entry). MySQL 8 cannot
+    // "ADD COLUMN IF NOT EXISTS" in the migration file, so guard here.
+    const [userCols] = await pool.query(
+        `SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user' AND COLUMN_NAME = 'two_factor_enabled'`,
+    );
+    if (userCols[0]?.n === 0) {
+        await pool.query('ALTER TABLE `user` ADD COLUMN `two_factor_enabled` boolean NOT NULL DEFAULT false');
+    }
+
     const db = drizzle(pool);
 
     console.log('   اعمال مایگریشن‌های drizzle از پوشه ./drizzle ...');

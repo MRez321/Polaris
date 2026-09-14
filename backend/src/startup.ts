@@ -6,6 +6,8 @@ import path from 'path';
 // guards and boot diagnostics run before any other module (better-auth config,
 // DB pool) is evaluated.
 
+import { assertProductionSecrets } from './core/security/env.js';
+
 dotenv.config();
 
 /**
@@ -40,3 +42,8 @@ process.on('uncaughtException', (err) => {
 });
 
 logStartupDiagnostics();
+
+// P0-A-03 production invariant: mandatory secrets must exist in production —
+// no silent fallbacks, no insecure defaults. Dev-only absence is warned
+// inside the assertion itself.
+assertProductionSecrets();

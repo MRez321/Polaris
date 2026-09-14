@@ -88,6 +88,21 @@ export async function runMigrations(): Promise<void> {
             database: DB_NAME,
             charset: 'utf8mb4_persian_ci',
         });
+
+        // 3a. P0-A-06 pre-step: two_factor / user.two_factor_enabled may
+        // already exist (created out-of-band on deployments that predate the
+        // schema entries). MySQL 8 cannot "ADD COLUMN IF NOT EXISTS" inside
+        // the migration file, so guard here before the migrator runs it.
+        const [userCols] = await migrationPool.query(
+            `SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user' AND COLUMN_NAME = 'two_factor_enabled'`,
+        );
+        if ((userCols as { n: number }[])[0]?.n === 0) {
+            await migrationPool.query(
+                'ALTER TABLE `user` ADD COLUMN `two_factor_enabled` boolean NOT NULL DEFAULT false',
+            );
+        }
+
         const db = drizzle(migrationPool);
         await migrate(db, { migrationsFolder: path.resolve(__dirname, '../../../drizzle') });
 

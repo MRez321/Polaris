@@ -5,6 +5,7 @@ import {
     boolean,
     datetime,
     text,
+    int,
     index,
 } from 'drizzle-orm/mysql-core';
 
@@ -22,6 +23,7 @@ export const user = mysqlTable('user', {
     banned: boolean('banned').notNull().default(false),
     banReason: varchar('ban_reason', { length: 255 }),
     banExpires: datetime('ban_expires'),
+    twoFactorEnabled: boolean('two_factor_enabled').notNull().default(false),
     createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
     updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });
@@ -73,4 +75,26 @@ export const verification = mysqlTable(
         updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
     },
     (t) => [index('verification_identifier_idx').on(t.identifier)],
+);
+
+// ---------------------------------------------------------------------------
+// better-auth twoFactor plugin (P0-A-06): TOTP secret + encrypted backup codes
+// per user. Secrets are written by better-auth only; the API never returns
+// them after setup and no log path may touch them.
+// Column names/shape verified against better-auth 1.7 schema.d.mts and the
+// pre-existing live table.
+// ---------------------------------------------------------------------------
+
+export const twoFactor = mysqlTable(
+    'two_factor',
+    {
+        id: varchar('id', { length: 36 }).primaryKey(),
+        userId: varchar('user_id', { length: 36 }).notNull(),
+        secret: varchar('secret', { length: 512 }).notNull(),
+        backupCodes: varchar('backup_codes', { length: 1024 }).notNull(),
+        verified: boolean('verified').notNull().default(true),
+        failedVerificationCount: int('failed_verification_count').notNull().default(0),
+        lockedUntil: datetime('locked_until'),
+    },
+    (t) => [index('two_factor_user_id_idx').on(t.userId)],
 );
