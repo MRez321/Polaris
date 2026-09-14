@@ -1,6 +1,7 @@
 .idea
 .env
 #temp
+temp/tel.js
 a
 
 node_modules
