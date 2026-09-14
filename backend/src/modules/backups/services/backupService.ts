@@ -17,6 +17,7 @@ import {
 } from './backupSettingsService.js';
 import { sendTelegramMessage } from '../../notifications/services/telegramService.js';
 import { logAudit } from '../../../core/services/auditService.js';
+import { sanitizeError } from '../../../core/utils/sanitize.js';
 
 /** What a backup includes. Local alias — shared with frontend types by value. */
 export type BackupKind = 'database' | 'website' | 'full';
@@ -448,7 +449,7 @@ export function announceBackup(
             await sendTelegramMessage(text);
         })
         .catch((err: unknown) => {
-            console.error('⚠️ Backup Telegram notice failed:', err);
+            console.error('⚠️ Backup Telegram notice failed:', sanitizeError(err));
         });
 }
 

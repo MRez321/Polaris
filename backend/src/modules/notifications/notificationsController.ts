@@ -11,6 +11,7 @@ import {
 import { isTelegramConfigured, resolveTelegramCredentials } from './services/telegramService.js';
 import { isMelipayamakConfigured, resolveMelipayamakCredentials } from './services/melipayamakService.js';
 import { logAudit } from '../../core/services/auditService.js';
+import { API_MASK, isMaskedCredential } from '../../core/utils/sanitize.js';
 
 const IRANIAN_MOBILE = /^09\d{9}$/;
 
@@ -47,8 +48,11 @@ const notificationSettingsSchema = z.object({
  * Settings + resolved-credential badges + the cached bot @username for the
  * t.me deep link. Never contacts Telegram: identity is persisted in the
  * settings row by refreshTelegramBotUsername (credential save / test send).
- * Admin-only route — the UI's reveal buttons need the real stored values,
- * so they are returned as-is and masked client-side only.
+ *
+ * P0-A-09: secrets (botToken, apiKey) are MASKED server-side with the fixed
+ * API_MASK. The env fallback resolution still decides the "configured"
+ * badges, but the raw credential never leaves the API. A save that submits
+ * the mask back unchanged keeps the stored value (handled below).
  */
 export async function getNotifications(_req: Request, res: Response): Promise<void> {
     const settings = await getNotificationSettings();
@@ -71,6 +75,9 @@ export async function getNotifications(_req: Request, res: Response): Promise<vo
             fromNumber: settings.sms.fromNumber || smsEnv.fromNumber,
         },
     };
+    // Secrets never leave the server: replace with the fixed mask.
+    if (resolved.telegram.botToken) resolved.telegram.botToken = API_MASK;
+    if (resolved.sms.apiKey) resolved.sms.apiKey = API_MASK;
     res.json({
         ...resolved,
         telegramConfigured: isTelegramConfigured(settings.telegram),
@@ -79,19 +86,45 @@ export async function getNotifications(_req: Request, res: Response): Promise<vo
 }
 
 export async function updateNotifications(req: Request, res: Response): Promise<void> {
-    const patch = notificationSettingsSchema.parse(req.body) as Partial<NotificationSettings>;
-    const updated = await updateNotificationSettings(patch);
+    // Zod's .optional() fields vs the required-fields DTO: this shape has
+    // matched the merge logic for years; the assert documents the boundary.
+    const parsed = notificationSettingsSchema.parse(req.body);
+    const patch = parsed as Partial<NotificationSettings>;
+
+    // P0-A-09: a submitted value that is just the mask echoed back means
+    // "unchanged" — strip it so the stored credential is neither overwritten
+    // by the literal mask string nor cleared by a partial PUT.
+    if (patch.telegram && isMaskedCredential(patch.telegram.botToken)) {
+        // Rebuild without botToken: spread-split keeps the other fields.
+        const { botToken: _masked, ...rest } = patch.telegram;
+        void _masked;
+        patch.telegram = rest as typeof patch.telegram;
+    }
+    if (patch.sms && isMaskedCredential(patch.sms.apiKey)) {
+        const { apiKey: _masked, ...rest } = patch.sms;
+        void _masked;
+        patch.sms = rest as typeof patch.sms;
+    }
+    const cleanPatch = patch;
+
+    const updated = await updateNotificationSettings(cleanPatch);
+    // The saved blob still holds real secrets — mask them in the response too.
+    const maskedUpdated = {
+        ...updated,
+        telegram: { ...updated.telegram, botToken: updated.telegram.botToken ? API_MASK : '' },
+        sms: { ...updated.sms, apiKey: updated.sms.apiKey ? API_MASK : '' },
+    };
 
     // Refresh the bot @username only when Telegram credentials were just
     // saved (bounded 4s — Telegram is unreachable without a working proxy,
     // so a stalled lookup must not hang the save).
     const telegramTouched =
-        patch.telegram && ('botToken' in patch.telegram || 'chatId' in patch.telegram);
+        !!cleanPatch.telegram && ('botToken' in cleanPatch.telegram || 'chatId' in cleanPatch.telegram);
     const botUsername = telegramTouched ? await refreshTelegramBotUsername() : updated.botUsername;
 
     logAudit(req.auth ?? null, 'update', 'settings', 'تنظیمات اطلاع‌رسانی به‌روزرسانی شد', req.ip);
     res.json({
-        ...updated,
+        ...maskedUpdated,
         botUsername,
         telegramConfigured: isTelegramConfigured(updated.telegram),
         smsConfigured: isMelipayamakConfigured(updated.sms),

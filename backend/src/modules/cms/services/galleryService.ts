@@ -7,6 +7,7 @@ import { db } from '../../../config/drizzle.js';
 import { galleryImages } from '../../../schema/index.js';
 import type { GalleryImageRow } from '../../../schema/index.js';
 import { badRequest, notFound } from '../../../core/utils/apiError.js';
+import { sanitizeError, sanitizeMessage } from '../../../core/utils/sanitize.js';
 
 /** Directory uploaded image files are written to; served at /uploads. */
 export const uploadsDir = path.join(process.cwd(), 'uploads');
@@ -83,7 +84,7 @@ export async function deleteGalleryImage(id: string): Promise<void> {
     if (row.url.startsWith('/uploads/')) {
         const filePath = path.join(uploadsDir, path.basename(row.url));
         fs.promises.unlink(filePath).catch((err: unknown) => {
-            console.warn(`⚠️ Failed to unlink ${filePath}:`, err);
+            console.warn(`⚠️ Failed to unlink ${sanitizeMessage(filePath)}:`, sanitizeError(err));
         });
     }
 }

@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 
 import { db } from '../../../config/drizzle.js';
 import { notificationSettings } from '../../../schema/index.js';
+import { sanitizeMessage } from '../../../core/utils/sanitize.js';
 import type { NotificationSettings, Order } from '../../../types/index.js';
 import {
     sendTelegramMessage,
@@ -153,7 +154,7 @@ export function notifyNewOrder(order: Order): void {
             try {
                 await sendTelegramMessage(buildNewOrderMessage(order), settings.telegram);
             } catch (err) {
-                console.error('[notifications] telegram failed:', err instanceof Error ? err.message : err);
+                console.error('[notifications] telegram failed:', sanitizeMessage(err instanceof Error ? err.message : err));
             }
         }
 
@@ -171,7 +172,7 @@ export function notifyNewOrder(order: Order): void {
                 try {
                     await sendMelipayamakSms(phone, buildNewOrderMessage(order), settings.sms);
                 } catch (err) {
-                    console.error('[notifications] sms failed:', err instanceof Error ? err.message : err);
+                    console.error('[notifications] sms failed:', sanitizeMessage(err instanceof Error ? err.message : err));
                 }
             }
         }

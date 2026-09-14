@@ -5,6 +5,7 @@ import { db } from '../../../config/drizzle.js';
 import { consignments, items, workshopNotifications } from '../../../schema/index.js';
 import type { WorkshopNotification } from '../../../types/index.js';
 import { notFound } from '../../../core/utils/apiError.js';
+import { sanitizeError } from '../../../core/utils/sanitize.js';
 
 // ---------------------------------------------------------------------------
 // In-app notification feed (workshop header bell).
@@ -232,6 +233,6 @@ export function recordWorkshopEvent(input: RecordEventInput): void {
             ...(input.link !== undefined ? { link: input.link } : {}),
         })
         .catch((err: unknown) => {
-            console.error('⚠️ Failed to write workshop notification event:', err);
+            console.error('⚠️ Failed to write workshop notification event:', sanitizeError(err));
         });
 }

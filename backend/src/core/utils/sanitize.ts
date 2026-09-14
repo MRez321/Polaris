@@ -119,6 +119,18 @@ export function sanitizeError(err: unknown): { name: string; message: string; st
     };
 }
 
+/**
+ * Fixed mask returned by settings GETs (P0-A-09): secret fields never leave
+ * the server in cleartext. A PUT that submits this exact value back is
+ * treated as "unchanged" and never overwrites the stored secret.
+ */
+export const API_MASK = '••••••••••••••••';
+
+/** True when a submitted credential is just the mask echoed back unchanged. */
+export function isMaskedCredential(value: unknown): boolean {
+    return typeof value === 'string' && value === API_MASK;
+}
+
 /** Masks a secret for display: keeps first/last char, hides the middle. */
 export function maskSecret(value: string | undefined | null): string {
     if (!value) return '';

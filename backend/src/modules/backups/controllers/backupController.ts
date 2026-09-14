@@ -11,6 +11,7 @@ import { z } from 'zod';
 import * as backupSettingsService from '../services/backupSettingsService.js';
 import * as backupService from '../services/backupService.js';
 import { BACKUPS_DIR } from '../services/backupService.js';
+import { API_MASK, isMaskedCredential, sanitizeMessage } from '../../../core/utils/sanitize.js';
 import { logAudit } from '../../../core/services/auditService.js';
 import { pathParam, badRequest } from '../../../core/utils/apiError.js';
 
@@ -30,11 +31,15 @@ const runBackupSchema = z.object({
 });
 
 export async function getBackupSettings(_req: Request, res: Response): Promise<void> {
-    res.json(await backupSettingsService.getBackupSettings());
+    const settings = await backupSettingsService.getBackupSettings();
+    // P0-A-09: cPanel API token never leaves the server.
+    res.json({ ...settings, cpanelToken: settings.cpanelToken ? API_MASK : '' });
 }
 
 export async function updateBackupSettings(req: Request, res: Response): Promise<void> {
     const patch = backupSettingsSchema.parse(req.body);
+    // P0-A-09: mask echoed back = unchanged — never overwrite the stored token.
+    if (isMaskedCredential(patch.cpanelToken)) delete patch.cpanelToken;
     const updated = await backupSettingsService.updateBackupSettings(patch);
     logAudit(
         req.auth ?? null,
@@ -43,7 +48,7 @@ export async function updateBackupSettings(req: Request, res: Response): Promise
         'تنظیمات پشتیبان‌گیری ذخیره شد',
         req.ip,
     );
-    res.json(updated);
+    res.json({ ...updated, cpanelToken: updated.cpanelToken ? API_MASK : '' });
 }
 
 export async function listBackups(_req: Request, res: Response): Promise<void> {
@@ -123,7 +128,7 @@ export async function runScheduledBackupIfDue(): Promise<void> {
         logAudit(null, 'create', 'backup', `پشتیبان خودکار ساخته شد: ${meta.filename}`);
         backupService.announceBackup(settings.autoKind, meta, true);
     } catch (err) {
-        console.error('⚠️ Automatic backup failed:', err instanceof Error ? err.message : err);
+        console.error('⚠️ Automatic backup failed:', sanitizeMessage(err instanceof Error ? err.message : err));
     }
 }
 

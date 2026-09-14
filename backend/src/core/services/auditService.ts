@@ -2,6 +2,7 @@ import { v4 as uuid } from 'uuid';
 
 import { db } from '../../config/drizzle.js';
 import { auditLogs } from '../../schema/index.js';
+import { sanitizeError } from '../utils/sanitize.js';
 import type { AuditLog } from '../../types/index.js';
 
 export interface AuditActor {
@@ -36,6 +37,6 @@ export function logAudit(
             ...(ip ? { ipAddress: ip } : {}),
         })
         .catch((err: unknown) => {
-            console.error('⚠️ Failed to write audit log:', err);
+            console.error('⚠️ Failed to write audit log:', sanitizeError(err));
         });
 }

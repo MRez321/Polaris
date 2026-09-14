@@ -10,6 +10,7 @@ import { logAudit } from '../../core/services/auditService.js';
 import { recordWorkshopEvent } from '../workshop/services/notificationsService.js';
 import { trustedOrigins } from '../../core/origins.js';
 import { IS_PRODUCTION, assertStrongAuthSecret } from '../../core/security/env.js';
+import { sanitizeMessage } from '../../core/utils/sanitize.js';
 
 dotenv.config();
 
@@ -99,7 +100,7 @@ export const auth = betterAuth({
                             });
                         }
                     } catch (err) {
-                        console.error('⚠️ Failed to write login audit log:', err instanceof Error ? err.message : err);
+                        console.error('⚠️ Failed to write login audit log:', sanitizeMessage(err instanceof Error ? err.message : err));
                     }
                 },
             },

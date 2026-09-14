@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { MulterError } from 'multer';
 import { ApiError } from '../../core/utils/apiError.js';
+import { sanitizeError } from '../utils/sanitize.js';
 import { ZodError } from 'zod';
 
 /**
@@ -36,6 +37,6 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
         return;
     }
 
-    console.error('❌ Unhandled error:', err);
+    console.error('❌ Unhandled error:', sanitizeError(err));
     res.status(500).json({ error: 'خطای داخلی سرور رخ داد' });
 }
