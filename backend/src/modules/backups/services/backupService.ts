@@ -118,9 +118,9 @@ interface SpawnResult {
     stderr: string;
 }
 
-function runCommand(bin: string, args: string[], opts?: { cwd?: string }): Promise<SpawnResult> {
+function runCommand(bin: string, args: string[], opts?: { cwd?: string; env?: NodeJS.ProcessEnv }): Promise<SpawnResult> {
     return new Promise((resolve, reject) => {
-        const child = spawn(bin, args, { shell: false, cwd: opts?.cwd });
+        const child = spawn(bin, args, { shell: false, cwd: opts?.cwd, env: opts?.env ? { ...process.env, ...opts.env } : undefined });
         let stderr = '';
         child.stderr.on('data', (chunk: Buffer) => {
             stderr += chunk.toString('utf8');
@@ -170,7 +170,6 @@ async function buildDatabaseBackup(): Promise<BackupFileMeta> {
         `--host=${process.env.DB_HOST ?? '127.0.0.1'}`,
         `--port=${process.env.DB_PORT ?? '3306'}`,
         `--user=${process.env.DB_USER ?? 'root'}`,
-        `--password=${process.env.DB_PASSWORD ?? ''}`,
         '--single-transaction',
         '--routines',
         '--triggers',
@@ -178,10 +177,12 @@ async function buildDatabaseBackup(): Promise<BackupFileMeta> {
         '--result-file',
         outFile,
     ];
-    const { code, stderr } = await runCommand(mysqldump, [
-        ...args,
-        process.env.DB_NAME ?? 'polaris',
-    ]);
+    // DB password travels via MYSQL_PWD env (invisible to `ps`), never argv.
+    const { code, stderr } = await runCommand(
+        mysqldump,
+        [...args, process.env.DB_NAME ?? 'polaris'],
+        { env: { MYSQL_PWD: process.env.DB_PASSWORD ?? '' } },
+    );
     if (code !== 0) {
         try {
             fs.unlinkSync(outFile);
