@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Scissors, LogIn, Loader2 } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
-import { mapAuthError, roleHome } from '@/lib/auth';
+import { Scissors, LogIn, Loader2, ShieldCheck, KeyRound } from 'lucide-react';
+import { useAuth, type TwoFactorChallenge } from '@/context/AuthContext';
+import { authClient, mapAuthError, roleHome } from '@/lib/auth';
 import { GoogleSignInButton } from '@/components/common/GoogleSignInButton';
+import { InputOTP, InputOTPGroup, InputOTPSlot, REGEXP_ONLY_DIGITS } from '@/components/ui/input-otp';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,6 +15,13 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // P0-A-06 two-factor challenge state (login step 2)
+  const [challenge, setChallenge] = useState<TwoFactorChallenge | null>(null);
+  const [totpCode, setTotpCode] = useState('');
+  const [backupCode, setBackupCode] = useState('');
+  const [useBackupCode, setUseBackupCode] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -50,9 +58,15 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const err = await signIn(trimmedEmail, password);
-      if (err) {
-        const msg = mapAuthError(err);
+      const result = await signIn(trimmedEmail, password);
+      if (result && typeof result === 'object') {
+        // Step 1 passed; TOTP challenge pending (server set the signed 2fa cookie).
+        setChallenge(result);
+        setLoading(false);
+        return;
+      }
+      if (result) {
+        const msg = mapAuthError(result);
         setError(msg);
         toast.error(msg);
         setLoading(false);
@@ -67,6 +81,40 @@ const LoginPage: React.FC = () => {
       setError(msg);
       toast.error(msg);
       setLoading(false);
+    }
+  };
+
+  // P0-A-06 step 2: verify TOTP (or a backup code) against the pending
+  // challenge. The signed 2fa cookie travels with the request automatically.
+  const handleVerifyTotp = async () => {
+    if (verifying) return;
+    const code = useBackupCode ? backupCode.trim() : totpCode;
+    if (!code) {
+      setError('کد تأیید را وارد کنید');
+      return;
+    }
+    setVerifying(true);
+    setError(null);
+    try {
+      const { error } = useBackupCode
+        ? await authClient.twoFactor.verifyBackupCode({ code })
+        : await authClient.twoFactor.verifyTotp({ code });
+      if (error) {
+        const msg = mapAuthError(error.message ?? '');
+        setError(msg);
+        toast.error(msg);
+        setVerifying(false);
+        // wrong code → let the user retry with an empty field
+        if (!useBackupCode) setTotpCode('');
+        return;
+      }
+      // Verified — the session cookie is now set; the session atom refresh
+      // re-renders and the redirect above takes over. Keep the spinner.
+    } catch {
+      const msg = 'خطا در اتصال به سرور؛ اتصال اینترنت را بررسی کنید';
+      setError(msg);
+      toast.error(msg);
+      setVerifying(false);
     }
   };
 
@@ -87,85 +135,170 @@ const LoginPage: React.FC = () => {
           {/* Brand */}
           <div className="flex flex-col items-center gap-3 text-center">
             <div className="w-14 h-14 rounded-2xl bg-brand text-brand-on flex items-center justify-center shadow-lg font-black ring-2 ring-brand/30">
-              <Scissors className="w-7 h-7 -rotate-45 text-black" />
+              {challenge ? <ShieldCheck className="w-7 h-7 text-black" /> : <Scissors className="w-7 h-7 -rotate-45 text-black" />}
             </div>
             <div>
               <h1 className="text-xl font-black tracking-tight text-stone-900 dark:text-white">
-                ورود به سامانه پولاریس
+                {challenge ? 'تأیید ورود دومرحله‌ای' : 'ورود به سامانه پولاریس'}
               </h1>
               <p className="text-xs text-stone-600 dark:text-gray-400 mt-1.5 font-medium leading-relaxed">
-                مدیریت کارگاه، امانات و حسابداری تولیدی پوشاک
+                {challenge
+                  ? 'کد تولیدشده در برنامه احراز هویت خود را وارد کنید'
+                  : 'مدیریت کارگاه، امانات و حسابداری تولیدی پوشاک'}
               </p>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <label
-                htmlFor="login-email"
-                className="block text-xs font-black text-stone-700 dark:text-gray-300"
-              >
-                ایمیل
-              </label>
-              <input
-                id="login-email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                dir="ltr"
-                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm font-mono text-left outline-none focus:border-brand transition-colors"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label
-                htmlFor="login-password"
-                className="block text-xs font-black text-stone-700 dark:text-gray-300"
-              >
-                رمز عبور
-              </label>
-              <input
-                id="login-password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                dir="ltr"
-                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm font-mono text-left outline-none focus:border-brand transition-colors"
-              />
-            </div>
-
-            {error && (
-              <p className="text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl px-3 py-2">
-                {error}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-brand hover:bg-brand-hover disabled:opacity-60 disabled:cursor-not-allowed text-brand-on font-black text-sm shadow-md transition-all active:scale-[0.98]"
-            >
-              {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+          {challenge ? (
+            <div className="space-y-4">
+              {!useBackupCode ? (
+                <div className="space-y-3">
+                  <div className="flex justify-center">
+                    <InputOTP
+                      maxLength={6}
+                      pattern={REGEXP_ONLY_DIGITS}
+                      value={totpCode}
+                      onChange={setTotpCode}
+                      disabled={verifying}
+                      autoFocus
+                    >
+                      <InputOTPGroup>
+                        <InputOTPSlot index={0} />
+                        <InputOTPSlot index={1} />
+                        <InputOTPSlot index={2} />
+                      </InputOTPGroup>
+                      <InputOTPGroup>
+                        <InputOTPSlot index={3} />
+                        <InputOTPSlot index={4} />
+                        <InputOTPSlot index={5} />
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setUseBackupCode(true)}
+                    className="w-full text-xs font-bold text-stone-500 dark:text-gray-400 hover:text-brand-ink dark:hover:text-brand transition-colors"
+                  >
+                    دسترسی به برنامه ندارید؟ ورود با کد بازیابی
+                  </button>
+                </div>
               ) : (
-                <LogIn className="w-4 h-4" />
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="login-backup-code"
+                      className="block text-xs font-black text-stone-700 dark:text-gray-300"
+                    >
+                      کد بازیابی
+                    </label>
+                    <input
+                      id="login-backup-code"
+                      type="text"
+                      autoComplete="one-time-code"
+                      value={backupCode}
+                      onChange={(e) => setBackupCode(e.target.value)}
+                      placeholder="‏••••-••••-••••"
+                      dir="ltr"
+                      className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm font-mono text-left outline-none focus:border-brand transition-colors"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setUseBackupCode(false)}
+                    className="w-full text-xs font-bold text-stone-500 dark:text-gray-400 hover:text-brand-ink dark:hover:text-brand transition-colors"
+                  >
+                    بازگشت به ورود با کد تأیید
+                  </button>
+                </div>
               )}
-              <span>{loading ? 'در حال ورود...' : 'ورود به حساب کاربری'}</span>
-            </button>
-          </form>
 
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 text-[11px] font-bold text-stone-400 dark:text-gray-500">
-              <span className="h-px flex-1 bg-stone-200 dark:bg-white/10" />
-              یا
-              <span className="h-px flex-1 bg-stone-200 dark:bg-white/10" />
+              {error && (
+                <p className="text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl px-3 py-2">
+                  {error}
+                </p>
+              )}
+
+              <button
+                type="button"
+                onClick={handleVerifyTotp}
+                disabled={verifying}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-brand hover:bg-brand-hover disabled:opacity-60 disabled:cursor-not-allowed text-brand-on font-black text-sm shadow-md transition-all active:scale-[0.98]"
+              >
+                {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+                <span>{verifying ? 'در حال بررسی...' : 'تأیید و ورود'}</span>
+              </button>
             </div>
-            <GoogleSignInButton label="ورود با گوگل" />
-          </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="login-email"
+                  className="block text-xs font-black text-stone-700 dark:text-gray-300"
+                >
+                  ایمیل
+                </label>
+                <input
+                  id="login-email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  dir="ltr"
+                  className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm font-mono text-left outline-none focus:border-brand transition-colors"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="login-password"
+                  className="block text-xs font-black text-stone-700 dark:text-gray-300"
+                >
+                  رمز عبور
+                </label>
+                <input
+                  id="login-password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  dir="ltr"
+                  className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm font-mono text-left outline-none focus:border-brand transition-colors"
+                />
+              </div>
+
+              {error && (
+                <p className="text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl px-3 py-2">
+                  {error}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-brand hover:bg-brand-hover disabled:opacity-60 disabled:cursor-not-allowed text-brand-on font-black text-sm shadow-md transition-all active:scale-[0.98]"
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <LogIn className="w-4 h-4" />
+                )}
+                <span>{loading ? 'در حال ورود...' : 'ورود به حساب کاربری'}</span>
+              </button>
+            </form>
+          )}
+
+          {!challenge && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 text-[11px] font-bold text-stone-400 dark:text-gray-500">
+                <span className="h-px flex-1 bg-stone-200 dark:bg-white/10" />
+                یا
+                <span className="h-px flex-1 bg-stone-200 dark:bg-white/10" />
+              </div>
+              <GoogleSignInButton label="ورود با گوگل" />
+            </div>
+          )}
 
           <p className="text-xs text-center text-stone-600 dark:text-gray-400 font-medium">
             حساب کاربری ندارید؟{' '}

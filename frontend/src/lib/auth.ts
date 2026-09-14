@@ -1,5 +1,5 @@
 import { createAuthClient } from 'better-auth/react';
-import { adminClient } from 'better-auth/client/plugins';
+import { adminClient, twoFactorClient } from 'better-auth/client/plugins';
 import { adminAc, userAc } from 'better-auth/plugins/admin/access';
 
 // Same-origin client: the backend mounts better-auth at /api/auth and the
@@ -19,6 +19,9 @@ export const authClient = createAuthClient({
         staff: userAc,
       },
     }),
+    // P0-A-06: TOTP + backup codes. The redirect stays manual (the login page
+    // renders the challenge UI itself) — no full-page reload.
+    twoFactorClient(),
   ],
 });
 

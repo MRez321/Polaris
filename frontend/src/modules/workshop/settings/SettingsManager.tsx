@@ -28,7 +28,9 @@ import {
   Users,
   Bell,
   Archive,
+  ShieldCheck,
 } from 'lucide-react';
+import { TwoFactorSettings } from './TwoFactorSettings';
 import type { CompanyBranding, GarmentItem, Seller, StaffMember, WorkshopExpense, Consignment } from '@/types';
 import { toPersianDigits, formatToman, toJalaliDate } from '@/utils/persian';
 import { Modal } from '@/components/common/Modal';
@@ -66,7 +68,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
   networkStatus,
   onOpenPwaInstall,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'branding' | 'gallery' | 'trash' | 'backups' | 'system' | 'audit' | 'users' | 'notifications'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'branding' | 'gallery' | 'trash' | 'backups' | 'security' | 'system' | 'audit' | 'users' | 'notifications'>('overview');
   const [isSavedAlert, setIsSavedAlert] = useState(false);
 
   // Form State for Workshop Info
@@ -521,6 +523,18 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               {toPersianDigits(totalTrashCount)}
             </span>
           )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab('security')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'security'
+              ? 'bg-brand text-brand-on shadow-md font-black'
+              : 'text-stone-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5'
+          }`}
+        >
+          <ShieldCheck className="w-3.5 h-3.5" />
+          <span>امنیت حساب</span>
         </button>
 
         <button
@@ -1301,6 +1315,15 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* TAB: SECURITY (account MFA) */}
+      {/* ======================================================== */}
+      {activeTab === 'security' && (
+        <div className="space-y-5 animate-in fade-in duration-200">
+          <TwoFactorSettings />
         </div>
       )}
 
