@@ -10,7 +10,7 @@
 import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import { badRequest, notFound } from '../../../core/utils/apiError.js';
+import { badRequest, conflict, notFound } from '../../../core/utils/apiError.js';
 import {
     getBackupSettings,
     type BackupSettingsData,
@@ -27,6 +27,16 @@ export const BACKUPS_DIR = path.join(process.cwd(), 'backups');
 /** mkdir -p for the storage dir; cheap enough to call before every build. */
 export function ensureBackupsDir(): void {
     fs.mkdirSync(BACKUPS_DIR, { recursive: true });
+}
+
+/**
+ * Concurrency guard (P0-A-10): one backup job at a time. Dumps and archives
+ * of the same live database racing each other would produce corrupt files
+ * and double Telegram noise; the scheduler tick checks this flag too.
+ */
+let backupRunning = false;
+export function isBackupRunning(): boolean {
+    return backupRunning;
 }
 
 export interface BackupFileMeta {
@@ -346,21 +356,29 @@ export async function runBackup(
     kind: BackupKind,
     automatic = false,
 ): Promise<BackupFileMeta> {
-    let meta: BackupFileMeta;
-    if (automatic) {
-        meta = await buildWithAutoPrefix(kind);
-    } else {
-        meta =
-            kind === 'database'
-                ? await buildDatabaseBackup()
-                : kind === 'website'
-                  ? await buildWebsiteBackup()
-                  : await buildFullBackup();
+    // P0-A-10: refuse concurrent backup jobs (409).
+    if (backupRunning) {
+        throw conflict('یک عملیات پشتیبان‌گیری دیگر در حال اجراست؛ تا پایان آن صبر کنید');
     }
-    await pruneOldBackups();
-    return meta;
+    backupRunning = true;
+    try {
+        let meta: BackupFileMeta;
+        if (automatic) {
+            meta = await buildWithAutoPrefix(kind);
+        } else {
+            meta =
+                kind === 'database'
+                    ? await buildDatabaseBackup()
+                    : kind === 'website'
+                      ? await buildWebsiteBackup()
+                      : await buildFullBackup();
+        }
+        await pruneOldBackups();
+        return meta;
+    } finally {
+        backupRunning = false;
+    }
 }
-
 /** Scheduler wrapper: same builders, `auto-` filename prefix. */
 async function buildWithAutoPrefix(kind: BackupKind): Promise<BackupFileMeta> {
     const meta =
@@ -393,32 +411,39 @@ export async function pruneOldBackups(): Promise<number> {
 
 // ---------------------------------------------------------------------------
 // cPanel host-side full backup (UAPI)
-// ---------------------------------------------------------------------------
-
 /** Triggers a cPanel full backup via UAPI (host-side, support-restorable). */
 export async function triggerCpanelFullBackup(settings: BackupSettingsData): Promise<void> {
     if (!settings.cpanelHost || !settings.cpanelUser || !settings.cpanelToken) {
         throw badRequest('برای پشتیبان‌گیری از cPanel، هاست، نام کاربری و توکن باید تنظیم شده باشند');
     }
-    const host = settings.cpanelHost.replace(/^https?:\/\//, '').replace(/\/+$/, '');
-    const url = `https://${host}:2083/execute/Backup/fullbackup`;
-    const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-            Authorization: `cpanel ${settings.cpanelUser}:${settings.cpanelToken}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({}),
-    });
-    if (!res.ok) {
-        throw badRequest(`خطای cPanel (کد ${res.status}) — هاست و توکن را بررسی کنید`);
+    // P0-A-10: same single-job guard as local backups.
+    if (backupRunning) {
+        throw conflict('یک عملیات پشتیبان‌گیری دیگر در حال اجراست؛ تا پایان آن صبر کنید');
     }
-    const payload = (await res.json().catch(() => null)) as
-        | { status?: number; messages?: string[]; errors?: string[] }
-        | null;
-    if (payload?.status !== 1) {
-        const detail = payload?.errors?.join('؛ ') ?? payload?.messages?.join('؛ ') ?? '';
-        throw badRequest(`cPanel پشتیبان‌گیری را نپذیرفت${detail ? `: ${detail}` : ''}`);
+    backupRunning = true;
+    try {
+        const host = settings.cpanelHost.replace(/^https?:\/\//, '').replace(/\/+$/, '');
+        const url = `https://${host}:2083/execute/Backup/fullbackup`;
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                Authorization: `cpanel ${settings.cpanelUser}:${settings.cpanelToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({}),
+        });
+        if (!res.ok) {
+            throw badRequest(`خطای cPanel (کد ${res.status}) — هاست و توکن را بررسی کنید`);
+        }
+        const payload = (await res.json().catch(() => null)) as
+            | { status?: number; messages?: string[]; errors?: string[] }
+            | null;
+        if (payload?.status !== 1) {
+            const detail = payload?.errors?.join('؛ ') ?? payload?.messages?.join('؛ ') ?? '';
+            throw badRequest(`cPanel پشتیبان‌گیری را نپذیرفت${detail ? `: ${detail}` : ''}`);
+        }
+    } finally {
+        backupRunning = false;
     }
 }
 

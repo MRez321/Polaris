@@ -90,6 +90,14 @@ export async function downloadBackup(req: Request, res: Response): Promise<void>
     const id = pathParam(req, 'id', 'شناسه پشتیبان');
     const filePath = backupService.getBackupFilePath(id);
     const filename = backupService.getBackupFilename(id);
+    // P0-A-10: backup exfiltration must be attributable.
+    logAudit(
+        req.auth ?? null,
+        'read',
+        'backup',
+        `فایل پشتیبان «${filename}» دانلود شد`,
+        req.ip,
+    );
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
     const stream = fs.createReadStream(filePath);
     stream.on('error', () => {
