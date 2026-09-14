@@ -28,7 +28,15 @@ Order matters (backend before frontend, restart last). `**/.env` excluded from F
 
 Backend `.env` (local, real values): DB_HOST/PORT/USER/PASSWORD/NAME, PORT=3016, BETTER_AUTH_SECRET, BETTER_AUTH_URL, FRONTEND_URL, GOOGLE_CLIENT_ID/SECRET, GITHUB_CLIENT_ID/SECRET, ADMIN_EMAIL/ADMIN_PASSWORD (seed), TELEGRAM_BOT_TOKEN/CHAT_ID, MELIPAYAMAK_* (SMS). Prod `.env` is server-only — prod secrets/passwords DIFFER from repo by design.
 
-Frontend `.env`: `VITE_API_URL` empty (dev = Vite proxy, prod = same-origin). `VITE_PROXY_TARGET` overrides local backend target.
+
+## Security posture (P0-A, 2026-09-14) — deploy-relevant
+
+- **Rate limiting is in-memory** (`core/security/rateLimit.ts`): per-process Map, windows reset on restart. Fine for the single cPanel Node process; if the app is ever load-balanced across processes/hosts, limits must move to a shared store (Redis) — spoofed-XFF aside, two processes would each allow the full bucket.
+- **`trust proxy` is `true`** (app.ts): required behind cPanel/Caddy variability, but it means the limiter trusts `X-Forwarded-For` — a direct-to-Node caller could spoof IPs. Acceptable behind cPanel (Node port not publicly reachable); if Node is ever exposed directly, tighten to the exact proxy hop.
+- **HSTS** only when `NODE_ENV=production` AND the request is HTTPS (secure proxies in front) — local HTTP never sets it.
+- **CSP** allows `unsafe-inline` for script/style (pre-paint theme script, JSON-LD, runtime brand-palette style) and pins fonts to Google Fonts + images to `self`/`data:`/`polarisstyle.ir`. If a third-party script is ever added, extend `script-src` in `core/middleware/securityHeaders.ts` — never disable the policy.
+- **`.env` unchanged**: P0-A added no new required env vars. Optional DB backup binary overrides `MYSQLDUMP_PATH`/`TAR_PATH` already existed.
+- **`backend/public/*` build output is gitignored** — CI uploads the real frontend build to the server; the repo keeps only the placeholder. Don't commit local `backend/public` copies.
 
 ## Prod debugging (no SSH — FTP + cPanel UI only)
 

@@ -24,6 +24,17 @@ backend/
   public/           frontend prod build copied here by copy-public.js at build
 ```
 
+## Security middleware (P0-A — all mounted in src/app.ts)
+
+| Layer | File | Notes |
+|---|---|---|
+| Rate limiting | `core/security/rateLimit.ts` | `app.use('/api', apiRateLimiter)` BEFORE the better-auth catch-all. Buckets: auth 10/15min (IP+email), mfa 10/1min, sensitive 20/1min, general 180/1min. `/api/health` excluded. 429 + `Retry-After` + Persian `{error}`. In-memory Map — resets on restart; single-process only. |
+| Security headers | `core/middleware/securityHeaders.ts` | nosniff, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy, CSP (`default-src 'self' …` with `unsafe-inline` for script/style — required by pre-paint theme script + runtime brand-palette style; browser-verified), HSTS (prod HTTPS only). `app.disable('x-powered-by')`. |
+| Error sanitization | `core/utils/sanitize.ts` | `sanitizeError`/`sanitizeMessage` wrap every console log site; `API_MASK` (16 bullets) + `isMaskedCredential()` for GET/PUT masking round-trips. |
+| RBAC permissions | `core/rbac/permissions.ts` | `requirePermission` middleware; backups + notification-credential routes declare explicit permissions beyond role gates. |
+
+Backup jobs: module-level `backupRunning` lock → concurrent runs return 409 Persian; `downloadBackup` writes an audit row (action `read`, filename+user+IP). mysqldump gets the DB password via `MYSQL_PWD` env (never argv — `ps` leak).
+
 ## Route mount order in apiRoutes.ts (order IS the auth)
 
 ```
@@ -67,9 +78,6 @@ Notes from the old API reference:
 - **Telegram relay**: `relayUrl` (DB) / `TELEGRAM_RELAY_URL` (env fallback) is a Cloudflare-Worker base-URL relay — the api.telegram.org base is swapped, connection is DIRECT (no proxy agent). It takes precedence over `proxyUrl` (CONNECT proxy via undici ProxyAgent). Guide: `docs/telegram-relay-guide.md`, worker example: `docs/telegram-proxy-worker.js`.
 - **Backups** (`src/modules/backups/`): backupService runs mysqldump → tar-czipped `.sql.gz` (database), tar of backend root (website), or both (full); binary resolution is env override (`MYSQLDUMP_PATH`/`TAR_PATH`) → PATH → common install dirs (Windows System32 tar.exe included). cPanel full backup triggers UAPI `POST https://<host>:2083/execute/Backup/fullbackup` with `Authorization: cpanel <user>:<token>`. Files stored in `backend/backups/` (gitignored) named `<kind>-YYYYMMDD-HHmmss.*`; ids are base64url of the filename — download route guards path traversal; prune enforces retention. `BackupKind` is defined locally in backupService.ts AND mirrored in backupSettingsService.ts (no circular import) — NOT in shared types. Scheduler: 15-min `setInterval` in `server.ts` (`BACKUP_TICK_MS`); automatic backups get an `auto-` filename prefix.
 
-Controllers are thin (parse → service call → res.json); business logic lives in `services/inventoryService.ts` — soft-delete via trash system, consignment stock math, debt allocation (JSON `DebtAllocation[]` on payments), shop allocation splits.
-
-## Conventions
 
 - Zod validation at every controller boundary; error shape `{ error: string }` (smoke-tested).
 - Audit logging via `logAudit(user, action, entity, details, ip?)` from `core/services/auditService.ts` — `audit_logs` table, column is `details` NOT `description`. Only successful logins audited automatically (better-auth session-create hook).
@@ -79,7 +87,7 @@ Controllers are thin (parse → service call → res.json); business logic lives
 ## Smoke suites (cwd backend/, backend must be running on 3016)
 
 - `node scripts/smoke.mjs` — full flow: sign-in, role check, CRUD, expenses, profit distribution, audit, error shape. RUN after any backend change.
-- `smoke-phase2.mjs`, `smoke-phase3.mjs` — phase-scoped regression suites.
+- `smoke-security.mjs` — security regression: 401/403 auth+RBAC, CORS, security headers, credential masking round-trips, full 2FA matrix (leaves admin 2FA OFF), rate-limit 429/Retry-After/Persian, backup traversal + concurrency. Run after any auth/security change; needs a DB reset if a prior run died mid-2FA (AUTH.md lockout trap).
 
 ## Starting the backend
 

@@ -3,7 +3,7 @@
 ## Connection
 
 Local: `127.0.0.1:3306`, db `polaris`, user `MRez` / `64321608`, charset utf8mb4 (persian_ci). Server: cPanel MySQL (`.env` only, differs from local — never assume prod creds).
-Schema definitions: `backend/src/schema/*.ts`; migrations: `backend/drizzle/0000…0014_*.sql` (15 files) + `meta/`; applied state in `__drizzle_migrations`. 0012 added `gallery_images` metadata columns; 0013 added scheduled-delivery + workshop notifications (see below); 0014 added `consignments.delivery_date` (nullable datetime — the *scheduled* handover date, distinct from `delivered_at` = actual delivery moment).
+Schema definitions: `backend/src/schema/*.ts`; migrations: `backend/drizzle/0000…0016_*.sql` (17 files) + `meta/`; applied state in `__drizzle_migrations`. 0012 added `gallery_images` metadata columns; 0013 added scheduled-delivery + workshop notifications (see below); 0014 added `consignments.delivery_date` (nullable datetime — the *scheduled* handover date, distinct from `delivered_at` = actual delivery moment); 0015 added `workshop_todos` + `backup_settings`; 0016 added `two_factor` + `user.two_factor_enabled` (idempotent — guarded column add in runMigrations.ts).
 
 **Ad-hoc DB queries** (bash, cwd `backend/` — module resolution needs it):
 
@@ -21,7 +21,7 @@ Always add the `.catch` — without it errors print as bare `Node.js v22.x` with
 
 ## Tables by domain (26, verified live 2026-09-09)
 
-**better-auth** (`schema/auth.ts`): `user` (id, name, email, role varchar32, banned, …), `session`, `account` (provider rows; credential rows carry scrypt `password` = `salt:key`), `verification`.
+**better-auth** (`schema/auth.ts`): `user` (id, name, email, role varchar32, banned, `two_factor_enabled` boolean default 0, …), `session` (token, userId, expiresAt, idleExpiresAt, ipAddress, userAgent), `account` (provider rows; credential rows carry scrypt `password` = `salt:key`), `verification`, **`two_factor`** (P0-A-06, migration 0016: id, userId, secret (symmetric-encrypted TOTP base32), backupCodes (encrypted JSON), verified boolean — `user.two_factor_enabled` mirrors `verified`; enable→unverified row; verify-totp flips both; disable deletes row + resets flag).
 
 **Workshop** (`schema/workshop.ts`): `items` (code auto-gen PLR-nnn; 3 prices cost/consignment/retail; `purchase_price_usd` DECIMAL(12,2) nullable; JSON `cost_breakdown` {fabric,sewing,accessories,transport,packaging}; `production_status` `ready`|`pending_production` — order-made items hidden from handover/shop until mark-ready; stock + minThreshold; sizes/colors/fabric; images JSON array for profile gallery; JSON `variantPrices`), `categories`, `sellers` (guarantee, creditLimit, bankAccounts JSON, currentDebt, status), `consignments` (JSON `ConsignmentItemLine[]` incl. per-line returned/sold qty; totalAmount/netAmount/paidAmount/remainingAmount; status active→partially_settled→settled; overdue flag; `delivery_status` `delivered`|`pending` + `delivery_date` datetime nullable — **scheduled handover** «تحویل بار زمان‌بندی‌شده»: `pending` rows reserve stock but debt/due-date only apply after `POST /consignments/:id/deliver` stamps `delivered_at`; pending rows excluded from FIFO/settlement/dashboard aggregates), `consignment_returns` (`ReturnItemLine[]`, condition heal…, `workshop_notifications` (event + derived rows: `type` critical|need_action|notification|system, `severity`, `link` for click-through navigation, `read_at` nullable, payload JSON)
 
