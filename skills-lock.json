@@ -61,6 +61,12 @@
       "skillPath": "skills/misc/git-guardrails-claude-code/SKILL.md",
       "computedHash": "ccf581d304132095c2787b0a3bcb7b4ff125863c9f796fb16311d8f1cacef470"
     },
+    "graphify": {
+      "source": "graphify-labs/graphify",
+      "sourceType": "github",
+      "skillPath": "graphify/SKILL.md",
+      "computedHash": "148eecd9968969e6961ffa6ba35e484991e7603aa6b5ce4bf0a14bae912fd24a"
+    },
     "grill-me": {
       "source": "mattpocock/skills",
       "sourceType": "github",
@@ -84,6 +90,12 @@
       "sourceType": "github",
       "skillPath": "skills/productivity/handoff/SKILL.md",
       "computedHash": "20e5f4afdef502637510bc5c64d27645d3c85c88df9cb006824bbb0980166319"
+    },
+    "i-have-adhd": {
+      "source": "ayghri/i-have-adhd",
+      "sourceType": "github",
+      "skillPath": "skills/i-have-adhd/SKILL.md",
+      "computedHash": "ff5ac62815dc9c74709333f433e667ea76215126afb628e7dd8e021758a9e3a7"
     },
     "implement": {
       "source": "mattpocock/skills",
