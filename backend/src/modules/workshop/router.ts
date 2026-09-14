@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { requireRole } from '../../modules/auth/middleware.js';
+import { requirePermission, requireRole } from '../../modules/auth/middleware.js';
 import * as items from './controllers/itemsController.js';
 import * as sellers from './controllers/sellersController.js';
 import * as consignments from './controllers/consignmentsController.js';
@@ -76,12 +76,16 @@ router.post('/todos/clear-done', todos.clearDoneTodos);
 router.delete('/todos/:id', todos.deleteTodo);
 
 // Backup system: settings, run-now, list, download, delete.
-router.get('/backups/settings', backups.getBackupSettings);
-router.put('/backups/settings', backups.updateBackupSettings);
-router.get('/backups', backups.listBackups);
-router.post('/backups/run', backups.runBackupNow);
-router.get('/backups/:id/download', backups.downloadBackup);
-router.delete('/backups/:id', backups.deleteBackup);
+// P0-A-04/P0-A-10: every route declares its required permission — create,
+// download, delete and settings are separate privileges; restore (not yet
+// implemented server-side) will require 'backup.restore' and remain
+// admin-only forever.
+router.get('/backups/settings', requirePermission('backup.settings'), backups.getBackupSettings);
+router.put('/backups/settings', requirePermission('backup.settings'), backups.updateBackupSettings);
+router.get('/backups', requirePermission('backup.create'), backups.listBackups);
+router.post('/backups/run', requirePermission('backup.create'), backups.runBackupNow);
+router.get('/backups/:id/download', requirePermission('backup.download'), backups.downloadBackup);
+router.delete('/backups/:id', requirePermission('backup.delete'), backups.deleteBackup);
 
 // Analytics: cross-channel sales rankings (sellers + online shop).
 router.get('/analytics', analytics.getAnalytics);
@@ -112,11 +116,13 @@ router.post('/trash/restore/:type/:id', trash.restoreEntity);
 router.put('/trash/edit-and-restore/:type/:id', trash.editAndRestore);
 router.delete('/trash/permanent/:type/:id', trash.permanentDelete);
 
-// Outbound notifications (Telegram / Melipayamak SMS) settings + test sends
-router.get('/notifications/settings', outboundNotifications.getNotifications);
-router.put('/notifications/settings', outboundNotifications.updateNotifications);
-router.post('/notifications/test/telegram', outboundNotifications.testTelegramNotification);
-router.post('/notifications/test/sms', outboundNotifications.testSmsNotification);
+// Outbound notifications (Telegram / Melipayamak SMS) settings + test sends.
+// P0-A-04/P0-A-09: these routes read/write integration credentials, so they
+// require explicit permissions (responses are masked server-side too).
+router.get('/notifications/settings', requirePermission('notifications.read'), outboundNotifications.getNotifications);
+router.put('/notifications/settings', requirePermission('notifications.write'), outboundNotifications.updateNotifications);
+router.post('/notifications/test/telegram', requirePermission('notifications.write'), outboundNotifications.testTelegramNotification);
+router.post('/notifications/test/sms', requirePermission('notifications.write'), outboundNotifications.testSmsNotification);
 
 // In-app workshop notification feed (header bell): merged stored events +
 // live derived states. Static paths above win over :id since Express matches

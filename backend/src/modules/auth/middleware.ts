@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { fromNodeHeaders } from 'better-auth/node';
 
 import { auth } from './service.js';
+import { roleHas, type Permission } from './permissions.js';
 
 /**
  * Attaches the better-auth session (if any) to `req.auth`.
@@ -56,6 +57,27 @@ export function requireRole(...roles: string[]) {
         }
         const role = req.auth.user.role ?? 'user';
         if (!roles.includes(role)) {
+            res.status(403).json({ error: 'شما اجازه انجام این عمل را ندارید' });
+            return;
+        }
+        next();
+    };
+}
+
+/**
+ * P0-A-04 permission guard factory. Requires an authenticated session whose
+ * role holds the permission (see permissions.ts for the catalog). Frontend
+ * visibility is not authorization — this is the server-side authority.
+ * Unknown roles hold nothing (fail closed).
+ */
+export function requirePermission(permission: Permission) {
+    return (req: Request, res: Response, next: NextFunction): void => {
+        if (!req.auth) {
+            res.status(401).json({ error: 'ابتدا وارد حساب کاربری خود شوید' });
+            return;
+        }
+        const role = req.auth.user.role ?? 'user';
+        if (!roleHas(role, permission)) {
             res.status(403).json({ error: 'شما اجازه انجام این عمل را ندارید' });
             return;
         }
