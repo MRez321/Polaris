@@ -10,13 +10,18 @@ import { apiRateLimiter } from './core/security/rateLimit.js';
 import { authHandler } from './modules/auth/routes.js';
 import apiRoutes, { workshopAdminChain } from './routes/apiRoutes.js';
 import { ensureUploadsDir, uploadsDir } from './modules/cms/services/galleryService.js';
+import { securityHeaders } from './core/middleware/securityHeaders.js';
 
 dotenv.config();
 
 const app = express();
+app.disable('x-powered-by');
 // cPanel and similar setups put Express behind a reverse proxy: trust
 // X-Forwarded-* so req.ip is the real client IP (used for audit logs).
 app.set('trust proxy', true);
+
+// P0-A-08: security headers (incl. CSP) on every response, before routes.
+app.use(securityHeaders);
 
 // === CORS CONFIGURATION ===
 // Origin trust lists live in one place: src/core/origins.ts (shared with

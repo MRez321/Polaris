@@ -1,15 +1,28 @@
-.idea
-.env
-#temp
-temp/tel.js
-a
 
-node_modules
-dist
-A
-# Uploaded image files
-backend/uploads/
 
-# Backup files (server-generated, restored via host backup tools)
-backend/backups/
 !backend/backups/.gitkeep
+# Backup files (server-generated, restored via host backup tools)
+# Frontend build output served by backend/public (P0-A-08: CSP live-verification build)
+# Uploaded image files
+#temp
+.env
+.idea
+A
+a
+backend/backups/
+backend/public/assets/
+backend/public/blog/
+backend/public/derive-palette.js
+backend/public/favicon.svg
+backend/public/icons.svg
+backend/public/icons/
+backend/public/index.html
+backend/public/manifest.json
+backend/public/og-image.jpg
+backend/public/robots.txt
+backend/public/site.webmanifest
+backend/public/sitemap.xml
+backend/uploads/
+dist
+node_modules
+temp/tel.js
