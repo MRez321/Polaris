@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import { errorHandler } from './core/middleware/errorHandler.js';
 import { attachSession } from './modules/auth/middleware.js';
 import { isLocalDevOrigin, trustedOrigins } from './core/origins.js';
+import { apiRateLimiter } from './core/security/rateLimit.js';
 import { authHandler } from './modules/auth/routes.js';
 import apiRoutes, { workshopAdminChain } from './routes/apiRoutes.js';
 import { ensureUploadsDir, uploadsDir } from './modules/cms/services/galleryService.js';
@@ -45,6 +46,9 @@ ensureUploadsDir();
 app.use(express.static(publicPath));
 app.use('/uploads', express.static(uploadsDir, { maxAge: '30d', immutable: true }));
 
+// P0-A-07: rate limiting — mounted before better-auth and every API route.
+// Buckets: auth-credential (IP+email), MFA verify, sensitive ops, general.
+app.use('/api', apiRateLimiter);
 // better-auth owns /api/auth/* — mounted before JSON-parsed API routes.
 // app.all preserves req.url so the handler sees the full path.
 app.all('/api/auth/{*splat}', authHandler);
