@@ -6,6 +6,14 @@ import { items, orders } from '../schema/index.js';
 import type { Order, OrderItemLine, OrderPaymentMethod, OrderStatus } from '../types/index.js';
 import { badRequest, notFound } from '../core/utils/apiError.js';
 import { nextCode } from '../core/utils/code.js';
+import {
+    recordMovements,
+    resolveLegacySku,
+    shopLocationId,
+    syncLegacyStockCache,
+} from '../core/services/inventoryLedgerService.js';
+import type { MovementInput } from '../core/services/inventoryLedgerService.js';
+import { entityActor, recordAudit } from '../core/services/auditService.js';
 
 export const ORDER_STATUSES: OrderStatus[] = [
     'pending',
@@ -64,11 +72,19 @@ export interface OrderInput {
  * client never dictates money values. Stock is checked and decremented
  * inside a single transaction with row locks.
  */
-export async function createOrder(input: OrderInput) {
+export async function createOrder(input: OrderInput, actorId?: string) {
     if (!input.lines.length) throw badRequest('سبد خرید خالی است');
 
     return db.transaction(async (tx) => {
+        // P0-B #7: the order id is the ledger reference, so it is minted
+        // before any stock moves are posted.
+        const codes = await tx.select({ code: orders.code }).from(orders);
+        const id = uuid();
+        const code = nextCode('ORD', codes.map((c) => c.code));
+
         const lines: OrderItemLine[] = [];
+        const moves: MovementInput[] = [];
+        const touchedItemIds: string[] = [];
         let total = 0;
 
         for (const line of input.lines) {
@@ -88,10 +104,21 @@ export async function createOrder(input: OrderInput) {
                 throw badRequest(`موجودی «${item.name}» کافی نیست (حداکثر ${item.websiteQuantity} عدد)`);
             }
 
-            await tx
-                .update(items)
-                .set({ websiteQuantity: item.websiteQuantity - line.quantity, updatedAt: new Date() })
-                .where(eq(items.id, item.id));
+            // SALE out of the shop pool; the ledger row is the truth, and the
+            // legacy websiteQuantity cache is resynced from Σledger below.
+            const skuId = await resolveLegacySku(tx, item.id);
+            moves.push({
+                skuId,
+                locationId: shopLocationId(),
+                movementType: 'SALE',
+                quantityDelta: -line.quantity,
+                referenceType: 'order',
+                referenceId: id,
+                reason: `سفارش ${code}`,
+                unitCost: item.costPrice,
+                ...(actorId !== undefined ? { actorId } : {}),
+            });
+            touchedItemIds.push(item.id);
 
             const price = item.retailPrice;
             total += price * line.quantity;
@@ -107,9 +134,6 @@ export async function createOrder(input: OrderInput) {
             });
         }
 
-        const codes = await tx.select({ code: orders.code }).from(orders);
-        const id = uuid();
-        const code = nextCode('ORD', codes.map((c) => c.code));
         const row: typeof orders.$inferInsert = {
             id,
             code,
@@ -128,6 +152,8 @@ export async function createOrder(input: OrderInput) {
         };
         await tx.insert(orders).values(row);
 
+        await recordMovements(tx, moves);
+        for (const itemId of touchedItemIds) await syncLegacyStockCache(tx, itemId);
 
         const created = await tx.select().from(orders).where(eq(orders.id, id)).limit(1);
         return toOrderDto(created[0]!);
@@ -170,7 +196,13 @@ export async function getOrderById(id: string) {
  * cancelled order back to any active state decrements stock again. Marking
  * shipped may attach a tracking code; marking delivered stamps deliveredAt.
  */
-export async function updateOrderStatus(id: string, status: OrderStatus, trackingCode?: string) {
+export async function updateOrderStatus(
+    id: string,
+    status: OrderStatus,
+    trackingCode?: string,
+    actorId?: string,
+    meta?: { ip?: string; userAgent?: string },
+) {
     if (!ORDER_STATUSES.includes(status)) throw badRequest('وضعیت سفارش معتبر نیست');
 
     return db.transaction(async (tx) => {
@@ -179,11 +211,15 @@ export async function updateOrderStatus(id: string, status: OrderStatus, trackin
         if (!order) throw notFound('سفارش یافت نشد');
         if (order.status === status) return toOrderDto(order);
 
-        const restock = order.status !== 'cancelled' && status === 'cancelled' ? 1 : 0;
-        const destock = order.status === 'cancelled' && status !== 'cancelled' ? -1 : 0;
-        const direction = restock || destock;
+        // P0-B #8: cancel posts RETURN_IN to the shop pool, un-cancel posts
+        // SALE out of it. The ledger is authoritative — an un-cancel that the
+        // shop pool cannot cover now fails loudly instead of clamping to zero.
+        const restoring = order.status !== 'cancelled' && status === 'cancelled';
+        const taking = order.status === 'cancelled' && status !== 'cancelled';
 
-        if (direction !== 0) {
+        if (restoring || taking) {
+            const moves: MovementInput[] = [];
+            const touchedItemIds: string[] = [];
             for (const line of order.items) {
                 const itemRows = await tx
                     .select()
@@ -192,14 +228,36 @@ export async function updateOrderStatus(id: string, status: OrderStatus, trackin
                     .for('update');
                 const item = itemRows[0];
                 if (!item || item.isDeleted) continue;
-                // Website orders own the shop pool; cancel restores to it and
-                // un-cancel takes from it again (clamped at zero like before).
-                const next = Math.max(0, item.websiteQuantity + direction * line.quantity);
-                await tx
-                    .update(items)
-                    .set({ websiteQuantity: next, updatedAt: new Date() })
-                    .where(eq(items.id, item.id));
+                const skuId = await resolveLegacySku(tx, item.id);
+                moves.push(
+                    restoring
+                        ? {
+                              skuId,
+                              locationId: shopLocationId(),
+                              movementType: 'RETURN_IN',
+                              quantityDelta: line.quantity,
+                              referenceType: 'order',
+                              referenceId: id,
+                              reason: `لغو سفارش ${order.code}`,
+                              unitCost: item.costPrice,
+                              ...(actorId !== undefined ? { actorId } : {}),
+                          }
+                        : {
+                              skuId,
+                              locationId: shopLocationId(),
+                              movementType: 'SALE',
+                              quantityDelta: -line.quantity,
+                              referenceType: 'order',
+                              referenceId: id,
+                              reason: `راه‌اندازی مجدد سفارش ${order.code}`,
+                              unitCost: item.costPrice,
+                              ...(actorId !== undefined ? { actorId } : {}),
+                          },
+                );
+                touchedItemIds.push(item.id);
             }
+            if (moves.length > 0) await recordMovements(tx, moves);
+            for (const itemId of touchedItemIds) await syncLegacyStockCache(tx, itemId);
         }
 
         const patch: { status: OrderStatus; updatedAt: Date; trackingCode?: string; deliveredAt?: Date | null } = {
@@ -217,6 +275,20 @@ export async function updateOrderStatus(id: string, status: OrderStatus, trackin
         }
         await tx.update(orders).set(patch).where(eq(orders.id, id));
         const updated = await tx.select().from(orders).where(eq(orders.id, id)).limit(1);
+        // P0-B item 27: order status change is audited with before/after
+        // snapshots, on the caller's tx so it commits/rolls back atomically.
+        recordAudit({
+            actor: await entityActor(tx, actorId),
+            action: 'update',
+            entityType: 'order',
+            entityId: id.slice(0, 64),
+            before: { status: order.status },
+            after: { status },
+            details: `وضعیت سفارش ${order.code} از «${order.status}» به «${status}» تغییر کرد`,
+            ...(meta?.ip !== undefined ? { ip: meta.ip } : {}),
+            ...(meta?.userAgent !== undefined ? { userAgent: meta.userAgent } : {}),
+            tx,
+        });
         return toOrderDto(updated[0]!);
     });
 }

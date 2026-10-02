@@ -16,7 +16,6 @@ import {
     type BackupSettingsData,
 } from './backupSettingsService.js';
 import { sendTelegramMessage } from '../../notifications/services/telegramService.js';
-import { logAudit } from '../../../core/services/auditService.js';
 
 /** What a backup includes. Local alias — shared with frontend types by value. */
 export type BackupKind = 'database' | 'website' | 'full';

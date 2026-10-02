@@ -120,6 +120,24 @@
       "when": 1789117051251,
       "tag": "0016_smart_vulcan",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "5",
+      "when": 1789458236708,
+      "tag": "0017_p0b_new_model"
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1789458236709,
+      "tag": "0018_p0b_foreign_keys"
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1789458236710,
+      "tag": "0019_p0b_indexes"
     }
   ]
 }

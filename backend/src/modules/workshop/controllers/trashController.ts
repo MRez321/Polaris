@@ -9,7 +9,8 @@ import {
     toExpenseDto,
     toConsignmentDto,
 } from '../../../models/mappers.js';
-import { logAudit } from '../../../core/services/auditService.js';
+import { recordAudit } from '../../../core/services/auditService.js';
+import { requestUserAgent } from '../../../core/utils/requestMeta.js';
 import { badRequest, pathParam } from '../../../core/utils/apiError.js';
 
 const TRASH_TYPES: readonly TrashEntityType[] = ['item', 'seller', 'staff', 'expense', 'consignment'];
@@ -21,34 +22,6 @@ function parseType(raw: string | string[] | undefined): TrashEntityType {
     return raw as TrashEntityType;
 }
 
-const ENTITY_BY_TYPE: Record<TrashEntityType, 'item' | 'seller' | 'staff' | 'cost' | 'consignment'> = {
-    item: 'item',
-    seller: 'seller',
-    staff: 'staff',
-    expense: 'cost',
-    consignment: 'consignment',
-};
-
-/** Builds the Persian display name of a trashed row (rows arrive as unknown/record shapes). */
-function entityDisplayName(type: TrashEntityType, row: unknown): string {
-    if (!row || typeof row !== 'object') return 'مورد نامشخص';
-    // Rows come from the trash table union; they share name/code/title columns.
-    const r = row as Record<string, unknown>;
-    switch (type) {
-        case 'item':
-            return `کالای «${r.name}» با کد ${r.code}`;
-        case 'seller':
-            return `دست‌فروش «${r.name}» با کد ${r.code}`;
-        case 'staff':
-            return `پرسنل «${r.name}» با کد ${r.code}`;
-        case 'expense':
-            return `هزینه «${r.title}»`;
-        case 'consignment':
-            return `واگذاری ${r.code} برای ${r.sellerName} به مبلغ ${r.totalAmount}`;
-        default:
-            return 'مورد نامشخص';
-    }
-}
 
 export async function listTrash(_req: Request, res: Response): Promise<void> {
     const t = await svc.listTrash();
@@ -64,8 +37,14 @@ export async function listTrash(_req: Request, res: Response): Promise<void> {
 export async function restoreEntity(req: Request, res: Response): Promise<void> {
     const type = parseType(req.params.type);
     const id = pathParam(req, 'id', 'شناسه مورد');
-    const restored = await svc.restoreEntity(type, id);
-    logAudit(req.auth ?? null, 'update', ENTITY_BY_TYPE[type], `${entityDisplayName(type, restored)} بازیابی شد`, req.ip);
+    // P0-B item 27: the service layer emits the 'restore' audit row with
+    // before/after snapshots inside its transaction; the controller only
+    // forwards request metadata.
+    const restored = await svc.restoreEntity(type, id, undefined, req.auth?.user.id, {
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.json({ message: 'مورد با موفقیت بازیابی شد', restored });
 }
 
@@ -73,15 +52,39 @@ export async function editAndRestore(req: Request, res: Response): Promise<void>
     const type = parseType(req.params.type);
     const id = pathParam(req, 'id', 'شناسه مورد');
     const patch = (req.body ?? {}) as Record<string, unknown>;
-    const restored = await svc.restoreEntity(type, id, patch);
-    logAudit(req.auth ?? null, 'update', ENTITY_BY_TYPE[type], `${entityDisplayName(type, restored)} ویرایش و بازیابی شد`, req.ip);
+    const restored = await svc.restoreEntity(type, id, patch, req.auth?.user.id, {
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.json({ message: 'مورد ویرایش و بازیابی شد', restored });
 }
 
 export async function permanentDelete(req: Request, res: Response): Promise<void> {
     const type = parseType(req.params.type);
     const id = pathParam(req, 'id', 'شناسه مورد');
-    const deleted = await svc.permanentDeleteEntity(type, id);
-    logAudit(req.auth ?? null, 'delete', ENTITY_BY_TYPE[type], `${entityDisplayName(type, deleted)} برای همیشه حذف شد`, req.ip);
-    res.json({ message: 'مورد برای همیشه حذف شد' });
+    const result = await svc.permanentDeleteEntity(type, id, req.auth?.user.id, {
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+    // Archived rows were already audited (action 'archive' with before/after)
+    // by the service inside its transaction; only true hard-deletes need the
+    // controller's 'delete' row.
+    if (!result.archived) {
+        recordAudit({
+            actor: req.auth ?? null,
+            action: 'delete',
+            entityType: svc.TRASH_ENTITY_TYPE[type],
+            entityId: id,
+            details: `${svc.entityDisplayName(type, result.row)} برای همیشه حذف شد`,
+            ip: req.ip,
+            userAgent: requestUserAgent(req),
+        });
+    }
+
+    res.json({
+        message: result.archived
+            ? 'این مورد فقط بایگانی میشود؛ رکورد مالی آن حفظ شده است'
+            : 'مورد برای همیشه حذف شد',
+    });
 }

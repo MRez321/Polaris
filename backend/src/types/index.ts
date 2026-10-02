@@ -267,7 +267,7 @@ export interface AuditLog {
     userName: string;
     userRole?: string;
     action: string;
-    entity: 'item' | 'seller' | 'consignment' | 'payment' | 'return' | 'damage' | 'staff' | 'settings' | 'cost' | 'profit' | 'auth' | 'notifications' | 'analytics' | 'todo' | 'backup';
+    entity: 'item' | 'seller' | 'consignment' | 'payment' | 'return' | 'damage' | 'staff' | 'settings' | 'cost' | 'profit' | 'auth' | 'notifications' | 'analytics' | 'todo' | 'backup' | 'order' | 'inventory-ledger' | 'financial-ledger';
     details: string;
     ipAddress: string | null;
 }

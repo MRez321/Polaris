@@ -12,6 +12,7 @@ import { damageRecords, items } from '../../schema/index.js';
 import { badRequest, notFound } from '../../core/utils/apiError.js';
 import { nextCode } from '../../core/utils/code.js';
 import { emitDataChanged } from '../../core/services/socketService.js';
+import { recordMovements, resolveLegacySku, shelfLocationId, syncLegacyStockCache } from '../../core/services/inventoryLedgerService.js';
 
 export type DamageSource = 'seller' | 'customer' | 'provider' | 'process';
 export type DamageStatus = 'damaged' | 'fixed' | 'disposed';
@@ -99,10 +100,10 @@ export async function updateDamageRecord(
 
 /**
  * Marks a damage record as repaired and returns the quantity to warehouse
- * stock (items.stockQuantity). Runs in a transaction so the record and the
- * stock bump can never diverge.
+ * stock (ledger ADJUSTMENT_IN at the shelf location). Runs in a transaction
+ * so the record and the stock bump can never diverge.
  */
-export async function fixDamageRecord(id: string, fixedBy?: string) {
+export async function fixDamageRecord(id: string, fixedBy?: string, actorId?: string) {
     const updated = await db.transaction(async (tx) => {
         const rows = await tx
             .select()
@@ -123,10 +124,23 @@ export async function fixDamageRecord(id: string, fixedBy?: string) {
         const itemRows = await tx.select().from(items).where(eq(items.id, record.itemId)).for('update');
         const item = itemRows[0];
         if (item) {
-            await tx
-                .update(items)
-                .set({ stockQuantity: item.stockQuantity + record.quantity, updatedAt: new Date() })
-                .where(eq(items.id, item.id));
+            // P0-B #5: repaired units re-enter stock through the ledger; the
+            // legacy items.stockQuantity cache is resynced from Σledger.
+            const skuId = await resolveLegacySku(tx, record.itemId);
+            await recordMovements(tx, [
+                {
+                    skuId,
+                    locationId: shelfLocationId(),
+                    movementType: 'ADJUSTMENT_IN',
+                    quantityDelta: record.quantity,
+                    referenceType: 'damage-record',
+                    referenceId: id,
+                    reason: 'ترمیم آسیب',
+                    unitCost: item.costPrice,
+                    ...(actorId !== undefined ? { actorId } : {}),
+                },
+            ]);
+            await syncLegacyStockCache(tx, record.itemId);
         }
         return (await tx.select().from(damageRecords).where(eq(damageRecords.id, id)))[0]!;
     });

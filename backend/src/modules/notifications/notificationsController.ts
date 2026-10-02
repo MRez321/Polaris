@@ -10,7 +10,8 @@ import {
 } from './services/notificationService.js';
 import { isTelegramConfigured, resolveTelegramCredentials } from './services/telegramService.js';
 import { isMelipayamakConfigured, resolveMelipayamakCredentials } from './services/melipayamakService.js';
-import { logAudit } from '../../core/services/auditService.js';
+import { recordAudit } from '../../core/services/auditService.js';
+import { requestUserAgent } from '../../core/utils/requestMeta.js';
 
 const IRANIAN_MOBILE = /^09\d{9}$/;
 
@@ -89,7 +90,15 @@ export async function updateNotifications(req: Request, res: Response): Promise<
         patch.telegram && ('botToken' in patch.telegram || 'chatId' in patch.telegram);
     const botUsername = telegramTouched ? await refreshTelegramBotUsername() : updated.botUsername;
 
-    logAudit(req.auth ?? null, 'update', 'settings', 'تنظیمات اطلاع‌رسانی به‌روزرسانی شد', req.ip);
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'update',
+        entityType: 'settings',
+        details: 'تنظیمات اطلاع‌رسانی به‌روزرسانی شد',
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.json({
         ...updated,
         botUsername,
@@ -102,7 +111,15 @@ export async function testTelegramNotification(req: Request, res: Response): Pro
     try {
         await sendTestTelegramMessage();
         const botUsername = await refreshTelegramBotUsername();
-        logAudit(req.auth ?? null, 'create', 'notifications', 'پیام آزمایشی تلگرام ارسال شد', req.ip);
+        recordAudit({
+            actor: req.auth ?? null,
+            action: 'create',
+            entityType: 'notifications',
+            details: 'پیام آزمایشی تلگرام ارسال شد',
+            ip: req.ip,
+            userAgent: requestUserAgent(req),
+        });
+
         res.json({ success: true, message: 'پیام آزمایشی تلگرام با موفقیت ارسال شد', botUsername });
     } catch (err) {
         const message = err instanceof Error ? err.message : 'ارسال پیام تلگرام ناموفق بود';
@@ -117,7 +134,15 @@ export async function testSmsNotification(req: Request, res: Response): Promise<
         .parse(req.body?.recipient);
     try {
         await sendTestSms(recipient);
-        logAudit(req.auth ?? null, 'create', 'notifications', 'پیامک آزمایشی ارسال شد', req.ip);
+        recordAudit({
+            actor: req.auth ?? null,
+            action: 'create',
+            entityType: 'notifications',
+            details: 'پیامک آزمایشی ارسال شد',
+            ip: req.ip,
+            userAgent: requestUserAgent(req),
+        });
+
         res.json({ success: true, message: `پیامک آزمایشی به ${recipient} ارسال شد` });
     } catch (err) {
         const message = err instanceof Error ? err.message : 'ارسال پیامک ناموفق بود';

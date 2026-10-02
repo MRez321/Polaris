@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 
 import * as svc from '../../../services/ordersService.js';
-import { logAudit } from '../../../core/services/auditService.js';
+import { requestUserAgent } from '../../../core/utils/requestMeta.js';
 import { pathParam } from '../../../core/utils/apiError.js';
 
 const statusSchema = z.enum(['pending', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled']);
@@ -19,7 +19,13 @@ export async function updateOrderStatus(req: Request, res: Response): Promise<vo
     const body = z
         .object({ status: statusSchema, trackingCode: z.string().trim().max(64).optional() })
         .parse(req.body);
-    const order = await svc.updateOrderStatus(id, body.status, body.trackingCode);
-    logAudit(req.auth ?? null, 'update', 'settings', `وضعیت سفارش ${order.code} به «${order.status}» تغییر کرد`, req.ip);
+    // P0-B item 27: the service emits the 'update' audit row with before/after
+    // status snapshots inside its transaction; the controller only forwards
+    // request metadata.
+    const order = await svc.updateOrderStatus(id, body.status, body.trackingCode, req.auth?.user.id, {
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.json(order);
 }

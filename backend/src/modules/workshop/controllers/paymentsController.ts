@@ -3,7 +3,8 @@ import { z } from 'zod';
 
 import * as svc from '../inventoryService.js';
 import { toPaymentDto } from '../../../models/mappers.js';
-import { logAudit } from '../../../core/services/auditService.js';
+import { recordAudit } from '../../../core/services/auditService.js';
+import { requestUserAgent } from '../../../core/utils/requestMeta.js';
 import { recordWorkshopEvent } from '../services/notificationsService.js';
 
 const paymentSchema = z.object({
@@ -22,14 +23,17 @@ export async function listPayments(_req: Request, res: Response): Promise<void> 
 export async function createPayment(req: Request, res: Response): Promise<void> {
     const data = paymentSchema.parse(req.body);
     const actor = req.auth?.user.name ?? 'سیستم';
-    const row = await svc.createPayment(data, actor);
-    logAudit(
-        req.auth ?? null,
-        'create',
-        'payment',
-        `پرداخت ${row.code} به مبلغ ${row.amount} برای ${row.sellerName} ثبت شد`,
-        req.ip,
-    );
+    const row = await svc.createPayment(data, actor, req.auth?.user.id);
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'create',
+        entityType: 'payment',
+        entityId: row.id,
+        details: `پرداخت ${row.code} به مبلغ ${row.amount} برای ${row.sellerName} ثبت شد`,
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     recordWorkshopEvent({
         type: 'notification',
         title: 'تسویه ثبت شده',

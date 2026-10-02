@@ -174,6 +174,8 @@ export const items = mysqlTable(
         updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
         isDeleted: boolean('is_deleted').notNull().default(false),
         deletedAt: datetime('deleted_at'),
+        // P0-B (item 28): who archived this row — NULL for all pre-existing deletes.
+        deletedBy: varchar('deleted_by', { length: 36 }),
     },
     (t) => [
         index('items_category_idx').on(t.category),
@@ -208,6 +210,8 @@ export const sellers = mysqlTable(
         updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
         isDeleted: boolean('is_deleted').notNull().default(false),
         deletedAt: datetime('deleted_at'),
+        // P0-B (item 28): who archived this row — NULL for all pre-existing deletes.
+        deletedBy: varchar('deleted_by', { length: 36 }),
     },
     (t) => [index('sellers_is_deleted_idx').on(t.isDeleted)],
 );
@@ -241,6 +245,8 @@ export const consignments = mysqlTable(
         updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
         isDeleted: boolean('is_deleted').notNull().default(false),
         deletedAt: datetime('deleted_at'),
+        // P0-B (item 28): who archived this row — NULL for all pre-existing deletes.
+        deletedBy: varchar('deleted_by', { length: 36 }),
     },
     (t) => [
         index('consignments_seller_id_idx').on(t.sellerId),
@@ -265,6 +271,8 @@ export const consignmentReturns = mysqlTable(
         createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
         isDeleted: boolean('is_deleted').notNull().default(false),
         deletedAt: datetime('deleted_at'),
+        // P0-B (item 28): who archived this row — NULL for all pre-existing deletes.
+        deletedBy: varchar('deleted_by', { length: 36 }),
     },
     (t) => [index('returns_consignment_id_idx').on(t.consignmentId), index('returns_seller_id_idx').on(t.sellerId)],
 );
@@ -287,6 +295,8 @@ export const payments = mysqlTable(
         createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
         isDeleted: boolean('is_deleted').notNull().default(false),
         deletedAt: datetime('deleted_at'),
+        // P0-B (item 28): who archived this row — NULL for all pre-existing deletes.
+        deletedBy: varchar('deleted_by', { length: 36 }),
     },
     (t) => [index('payments_seller_id_idx').on(t.sellerId), index('payments_date_idx').on(t.date)],
 );
@@ -318,6 +328,8 @@ export const staff = mysqlTable(
         updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
         isDeleted: boolean('is_deleted').notNull().default(false),
         deletedAt: datetime('deleted_at'),
+        // P0-B (item 28): who archived this row — NULL for all pre-existing deletes.
+        deletedBy: varchar('deleted_by', { length: 36 }),
     },
     (t) => [index('staff_is_deleted_idx').on(t.isDeleted)],
 );
@@ -348,6 +360,8 @@ export const expenses = mysqlTable(
         updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
         isDeleted: boolean('is_deleted').notNull().default(false),
         deletedAt: datetime('deleted_at'),
+        // P0-B (item 28): who archived this row — NULL for all pre-existing deletes.
+        deletedBy: varchar('deleted_by', { length: 36 }),
     },
     (t) => [index('expenses_is_deleted_idx').on(t.isDeleted)],
 );
@@ -408,6 +422,8 @@ export const damageRecords = mysqlTable(
         updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
         isDeleted: boolean('is_deleted').notNull().default(false),
         deletedAt: datetime('deleted_at'),
+        // P0-B (item 28): who archived this row — NULL for all pre-existing deletes.
+        deletedBy: varchar('deleted_by', { length: 36 }),
     },
     (t) => [
         index('damage_records_item_id_idx').on(t.itemId),
@@ -436,6 +452,8 @@ export const workshopTodos = mysqlTable(
         doneAt: datetime('done_at'),
         isDeleted: boolean('is_deleted').notNull().default(false),
         deletedAt: datetime('deleted_at'),
+        // P0-B (item 28): who archived this row — NULL for all pre-existing deletes.
+        deletedBy: varchar('deleted_by', { length: 36 }),
     },
     (t) => [
         index('workshop_todos_is_deleted_idx').on(t.isDeleted),

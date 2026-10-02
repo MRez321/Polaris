@@ -11,4 +11,5 @@ export * from './userAddresses.js';
 export * from './company.js';
 export * from './audit.js';
 export * from './notifications.js';
+export * from './newModel.js';
 export * from './backups.js';

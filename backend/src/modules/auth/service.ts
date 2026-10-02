@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 
 import { db } from '../../config/drizzle.js';
 import * as schema from '../../schema/index.js';
-import { logAudit } from '../../core/services/auditService.js';
+import { recordAudit } from '../../core/services/auditService.js';
 import { recordWorkshopEvent } from '../workshop/services/notificationsService.js';
 import { trustedOrigins } from '../../core/origins.js';
 import { isProduction } from '../../config/env.js';
@@ -68,13 +68,16 @@ export const auth = betterAuth({
                         const rows = await db.select().from(schema.user).where(eq(schema.user.id, session.userId));
                         const u = rows[0];
                         if (u) {
-                            logAudit(
-                                { user: { id: u.id, name: u.name, role: u.role } },
-                                'login',
-                                'auth',
-                                `ورود کاربر ${u.name} (${u.email})`,
-                                typeof session.ipAddress === 'string' ? session.ipAddress : undefined,
-                            );
+                            recordAudit({
+                                actor: { user: { id: u.id, name: u.name, role: u.role } },
+                                action: 'login',
+                                entityType: 'auth',
+                                entityId: u.id,
+                                details: `ورود کاربر ${u.name} (${u.email})`,
+                                ip: typeof session.ipAddress === 'string' ? session.ipAddress : undefined,
+                                userAgent: typeof session.userAgent === 'string' ? session.userAgent.slice(0, 255) : undefined,
+                            });
+
                             recordWorkshopEvent({
                                 type: 'system',
                                 title: 'ورود کاربر',

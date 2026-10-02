@@ -19,6 +19,7 @@ export const unauthorized = (message = 'دسترسی غیرمجاز است'): Ap
 export const forbidden = (message = 'شما اجازه انجام این عمل را ندارید'): ApiError => new ApiError(403, message);
 export const notFound = (message = 'مورد درخواستی یافت نشد'): ApiError => new ApiError(404, message);
 export const conflict = (message: string): ApiError => new ApiError(409, message);
+export const gone = (message: string): ApiError => new ApiError(410, message);
 
 /**
  * Reads a route path parameter, rejecting missing/empty/non-string values

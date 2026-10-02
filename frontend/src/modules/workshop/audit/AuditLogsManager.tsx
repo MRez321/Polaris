@@ -9,6 +9,9 @@ import {
   FileText,
   Package,
   CreditCard,
+  ShoppingBag,
+  ArrowLeftRight,
+  Coins,
   ChevronDown,
   Loader2,
   Globe,
@@ -91,6 +94,12 @@ export const AuditLogsManager: React.FC = () => {
         return <ClipboardList className="w-4 h-4 text-sky-500" />;
       case 'backup':
         return <Archive className="w-4 h-4 text-violet-500" />;
+      case 'order':
+        return <ShoppingBag className="w-4 h-4 text-brand" />;
+      case 'inventory-ledger':
+        return <ArrowLeftRight className="w-4 h-4 text-sky-500" />;
+      case 'financial-ledger':
+        return <Coins className="w-4 h-4 text-emerald-500" />;
       default:
         return <Clock className="w-4 h-4 text-stone-400" />;
     }
@@ -110,6 +119,8 @@ export const AuditLogsManager: React.FC = () => {
         return 'پرسنل و هم‌بنیان‌گذاران';
       case 'return':
         return 'مرجوعی کالا';
+      case 'cost':
+        return 'هزینه‌ها';
       case 'notifications':
         return 'اطلاع‌رسانی';
       case 'todo':
@@ -120,6 +131,12 @@ export const AuditLogsManager: React.FC = () => {
         return 'توزیع سود';
       case 'settings':
         return 'تنظیمات و برند';
+      case 'order':
+        return 'سفارش‌ها';
+      case 'inventory-ledger':
+        return 'دفتر موجودی';
+      case 'financial-ledger':
+        return 'دفتر مالی';
       case 'auth':
         return 'ورود و امنیت';
       default:
@@ -135,6 +152,12 @@ export const AuditLogsManager: React.FC = () => {
         return 'ویرایش';
       case 'delete':
         return 'حذف';
+      case 'restore':
+        return 'بازیابی';
+      case 'archive':
+        return 'بایگانی';
+      case 'login':
+        return 'ورود';
       default:
         return action;
     }
@@ -196,6 +219,9 @@ export const AuditLogsManager: React.FC = () => {
             { value: 'staff', label: 'پرسنل و کادر کارگاه' },
             { value: 'return', label: 'مرجوعی کالا' },
             { value: 'cost', label: 'هزینه‌های کارگاه' },
+            { value: 'order', label: 'سفارش‌ها' },
+            { value: 'inventory-ledger', label: 'دفتر موجودی' },
+            { value: 'financial-ledger', label: 'دفتر مالی' },
             { value: 'profit', label: 'توزیع سود' },
             { value: 'notifications', label: 'اطلاع‌رسانی' },
             { value: 'todo', label: 'کارهای کارگاه' },
@@ -214,6 +240,8 @@ export const AuditLogsManager: React.FC = () => {
             { value: 'create', label: 'ایجاد' },
             { value: 'update', label: 'ویرایش' },
             { value: 'delete', label: 'حذف' },
+            { value: 'archive', label: 'بایگانی' },
+            { value: 'restore', label: 'بازیابی' },
           ]}
         />
       </div>

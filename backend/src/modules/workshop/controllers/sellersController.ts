@@ -3,7 +3,8 @@ import { z } from 'zod';
 
 import * as svc from '../inventoryService.js';
 import { toSellerDto } from '../../../models/mappers.js';
-import { logAudit } from '../../../core/services/auditService.js';
+import { recordAudit } from '../../../core/services/auditService.js';
+import { requestUserAgent } from '../../../core/utils/requestMeta.js';
 import { badRequest, pathParam } from '../../../core/utils/apiError.js';
 import { clientIdSchema } from '../../../schema/clientId.js';
 
@@ -55,7 +56,16 @@ export async function getSeller(req: Request, res: Response): Promise<void> {
 export async function createSeller(req: Request, res: Response): Promise<void> {
     const data = createSellerSchema.parse(req.body);
     const row = await svc.createSeller(data);
-    logAudit(req.auth ?? null, 'create', 'seller', `دست‌فروش «${row.name}» با کد ${row.code} ایجاد شد`, req.ip);
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'create',
+        entityType: 'seller',
+        entityId: row.id,
+        details: `دست‌فروش «${row.name}» با کد ${row.code} ایجاد شد`,
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.status(201).json(toSellerDto(row));
 }
 
@@ -63,13 +73,31 @@ export async function updateSeller(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه دست‌فروش');
     const data = sellerSchema.partial().parse(req.body);
     const row = await svc.updateSeller(id, data);
-    logAudit(req.auth ?? null, 'update', 'seller', `دست‌فروش «${row.name}» ویرایش شد`, req.ip);
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'update',
+        entityType: 'seller',
+        entityId: row.id,
+        details: `دست‌فروش «${row.name}» ویرایش شد`,
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.json(toSellerDto(row));
 }
 
 export async function deleteSeller(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه دست‌فروش');
     const row = await svc.softDeleteSeller(id);
-    logAudit(req.auth ?? null, 'delete', 'seller', `دست‌فروش «${row.name}» با کد ${row.code} به سطل بازیافت منتقل شد`, req.ip);
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'delete',
+        entityType: 'seller',
+        entityId: row.id,
+        details: `دست‌فروش «${row.name}» با کد ${row.code} به سطل بازیافت منتقل شد`,
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.json({ message: 'دست‌فروش به سطل بازیافت منتقل شد' });
 }

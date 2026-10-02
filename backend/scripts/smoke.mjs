@@ -82,9 +82,15 @@ const item2 = r.data;
 r = await req('GET', W + '/items');
 check('list items grew by 2', r.status === 200 && r.data.length === baselineItemCount + 2, { before: baselineItemCount, after: r.data?.length });
 
-// 5. Update item
-r = await req('PUT', W + `/items/${item.id}`, { stockQuantity: 25 });
-check('update item stock', r.status === 200 && r.data.stockQuantity === 25, r);
+// 5. Update item — P0-B item 28: stock is NOT writable through this endpoint.
+// stockQuantity/websiteQuantity are stripped at the Zod boundary (updateItemSchema
+// .omit) and again in the service, so the only effect is the price field.
+r = await req('PUT', W + `/items/${item.id}`, { stockQuantity: 25, retailPrice: 1600000 });
+check(
+    'update item: direct stockQuantity write is stripped (stays 20)',
+    r.status === 200 && r.data.stockQuantity === 20 && r.data.retailPrice === 1600000,
+    { status: r.status, stock: r.data?.stockQuantity, retail: r.data?.retailPrice },
+);
 
 // 6. Create seller
 r = await req('POST', W + '/sellers', {
@@ -120,7 +126,7 @@ check('handover remainingAmount', cons.remainingAmount === cons.totalAmount, con
 r = await req('GET', W + '/items');
 const it1 = r.data.find((i) => i.id === item.id);
 const it2 = r.data.find((i) => i.id === item2.id);
-check('stock decremented item1 (25→20)', it1.stockQuantity === 20, it1.stockQuantity);
+check('stock decremented item1 (20→15)', it1.stockQuantity === 15, it1.stockQuantity);
 check('stock decremented item2 (15→11)', it2.stockQuantity === 11, it2.stockQuantity);
 
 // seller debt updated?
@@ -164,7 +170,7 @@ check('return totalReturnAmount', ret.returnRecord.totalReturnAmount === 2 * 110
 // stock restocked?
 r = await req('GET', W + '/items');
 const it1b = r.data.find((i) => i.id === item.id);
-check('stock restocked (20→22)', it1b.stockQuantity === 22, it1b.stockQuantity);
+check('stock restocked (15→17)', it1b.stockQuantity === 17, it1b.stockQuantity);
 
 // consignment net reduced
 check('updatedConsignment remainingAmount', ret.updatedConsignment.remainingAmount === cons.totalAmount - 3000000 - 2200000, ret.updatedConsignment.remainingAmount);
@@ -185,12 +191,14 @@ check('restore item', r.status === 200, r);
 r = await req('GET', W + '/items');
 check('item back in list', r.data.some((i) => i.id === item2.id), r.data.length);
 
-// permanent delete
+// permanent delete — P0-B item 28: financial-bearing types (item/seller/
+// consignment) are ARCHIVED in place, never removed, so the row must stay in the
+// trash and the ledger history must survive.
 r = await req('DELETE', W + `/items/${item2.id}`);
 r = await req('DELETE', W + `/trash/permanent/item/${item2.id}`);
-check('permanent delete', r.status === 200, r);
+check('permanent delete of item archives instead of removing', r.status === 200 && /بایگانی/.test(String(r.data?.message)), r.data);
 r = await req('GET', W + '/trash');
-check('trash empty of item2', !r.data.items.some((i) => i.id === item2.id), r.data.items?.length);
+check('item2 still in trash after permanent delete', r.data.items.some((i) => i.id === item2.id), r.data.items?.length);
 
 // 12. Company
 r = await req('GET', '/company');

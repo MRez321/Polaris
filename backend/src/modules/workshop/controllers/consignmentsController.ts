@@ -3,7 +3,8 @@ import { z } from 'zod';
 
 import * as svc from '../inventoryService.js';
 import { toConsignmentDto, toReturnDto } from '../../../models/mappers.js';
-import { logAudit } from '../../../core/services/auditService.js';
+import { recordAudit } from '../../../core/services/auditService.js';
+import { requestUserAgent } from '../../../core/utils/requestMeta.js';
 import { badRequest, pathParam } from '../../../core/utils/apiError.js';
 import { recordWorkshopEvent } from '../services/notificationsService.js';
 
@@ -55,8 +56,17 @@ export async function listReturns(_req: Request, res: Response): Promise<void> {
 export async function createConsignment(req: Request, res: Response): Promise<void> {
     const data = handoverSchema.parse(req.body);
     const actor = req.auth?.user.name ?? 'سیستم';
-    const row = await svc.createHandover(data, actor);
-    logAudit(req.auth ?? null, 'create', 'consignment', `واگذاری ${row.code} برای ${row.sellerName} به مبلغ ${row.totalAmount} ثبت شد`, req.ip);
+    const row = await svc.createHandover(data, actor, req.auth?.user.id);
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'create',
+        entityType: 'consignment',
+        entityId: row.id,
+        details: `واگذاری ${row.code} برای ${row.sellerName} به مبلغ ${row.totalAmount} ثبت شد`,
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     recordWorkshopEvent({
         type: 'notification',
         title: row.deliveryStatus === 'pending' ? 'حواله در انتظار تحویل ثبت شد' : 'واگذاری انجام شد',
@@ -71,8 +81,17 @@ export async function createConsignment(req: Request, res: Response): Promise<vo
 export async function deliverConsignment(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه واگذاری');
     const actor = req.auth?.user.name ?? 'سیستم';
-    const row = await svc.markDelivered(id, actor);
-    logAudit(req.auth ?? null, 'update', 'consignment', `واگذاری ${row.code} به ${row.sellerName} تحویل داده شد`, req.ip);
+    const row = await svc.markDelivered(id, actor, req.auth?.user.id);
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'update',
+        entityType: 'consignment',
+        entityId: row.id,
+        details: `واگذاری ${row.code} به ${row.sellerName} تحویل داده شد`,
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     recordWorkshopEvent({
         type: 'notification',
         title: 'واگذاری انجام شد',
@@ -87,28 +106,34 @@ export async function deliverConsignment(req: Request, res: Response): Promise<v
 
 export async function deleteConsignment(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه واگذاری');
-    const row = await svc.softDeleteConsignment(id);
-    logAudit(
-        req.auth ?? null,
-        'delete',
-        'consignment',
-        `واگذاری ${row.code} برای ${row.sellerName} به مبلغ ${row.totalAmount} به سطل بازیافت منتقل شد`,
-        req.ip,
-    );
+    const row = await svc.softDeleteConsignment(id, req.auth?.user.id);
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'delete',
+        entityType: 'consignment',
+        entityId: row.id,
+        details: `واگذاری ${row.code} برای ${row.sellerName} به مبلغ ${row.totalAmount} به سطل بازیافت منتقل شد`,
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.json({ message: 'واگذاری به سطل بازیافت منتقل شد' });
 }
 
 export async function submitReturn(req: Request, res: Response): Promise<void> {
     const data = returnSchema.parse(req.body);
     const actor = req.auth?.user.name ?? 'سیستم';
-    const { returnRecord, updatedConsignment } = await svc.submitReturn(data, actor);
-    logAudit(
-        req.auth ?? null,
-        'create',
-        'return',
-        `مرجوعی واگذاری ${updatedConsignment.code} به ارزش ${returnRecord.totalReturnAmount} ثبت شد`,
-        req.ip,
-    );
+    const { returnRecord, updatedConsignment } = await svc.submitReturn(data, actor, req.auth?.user.id);
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'create',
+        entityType: 'return',
+        entityId: returnRecord.id,
+        details: `مرجوعی واگذاری ${updatedConsignment.code} به ارزش ${returnRecord.totalReturnAmount} ثبت شد`,
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.status(201).json({
         message: 'مرجوعی با موفقیت ثبت شد',
         returnRecord: toReturnDto(returnRecord),

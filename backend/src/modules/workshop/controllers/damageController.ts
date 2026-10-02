@@ -6,7 +6,8 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { damageRecords } from '../../../schema/index.js';
 import * as svc from '../damageService.js';
-import { logAudit } from '../../../core/services/auditService.js';
+import { recordAudit } from '../../../core/services/auditService.js';
+import { requestUserAgent } from '../../../core/utils/requestMeta.js';
 import { pathParam } from '../../../core/utils/apiError.js';
 
 const createDamageSchema = z.object({
@@ -77,13 +78,16 @@ export async function listDamageRecords(req: Request, res: Response): Promise<vo
 export async function createDamageRecord(req: Request, res: Response): Promise<void> {
     const data = createDamageSchema.parse(req.body);
     const row = await svc.createDamageRecord(data);
-    logAudit(
-        req.auth ?? null,
-        'create',
-        'damage',
-        `خرابی/مرجوعی «${row.itemName}» با کد ${row.code} ثبت شد`,
-        req.ip,
-    );
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'create',
+        entityType: 'damage',
+        entityId: row.id,
+        details: `خرابی/مرجوعی «${row.itemName}» با کد ${row.code} ثبت شد`,
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.status(201).json(toDto(row));
 }
 
@@ -91,46 +95,64 @@ export async function updateDamageRecord(req: Request, res: Response): Promise<v
     const id = pathParam(req, 'id', 'شناسه رکورد خرابی');
     const data = updateDamageSchema.parse(req.body);
     const row = await svc.updateDamageRecord(id, data);
-    logAudit(req.auth ?? null, 'update', 'damage', `رکورد خرابی ${row.code} ویرایش شد`, req.ip);
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'update',
+        entityType: 'damage',
+        entityId: row.id,
+        details: `رکورد خرابی ${row.code} ویرایش شد`,
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.json(toDto(row));
 }
 
 export async function fixDamageRecord(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه رکورد خرابی');
     const { fixedBy } = fixSchema.parse(req.body ?? {});
-    const row = await svc.fixDamageRecord(id, fixedBy);
-    logAudit(
-        req.auth ?? null,
-        'update',
-        'damage',
-        `رکورد خرابی «${row.itemName}» با کد ${row.code} ترمیم و به انبار برگشت`,
-        req.ip,
-    );
+    const row = await svc.fixDamageRecord(id, fixedBy, req.auth?.user.id);
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'update',
+        entityType: 'damage',
+        entityId: row.id,
+        details: `رکورد خرابی «${row.itemName}» با کد ${row.code} ترمیم و به انبار برگشت`,
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.json(toDto(row));
 }
 
 export async function disposeDamageRecord(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه رکورد خرابی');
     const row = await svc.disposeDamageRecord(id);
-    logAudit(
-        req.auth ?? null,
-        'update',
-        'damage',
-        `رکورد خرابی «${row.itemName}» با کد ${row.code} اسقاط شد`,
-        req.ip,
-    );
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'update',
+        entityType: 'damage',
+        entityId: row.id,
+        details: `رکورد خرابی «${row.itemName}» با کد ${row.code} اسقاط شد`,
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.json(toDto(row));
 }
 
 export async function deleteDamageRecord(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه رکورد خرابی');
     const row = await svc.softDeleteDamageRecord(id);
-    logAudit(
-        req.auth ?? null,
-        'delete',
-        'damage',
-        `رکورد خرابی «${row.itemName}» با کد ${row.code} به سطل بازیافت منتقل شد`,
-        req.ip,
-    );
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'delete',
+        entityType: 'damage',
+        entityId: row.id,
+        details: `رکورد خرابی «${row.itemName}» با کد ${row.code} به سطل بازیافت منتقل شد`,
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.json({ message: 'رکورد خرابی به سطل بازیافت منتقل شد' });
 }

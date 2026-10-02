@@ -11,7 +11,8 @@ import { z } from 'zod';
 import * as backupSettingsService from '../services/backupSettingsService.js';
 import * as backupService from '../services/backupService.js';
 import { BACKUPS_DIR } from '../services/backupService.js';
-import { logAudit } from '../../../core/services/auditService.js';
+import { recordAudit } from '../../../core/services/auditService.js';
+import { requestUserAgent } from '../../../core/utils/requestMeta.js';
 import { pathParam, badRequest } from '../../../core/utils/apiError.js';
 
 const backupSettingsSchema = z.object({
@@ -36,13 +37,15 @@ export async function getBackupSettings(_req: Request, res: Response): Promise<v
 export async function updateBackupSettings(req: Request, res: Response): Promise<void> {
     const patch = backupSettingsSchema.parse(req.body);
     const updated = await backupSettingsService.updateBackupSettings(patch);
-    logAudit(
-        req.auth ?? null,
-        'update',
-        'backup',
-        'تنظیمات پشتیبان‌گیری ذخیره شد',
-        req.ip,
-    );
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'update',
+        entityType: 'backup',
+        details: 'تنظیمات پشتیبان‌گیری ذخیره شد',
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.json(updated);
 }
 
@@ -57,26 +60,31 @@ export async function runBackupNow(req: Request, res: Response): Promise<void> {
     if (kind === 'cpanel') {
         const settings = await backupSettingsService.getBackupSettings();
         await backupService.triggerCpanelFullBackup(settings);
-        logAudit(
-            req.auth ?? null,
-            'create',
-            'backup',
-            'درخواست پشتیبان کامل روی هاست cPanel ثبت شد',
-            req.ip,
-        );
+        recordAudit({
+            actor: req.auth ?? null,
+            action: 'create',
+            entityType: 'backup',
+            details: 'درخواست پشتیبان کامل روی هاست cPanel ثبت شد',
+            ip: req.ip,
+            userAgent: requestUserAgent(req),
+        });
+
         backupService.announceBackup('full', null, false);
         res.json({ message: 'درخواست پشتیبان‌گیری روی هاست ثبت شد — پس از تکمیل، فایل در حساب cPanel شما قرار می‌گیرد' });
         return;
     }
 
     const meta = await backupService.runBackup(kind, false);
-    logAudit(
-        req.auth ?? null,
-        'create',
-        'backup',
-        `پشتیبان ${kind === 'database' ? 'دیتابیس' : kind === 'website' ? 'فایل‌های سایت' : 'کامل'} ساخته شد: ${meta.filename}`,
-        req.ip,
-    );
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'create',
+        entityType: 'backup',
+        entityId: meta.filename,
+        details: `پشتیبان ${kind === 'database' ? 'دیتابیس' : kind === 'website' ? 'فایل‌های سایت' : 'کامل'} ساخته شد: ${meta.filename}`,
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     backupService.announceBackup(kind, meta, false);
     res.status(201).json(meta);
 }
@@ -97,13 +105,16 @@ export async function downloadBackup(req: Request, res: Response): Promise<void>
 export async function deleteBackup(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه پشتیبان');
     const filename = await backupService.deleteBackupFile(id);
-    logAudit(
-        req.auth ?? null,
-        'delete',
-        'backup',
-        `فایل پشتیبان «${filename}» حذف شد`,
-        req.ip,
-    );
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'delete',
+        entityType: 'backup',
+        entityId: filename,
+        details: `فایل پشتیبان «${filename}» حذف شد`,
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.json({ message: 'فایل پشتیبان حذف شد' });
 }
 
@@ -120,7 +131,13 @@ export async function runScheduledBackupIfDue(): Promise<void> {
         const meta = await backupService.runBackup(settings.autoKind, true);
         await backupSettingsService.markBackupCompleted(new Date());
         console.log(`🗂️  پشتیبان خودکار ساخته شد: ${meta.filename}`);
-        logAudit(null, 'create', 'backup', `پشتیبان خودکار ساخته شد: ${meta.filename}`);
+        recordAudit({
+            actor: null,
+            action: 'create',
+            entityType: 'backup',
+            details: `پشتیبان خودکار ساخته شد: ${meta.filename}`,
+        });
+
         backupService.announceBackup(settings.autoKind, meta, true);
     } catch (err) {
         console.error('⚠️ Automatic backup failed:', err instanceof Error ? err.message : err);

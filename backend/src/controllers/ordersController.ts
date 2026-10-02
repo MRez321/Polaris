@@ -3,7 +3,8 @@ import { z } from 'zod';
 
 import * as svc from '../services/ordersService.js';
 import { notifyNewOrder } from '../modules/notifications/services/notificationService.js';
-import { logAudit } from '../core/services/auditService.js';
+import { recordAudit } from '../core/services/auditService.js';
+import { requestUserAgent } from '../core/utils/requestMeta.js';
 
 const orderLineSchema = z.object({
     itemId: z.string().min(1),
@@ -30,20 +31,32 @@ const createOrderSchema = z.object({
 /** Authenticated customer: place an order from the cart. */
 export async function createOrder(req: Request, res: Response): Promise<void> {
     const data = createOrderSchema.parse(req.body);
-    const order = await svc.createOrder({
-        userId: req.auth!.user.id,
-        customerName: data.customerName.trim(),
-        phone: data.phone,
-        city: data.city.trim(),
-        province: data.province.trim(),
-        postalCode: data.postalCode.trim(),
-        address: data.address.trim(),
-        note: data.note?.trim(),
-        paymentMethod: data.paymentMethod,
-        lines: data.lines,
-    });
+    const order = await svc.createOrder(
+        {
+            userId: req.auth!.user.id,
+            customerName: data.customerName.trim(),
+            phone: data.phone,
+            city: data.city.trim(),
+            province: data.province.trim(),
+            postalCode: data.postalCode.trim(),
+            address: data.address.trim(),
+            note: data.note?.trim(),
+            paymentMethod: data.paymentMethod,
+            lines: data.lines,
+        },
+        req.auth?.user.id,
+    );
     notifyNewOrder(order);
-    logAudit(req.auth ?? null, 'create', 'settings', `سفارش ${order.code} توسط ${order.customerName} ثبت شد`, req.ip);
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'create',
+        entityType: 'order',
+        entityId: order.id,
+        details: `سفارش ${order.code} توسط ${order.customerName} ثبت شد`,
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.status(201).json(order);
 }
 
@@ -60,13 +73,19 @@ export async function getMyOrder(req: Request, res: Response): Promise<void> {
 const statusSchema = z.enum(['pending', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled']);
 
 /** Admin: move an order between statuses (restocks on cancel; shipped may
- *  attach a tracking code; delivered stamps the delivery time). */
+ *  attach a postal tracking code; delivered stamps the delivery time). */
 export async function updateOrderStatus(req: Request, res: Response): Promise<void> {
     const id = String(req.params.id);
     const body = z
         .object({ status: statusSchema, trackingCode: z.string().trim().max(64).optional() })
         .parse(req.body);
-    const order = await svc.updateOrderStatus(id, body.status, body.trackingCode);
-    logAudit(req.auth ?? null, 'update', 'settings', `وضعیت سفارش ${order.code} به «${order.status}» تغییر کرد`, req.ip);
+    // P0-B item 27: the service emits the 'update' audit row with before/after
+    // status snapshots inside its transaction; the controller only forwards
+    // request metadata.
+    const order = await svc.updateOrderStatus(id, body.status, body.trackingCode, req.auth?.user.id, {
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.json(order);
 }

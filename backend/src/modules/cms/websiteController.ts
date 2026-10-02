@@ -2,7 +2,8 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 
 import { getWebsiteSettings, updateWebsiteSettings } from './services/websiteService.js';
-import { logAudit } from '../../core/services/auditService.js';
+import { recordAudit } from '../../core/services/auditService.js';
+import { requestUserAgent } from '../../core/utils/requestMeta.js';
 
 const websiteSettingsSchema = z.object({
     enabled: z.boolean().optional(),
@@ -19,6 +20,14 @@ export async function getWebsite(_req: Request, res: Response): Promise<void> {
 export async function updateWebsite(req: Request, res: Response): Promise<void> {
     const patch = websiteSettingsSchema.parse(req.body);
     const updated = await updateWebsiteSettings(patch);
-    logAudit(req.auth ?? null, 'update', 'settings', 'تنظیمات وب‌سایت عمومی به‌روزرسانی شد', req.ip);
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'update',
+        entityType: 'settings',
+        details: 'تنظیمات وب‌سایت عمومی به‌روزرسانی شد',
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.json(updated);
 }

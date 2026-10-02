@@ -3,7 +3,8 @@ import { z } from 'zod';
 
 import * as svc from '../inventoryService.js';
 import { toExpenseDto, toProfitDto } from '../../../models/mappers.js';
-import { logAudit } from '../../../core/services/auditService.js';
+import { recordAudit } from '../../../core/services/auditService.js';
+import { requestUserAgent } from '../../../core/utils/requestMeta.js';
 import { badRequest, pathParam } from '../../../core/utils/apiError.js';
 import { clientIdSchema } from '../../../schema/clientId.js';
 
@@ -42,7 +43,16 @@ export async function listExpenses(_req: Request, res: Response): Promise<void> 
 export async function createExpense(req: Request, res: Response): Promise<void> {
     const data = createExpenseSchema.parse(req.body);
     const row = await svc.createExpense(data);
-    logAudit(req.auth ?? null, 'create', 'cost', `هزینه «${row.title}» به مبلغ ${row.amount} ثبت شد`, req.ip);
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'create',
+        entityType: 'cost',
+        entityId: row.id,
+        details: `هزینه «${row.title}» به مبلغ ${row.amount} ثبت شد`,
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.status(201).json(toExpenseDto(row));
 }
 
@@ -50,14 +60,32 @@ export async function updateExpense(req: Request, res: Response): Promise<void> 
     const id = pathParam(req, 'id', 'شناسه هزینه');
     const data = expenseSchema.partial().parse(req.body);
     const row = await svc.updateExpense(id, data);
-    logAudit(req.auth ?? null, 'update', 'cost', `هزینه «${row.title}» ویرایش شد`, req.ip);
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'update',
+        entityType: 'cost',
+        entityId: row.id,
+        details: `هزینه «${row.title}» ویرایش شد`,
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.json(toExpenseDto(row));
 }
 
 export async function deleteExpense(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه هزینه');
     const row = await svc.softDeleteExpense(id);
-    logAudit(req.auth ?? null, 'delete', 'cost', `هزینه «${row.title}» به سطل بازیافت منتقل شد`, req.ip);
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'delete',
+        entityType: 'cost',
+        entityId: row.id,
+        details: `هزینه «${row.title}» به سطل بازیافت منتقل شد`,
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.json({ message: 'هزینه به سطل بازیافت منتقل شد' });
 }
 
@@ -104,6 +132,15 @@ export async function listProfitDistributions(_req: Request, res: Response): Pro
 export async function createProfitDistribution(req: Request, res: Response): Promise<void> {
     const data = profitSchema.parse(req.body);
     const row = await svc.createProfitDistribution(data);
-    logAudit(req.auth ?? null, 'create', 'profit', `توزیع سود «${row.periodName}» ثبت شد`, req.ip);
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'create',
+        entityType: 'profit',
+        entityId: row.id,
+        details: `توزیع سود «${row.periodName}» ثبت شد`,
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.status(201).json(toProfitDto(row));
 }

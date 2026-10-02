@@ -13,7 +13,8 @@ import {
     uploadsDir,
     validateImageMime,
 } from './services/galleryService.js';
-import { logAudit } from '../../core/services/auditService.js';
+import { recordAudit } from '../../core/services/auditService.js';
+import { requestUserAgent } from '../../core/utils/requestMeta.js';
 import { badRequest, pathParam } from '../../core/utils/apiError.js';
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024; // 8 MB per image
@@ -91,7 +92,15 @@ export async function uploadImages(req: Request, res: Response): Promise<void> {
         );
     }
 
-    logAudit(req.auth ?? null, 'create', 'settings', `${rows.length} تصویر به گالری افزوده شد`, req.ip);
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'create',
+        entityType: 'settings',
+        details: `${rows.length} تصویر به گالری افزوده شد`,
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.status(201).json(rows);
 }
 
@@ -110,14 +119,32 @@ export async function updateImage(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه تصویر');
     const patch = patchSchema.parse(req.body);
     const row = await updateGalleryImage(id, patch);
-    logAudit(req.auth ?? null, 'update', 'settings', 'اطلاعات یک تصویر گالری ویرایش شد', req.ip);
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'update',
+        entityType: 'settings',
+        entityId: id,
+        details: 'اطلاعات یک تصویر گالری ویرایش شد',
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.json(row);
 }
 
 export async function deleteImage(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه تصویر');
     await deleteGalleryImage(id);
-    logAudit(req.auth ?? null, 'delete', 'settings', 'یک تصویر از گالری حذف شد', req.ip);
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'delete',
+        entityType: 'settings',
+        entityId: id,
+        details: 'یک تصویر از گالری حذف شد',
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.json({ message: 'تصویر حذف شد' });
 }
 

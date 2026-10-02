@@ -17,9 +17,28 @@ import {
 import type { ConsignmentItemLine, DebtAllocation, ReturnItemLine } from '../../schema/index.js';
 import type { TrashEntityType } from '../../types/index.js';
 import { isClientId } from '../../schema/clientId.js';
-import { badRequest, notFound } from '../../core/utils/apiError.js';
+import { badRequest, gone, notFound } from '../../core/utils/apiError.js';
 import { nextCode } from '../../core/utils/code.js';
 import { emitDataChanged } from '../../core/services/socketService.js';
+import {
+    ensureLegacySku,
+    ensureLocation,
+    recordMovements,
+    resolveLegacySku,
+    sellerCustodyLocationId,
+    sellerWarehouseId,
+    shelfLocationId,
+    shopLocationId,
+    syncLegacyStockCache,
+    transferPair,
+    type DbTx,
+} from '../../core/services/inventoryLedgerService.js';
+import {
+    openSellerPayable,
+    reduceSellerPayable,
+    settleDebt,
+} from '../../core/services/financialService.js';
+import { entityActor, recordAudit } from '../../core/services/auditService.js';
 
 // Shared type (frontend mirror in types/index.ts) re-exported for the
 // workshop controllers that import it from this module.
@@ -55,21 +74,23 @@ export async function getItemRow(id: string) {
     return rows[0] ?? null;
 }
 
-export async function createItem(data: Partial<typeof items.$inferInsert>) {
+export async function createItem(data: Partial<typeof items.$inferInsert>, actorId?: string) {
     if (!data.name || !data.category) throw badRequest('نام و دسته‌بندی کالا الزامی است');
-    const codes = await db.select({ code: items.code }).from(items);
+    const name = data.name;
+    const category = data.category;
     const id = isClientId(data.id) ? data.id : uuid();
-    await db
-        .insert(items)
-        .values({
+    return db.transaction(async (tx) => {
+        const codes = await tx.select({ code: items.code }).from(items);
+        await tx.insert(items).values({
             id,
             code: data.code || nextCode('PLR', codes.map((c) => c.code)),
-            name: data.name,
-            category: data.category,
+            name,
+            category,
             costPrice: data.costPrice ?? 0,
             consignmentPrice: data.consignmentPrice ?? 0,
             retailPrice: data.retailPrice ?? 0,
             stockQuantity: data.stockQuantity ?? 0,
+            websiteQuantity: 0,
             minStockThreshold: data.minStockThreshold ?? 5,
             sizes: data.sizes ?? [],
             colors: data.colors ?? [],
@@ -82,47 +103,99 @@ export async function createItem(data: Partial<typeof items.$inferInsert>) {
             ...(data.productionStatus !== undefined ? { productionStatus: data.productionStatus } : {}),
             images: data.images ?? [],
         });
-    const inserted = await db.select().from(items).where(eq(items.id, id));
-    emitDataChanged('item', 'create');
-    return inserted[0]!;
+        // P0-B #6: new items get a deterministic primary sku; opening stock is
+        // posted through the ledger, never a direct column write.
+        const skuId = await ensureLegacySku(tx, id);
+        const openingStock = data.stockQuantity ?? 0;
+        if (openingStock > 0) {
+            await recordMovements(tx, [
+                {
+                    skuId,
+                    locationId: shelfLocationId(),
+                    movementType: 'ADJUSTMENT_IN',
+                    quantityDelta: openingStock,
+                    referenceType: 'item',
+                    referenceId: id,
+                    reason: 'افتتاح حساب موجودی',
+                    ...(actorId !== undefined ? { actorId } : {}),
+                },
+            ]);
+        }
+        await syncLegacyStockCache(tx, id);
+        const inserted = await tx.select().from(items).where(eq(items.id, id));
+        emitDataChanged('item', 'create');
+        return inserted[0]!;
+    });
 }
 
-export async function updateItem(id: string, data: Partial<typeof items.$inferInsert>) {
+export async function updateItem(
+    id: string,
+    data: Partial<typeof items.$inferInsert>,
+    actorId?: string,
+    meta?: { ip?: string; userAgent?: string },
+) {
     const existing = await db.select().from(items).where(eq(items.id, id));
     if (!existing[0]) throw notFound('کالا یافت نشد');
-    const { id: _id, code: _code, ...patch } = data;
+    const before = existing[0]!;
+    const { id: _id, code: _code, stockQuantity: _stockQuantity, websiteQuantity: _websiteQuantity, ...patch } = data;
     await db
         .update(items)
         .set({ ...patch, updatedAt: new Date() })
         .where(eq(items.id, id));
     const updated = await db.select().from(items).where(eq(items.id, id));
+    // P0-B item 27: price changes are audited with before/after snapshots —
+    // the generic controller 'update' row has no payload, so this row is only
+    // emitted when an actual price field changed.
+    const PRICE_FIELDS = ['costPrice', 'consignmentPrice', 'retailPrice', 'variantPrices', 'purchasePriceUsd'] as const;
+    const pricePatch = Object.fromEntries(PRICE_FIELDS.map((f) => [f, patch[f]]) as [string, unknown][]);
+    const priceChanged = PRICE_FIELDS.some((f) => (patch[f] ?? null) !== (before as Record<string, unknown>)[f]);
+    if (priceChanged && Object.keys(pricePatch).length > 0) {
+        recordAudit({
+            actor: await entityActor(db, actorId),
+            action: 'update',
+            entityType: 'item',
+            entityId: id.slice(0, 64),
+            before: {
+                costPrice: before.costPrice,
+                consignmentPrice: before.consignmentPrice,
+                retailPrice: before.retailPrice,
+                variantPrices: before.variantPrices,
+                purchasePriceUsd: before.purchasePriceUsd,
+            },
+            after: {
+                costPrice: (updated[0] as typeof before)!.costPrice,
+                consignmentPrice: (updated[0] as typeof before)!.consignmentPrice,
+                retailPrice: (updated[0] as typeof before)!.retailPrice,
+                variantPrices: (updated[0] as typeof before)!.variantPrices,
+                purchasePriceUsd: (updated[0] as typeof before)!.purchasePriceUsd,
+            },
+            details: `قیمت کالای «${before.name}» (کد ${before.code}) تغییر کرد`,
+            ...(meta?.ip !== undefined ? { ip: meta.ip } : {}),
+            ...(meta?.userAgent !== undefined ? { userAgent: meta.userAgent } : {}),
+        });
+    }
     emitDataChanged('item', 'update');
     return updated[0]!;
 }
 
 /**
- * Flips a pending_production item to 'ready' — the made-to-order garment
- * finished production and is now sellable through sellers and the shop.
+ * P0-B item 13/production deprecation: the made-to-order production flow is
+ * retired — every legacy item already carries productionStatus 'ready' and
+ * new items are born ready. The endpoint survives only as a 410 so old
+ * clients get an explicit, actionable error instead of a silent no-op.
  */
-export async function markItemReady(id: string) {
-    const existing = await db.select().from(items).where(eq(items.id, id));
-    const row = existing[0];
-    if (!row) throw notFound('کالا یافت نشد');
-    if (row.productionStatus === 'ready') return row;
-    await db
-        .update(items)
-        .set({ productionStatus: 'ready', updatedAt: new Date() })
-        .where(eq(items.id, id));
-    const updated = await db.select().from(items).where(eq(items.id, id));
-    emitDataChanged('item', 'update');
-    return updated[0]!;
+export async function markItemReady(_id: string): Promise<never> {
+    throw gone('جریان تولید حذف شده است؛ کالاها بلافاصله پس از ایجاد قابل فروش هستند');
 }
 
-export async function softDeleteItem(id: string) {
+export async function softDeleteItem(id: string, actorId?: string) {
     const existing = await db.select().from(items).where(eq(items.id, id));
     const row = existing[0];
     if (!row) throw notFound('کالا یافت نشد');
-    await db.update(items).set({ isDeleted: true, deletedAt: new Date() }).where(eq(items.id, id));
+    await db
+        .update(items)
+        .set({ isDeleted: true, deletedAt: new Date(), ...(actorId !== undefined ? { deletedBy: actorId } : {}) })
+        .where(eq(items.id, id));
     emitDataChanged('item', 'delete');
     return row;
 }
@@ -133,7 +206,7 @@ export async function softDeleteItem(id: string) {
  * handover or website order can never over-allocate. websiteQuantity is
  * the absolute target; the delta transfers against stockQuantity.
  */
-export async function setShopAllocation(id: string, websiteQuantity: number) {
+export async function setShopAllocation(id: string, websiteQuantity: number, actorId?: string) {
     if (!Number.isInteger(websiteQuantity) || websiteQuantity < 0) {
         throw badRequest('تعداد تخصیصی فروشگاه باید عدد صحیح و بزرگ‌تر یا مساوی صفر باشد');
     }
@@ -150,14 +223,36 @@ export async function setShopAllocation(id: string, websiteQuantity: number) {
             );
         }
 
-        await tx
-            .update(items)
-            .set({
-                stockQuantity: item.stockQuantity - delta,
-                websiteQuantity,
-                updatedAt: new Date(),
-            })
-            .where(eq(items.id, item.id));
+        // P0-B #2: shelf ↔ shop transfer pair through the ledger.
+        if (delta !== 0) {
+            const skuId = await resolveLegacySku(tx, id);
+            const moves =
+                delta > 0
+                    ? transferPair({
+                          skuId,
+                          fromLocationId: shelfLocationId(),
+                          toLocationId: shopLocationId(),
+                          quantity: delta,
+                          referenceType: 'legacy',
+                          referenceId: id,
+                          reason: 'تخصیص به فروشگاه آنلاین',
+                          unitCost: item.costPrice,
+                          ...(actorId !== undefined ? { actorId } : {}),
+                      })
+                    : transferPair({
+                          skuId,
+                          fromLocationId: shopLocationId(),
+                          toLocationId: shelfLocationId(),
+                          quantity: -delta,
+                          referenceType: 'legacy',
+                          referenceId: id,
+                          reason: 'بازگشت از فروشگاه آنلاین',
+                          unitCost: item.costPrice,
+                          ...(actorId !== undefined ? { actorId } : {}),
+                      });
+            await recordMovements(tx, moves);
+        }
+        await syncLegacyStockCache(tx, id);
         return (await tx.select().from(items).where(eq(items.id, id)))[0]!;
     });
 
@@ -197,32 +292,57 @@ export async function getSeller(id: string) {
 }
 
 export async function createSeller(data: Partial<typeof sellers.$inferInsert>) {
-    if (!data.name || !data.phone) throw badRequest('نام و شماره تماس دست‌فروش الزامی است');
+    const name = data.name;
+    const phone = data.phone;
+    if (!name || !phone) throw badRequest('نام و شماره تماس دستفروش الزامی است');
     const codes = await db.select({ code: sellers.code }).from(sellers);
     const id = isClientId(data.id) ? data.id : uuid();
-    await db.insert(sellers).values({
-        id,
-        code: data.code || nextCode('SLR', codes.map((c) => c.code)),
-        name: data.name,
-        phone: data.phone,
-        additionalPhones: data.additionalPhones ?? [],
-        nationalCode: data.nationalCode ?? '',
-        streetLocation: data.streetLocation ?? '',
-        hasGuarantee: data.hasGuarantee ?? false,
-        guaranteeType: data.guaranteeType ?? 'promissory_note',
-        guaranteeAmount: data.guaranteeAmount ?? 0,
-        guaranteeDetails: data.guaranteeDetails ?? '',
-        creditLimit: data.creditLimit ?? 0,
-        bankAccounts: data.bankAccounts ?? [],
-        currentDebt: 0,
-        totalHandoversValue: 0,
-        totalPaid: 0,
-        status: data.status ?? 'active',
-        ...(data.avatarUrl !== undefined ? { avatarUrl: data.avatarUrl } : {}),
-        ...(data.notes !== undefined ? { notes: data.notes } : {}),
+    const code = data.code || nextCode('SLR', codes.map((c) => c.code));
+    // The custody location is FK-referenced by every ledger row that moves
+    // goods to this seller, so it is created with the seller — before/without
+    // the backfill. Idempotent, so a pre-existing row is left untouched.
+    await db.transaction(async (tx) => {
+        await ensureSellerCustodyLocation(tx, { id, code, name });
+        await tx.insert(sellers).values({
+            id,
+            code,
+            name,
+            phone,
+            additionalPhones: data.additionalPhones ?? [],
+            nationalCode: data.nationalCode ?? '',
+            streetLocation: data.streetLocation ?? '',
+            hasGuarantee: data.hasGuarantee ?? false,
+            guaranteeType: data.guaranteeType ?? 'promissory_note',
+            guaranteeAmount: data.guaranteeAmount ?? 0,
+            guaranteeDetails: data.guaranteeDetails ?? '',
+            creditLimit: data.creditLimit ?? 0,
+            bankAccounts: data.bankAccounts ?? [],
+            currentDebt: 0,
+            totalHandoversValue: 0,
+            totalPaid: 0,
+            status: data.status ?? 'active',
+            ...(data.avatarUrl !== undefined ? { avatarUrl: data.avatarUrl } : {}),
+            ...(data.notes !== undefined ? { notes: data.notes } : {}),
+        });
     });
     emitDataChanged('seller', 'create');
     return getSeller(id);
+}
+
+/**
+ * Ensures this seller's custody location exists. Called from createSeller and
+ * defensively from every flow that posts custody movements, because sellers
+ * created before the backfill (or restored from an old dump) may predate it.
+ */
+export async function ensureSellerCustodyLocation(
+    tx: DbTx,
+    seller: { id: string; code: string; name: string },
+): Promise<void> {
+    await ensureLocation(tx, sellerCustodyLocationId(seller.id), {
+        warehouseId: sellerWarehouseId(),
+        code: `CUST-${seller.code}`.slice(0, 32),
+        name: `امانتی ${seller.name}`.slice(0, 255),
+    });
 }
 
 export async function updateSeller(id: string, data: Partial<typeof sellers.$inferInsert>) {
@@ -237,11 +357,14 @@ export async function updateSeller(id: string, data: Partial<typeof sellers.$inf
     return getSeller(id);
 }
 
-export async function softDeleteSeller(id: string) {
+export async function softDeleteSeller(id: string, actorId?: string) {
     const existing = await db.select().from(sellers).where(eq(sellers.id, id));
     const row = existing[0];
     if (!row) throw notFound('دست‌فروش یافت نشد');
-    await db.update(sellers).set({ isDeleted: true, deletedAt: new Date() }).where(eq(sellers.id, id));
+    await db
+        .update(sellers)
+        .set({ isDeleted: true, deletedAt: new Date(), ...(actorId !== undefined ? { deletedBy: actorId } : {}) })
+        .where(eq(sellers.id, id));
     emitDataChanged('seller', 'delete');
     return row;
 }
@@ -271,7 +394,7 @@ export async function listConsignments(includeDeleted = false) {
         : db.select().from(consignments).where(eq(consignments.isDeleted, false));
 }
 
-export async function createHandover(input: HandoverInput, actorName: string) {
+export async function createHandover(input: HandoverInput, actorName: string, actorId?: string) {
     const due = new Date(input.dueDate);
     if (Number.isNaN(due.getTime())) throw badRequest('تاریخ سررسید معتبر نیست');
     if (!input.itemsList || input.itemsList.length === 0) throw badRequest('حداقل یک کالا برای تحویل انتخاب کنید');
@@ -294,9 +417,16 @@ export async function createHandover(input: HandoverInput, actorName: string) {
             .where(and(eq(sellers.id, input.sellerId), eq(sellers.isDeleted, false)));
         const seller = sellerRows[0];
         if (!seller) throw notFound('دست‌فروش یافت نشد');
+        // Custody location must exist before the transfer pairs below — sellers
+        // created before the backfill may not have one yet (idempotent).
+        await ensureSellerCustodyLocation(tx, seller);
 
         const lines: ConsignmentItemLine[] = [];
         let totalAmount = 0;
+        // P0-B #1: collect per-line transfer pairs; posted atomically after
+        // the consignment row exists so referenceId is stable.
+        const moves: Parameters<typeof recordMovements>[1] = [];
+        const touchedItemIds: string[] = [];
 
         for (const line of input.itemsList) {
             if (!Number.isFinite(line.quantity) || line.quantity <= 0) {
@@ -316,10 +446,21 @@ export async function createHandover(input: HandoverInput, actorName: string) {
                 throw badRequest(`موجودی «${item.name}» کافی نیست (موجودی: ${item.stockQuantity}، درخواستی: ${line.quantity})`);
             }
 
-            await tx
-                .update(items)
-                .set({ stockQuantity: item.stockQuantity - line.quantity, updatedAt: new Date() })
-                .where(eq(items.id, item.id));
+            const skuId = await resolveLegacySku(tx, item.id);
+            moves.push(
+                ...transferPair({
+                    skuId,
+                    fromLocationId: shelfLocationId(),
+                    toLocationId: sellerCustodyLocationId(seller.id),
+                    quantity: line.quantity,
+                    referenceType: 'consignment',
+                    referenceId: '', // backfilled below once the consignment id exists
+                    reason: 'تحویل به دستفروش',
+                    unitCost: item.costPrice,
+                    ...(actorId !== undefined ? { actorId } : {}),
+                }),
+            );
+            touchedItemIds.push(item.id);
 
             const totalPrice = line.quantity * line.unitPrice;
             totalAmount += totalPrice;
@@ -338,11 +479,12 @@ export async function createHandover(input: HandoverInput, actorName: string) {
         }
 
         const codes = await tx.select({ code: consignments.code }).from(consignments);
+        const code = nextCode('HND', codes.map((c) => c.code));
         const id = uuid();
         const now = new Date();
         await tx.insert(consignments).values({
             id,
-            code: nextCode('HND', codes.map((c) => c.code)),
+            code,
             sellerId: seller.id,
             sellerName: seller.name,
             date: now,
@@ -361,18 +503,21 @@ export async function createHandover(input: HandoverInput, actorName: string) {
             handedOverBy: actorName,
         });
 
+        for (const m of moves) m.referenceId = id;
+        await recordMovements(tx, moves);
+        for (const itemId of touchedItemIds) await syncLegacyStockCache(tx, itemId);
+
         // Debt only applies to delivered goods; a scheduled handover owes
-        // nothing until markDelivered runs.
+        // nothing until markDelivered runs. openSellerPayable owns both the
+        // PAYABLE row and the legacy sellers cache bump.
         if (!isScheduled) {
-            await tx
-                .update(sellers)
-                .set({
-                    currentDebt: seller.currentDebt + totalAmount,
-                    totalHandoversValue: seller.totalHandoversValue + totalAmount,
-                    status: seller.status === 'settled' ? 'active' : seller.status,
-                    updatedAt: new Date(),
-                })
-                .where(eq(sellers.id, seller.id));
+            await openSellerPayable(tx, {
+                sellerId: seller.id,
+                amount: totalAmount,
+                reference: { type: 'consignment', id },
+                description: `واگذاری ${code}`,
+                ...(actorId !== undefined ? { actorId } : {}),
+            });
         }
 
         const created = await tx.select().from(consignments).where(eq(consignments.id, id));
@@ -381,43 +526,60 @@ export async function createHandover(input: HandoverInput, actorName: string) {
     });
 }
 
-export async function softDeleteConsignment(id: string) {
+export async function softDeleteConsignment(id: string, actorId?: string) {
     const consignment = await db.transaction(async (tx) => {
         const rows = await tx.select().from(consignments).where(eq(consignments.id, id)).for('update');
         const existing = rows[0];
         if (!existing) throw notFound('واگذاری یافت نشد');
 
         if (existing.deliveryStatus === 'pending') {
-            // Goods never left: give the reserved stock back to the warehouse
-            // pool (no debt was applied, so there is nothing to release).
+            // Goods never left: reverse the reserved transfer pair back to the
+            // warehouse pool (no debt was applied, so there is nothing to release).
+            const moves: Parameters<typeof recordMovements>[1] = [];
+            const touchedItemIds: string[] = [];
             for (const line of existing.items) {
                 const out = line.quantity - line.returnedQuantity;
                 if (out <= 0) continue;
                 const itemRows = await tx.select().from(items).where(eq(items.id, line.itemId)).for('update');
                 const item = itemRows[0];
                 if (item) {
-                    await tx
-                        .update(items)
-                        .set({ stockQuantity: item.stockQuantity + out, updatedAt: new Date() })
-                        .where(eq(items.id, item.id));
+                    const skuId = await resolveLegacySku(tx, item.id);
+                    moves.push(
+                        ...transferPair({
+                            skuId,
+                            fromLocationId: sellerCustodyLocationId(existing.sellerId),
+                            toLocationId: shelfLocationId(),
+                            quantity: out,
+                            referenceType: 'consignment',
+                            referenceId: id,
+                            reason: 'حذف واگذاری در انتظار تحویل',
+                            unitCost: item.costPrice,
+                            ...(actorId !== undefined ? { actorId } : {}),
+                        }),
+                    );
+                    touchedItemIds.push(item.id);
                 }
             }
+            if (moves.length > 0) await recordMovements(tx, moves);
+            for (const itemId of touchedItemIds) await syncLegacyStockCache(tx, itemId);
         } else if (existing.remainingAmount > 0) {
             // Release the outstanding debt back off the seller while in trash.
-            const sellerRows = await tx.select().from(sellers).where(eq(sellers.id, existing.sellerId)).for('update');
-            const seller = sellerRows[0];
-            if (seller) {
-                const newDebt = Math.max(0, seller.currentDebt - existing.remainingAmount);
-                await tx
-                    .update(sellers)
-                    .set({ currentDebt: newDebt, status: newDebt === 0 ? 'settled' : seller.status, updatedAt: new Date() })
-                    .where(eq(sellers.id, seller.id));
-            }
+            await reduceSellerPayable(tx, {
+                sellerId: existing.sellerId,
+                amount: existing.remainingAmount,
+                reference: { type: 'consignment', id },
+                description: `حذف واگذاری ${existing.code}`,
+                ...(actorId !== undefined ? { actorId } : {}),
+            });
         }
 
         await tx
             .update(consignments)
-            .set({ isDeleted: true, deletedAt: new Date() })
+            .set({
+                isDeleted: true,
+                deletedAt: new Date(),
+                ...(actorId !== undefined ? { deletedBy: actorId } : {}),
+            })
             .where(eq(consignments.id, id));
         return existing;
     });
@@ -430,7 +592,7 @@ export async function softDeleteConsignment(id: string) {
  * the due-date countdown, and handover-value counters all start now —
  * mirroring what createHandover applies immediately for on-the-spot rows.
  */
-export async function markDelivered(id: string, actorName: string) {
+export async function markDelivered(id: string, actorName: string, actorId?: string) {
     const updated = await db.transaction(async (tx) => {
         const rows = await tx
             .select()
@@ -449,19 +611,14 @@ export async function markDelivered(id: string, actorName: string) {
             .set({ deliveryStatus: 'delivered', deliveredAt: now, updatedAt: now })
             .where(eq(consignments.id, id));
 
-        const sellerRows = await tx.select().from(sellers).where(eq(sellers.id, existing.sellerId)).for('update');
-        const seller = sellerRows[0];
-        if (seller) {
-            await tx
-                .update(sellers)
-                .set({
-                    currentDebt: seller.currentDebt + existing.totalAmount,
-                    totalHandoversValue: seller.totalHandoversValue + existing.totalAmount,
-                    status: seller.status === 'settled' ? 'active' : seller.status,
-                    updatedAt: now,
-                })
-                .where(eq(sellers.id, seller.id));
-        }
+        // openSellerPayable owns the PAYABLE row + legacy sellers cache bump.
+        await openSellerPayable(tx, {
+            sellerId: existing.sellerId,
+            amount: existing.totalAmount,
+            reference: { type: 'consignment', id },
+            description: `تحویل واگذاری ${existing.code} توسط ${actorName}`,
+            ...(actorId !== undefined ? { actorId } : {}),
+        });
 
         const created = await tx.select().from(consignments).where(eq(consignments.id, id));
         return created[0]!;
@@ -488,7 +645,7 @@ export interface ReturnInput {
     notes?: string;
 }
 
-export async function submitReturn(input: ReturnInput, actorName: string) {
+export async function submitReturn(input: ReturnInput, actorName: string, actorId?: string) {
     if (!input.returnItems || input.returnItems.length === 0) {
         throw badRequest('حداقل یک کالا برای مرجوعی انتخاب کنید');
     }
@@ -505,8 +662,13 @@ export async function submitReturn(input: ReturnInput, actorName: string) {
             throw badRequest('این واگذاری کاملاً تسویه شده و امکان مرجوعی ندارد');
         }
 
+        // P0-B #4: the return record id is the ledger reference — generated up
+        // front so healthy/damaged movements can reference it as they happen.
+        const returnId = uuid();
         const updatedLines: ConsignmentItemLine[] = consignment.items.map((l) => ({ ...l }));
         const returnLines: ReturnItemLine[] = [];
+        const moves: Parameters<typeof recordMovements>[1] = [];
+        const touchedItemIds: string[] = [];
         let totalValue = 0;
         let healthyCount = 0;
         let damagedCount = 0;
@@ -539,17 +701,38 @@ export async function submitReturn(input: ReturnInput, actorName: string) {
             if (ret.condition === 'healthy') healthyCount += ret.quantity;
             else damagedCount += ret.quantity;
 
-            // Healthy items go back to warehouse stock.
+            const skuId = await resolveLegacySku(tx, ret.itemId);
             if (ret.condition === 'healthy') {
-                const itemRows = await tx.select().from(items).where(eq(items.id, ret.itemId)).for('update');
-                const item = itemRows[0];
-                if (item) {
-                    await tx
-                        .update(items)
-                        .set({ stockQuantity: item.stockQuantity + ret.quantity, updatedAt: new Date() })
-                        .where(eq(items.id, item.id));
-                }
+                // Healthy items transfer custody → shelf (both rows posted).
+                moves.push(
+                    ...transferPair({
+                        skuId,
+                        fromLocationId: sellerCustodyLocationId(consignment.sellerId),
+                        toLocationId: shelfLocationId(),
+                        quantity: ret.quantity,
+                        referenceType: 'consignment-return',
+                        referenceId: returnId,
+                        reason: 'مرجوعی سالم',
+                        unitCost: line.unitPrice,
+                        ...(actorId !== undefined ? { actorId } : {}),
+                    }),
+                );
+            } else {
+                // Damaged items never come back into sellable stock: they leave
+                // seller custody as an explicit ADJUSTMENT_OUT.
+                moves.push({
+                    skuId,
+                    locationId: sellerCustodyLocationId(consignment.sellerId),
+                    movementType: 'ADJUSTMENT_OUT',
+                    quantityDelta: -ret.quantity,
+                    referenceType: 'consignment-return',
+                    referenceId: returnId,
+                    reason: 'مرجوعی آسیب‌دیده',
+                    unitCost: line.unitPrice,
+                    ...(actorId !== undefined ? { actorId } : {}),
+                });
             }
+            touchedItemIds.push(ret.itemId);
 
             returnLines.push({
                 itemId: ret.itemId,
@@ -564,6 +747,9 @@ export async function submitReturn(input: ReturnInput, actorName: string) {
                 ...(line.selectedColor !== undefined ? { selectedColor: line.selectedColor } : {}),
             });
         }
+
+        if (moves.length > 0) await recordMovements(tx, moves);
+        for (const itemId of touchedItemIds) await syncLegacyStockCache(tx, itemId);
 
         const newReturnedAmount = consignment.returnedAmount + totalValue;
         const newNetAmount = consignment.totalAmount - newReturnedAmount;
@@ -582,18 +768,18 @@ export async function submitReturn(input: ReturnInput, actorName: string) {
             })
             .where(eq(consignments.id, consignment.id));
 
-        // Reduce seller debt by the returned value.
-        const sellerRows = await tx.select().from(sellers).where(eq(sellers.id, consignment.sellerId)).for('update');
-        const seller = sellerRows[0];
-        if (seller) {
-            const newDebt = Math.max(0, seller.currentDebt - totalValue);
-            await tx
-                .update(sellers)
-                .set({ currentDebt: newDebt, status: newDebt === 0 ? 'settled' : seller.status, updatedAt: new Date() })
-                .where(eq(sellers.id, seller.id));
+        // Reduce seller debt by the returned value (negative PAYABLE row +
+        // legacy currentDebt cache).
+        if (totalValue > 0) {
+            await reduceSellerPayable(tx, {
+                sellerId: consignment.sellerId,
+                amount: totalValue,
+                reference: { type: 'consignment-return', id: returnId },
+                description: `مرجوعی ${consignment.code}`,
+                ...(actorId !== undefined ? { actorId } : {}),
+            });
         }
 
-        const returnId = uuid();
         await tx.insert(consignmentReturns).values({
             id: returnId,
             consignmentId: consignment.id,
@@ -638,7 +824,7 @@ export async function listPayments() {
     return db.select().from(payments).where(eq(payments.isDeleted, false)).orderBy(asc(payments.date));
 }
 
-export async function createPayment(input: PaymentInput, actorName: string) {
+export async function createPayment(input: PaymentInput, actorName: string, actorId?: string) {
     if (!Number.isFinite(input.amount) || input.amount <= 0) {
         throw badRequest('مبلغ پرداختی باید بزرگ‌تر از صفر باشد');
     }
@@ -729,6 +915,16 @@ export async function createPayment(input: PaymentInput, actorName: string) {
             ...(input.notes !== undefined ? { notes: input.notes } : {}),
         });
 
+        // P0-B #9: PAYMENT + SETTLEMENT rows for the money in and its FIFO
+        // destinations. The consignment + sellers cache writes above stay
+        // verbatim (settleDebt touches only financial_transactions).
+        await settleDebt(tx, {
+            sellerId: seller.id,
+            amount: input.amount,
+            allocations,
+            paymentId: id,
+            ...(actorId !== undefined ? { actorId } : {}),
+        });
         const created = await tx.select().from(payments).where(eq(payments.id, id));
         emitDataChanged('payment', 'create');
         return created[0]!;
@@ -776,22 +972,47 @@ export async function createStaff(data: Partial<typeof staff.$inferInsert>) {
     return rows[0]!;
 }
 
-export async function updateStaff(id: string, data: Partial<typeof staff.$inferInsert>) {
+export async function updateStaff(
+    id: string,
+    data: Partial<typeof staff.$inferInsert>,
+    actorId?: string,
+    meta?: { ip?: string; userAgent?: string },
+) {
     const existing = await db.select().from(staff).where(eq(staff.id, id));
     if (!existing[0]) throw notFound('پرسنل یافت نشد');
+    const before = existing[0]!;
     const { id: _id, code: _code, ...patch } = data;
     if (typeof data.hireDate === 'string') patch.hireDate = new Date(data.hireDate);
     await db.update(staff).set(patch).where(eq(staff.id, id));
     const rows = await db.select().from(staff).where(eq(staff.id, id));
+    const after = rows[0]!;
+    // P0-B item 27: RBAC/permission changes are audited with before/after —
+    // the generic controller 'update' row carries no role payload.
+    if (patch.role !== undefined && patch.role !== before.role) {
+        recordAudit({
+            actor: await entityActor(db, actorId),
+            action: 'update',
+            entityType: 'staff',
+            entityId: id.slice(0, 64),
+            before: { role: before.role, roleTitle: before.roleTitle },
+            after: { role: after.role, roleTitle: after.roleTitle },
+            details: `نقش پرسنل «${before.name}» از «${before.roleTitle || before.role}» به «${after.roleTitle || after.role}» تغییر کرد`,
+            ...(meta?.ip !== undefined ? { ip: meta.ip } : {}),
+            ...(meta?.userAgent !== undefined ? { userAgent: meta.userAgent } : {}),
+        });
+    }
     emitDataChanged('staff', 'update');
     return rows[0]!;
 }
 
-export async function softDeleteStaff(id: string) {
+export async function softDeleteStaff(id: string, actorId?: string) {
     const existing = await db.select().from(staff).where(eq(staff.id, id));
     const row = existing[0];
     if (!row) throw notFound('پرسنل یافت نشد');
-    await db.update(staff).set({ isDeleted: true, deletedAt: new Date() }).where(eq(staff.id, id));
+    await db
+        .update(staff)
+        .set({ isDeleted: true, deletedAt: new Date(), ...(actorId !== undefined ? { deletedBy: actorId } : {}) })
+        .where(eq(staff.id, id));
     emitDataChanged('staff', 'delete');
     return row;
 }
@@ -841,11 +1062,14 @@ export async function updateExpense(id: string, data: Partial<typeof expenses.$i
     return rows[0]!;
 }
 
-export async function softDeleteExpense(id: string) {
+export async function softDeleteExpense(id: string, actorId?: string) {
     const existing = await db.select().from(expenses).where(eq(expenses.id, id));
     const row = existing[0];
     if (!row) throw notFound('هزینه یافت نشد');
-    await db.update(expenses).set({ isDeleted: true, deletedAt: new Date() }).where(eq(expenses.id, id));
+    await db
+        .update(expenses)
+        .set({ isDeleted: true, deletedAt: new Date(), ...(actorId !== undefined ? { deletedBy: actorId } : {}) })
+        .where(eq(expenses.id, id));
     emitDataChanged('cost', 'delete');
     return row;
 }
@@ -906,13 +1130,51 @@ export async function listTrash() {
     return { deletedItems, deletedSellers, deletedStaff, deletedExpenses, deletedConsignments };
 }
 
-export async function restoreEntity(type: TrashEntityType, id: string, patch?: Record<string, unknown>) {
+/**
+ * Legacy `entity` bucket per trash type — shared by the trash controller and
+ * the service-layer restore/archive audit rows so both land in the same
+ * filterable category the frontend already labels.
+ */
+export const TRASH_ENTITY_TYPE: Record<TrashEntityType, 'item' | 'seller' | 'staff' | 'cost' | 'consignment'> = {
+    item: 'item',
+    seller: 'seller',
+    staff: 'staff',
+    expense: 'cost',
+    consignment: 'consignment',
+};
+
+/** Persian display name of a trash row (rows share name/code/title columns). */
+export function entityDisplayName(type: TrashEntityType, row: unknown): string {
+    if (!row || typeof row !== 'object') return 'مورد نامشخص';
+    const r = row as Record<string, unknown>;
+    switch (type) {
+        case 'item':
+            return `کالای «${r.name}» با کد ${r.code}`;
+        case 'seller':
+            return `دستفروش «${r.name}» با کد ${r.code}`;
+        case 'staff':
+            return `پرسنل «${r.name}» با کد ${r.code}`;
+        case 'expense':
+            return `هزینه «${r.title}»`;
+        case 'consignment':
+            return `واگذاری ${r.code} برای ${r.sellerName} به مبلغ ${r.totalAmount}`;
+        default:
+            return 'مورد نامشخص';
+    }
+}
+export async function restoreEntity(
+    type: TrashEntityType,
+    id: string,
+    patch?: Record<string, unknown>,
+    actorId?: string,
+    meta?: { ip?: string; userAgent?: string },
+) {
     const table = trashTables[type];
     if (!table) throw badRequest('نوع موجودیت نامعتبر است');
 
     return db.transaction(async (tx) => {
         const rows = await tx.select().from(table).where(eq(table.id, id)).for('update');
-        const row = rows[0] as { isDeleted: boolean } | undefined;
+        const row = rows[0] as (Record<string, unknown> & { isDeleted: boolean }) | undefined;
         if (!row) throw notFound('مورد یافت نشد');
         if (!row.isDeleted) throw badRequest('این مورد در سطل بازیافت نیست');
 
@@ -920,6 +1182,7 @@ export async function restoreEntity(type: TrashEntityType, id: string, patch?: R
             ...(patch ?? {}),
             isDeleted: false,
             deletedAt: null,
+            deletedBy: null,
             updatedAt: new Date(),
         };
         delete setPayload.id;
@@ -927,48 +1190,107 @@ export async function restoreEntity(type: TrashEntityType, id: string, patch?: R
 
         await tx.update(table).set(setPayload).where(eq(table.id, id));
 
-        // Restoring a consignment re-applies its outstanding debt to the
-        // seller — but pending-delivery rows never applied debt (their
-        // stock was returned to the warehouse on delete) and owe nothing.
+        // Restoring a delivered consignment re-opens its outstanding debt as a
+        // PAYABLE so the financial ledger stays consistent with sellers.currentDebt.
         if (type === 'consignment') {
-            const consignmentRows = await tx.select().from(consignments).where(eq(consignments.id, id));
+            const consignmentRows = await tx
+                .select()
+                .from(consignments)
+                .where(eq(consignments.id, id));
             const consignment = consignmentRows[0];
             if (
                 consignment &&
                 consignment.deliveryStatus === 'delivered' &&
                 consignment.remainingAmount > 0
             ) {
-                const sellerRows = await tx.select().from(sellers).where(eq(sellers.id, consignment.sellerId)).for('update');
-                const seller = sellerRows[0];
-                if (seller) {
-                    await tx
-                        .update(sellers)
-                        .set({
-                            currentDebt: seller.currentDebt + consignment.remainingAmount,
-                            status: seller.status === 'settled' ? 'active' : seller.status,
-                            updatedAt: new Date(),
-                        })
-                        .where(eq(sellers.id, seller.id));
-                }
+                await openSellerPayable(tx, {
+                    sellerId: consignment.sellerId,
+                    amount: consignment.remainingAmount,
+                    reference: { type: 'consignment', id },
+                    description: `بازیافت واگذاری ${consignment.code}`,
+                    ...(actorId !== undefined ? { actorId } : {}),
+                });
             }
         }
 
         const restored = await tx.select().from(table).where(eq(table.id, id));
+        const restoredRow = (restored as unknown[])[0] as Record<string, unknown> | undefined;
+        // P0-B item 27: restore is logged as action 'restore' with the archived
+        // state before and the live state after — inside the transaction so the
+        // audit row commits/rolls back with the restore itself.
+        const didEdit = patch !== undefined && Object.keys(patch).length > 0;
+        recordAudit({
+            actor: await entityActor(tx, actorId),
+            action: 'restore',
+            entityType: TRASH_ENTITY_TYPE[type],
+            entityId: id.slice(0, 64),
+            before: row,
+            after: restoredRow,
+            details: `${entityDisplayName(type, restoredRow)} ${didEdit ? 'ویرایش و بازیابی' : 'بازیابی'} شد`,
+            ...(meta?.ip !== undefined ? { ip: meta.ip } : {}),
+            ...(meta?.userAgent !== undefined ? { userAgent: meta.userAgent } : {}),
+            tx,
+        });
         emitDataChanged(type, 'restore');
-        return (restored as unknown[])[0];
+        return restoredRow;
     });
 }
 
-export async function permanentDeleteEntity(type: TrashEntityType, id: string) {
+// Entities with financial/ledger history cannot be hard-deleted without
+// breaking referential integrity. Archive them instead and surface a clear
+// Persian marker so the controller can relay it to the UI.
+const ARCHIVE_ONLY_TYPES = new Set<TrashEntityType>(['item', 'seller', 'consignment']);
+
+export async function permanentDeleteEntity(
+    type: TrashEntityType,
+    id: string,
+    actorId?: string,
+    meta?: { ip?: string; userAgent?: string },
+): Promise<{ archived: boolean; row: Record<string, unknown> }> {
     const table = trashTables[type];
     if (!table) throw badRequest('نوع موجودیت نامعتبر است');
-    const rows = await db.select().from(table).where(eq(table.id, id));
-    // Row comes from a union of tables; expose it as a generic record for callers.
-    const row = rows[0] as Record<string, unknown> | undefined;
-    if (!row) throw notFound('مورد یافت نشد');
-    await db.delete(table).where(eq(table.id, id));
-    emitDataChanged(type, 'permanent-delete');
-    return row;
+
+    return db.transaction(async (tx) => {
+        const rows = await tx.select().from(table).where(eq(table.id, id)).for('update');
+        const row = rows[0] as Record<string, unknown> | undefined;
+        if (!row) throw notFound('مورد یافت نشد');
+
+        if (ARCHIVE_ONLY_TYPES.has(type)) {
+            await tx
+                .update(table)
+                .set({
+                    isDeleted: true,
+                    deletedAt: new Date(),
+                    ...(actorId !== undefined ? { deletedBy: actorId } : {}),
+                })
+                .where(eq(table.id, id));
+            // P0-B item 27: archiving is audited as action 'archive' with the
+            // live row before and the archived row after, inside the
+            // transaction so the audit row commits with the archive itself.
+            const archivedRows = await tx.select().from(table).where(eq(table.id, id));
+            const archivedRow = (archivedRows as unknown[])[0] as Record<string, unknown> | undefined;
+            recordAudit({
+                actor: await entityActor(tx, actorId),
+                action: 'archive',
+                entityType: TRASH_ENTITY_TYPE[type],
+                entityId: id.slice(0, 64),
+                before: row,
+                after: archivedRow,
+                details: `${entityDisplayName(type, row)} بایگانی شد`,
+                ...(meta?.ip !== undefined ? { ip: meta.ip } : {}),
+                ...(meta?.userAgent !== undefined ? { userAgent: meta.userAgent } : {}),
+                tx,
+            });
+            emitDataChanged(type, 'archive');
+            return { archived: true, row };
+        }
+
+        // Hard delete: the controller keeps the 'delete' row (it carries the
+        // request context for this non-financial, non-recoverable removal).
+        await tx.delete(table).where(eq(table.id, id));
+        emitDataChanged(type, 'permanent-delete');
+        return { archived: false, row };
+    });
 }
 
 // ---------------------------------------------------------------------------
