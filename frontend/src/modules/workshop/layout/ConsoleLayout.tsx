@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation, useParams } from 'react-router-dom';
 import { Header } from '@/modules/workshop/layout/Header';
 import { Sidebar } from '@/modules/workshop/layout/Sidebar';
 import { MobileNav } from '@/modules/workshop/layout/MobileNav';
@@ -14,32 +14,84 @@ import { useData } from '@/modules/workshop/context/DataContext';
 import { useAuth } from '@/context/AuthContext';
 import { DataProvider } from '@/modules/workshop/context/DataContext';
 import { UIProvider } from '@/modules/workshop/context/UIContext';
+import DashboardPage from '@/modules/workshop/pages/DashboardPage';
+import { CONSOLE_ACCESS, type Permission } from '@/lib/permissions';
 
 /**
- * Workshop chrome + the workshop-scoped providers. Data/UI context live here
- * — not at the app root — so anonymous public visitors never trigger the
- * admin-only API calls DataContext makes on mount. App.tsx mounts this
- * component at /workshop and RequireAdmin keeps non-admins out, so by the
- * time these providers mount there is a settled admin session.
+ * The single management surface — merged from the former /workshop (AppLayout)
+ * and /controlpanel (ControlPanelLayout). Same header/glass sidebar structure,
+ * but access is role-based instead of admin-only: authors hold blog.manage and
+ * staff a view-level subset, so nav items and routes are permission-gated.
+ *
+ * Data/UI context live here — not at the app root — so anonymous public
+ * visitors never trigger the admin-only API calls DataContext makes on mount.
+ * ConsoleLayout's own guard rejects plain users before these providers mount.
  */
-export const AppLayout: React.FC = () => {
+export const ConsoleLayout: React.FC = () => {
   const { user, isLoading } = useAuth();
 
   // Route protection: once the session has settled, unauthenticated visitors
-  // are bounced to the login page.
+  // are bounced to the login page and plain users to their account.
   if (isLoading) return null;
-  if (!user) return <Navigate to="/login?next=%2Fworkshop" replace />;
+  if (!user) return <Navigate to="/login?next=%2Fconsole" replace />;
+  if (!CONSOLE_ACCESS.some((role) => role === user.role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
     <DataProvider>
       <UIProvider>
-        <WorkshopShell />
+        <ConsoleShell />
       </UIProvider>
     </DataProvider>
   );
 };
 
-const WorkshopShell: React.FC = () => {
+/**
+ * Per-page gate for console routes. Hides pages the role cannot read
+ * (authors reaching for /console/inventory land back on the console index
+ * instead of an empty, 403-filled table). API-level gating lands with the
+ * P0-C/D services.
+ */
+export const RequirePermission: React.FC<{ permission: Permission }> = ({
+  permission,
+}) => {
+  const { hasPermission } = useAuth();
+  if (!hasPermission(permission)) return <Navigate to="/console" replace />;
+  return <Outlet />;
+};
+
+/** Entity profiles are readable only through the section that owns them. */
+const PROFILE_PERMISSIONS: Record<string, Permission> = {
+  items: 'inventory.view',
+  sellers: 'people.view',
+  staff: 'people.view',
+  owners: 'people.view',
+};
+
+export const RequireProfilePermission: React.FC = () => {
+  const { type } = useParams<{ type: string }>();
+  const { hasPermission } = useAuth();
+  const permission = PROFILE_PERMISSIONS[type || ''];
+  // Unknown types fall through so EntityProfilePage renders its own
+  // «یافت نشد» card rather than silently redirecting.
+  if (permission && !hasPermission(permission)) return <Navigate to="/console" replace />;
+  return <Outlet />;
+};
+
+/**
+ * Console index (spec: admin → dashboard, author → blog). Dashboard is the
+ * analytics surface, so the same permission that gates /console/analytics
+ * decides the landing target; authors have blog.manage and land on the blog.
+ */
+export const ConsoleIndex: React.FC = () => {
+  const { hasPermission } = useAuth();
+  if (hasPermission('analytics.view')) return <DashboardPage />;
+  if (hasPermission('blog.manage')) return <Navigate to="/console/website/blog" replace />;
+  return <Navigate to="/dashboard" replace />;
+};
+
+const ConsoleShell: React.FC = () => {
   const location = useLocation();
 
   // Reset scroll on every route change: tab switches inside pages keep the

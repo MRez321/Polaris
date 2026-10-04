@@ -243,7 +243,7 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
 
           return (
             <div
-              onClick={() => navigate(`/workshop/profile/sellers/${seller.id}`)}
+              onClick={() => navigate(`/console/profile/sellers/${seller.id}`)}
               className="glass-card p-4 sm:p-5 rounded-2xl hover:border-brand/50 shadow-md hover:shadow-xl transition-all cursor-pointer flex flex-col justify-between space-y-3.5 group relative"
             >
               <div>

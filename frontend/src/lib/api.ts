@@ -80,8 +80,6 @@ export const itemsApi = {
   remove: (id: string) => api.delete(`${W}/items/${id}`).then((r) => r.data),
   setShopAllocation: (id: string, websiteQuantity: number) =>
     api.put<GarmentItem>(`${W}/items/${id}/shop-allocation`, { websiteQuantity }).then((r) => r.data),
-  markReady: (id: string) =>
-    api.post<GarmentItem>(`${W}/items/${id}/mark-ready`, {}).then((r) => r.data),
 };
 
 // --- Damage / Returns tracking ---

@@ -24,6 +24,8 @@ import {
 import { useData } from '@/modules/workshop/context/DataContext';
 import { toPersianDigits } from '@/utils/persian';
 import { useBrand } from '@/context/BrandContext';
+import { useAuth } from '@/context/AuthContext';
+import type { Permission } from '@/lib/permissions';
 
 interface SideMenuProps {
   open: boolean;
@@ -41,6 +43,11 @@ export const SideMenu: React.FC<SideMenuProps> = ({ open, onOpenChange }) => {
   const location = useLocation();
   const { consignments } = useData();
   const { company } = useBrand();
+  const { hasPermission } = useAuth();
+
+  // Same gate as the desktop sidebar: a role without the permission never
+  // sees the destination. Author therefore keeps only the blog entry.
+  const can = (permission: Permission) => hasPermission(permission);
 
   const overdueCount = consignments.filter(
     (c) => (c.remainingAmount || 0) > 0 && new Date(c.dueDate).getTime() < Date.now()
@@ -91,47 +98,61 @@ export const SideMenu: React.FC<SideMenuProps> = ({ open, onOpenChange }) => {
             کارگاه
           </p>
 
-          <NavLink to="/workshop" end onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
-            <LayoutDashboard className="w-4.5 h-4.5 shrink-0" />
-            داشبورد
-          </NavLink>
+          {can('analytics.view') && (
+            <NavLink to="/console" end onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
+              <LayoutDashboard className="w-4.5 h-4.5 shrink-0" />
+              داشبورد
+            </NavLink>
+          )}
 
-          <NavLink to="/workshop/consignments" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
-            <span className="relative">
-              <ArrowLeftRight className="w-4.5 h-4.5 shrink-0" />
-              {overdueCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-600 text-white text-[9px] flex items-center justify-center font-black">
-                  {toPersianDigits(overdueCount)}
-                </span>
-              )}
-            </span>
-            حواله‌ها و تحویل امانی
-          </NavLink>
+          {can('consignments.view') && (
+            <NavLink to="/console/consignments" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
+              <span className="relative">
+                <ArrowLeftRight className="w-4.5 h-4.5 shrink-0" />
+                {overdueCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-600 text-white text-[9px] flex items-center justify-center font-black">
+                    {toPersianDigits(overdueCount)}
+                  </span>
+                )}
+              </span>
+              حواله‌ها و تحویل امانی
+            </NavLink>
+          )}
 
-          <NavLink to="/workshop/inventory" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
-            <Package className="w-4.5 h-4.5 shrink-0" />
-            انبار و موجودی اجناس
-          </NavLink>
+          {can('inventory.view') && (
+            <NavLink to="/console/inventory" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
+              <Package className="w-4.5 h-4.5 shrink-0" />
+              انبار و موجودی اجناس
+            </NavLink>
+          )}
 
-          <NavLink to="/workshop/people" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
-            <Users className="w-4.5 h-4.5 shrink-0" />
-            فروشندگان و پرسنل
-          </NavLink>
+          {can('people.view') && (
+            <NavLink to="/console/people" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
+              <Users className="w-4.5 h-4.5 shrink-0" />
+              فروشندگان و پرسنل
+            </NavLink>
+          )}
 
-          <NavLink to="/workshop/finances" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
-            <CreditCard className="w-4.5 h-4.5 shrink-0" />
-            امور مالی
-          </NavLink>
+          {can('finances.view') && (
+            <NavLink to="/console/finances" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
+              <CreditCard className="w-4.5 h-4.5 shrink-0" />
+              امور مالی
+            </NavLink>
+          )}
 
-          <NavLink to="/workshop/returns" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
-            <RotateCcw className="w-4.5 h-4.5 shrink-0" />
-            مرجوعی‌ها و خرابی‌ها
-          </NavLink>
+          {can('returns.view') && (
+            <NavLink to="/console/returns" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
+              <RotateCcw className="w-4.5 h-4.5 shrink-0" />
+              مرجوعی‌ها و خرابی‌ها
+            </NavLink>
+          )}
 
-          <NavLink to="/workshop/analytics" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
-            <BarChart3 className="w-4.5 h-4.5 shrink-0" />
-            تحلیل فروش
-          </NavLink>
+          {can('analytics.view') && (
+            <NavLink to="/console/analytics" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
+              <BarChart3 className="w-4.5 h-4.5 shrink-0" />
+              تحلیل فروش
+            </NavLink>
+          )}
 
           {/* Gold gradient separator + website section */}
           <div className="my-3 mx-1 flex items-center gap-2">
@@ -143,15 +164,19 @@ export const SideMenu: React.FC<SideMenuProps> = ({ open, onOpenChange }) => {
             <span className="flex-1 h-px bg-gradient-to-l from-transparent via-brand/60 to-transparent" />
           </div>
 
-          <NavLink to="/workshop/orders" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
-            <ShoppingBag className="w-4.5 h-4.5 shrink-0" />
-            سفارش‌های فروشگاه
-          </NavLink>
+          {can('orders.view') && (
+            <NavLink to="/console/orders" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
+              <ShoppingBag className="w-4.5 h-4.5 shrink-0" />
+              سفارش‌های فروشگاه
+            </NavLink>
+          )}
 
-          <button type="button" onClick={() => go('/controlpanel')} className={itemClass(isActive('/controlpanel'))}>
-            <Globe className="w-4.5 h-4.5 shrink-0" />
-            مدیریت وب‌سایت
-          </button>
+          {can('blog.manage') && (
+            <button type="button" onClick={() => go('/console/website/blog')} className={itemClass(isActive('/console/website/blog'))}>
+              <Globe className="w-4.5 h-4.5 shrink-0" />
+              مدیریت وب‌سایت
+            </button>
+          )}
 
           <button type="button" onClick={() => go('/')} className={itemClass(false)}>
             <Home className="w-4.5 h-4.5 shrink-0" />
@@ -160,12 +185,14 @@ export const SideMenu: React.FC<SideMenuProps> = ({ open, onOpenChange }) => {
         </nav>
 
         {/* Settings pinned to the bottom */}
-        <div className="p-3 border-t border-stone-200 dark:border-white/5">
-          <NavLink to="/workshop/settings" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
-            <Settings className="w-4.5 h-4.5 shrink-0" />
-            تنظیمات و مدیریت
-          </NavLink>
-        </div>
+        {can('settings.manage') && (
+          <div className="p-3 border-t border-stone-200 dark:border-white/5">
+            <NavLink to="/console/settings" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
+              <Settings className="w-4.5 h-4.5 shrink-0" />
+              تنظیمات و مدیریت
+            </NavLink>
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );

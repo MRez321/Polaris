@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useMemo } from 'react';
 import { authClient } from '@/lib/auth';
+import { hasPermission as roleHasPermission, type Permission } from '@/lib/permissions';
 
 export interface AuthUser {
   id: string;
@@ -13,6 +14,8 @@ interface AuthContextValue {
   user: AuthUser | null;
   isAdmin: boolean;
   isLoading: boolean;
+  /** True when the signed-in role grants `permission` (nav/route gating). */
+  hasPermission: (permission: Permission) => boolean;
   signIn: (email: string, password: string) => Promise<string | null>;
   signUp: (name: string, email: string, password: string) => Promise<string | null>;
   signOut: () => Promise<void>;
@@ -70,6 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user,
       isAdmin: user?.role === 'admin',
       isLoading: isPending,
+      hasPermission: (permission: Permission) => roleHasPermission(user?.role, permission),
       signIn,
       signUp,
       signOut,

@@ -86,7 +86,7 @@ export const BlogManagerPage: React.FC = () => {
   usePageMeta(
     'مدیریت وبلاگ',
     'نوشتن، ویرایش و انتشار مطالب وبلاگ پولاریس استایل.',
-    '/controlpanel/blog'
+    '/console/website/blog'
   );
 
   const load = useCallback(() => {

@@ -56,7 +56,7 @@ export const WebsiteSettingsPage: React.FC = () => {
 
   if (isLoading) return null;
   // Authors have no business here — send them to the blog section.
-  if (!user || !isAdmin) return <Navigate to={user ? '/controlpanel/blog' : '/login?next=%2Fcontrolpanel%2Fwebsite'} replace />;
+  if (!user || !isAdmin) return <Navigate to={user ? '/console/website/blog' : '/login?next=%2Fconsole%2Fwebsite%2Fwebsite'} replace />;
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();

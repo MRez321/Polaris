@@ -101,7 +101,7 @@ export const ThemeSettingsPage: React.FC = () => {
   if (!user || !isAdmin)
     return (
       <Navigate
-        to={user ? '/controlpanel/blog' : '/login?next=%2Fcontrolpanel%2Ftheme'}
+        to={user ? '/console/website/blog' : '/login?next=%2Fconsole%2Fwebsite%2Ftheme'}
         replace
       />
     );

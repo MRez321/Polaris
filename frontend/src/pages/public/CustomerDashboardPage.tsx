@@ -87,20 +87,21 @@ const ROLE_DESCRIPTIONS: Record<string, string> = {
 
 /**
  * Panel entry points per role — an explicit allowlist, so unknown or legacy
- * roles render no links. These buttons are navigation sugar only: /app and
- * /controlpanel re-check the role in their route guards, and every API
- * enforces it server-side (requireRole), so a hand-crafted URL or a tampered
- * DOM grants no access.
+ * roles render no links. These buttons are navigation sugar only: /console
+ * re-checks the role in its layout guard, and every API enforces access
+ * server-side (requireRole), so a hand-crafted URL or a tampered DOM grants
+ * no access.
  */
 const PANEL_LINKS: Record<
   string,
   { to: string; label: string; icon: React.ComponentType<{ className?: string }>; primary?: boolean }[]
 > = {
   admin: [
-    { to: '/workshop', label: 'پنل مدیریت کارگاه', icon: LayoutDashboard, primary: true },
-    { to: '/controlpanel', label: 'مدیریت وب‌سایت و وبلاگ', icon: Settings2 },
+    { to: '/console', label: 'پنل مدیریت کارگاه', icon: LayoutDashboard, primary: true },
+    { to: '/console/website/website', label: 'تنظیمات وب‌سایت و وبلاگ', icon: Settings2 },
   ],
-  author: [{ to: '/controlpanel', label: 'پنل مدیریت وبلاگ', icon: PenLine, primary: true }],
+  author: [{ to: '/console/website/blog', label: 'پنل مدیریت وبلاگ', icon: PenLine, primary: true }],
+  staff: [{ to: '/console', label: 'پنل کارگاه', icon: LayoutDashboard, primary: true }],
 };
 
 /** First letter of up to two words, for the avatar fallback. */

@@ -69,7 +69,7 @@ export const ShopManagementPage: React.FC = () => {
   if (isLoading) return null;
   // Authors must not touch allocations — send them to their own section.
   if (!user || !isAdmin)
-    return <Navigate to={user ? '/controlpanel/blog' : '/login?next=%2Fcontrolpanel%2Fshop'} replace />;
+    return <Navigate to={user ? '/console/website/blog' : '/login?next=%2Fconsole%2Fwebsite%2Fshop'} replace />;
 
   const allocatedItems = items.filter((i) => (i.websiteQuantity || 0) > 0);
 

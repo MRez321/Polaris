@@ -34,7 +34,6 @@ export const DASHBOARD_WIDGETS: DashboardWidgetDef[] = [
   { id: 'latestReturns', label: 'آخرین مرجوعی‌ها', cols: 1 },
   { id: 'topItems', label: 'پرفروش‌ترین اقلام', cols: 1 },
   { id: 'scheduledDeliveries', label: 'تحویل‌های زمان‌بندی‌شده', cols: 1 },
-  { id: 'pendingProduction', label: 'اقلام در انتظار تولید', cols: 1 },
   { id: 'liquidBalance', label: 'موجودی صندوق کارگاه', cols: 1 },
   { id: 'incomeWindowStats', label: 'درآمد هفتگی و ماهانه', cols: 3 },
 ];

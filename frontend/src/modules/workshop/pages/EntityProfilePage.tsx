@@ -699,9 +699,6 @@ export const EntityProfilePage: React.FC = () => {
             {item.sellerHeld != null && item.sellerHeld > 0 && (
               <Chip>نزد دست‌فروش‌ها: {toPersianDigits(item.sellerHeld)} عدد</Chip>
             )}
-            {item.productionStatus === 'pending_production' && (
-              <Chip>در انتظار تولید</Chip>
-            )}
           </div>
 
           {/* USD purchase price + cost breakdown */}

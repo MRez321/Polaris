@@ -8,7 +8,7 @@ import { CartDrawer } from '@/components/public/CartDrawer';
 /**
  * Layout for the public marketing site (/, /shop, /blog, /contact).
  *
- * Deliberately isolated from the admin AppLayout: no DataContext, no
+ * Deliberately isolated from the admin ConsoleLayout: no DataContext, no
  * authenticated widgets, no admin navigation — public visitors never load
  * admin code paths or see admin chrome.
  */

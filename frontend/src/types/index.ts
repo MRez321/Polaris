@@ -115,8 +115,6 @@ export interface GarmentItem {
   purchasePriceUsd?: number;
   // تفکیک قیمت تمام شده کارگاه (تومان): پارچه، دوخت، یراق، حمل، بسته‌بندی
   costBreakdown?: CostBreakdown;
-  // 'ready' = قابل فروش؛ 'pending_production' = سفارش در انتظار تولید
-  productionStatus?: 'ready' | 'pending_production';
   createdAt: string;
   updatedAt: string;
   isDeleted?: boolean;

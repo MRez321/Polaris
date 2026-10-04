@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { toPersianDigits } from '@/utils/persian';
 import { useTheme } from '@/context/ThemeContext';
+import { useAuth } from '@/context/AuthContext';
 import { useUI } from '@/modules/workshop/context/UIContext';
 import { UserMenu } from '@/components/common/UserMenu';
 import { useBrand } from '@/context/BrandContext';
@@ -19,6 +20,7 @@ import { NotificationsPanel } from './NotificationsPanel';
 import { notificationsApi } from '@/lib/api';
 
 export const Header: React.FC = () => {
+  const { hasPermission } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const { openQuickHandover, openQuickPayment } = useUI();
   const { company } = useBrand();
@@ -79,25 +81,31 @@ export const Header: React.FC = () => {
 
         {/* Quick Actions & Utility controls */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Quick Payment Button (desktop; mobile uses the bottom nav) */}
-          <button
-            onClick={() => openQuickPayment()}
-            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl glass-card hover:border-brand text-stone-900 dark:text-stone-200 text-xs font-bold transition-all active:scale-95 shadow-sm"
-            title="ثبت وجه دریافتی با تسویه زنجیره‌ای فاکتورها"
-          >
-            <Receipt className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
-            <span className="hidden sm:inline">وجه‌های دریافتی</span>
-          </button>
+          {/* Workshop money movement — hidden for roles without consignment
+              management (e.g. blog-only authors). */}
+          {hasPermission('consignments.manage') && (
+            <>
+              {/* Quick Payment Button (desktop; mobile uses the bottom nav) */}
+              <button
+                onClick={() => openQuickPayment()}
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl glass-card hover:border-brand text-stone-900 dark:text-stone-200 text-xs font-bold transition-all active:scale-95 shadow-sm"
+                title="ثبت وجه دریافتی با تسویه زنجیره‌ای فاکتورها"
+              >
+                <Receipt className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
+                <span className="hidden sm:inline">وجه‌های دریافتی</span>
+              </button>
 
-          {/* Quick Handover Button (desktop; mobile uses the bottom nav) */}
-          <button
-            onClick={() => openQuickHandover()}
-            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-brand hover:bg-brand-hover text-brand-on font-black text-xs sm:text-sm shadow-md transition-all active:scale-95"
-            title="تحویل بار جدید"
-          >
-            <Plus className="w-4 h-4 text-black" />
-            <span className="hidden sm:inline">تحویل بار جدید</span>
-          </button>
+              {/* Quick Handover Button (desktop; mobile uses the bottom nav) */}
+              <button
+                onClick={() => openQuickHandover()}
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-brand hover:bg-brand-hover text-brand-on font-black text-xs sm:text-sm shadow-md transition-all active:scale-95"
+                title="تحویل بار جدید"
+              >
+                <Plus className="w-4 h-4 text-black" />
+                <span className="hidden sm:inline">تحویل بار جدید</span>
+              </button>
+            </>
+          )}
 
           {/* Notification center bell — always visible, opens the panel */}
           <button

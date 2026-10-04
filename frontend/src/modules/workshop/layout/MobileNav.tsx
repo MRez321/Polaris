@@ -11,6 +11,7 @@ import {
 import { toPersianDigits } from '@/utils/persian';
 import { useData } from '@/modules/workshop/context/DataContext';
 import { useUI } from '@/modules/workshop/context/UIContext';
+import { useAuth } from '@/context/AuthContext';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -29,7 +30,12 @@ import {
 export const MobileNav: React.FC = () => {
   const { consignments } = useData();
   const { openQuickHandover, openQuickPayment } = useUI();
+  const { hasPermission } = useAuth();
   const navigate = useNavigate();
+
+  // Workshop-centric bar (consignments / orders / inventory / quick money
+  // actions). Blog-only console users navigate through the header side menu.
+  if (!hasPermission('consignments.view') && !hasPermission('inventory.view')) return null;
 
   const overdueCount = consignments.filter(
     (c) => (c.remainingAmount || 0) > 0 && new Date(c.dueDate).getTime() < Date.now()
@@ -54,7 +60,7 @@ export const MobileNav: React.FC = () => {
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-[#141416] border-t border-stone-200 dark:border-white/5 px-2 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] shadow-2xl">
       <div className="grid grid-cols-5 items-center justify-items-center h-16">
         {/* امانات — route (RTL first slot, leftmost) */}
-        <NavLink to="/workshop/consignments" className={routeClass}>
+        <NavLink to="/console/consignments" className={routeClass}>
           <span className="relative">
             <ArrowLeftRight className="w-5 h-5 mb-1 shrink-0" />
             {overdueCount > 0 && (
@@ -67,13 +73,13 @@ export const MobileNav: React.FC = () => {
         </NavLink>
 
         {/* سفارش‌ها — route */}
-        <NavLink to="/workshop/orders" className={routeClass}>
+        <NavLink to="/console/orders" className={routeClass}>
           <ShoppingBag className="w-5 h-5 mb-1 shrink-0" />
           <span className="text-[10px] whitespace-nowrap">سفارش‌ها</span>
         </NavLink>
 
         {/* داشبورد — center, lifted gold FAB */}
-        <NavLink to="/workshop" end className="relative flex flex-col items-center px-2 -translate-y-3.5">
+        <NavLink to="/console" end className="relative flex flex-col items-center px-2 -translate-y-3.5">
           <span className="w-11 h-11 rounded-2xl bg-gradient-to-br from-brand to-brand-hover text-brand-on flex items-center justify-center shadow-lg shadow-brand/40 ring-4 ring-white dark:ring-[#141416] transition-transform active:scale-95">
             <LayoutDashboard className="w-5 h-5 text-brand-on" />
           </span>
@@ -83,7 +89,7 @@ export const MobileNav: React.FC = () => {
         </NavLink>
 
         {/* انبار — route */}
-        <NavLink to="/workshop/inventory" className={routeClass}>
+        <NavLink to="/console/inventory" className={routeClass}>
           <Package className="w-5 h-5 mb-1 shrink-0" />
           <span className="text-[10px] whitespace-nowrap">انبار</span>
         </NavLink>
@@ -109,7 +115,7 @@ export const MobileNav: React.FC = () => {
             </DropdownMenuItem>
             <DropdownMenuItem
               className={menuItemClass}
-              onClick={() => navigate('/workshop/finances/costs')}
+              onClick={() => navigate('/console/finances/costs')}
             >
               <span className="w-7 h-7 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                 <Plus className="w-4 h-4" />

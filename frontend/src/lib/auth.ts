@@ -22,11 +22,11 @@ export const authClient = createAuthClient({
   ],
 });
 
-// Landing route per role after login/signup: admins run the workshop panel,
-// authors manage the website blog, everyone else is a shop customer.
+// Landing route per role after login/signup: admins run the console,
+// authors land on the website blog, everyone else is a shop customer.
 export function roleHome(role: string | undefined): string {
-  if (role === 'admin') return '/workshop';
-  if (role === 'author') return '/controlpanel';
+  if (role === 'admin') return '/console';
+  if (role === 'author') return '/console/website/blog';
   return '/dashboard';
 }
 

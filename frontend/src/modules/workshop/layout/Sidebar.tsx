@@ -10,14 +10,29 @@ import {
   Settings,
   RotateCcw,
   BarChart3,
+  Globe,
+  Palette,
+  Newspaper,
+  type LucideIcon,
 } from 'lucide-react';
 import { toPersianDigits } from '@/utils/persian';
 import { useData } from '@/modules/workshop/context/DataContext';
 import { useAuth } from '@/context/AuthContext';
+import type { Permission } from '@/lib/permissions';
+
+interface NavItem {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  end?: boolean;
+  badge?: number;
+  /** Absent = visible to every signed-in console user (the console home). */
+  permission?: Permission;
+}
 
 export const Sidebar: React.FC = () => {
   const { consignments, items } = useData();
-  const { isAdmin } = useAuth();
+  const { hasPermission } = useAuth();
   const navigate = useNavigate();
 
   const overdueCount = consignments.filter(
@@ -25,24 +40,29 @@ export const Sidebar: React.FC = () => {
   ).length;
   // Mirrors InventoryManager's low-stock rule: at or below the threshold.
   const lowStockCount = items.filter((i) => (i.stockQuantity || 0) <= (i.minStockThreshold || 0)).length;
-  const pendingCount = items.filter((i) => i.productionStatus === 'pending_production').length;
 
-  const navItems = [
-    { to: '/workshop', label: 'داشبورد', icon: LayoutDashboard, end: true },
-    { to: '/workshop/orders', label: 'سفارش‌های فروشگاه', icon: ShoppingBag },
-    { to: '/workshop/inventory', label: 'انبار و موجودی اجناس', icon: Package },
+  const allNavItems: NavItem[] = [
+    { to: '/console', label: 'داشبورد', icon: LayoutDashboard, end: true, permission: 'analytics.view' },
+    { to: '/console/orders', label: 'سفارش‌های فروشگاه', icon: ShoppingBag, permission: 'orders.view' },
+    { to: '/console/inventory', label: 'انبار و موجودی اجناس', icon: Package, permission: 'inventory.view' },
     {
-      to: '/workshop/consignments',
+      to: '/console/consignments',
       label: 'حواله‌ها و تحویل امانی',
       icon: ArrowLeftRight,
       badge: overdueCount > 0 ? overdueCount : undefined,
+      permission: 'consignments.view',
     },
-    { to: '/workshop/people', label: 'فروشندگان و پرسنل', icon: Users },
-    { to: '/workshop/returns', label: 'مرجوعی‌ها و خرابی‌ها', icon: RotateCcw },
-    { to: '/workshop/analytics', label: 'تحلیل فروش', icon: BarChart3 },
-    { to: '/workshop/finances', label: 'امور مالی، درآمد و هزینه‌ها', icon: CreditCard },
-    { to: '/workshop/settings', label: 'تنظیمات و مدیریت', icon: Settings },
-  ].filter((item) => isAdmin || item.to === '/workshop');
+    { to: '/console/people', label: 'فروشندگان و پرسنل', icon: Users, permission: 'people.view' },
+    { to: '/console/returns', label: 'مرجوعی‌ها و خرابی‌ها', icon: RotateCcw, permission: 'returns.view' },
+    { to: '/console/analytics', label: 'تحلیل فروش', icon: BarChart3, permission: 'analytics.view' },
+    { to: '/console/finances', label: 'امور مالی، درآمد و هزینه‌ها', icon: CreditCard, permission: 'finances.view' },
+    { to: '/console/settings', label: 'تنظیمات و مدیریت', icon: Settings, permission: 'settings.manage' },
+    { to: '/console/website/website', label: 'تنظیمات وب‌سایت', icon: Globe, permission: 'website.manage' },
+    { to: '/console/website/theme', label: 'تنظیمات ظاهری', icon: Palette, permission: 'website.manage' },
+    { to: '/console/website/shop', label: 'مدیریت فروشگاه', icon: ShoppingBag, permission: 'website.manage' },
+    { to: '/console/website/blog', label: 'مدیریت وبلاگ', icon: Newspaper, permission: 'blog.manage' },
+  ];
+  const navItems = allNavItems.filter((item) => !item.permission || hasPermission(item.permission));
 
   return (
     <aside className="w-64 shrink-0 hidden md:block">
@@ -89,52 +109,42 @@ export const Sidebar: React.FC = () => {
           );
         })}
 
-        <div className="pt-3 mt-3 border-t border-stone-200 dark:border-white/5 px-1">
-          <div className="p-3 rounded-xl bg-brand/10 dark:bg-brand/15 border border-brand/20 dark:border-brand/30">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-2 h-2 rounded-full bg-brand-deep dark:bg-brand animate-pulse"></span>
-              <p className="font-black text-xs text-stone-900 dark:text-white">نبض کارگاه</p>
-            </div>
-            <div className="divide-y divide-brand/15">
-              <button
-                type="button"
-                onClick={() => navigate('/workshop/consignments')}
-                className="w-full flex items-center justify-between gap-2 py-1.5 group cursor-pointer"
-              >
-                <span className="text-[10px] font-bold text-stone-700 dark:text-stone-300 group-hover:text-brand transition-colors">
-                  حواله‌های معوق
-                </span>
-                <span className={`text-xs font-black ${overdueCount > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-stone-400'}`}>
-                  {toPersianDigits(overdueCount)}
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/workshop/inventory')}
-                className="w-full flex items-center justify-between gap-2 py-1.5 group cursor-pointer"
-              >
-                <span className="text-[10px] font-bold text-stone-700 dark:text-stone-300 group-hover:text-brand transition-colors">
-                  اجناس کم‌موجودی
-                </span>
-                <span className={`text-xs font-black ${lowStockCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-stone-400'}`}>
-                  {toPersianDigits(lowStockCount)}
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/workshop/inventory')}
-                className="w-full flex items-center justify-between gap-2 py-1.5 group cursor-pointer"
-              >
-                <span className="text-[10px] font-bold text-stone-700 dark:text-stone-300 group-hover:text-brand transition-colors">
-                  در انتظار تولید
-                </span>
-                <span className={`text-xs font-black ${pendingCount > 0 ? 'text-brand-deep dark:text-brand' : 'text-stone-400'}`}>
-                  {toPersianDigits(pendingCount)}
-                </span>
-              </button>
+        {(hasPermission('consignments.view') || hasPermission('inventory.view')) && (
+          <div className="pt-3 mt-3 border-t border-stone-200 dark:border-white/5 px-1">
+            <div className="p-3 rounded-xl bg-brand/10 dark:bg-brand/15 border border-brand/20 dark:border-brand/30">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-2 h-2 rounded-full bg-brand-deep dark:bg-brand animate-pulse"></span>
+                <p className="font-black text-xs text-stone-900 dark:text-white">نبض کارگاه</p>
+              </div>
+              <div className="divide-y divide-brand/15">
+                <button
+                  type="button"
+                  onClick={() => navigate('/console/consignments')}
+                  className="w-full flex items-center justify-between gap-2 py-1.5 group cursor-pointer"
+                >
+                  <span className="text-[10px] font-bold text-stone-700 dark:text-stone-300 group-hover:text-brand transition-colors">
+                    حواله‌های معوق
+                  </span>
+                  <span className={`text-xs font-black ${overdueCount > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-stone-400'}`}>
+                    {toPersianDigits(overdueCount)}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/console/inventory')}
+                  className="w-full flex items-center justify-between gap-2 py-1.5 group cursor-pointer"
+                >
+                  <span className="text-[10px] font-bold text-stone-700 dark:text-stone-300 group-hover:text-brand transition-colors">
+                    اجناس کم‌موجودی
+                  </span>
+                  <span className={`text-xs font-black ${lowStockCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-stone-400'}`}>
+                    {toPersianDigits(lowStockCount)}
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </aside>
   );

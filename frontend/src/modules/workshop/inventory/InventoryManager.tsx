@@ -11,18 +11,15 @@ import {
   HandCoins,
   Store,
   ArrowUpDown,
-  CheckCircle2,
-  Clock,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import type { GarmentItem } from '@/types';
 import { formatToman, toPersianDigits } from '@/utils/persian';
 import { Badge } from '@/components/common/Badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SelectMenu } from '@/components/ui/select-menu';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
-import { analyticsApi, itemsApi, getApiErrorMessage } from '@/lib/api';
+import { analyticsApi } from '@/lib/api';
 import { ItemFormModal } from './ItemFormModal';
 
 interface InventoryManagerProps {
@@ -83,8 +80,6 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
   const [channel, setChannel] = useState<'all' | 'handover' | 'shop' | 'warehouse'>('all');
   const [sortBy, setSortBy] = useState<SortKey>('newest');
   const [deleteTarget, setDeleteTarget] = useState<GarmentItem | null>(null);
-  const [readyTarget, setReadyTarget] = useState<GarmentItem | null>(null);
-  const [markingReady, setMarkingReady] = useState(false);
   // sold counts from analytics: itemId -> { total, seller, shop }
   const [soldStats, setSoldStats] = useState<Map<string, { total: number; seller: number; shop: number }>>(new Map());
 
@@ -172,21 +167,6 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
       onUpdateItem(editingItem.id, itemData);
     } else {
       onAddItem(itemData);
-    }
-  };
-
-  const handleMarkReady = async () => {
-    if (!readyTarget) return;
-    setMarkingReady(true);
-    try {
-      const updated = await itemsApi.markReady(readyTarget.id);
-      onUpdateItem(readyTarget.id, updated);
-      toast.success(`«${readyTarget.name}» تولید کامل شد و قابل فروش است`);
-    } catch (err) {
-      toast.error(getApiErrorMessage(err, 'ثبت آماده‌سازی کالا ناموفق بود'));
-    } finally {
-      setMarkingReady(false);
-      setReadyTarget(null);
     }
   };
 
@@ -312,7 +292,6 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredItems.map((item) => {
           const isLowStock = item.stockQuantity <= item.minStockThreshold;
-          const isPending = item.productionStatus === 'pending_production';
           const sold = soldStats.get(item.id);
 
           return (
@@ -321,7 +300,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
               className={`p-4 rounded-2xl glass-card border transition-all hover:border-brand/50 shadow-md flex flex-col justify-between cursor-pointer ${
                 isLowStock ? 'border-amber-400/50 bg-amber-500/[0.05]' : 'border-stone-200 dark:border-white/5'
               }`}
-              onClick={() => navigate(`/workshop/profile/items/${item.id}`)}
+              onClick={() => navigate(`/console/profile/items/${item.id}`)}
             >
               <div>
                 <div className="flex items-start justify-between gap-2">
@@ -333,12 +312,6 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                       {isLowStock && (
                         <Badge variant="warning" size="sm">
                           کسری موجودی
-                        </Badge>
-                      )}
-                      {isPending && (
-                        <Badge variant="default" size="sm" className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-                          <Clock className="w-3 h-3 ml-1" />
-                          در انتظار تولید
                         </Badge>
                       )}
                       {sold && sold.total > 0 && (
@@ -353,18 +326,6 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                   </div>
 
                   <div className="flex items-center gap-1">
-                    {isPending && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setReadyTarget(item);
-                        }}
-                        className="p-1.5 rounded-lg text-emerald-600 hover:text-emerald-500 hover:bg-emerald-500/10 transition-colors"
-                        title="علامت‌گذاری آماده (تولید کامل)"
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
-                      </button>
-                    )}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -467,7 +428,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                       )}
                     </>
                   )}
-                  {onQuickHandoverItem && !isPending && (
+                  {onQuickHandoverItem && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -507,15 +468,6 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
         }}
       />
 
-      {/* Mark-ready confirmation */}
-      <ConfirmDialog
-        open={readyTarget !== null}
-        onOpenChange={(open) => !open && setReadyTarget(null)}
-        title="علامت‌گذاری کالا به‌عنوان آماده"
-        description={`«${readyTarget?.name ?? ''}» تولید کامل شد؟ پس از تایید، این کالا برای دست‌فروش‌ها و فروشگاه قابل فروش خواهد بود.`}
-        confirmLabel={markingReady ? 'در حال ثبت…' : 'بله، آماده است'}
-        onConfirm={handleMarkReady}
-      />
     </div>
   );
 };

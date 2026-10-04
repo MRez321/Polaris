@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, LogIn, LogOut, Settings2, UserRound } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
+import { CONSOLE_ACCESS } from '@/lib/permissions';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -73,17 +74,17 @@ interface UserMenuProps {
 }
 
 /**
- * Role-aware account menu, one component for all three surfaces
- * (public website, workshop dashboard, control panel). Avatar shows the
- * profile picture; the dropdown links to the account dashboard, the
- * control panel (admin+author), and the workshop (admin).
+ * Role-aware account menu, one component for all surfaces (public website,
+ * console). Avatar shows the profile picture; the dropdown links to the
+ * account dashboard, the website settings/blog (permission-gated), and the
+ * console (admin).
  */
 export const UserMenu: React.FC<UserMenuProps> = ({
   className,
   loginTo = '/login',
   showName = true,
 }) => {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, hasPermission, signOut } = useAuth();
   const navigate = useNavigate();
 
   if (!user) {
@@ -102,8 +103,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
     );
   }
 
-  const isAuthor = user.role === 'author';
-  const canManageSite = isAdmin || isAuthor;
+  const isConsoleUser = CONSOLE_ACCESS.some((role) => role === (user.role || 'user'));
 
   const handleSignOut = async () => {
     await signOut();
@@ -138,14 +138,20 @@ export const UserMenu: React.FC<UserMenuProps> = ({
             <UserRound />
             حساب کاربری من
           </DropdownMenuItem>
-          {canManageSite && (
-            <DropdownMenuItem render={<Link to="/controlpanel" />}>
+          {isConsoleUser && hasPermission('website.manage') && (
+            <DropdownMenuItem render={<Link to="/console/website/website" />}>
               <Settings2 />
-              مدیریت وب‌سایت
+              تنظیمات وب‌سایت
+            </DropdownMenuItem>
+          )}
+          {isConsoleUser && hasPermission('blog.manage') && (
+            <DropdownMenuItem render={<Link to="/console/website/blog" />}>
+              <Settings2 />
+              مدیریت وبلاگ
             </DropdownMenuItem>
           )}
           {isAdmin && (
-            <DropdownMenuItem render={<Link to="/workshop" />}>
+            <DropdownMenuItem render={<Link to="/console" />}>
               <LayoutDashboard />
               پنل کارگاه
             </DropdownMenuItem>

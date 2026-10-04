@@ -294,7 +294,7 @@ export async function getSeller(id: string) {
 export async function createSeller(data: Partial<typeof sellers.$inferInsert>) {
     const name = data.name;
     const phone = data.phone;
-    if (!name || !phone) throw badRequest('نام و شماره تماس دستفروش الزامی است');
+    if (!name || !phone) throw badRequest('نام و شماره تماس دست‌فروش الزامی است');
     const codes = await db.select({ code: sellers.code }).from(sellers);
     const id = isClientId(data.id) ? data.id : uuid();
     const code = data.code || nextCode('SLR', codes.map((c) => c.code));

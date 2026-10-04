@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '@/components/common/Modal';
 import type { GarmentItem, VariantPrices, VariantPriceOverride, CostBreakdown } from '@/types';
 import { toPersianDigits, formatToman } from '@/utils/persian';
-import { Plus, Image as ImageIcon, Tags, Calculator, DollarSign, Percent, Ruler, Palette, PackageCheck, Shirt } from 'lucide-react';
+import { Plus, Image as ImageIcon, Tags, Calculator, DollarSign, Percent, Ruler, Palette, PackageCheck } from 'lucide-react';
 import { SelectMenu } from '@/components/ui/select-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
@@ -78,8 +78,6 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
   const [percentPricingOn, setPercentPricingOn] = useState(false);
   const [consignmentPercent, setConsignmentPercent] = useState<number | null>(null);
   const [retailPercent, setRetailPercent] = useState<number | null>(null);
-  // Production status: order-made items waiting to be produced.
-  const [isPendingProduction, setIsPendingProduction] = useState(false);
   // Custom size/color definitions.
   const [customSizes, setCustomSizes] = useState<string[]>([]);
   const [customColors, setCustomColors] = useState<string[]>([]);
@@ -142,7 +140,6 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
       setPercentPricingOn(false);
       setConsignmentPercent(null);
       setRetailPercent(null);
-      setIsPendingProduction(editItem.productionStatus === 'pending_production');
     } else {
       setName('');
       setItemId(crypto.randomUUID());
@@ -168,7 +165,6 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
       setPercentPricingOn(false);
       setConsignmentPercent(null);
       setRetailPercent(null);
-      setIsPendingProduction(false);
     }
     setIsCreatingCategory(false);
     setNewCategoryName('');
@@ -291,7 +287,6 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
       images: imagesList,
       ...(validUsd !== undefined ? { purchasePriceUsd: validUsd } : {}),
       ...(breakdownTouched ? { costBreakdown: breakdown } : {}),
-      productionStatus: isPendingProduction ? 'pending_production' : 'ready',
     });
     onClose();
   };
@@ -766,7 +761,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
           )}
         </div>
 
-        {/* Stock & production status */}
+        {/* Opening stock */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
@@ -790,22 +785,6 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
               placeholder="مثلاً: ۸ عدد"
               className="w-full px-3 py-2 rounded-xl glass-input text-sm focus:border-brand outline-none font-mono"
             />
-          </div>
-
-          <div className="sm:col-span-2">
-            <label className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 cursor-pointer select-none">
-              <Shirt className="w-4 h-4 text-amber-600 shrink-0" />
-              <span className="flex-1 text-xs font-bold text-stone-700 dark:text-stone-200">
-                این کالا سفارش است و هنوز تولید نشده
-                <span className="block text-[10px] font-normal text-stone-500 dark:text-stone-400 mt-0.5">
-                  تا زمان «علامت‌گذاری آماده» برای دست‌فروش‌ها و فروشگاه قابل فروش نیست
-                </span>
-              </span>
-              <Checkbox
-                checked={isPendingProduction}
-                onCheckedChange={(c) => setIsPendingProduction(c === true)}
-              />
-            </label>
           </div>
         </div>
 

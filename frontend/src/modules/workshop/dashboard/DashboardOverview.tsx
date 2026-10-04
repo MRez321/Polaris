@@ -232,7 +232,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     (c) => (c.remainingAmount || 0) > 0 && new Date(c.dueDate).getTime() < Date.now()
   );
   const pendingDeliveries = safeConsignments.filter((c) => c.deliveryStatus === 'pending');
-  const pendingProductionItems = safeItems.filter((i) => i.productionStatus === 'pending_production');
 
   const totalStockCount = safeItems.reduce((s, i) => s + (i.stockQuantity || 0), 0);
 
@@ -607,28 +606,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       </div>
     ),
 
-    pendingProduction: (
-      <div>
-        {pendingProductionItems.length === 0 ? (
-          <p className="text-xs text-stone-500 dark:text-gray-400 py-4 text-center">قلمی در انتظار تولید نیست</p>
-        ) : (
-          <div className="space-y-2.5">
-            {pendingProductionItems.slice(0, 5).map((i) => (
-              <div
-                key={i.id}
-                className="p-3.5 rounded-xl glass-card flex items-center justify-between gap-3"
-              >
-                <div>
-                  <span className="font-black text-xs sm:text-sm text-stone-900 dark:text-white">{i.name}</span>
-                  <p className="text-[10px] text-stone-500 dark:text-gray-400 font-mono mt-0.5">{i.code}</p>
-                </div>
-                <Badge variant="warning" size="sm">در انتظار تولید</Badge>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    ),
 
     liquidBalance: (
       <div className="flex items-center gap-4">

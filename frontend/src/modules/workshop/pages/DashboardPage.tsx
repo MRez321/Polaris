@@ -61,20 +61,20 @@ const DashboardPage: React.FC = () => {
       onOpenPayment={() => openQuickPayment()}
       onSelectConsignment={(c) => {
         setSelectedConsignment(c);
-        navigate('/workshop/consignments');
+        navigate('/console/consignments');
       }}
       onSelectSeller={() => {
-        navigate('/workshop/people');
+        navigate('/console/people');
       }}
       onGoToTab={(tab: string) => {
         if (tab === 'sellers' || tab === 'staff') {
-          navigate('/workshop/people');
+          navigate('/console/people');
         } else if (tab === 'payments' || tab === 'workshop' || tab === 'analytics') {
-          navigate('/workshop/finances/payments');
+          navigate('/console/finances/payments');
         } else if (tab === 'audit') {
-          navigate('/workshop/settings');
+          navigate('/console/settings');
         } else {
-          navigate(`/workshop/${tab}`);
+          navigate(`/console/${tab}`);
         }
       }}
       dashboardPrefs={normalizeLayout(workshopInfo.dashboardPrefs)}
