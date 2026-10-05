@@ -24,6 +24,9 @@ skills:
     - wait-what              # Understanding complex issues
     - wayfinder              # Navigating codebase
 
+    # Graph
+    - graphify
+
   ignoredSkills:
     - supabase-*             # Using MySQL, not Supabase
     - vercel-composition-patterns  # Not using Vercel deployment
