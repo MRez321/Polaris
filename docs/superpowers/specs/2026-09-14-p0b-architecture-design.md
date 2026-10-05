@@ -273,3 +273,23 @@ Post-implementation sweep, grep + review, reported in this spec's implementation
 old-model references, direct stock updates (`items.stockQuantity` writes outside ledger service), hard deletes on critical data, contradictory migrations, untraceable financial fields. Target: zero findings or explicit deprecation notes.
 
 24-step order from `temp/p0b.txt` L465-489 maps 1:1 to the implementation plan phases (audit 1-2 done; design 3-4 = this spec; steps 5-24 executed in the plan).
+
+## Implementation Notes (2026-10-04)
+
+### /console unification — built as specified (L245-254)
+- `backend/src/modules/auth/permissions.ts`: `PERMISSIONS` + `ROLE_PERMISSIONS` (admin=all, author=`blog.manage`, staff=view subset of inventory/consignments/orders/people/returns/analytics/reports); `/api/workshop` stays `requireRole('admin')`, `/api/blog*` unchanged.
+- `frontend/src/lib/permissions.ts` mirrors the matrix + `CONSOLE_ACCESS = ['admin','author','staff']`; `useAuth().hasPermission()` is the single client gate.
+- `/console/*` mirrors workshop pages (Dashboard, Orders, Inventory, Consignments, People incl. `people/staff`, Returns, Analytics, Finances incl. `finances/workshop|payments|costs` + `finances/reports` on `reports.view`, Settings) + 4 website pages under `/console/website/*` + `profile/:type/:id` (type→permission map: items→`inventory.view`, sellers/staff/owners→`people.view`).
+- Index: `analytics.view` → DashboardPage, else `blog.manage` → `/console/website/blog`, else `/dashboard`. Legacy `/workshop*` and `/controlpanel*` redirect client-side (`/controlpanel/{theme,website,shop,blog}` → `/console/website/*`).
+- `AppLayout` + `ControlPanelLayout` deleted; `ConsoleLayout` is the single shell. Sidebar/SideMenu filter per item permission; pulse card gated on `consignments.view || inventory.view`; header quick-actions gated on `consignments.manage`; MobileNav hidden for blog-only roles.
+- Production deprecation: `mark-ready` → 410 (`gone('جریان تولید حذف شده است…')`); `productionStatus` badge/counter removed from sidebar, item form, entity profile (DB column preserved, all rows `ready`).
+- Browser-verified: admin lands `/console` with 13 nav items; author lands `/console/website/blog` with only the blog item; 8/8 legacy redirects resolve.
+
+### Item-28 grep sweeps (zero open findings)
+- `stockQuantity`/`websiteQuantity` writers: only `syncLegacyStockCache` (`inventoryLedgerService.ts:338`, comment at :312 declares the monopoly) + `createItem` opening stock (`inventoryService.ts:92`, consumed once at :109 for the opening `ADJUSTMENT_IN`); `updateItem` strips both fields from the patch (:140). All other hits are reads, Zod schemas, mappers, or notifications text.
+- `.delete()` on ledger/financial/audit/order/payment tables: none. Drizzle `.delete()` hits are CMS content (blog/gallery), workshop-entity trash paths (items/sellers/consignments/staff/expenses via soft-delete + audited trash/permanent), todos, notifications, and user addresses. `inventoryService.ts:1290` is the trash permanent-delete for non-financial entities; the controller keeps the audit row.
+
+### Verification evidence
+- `test-acceptance.mts`: 57/57 (step 7 logically deletes ALL test entities — item + both consignments + seller + purchase unwind — and asserts derived debt 0).
+- `verify-migration.mjs`: 11/11 (cache==Σledger, debt==Σfinancial across sellers, referential integrity).
+- Frontend `tsc --noEmit`: 0; `npm run build`: exit 0. Backend `tsc --noEmit`: 0.

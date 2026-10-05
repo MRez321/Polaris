@@ -44,7 +44,7 @@ Legacy `/api/workshop-legacy` inline mount was removed in Phase 5 — `/api/work
 ```
 GET  /dashboard/stats        GET /audit-logs        GET /analytics (sales/debt/expense analytics aggregation)
 GET/PUT /orders, PUT /orders/:id          (status transitions)
-GET/POST/PUT/DELETE /items, PUT /items/:id/shop-allocation (row-locked: concurrent handovers/orders can never over-allocate; websiteQuantity only moves via this endpoint, never via PUT /items/:id), POST /items/:id/mark-ready (pending_production → ready)
+GET/POST/PUT/DELETE /items, PUT /items/:id/shop-allocation (row-locked: concurrent handovers/orders can never over-allocate; websiteQuantity only moves via this endpoint, never via PUT /items/:id), POST /items/:id/mark-ready → 410 retired (production flow removed P0-B)
 GET/POST /categories
 GET/POST/PUT/DELETE /sellers (+GET /sellers/:id)
 GET/POST/DELETE /consignments, POST /consignments/return, POST /consignments/:id/deliver (scheduled → delivered: stamps deliveredAt, applies seller debt/due), GET /consignments/returns

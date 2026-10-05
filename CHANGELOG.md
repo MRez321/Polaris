@@ -12,11 +12,15 @@ Format: [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/) — newes
 - Dashboard layout customization v2: 16-widget registry with per-widget visibility, HTML5 drag-and-drop reorder (plus up/down buttons), column span (1–3) and collapsible state, plus named shareable presets — persisted server-side in `company_settings.dashboardPrefs` (v2 schema with client-side migration from the legacy flat `{widgetId: boolean}` shape via `normalizeLayout`).
 - Backup manager UI in workshop settings: run-now actions (database / website / full / cPanel), schedule + retention + Telegram-notify settings, backup file list with Jalali dates, download and delete.
 - Telegram relay option: `relayUrl` setting (Cloudflare Worker base-URL relay, takes precedence over `proxyUrl`) in the notifications settings UI and `telegramService`, with setup guide `docs/telegram-relay-guide.md` and worker example `docs/telegram-proxy-worker.js`.
-- Audit-log support for the new domains: entity types `todo` and `backup` with icons/labels in `AuditLogsManager` and entity-filter options.
+- P0-B data model: 17 new tables (migrations 0017–0019) — catalog SKUs, parties, custody locations, channels, purchasing, sales orders, finance ledger, inventory ledger, audit enrichment — with one-shot backfill `backend/scripts/backfill-new-model.mjs`, acceptance suite `test-acceptance.mts` and `verify-migration.mjs` (see `docs/superpowers/specs/2026-09-14-p0b-architecture-design.md`).
+- Unified `/console` permission system: `PERMISSIONS` + `ROLE_PERMISSIONS` in `backend/src/modules/auth/permissions.ts` (admin=all, author=`blog.manage`, staff=view subset) mirrored by `frontend/src/lib/permissions.ts` with `CONSOLE_ACCESS` roles and `useAuth().hasPermission()`.
 
 ### Changed
 - Dashboard clock widget title changed from «ساعت زنده کارگاه» to «ساعت کارگاه».
 - Overdue alert banner recolored from amber to rose across header, icon, title, body and item borders.
+- `/workshop` + `/controlpanel` merged into one `/console` surface: `ConsoleLayout` (role guard, permission-gated index: dashboard for `analytics.view`, blog for `blog.manage`), per-route `RequirePermission`/`RequireProfilePermission`, permission-filtered sidebar/side-menu, gated header quick-actions and mobile nav; legacy `/workshop*` and `/controlpanel*` redirect client-side to `/console` equivalents (`/controlpanel/{theme,website,shop,blog}` → `/console/website/*`).
+- Made-to-order production flow retired: `POST /api/workshop/items/:id/mark-ready` returns 410 with a Persian deprecation message; `productionStatus` badge/counter removed from sidebar, item form and entity profile (DB column preserved, all rows `ready`).
+- Acceptance cleanup (spec item 28): test-acceptance step 7 logically deletes all test entities via inverse `ADJUSTMENT_OUT` + soft deletes; item-28 grep sweeps pass — no `stockQuantity` writes outside the ledger `syncLegacyStockCache` + sanctioned `createItem` opening stock, no hard deletes on ledger/financial/audit/order/payment tables.
 
 ### Fixed
 - Smoke suites `smoke-phase2.mjs` and `smoke-phase3.mjs` now send the required `province` field when placing test orders (schema drift from the checkout CitySelector work); all three suites pass again.

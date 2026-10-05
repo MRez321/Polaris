@@ -39,10 +39,12 @@ import {
     setShopAllocation,
     softDeleteConsignment,
     softDeleteItem,
+    softDeleteSeller,
 } from '../src/modules/workshop/inventoryService.js';
 import { createOrder, updateOrderStatus } from '../src/services/ordersService.js';
 import {
     auditLogs,
+    consignments,
     financialTransactions,
     inventoryLedger,
     items,
@@ -482,6 +484,31 @@ async function main(): Promise<void> {
         (await cacheQty(unwindSku, shelfLocationId())) === 0 &&
             (await cacheQty(skuId, shopLocationId())) === 0,
     );
+
+    // Logically delete the remaining test entities. Each consignment delete
+    // releases its outstanding debt back off the seller (reduceSellerPayable),
+    // so the derived balance returns to exactly zero; the seller row itself
+    // is archived. Financial/payment rows stay — append-only history.
+    await softDeleteConsignment(pendingHandover.id, ADMIN_ID);
+    await softDeleteConsignment(handover.id, ADMIN_ID);
+    await softDeleteSeller(seller.id, ADMIN_ID);
+    check(
+        'test consignments are in the trash (is_deleted=1)',
+        (
+            await db
+                .select({ d: consignments.isDeleted })
+                .from(consignments)
+                .where(eq(consignments.sellerId, seller.id))
+        ).every((r) => r.d === true),
+    );
+    check(
+        'test seller is in the trash (is_deleted=1)',
+        (await db.select({ d: sellers.isDeleted }).from(sellers).where(eq(sellers.id, seller.id)))[0]?.d === true,
+    );
+    check('derived seller debt is zero after cleanup', (await getSellerBalance(seller.id)) === 0, {
+        debt: await getSellerBalance(seller.id),
+    });
+    await assertDebtMatchesFinancial(seller.id, 'after cleanup');
 
     console.log(`\n▶ ${checks - failures}/${checks} checks passed`);
     if (failures > 0) {

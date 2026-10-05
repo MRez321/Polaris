@@ -9,9 +9,9 @@ Config: `backend/src/modules/auth/service.ts`. Middleware: `backend/src/modules/
 
 - **Providers**: email+password (enabled), Google OAuth, GitHub OAuth. OAuth accounts auto-link to credential users by matching email (`requireLocalEmailVerified: false` — there is NO email verification flow).
 - **No password reset / forget-password** — `sendResetPassword` not configured, no SMTP. Recovery = write `account.password` hash directly in DB (recipe below).
-- **Roles**: stored on `user.role` (varchar 32) — `admin`, `author`, `user` (signup default). `adminRoles: ['admin']`. Workshop panel requires `admin`; controlpanel blog allows `author`.
+- **Roles**: stored on `user.role` (varchar 32) — `admin`, `author`, `staff`, `user` (signup default). `adminRoles: ['admin']`. Unified `/console` requires a `CONSOLE_ACCESS` role (admin/author/staff); per-page access is permission-gated (`frontend/src/lib/permissions.ts` — admin=all, author=`blog.manage` only, staff=view subset).
 - **Session**: cookie `better-auth.session_token`, HttpOnly, SameSite=Lax, Max-Age 604800 (7d). Frontend reads session via better-auth client (`frontend/src/lib/auth.ts` → `authClient`).
-- **Frontend guard**: `RequireAdmin` in `frontend/src/App.tsx` — anonymous → `/login?next=%2Fworkshop`, signed-in non-admin → `/dashboard`.
+- **Frontend guard**: `ConsoleLayout` in `frontend/src/modules/workshop/layout/ConsoleLayout.tsx` (anon → `/login?next=%2Fconsole`, non-console role → `/dashboard`) + per-route `RequirePermission` (→ `/console`) and `RequireProfilePermission` for `profile/:type/:id`. Legacy `/workshop*` and `/controlpanel*` redirect client-side to `/console` equivalents. Backend `/api/workshop` chain stays `requireRole('admin')` (no permission-level API gating yet — P0-C/D).
 - **Login audit**: better-auth `databaseHooks.session.create.after` → `logAudit(..., 'login', 'auth', 'ورود کاربر ...')`. Failures swallowed. `audit_logs` only records SUCCESSFUL logins — a failing login leaves no audit row.
 - **Base URL**: `BETTER_AUTH_URL` env (prod: https://polarisstyle.ir, local default http://localhost:3016). Trusted origins from `core/origins.ts` (shared with CORS + socket.io — single source, don't hardcode elsewhere).
 
