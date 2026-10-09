@@ -41,6 +41,16 @@ export const PERMISSIONS = [
     'returns.manage',
     // Blog CMS (/console/website/blog) — the controlpanel access today
     'blog.manage',
+    // Supply / purchasing (P0-C: /console/supply) — suppliers, requests,
+    // orders, receipts, landed cost. Financial figures additionally gated.
+    'suppliers.view',
+    'suppliers.manage',
+    'purchasing.view',
+    'purchasing.manage',
+    'purchasing.approve',
+    'purchasing.receive',
+    'supplycosts.manage',
+    'purchasefinance.view',
     // Backups module (console settings → پشتیبان‌گیری)
     'backup.read',
     'backup.run',
@@ -65,6 +75,8 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
         'returns.view',
         'analytics.view',
         'reports.view',
+        'suppliers.view',
+        'purchasing.view',
     ],
 };
 

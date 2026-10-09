@@ -17,7 +17,7 @@
  *   items cache == Σ ledger | debt cache == Σ financial | every movement has
  *   reference + actor | every sensitive action audited.
  */
-import { and, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 
 import { db } from '../src/config/drizzle.js';
 import { getSellerBalance } from '../src/core/services/financialService.js';
@@ -42,6 +42,9 @@ import {
     softDeleteSeller,
 } from '../src/modules/workshop/inventoryService.js';
 import { createOrder, updateOrderStatus } from '../src/services/ordersService.js';
+import * as supplierSvc from '../src/modules/supply/supplierService.js';
+import * as purchaseSvc from '../src/modules/supply/purchaseService.js';
+import { shelfLocationId } from '../src/core/services/inventoryLedgerService.js';
 import {
     auditLogs,
     consignments,
@@ -50,13 +53,25 @@ import {
     items,
     orders,
     purchaseItems,
+    purchaseReceipts,
+    purchaseReceiptItems,
+    purchaseRequestItems,
+    purchaseRequests,
     purchases,
     sellers,
     skus,
     skuLocations,
+    supplyCosts,
+    supplyCostAllocations,
     suppliers,
+    supplierPrices,
 } from '../src/schema/index.js';
 
+const SUPPLIER_NAME = 'تأمین‌کننده آزمون پذیرش';
+const PO_UNIT_COST = 85_000;
+const PO_QTY = 50;
+const PO_RECEIVE = 50;
+const SUPPLY_COST = 300_000;
 const REF = 'acceptance-test';
 const ADMIN_ID = 'pwAoBHRjr8giUkPk3w1xZ1RTtLaHnzjs';
 const ACTOR_NAME = 'آزمون پذیرش';
@@ -184,6 +199,156 @@ async function assertMovementsTraceable(): Promise<void> {
     const bad = rows.filter((r) => r.referenceType === '' || r.referenceId === '' || !r.actorId);
     check(`every ${REF} movement has reference + actor (${rows.length} rows)`, bad.length === 0, bad.slice(0, 5));
 }
+async function runP0CSection(): Promise<void> {
+    // P0-C #14: supplier with price history.
+    console.log('1. supplier CRUD + append-only price history');
+    const supplier = await supplierSvc.createSupplier(
+        { name: `${SUPPLIER_NAME}${Date.now()}`, contactPerson: 'احمد آزمون' },
+        ADMIN_ID,
+    );
+    check('supplier created', supplier.id !== undefined && supplier.name.startsWith(SUPPLIER_NAME));
+
+    // The item is created in P0-B step 1 (same closure). Reuse it: find the
+    // most recent acceptance item and its linked legacy SKU.
+    const latestItems = await db
+        .select({ id: items.id })
+        .from(items)
+        .where(sql`name LIKE 'کالای آزمون پذیرش%'`)
+        .orderBy(desc(items.createdAt))
+        .limit(1);
+    const itemId = latestItems[0]?.id;
+    check('found acceptance item for PO line', itemId !== undefined, { itemId });
+    if (!itemId) return;
+    // createItem already ensured a legacy SKU is linked via legacyItemId.
+    const skuLookup = await db.select({ id: skus.id }).from(skus).where(eq(skus.legacyItemId, itemId));
+    const skuId = skuLookup[0]?.id ?? itemId;
+    check('resolved SKU for PO line', skuId !== undefined, { skuId });
+
+    // P0-C #14: append-only supplier price history (needs a real SKU FK).
+    await supplierSvc.appendSupplierPrice(supplier.id, {
+        skuId,
+        unit: 'قلم',
+        purchasePrice: 80_000,
+        currency: 'IRT',
+        effectiveDate: new Date(),
+    }, ADMIN_ID);
+    await supplierSvc.appendSupplierPrice(supplier.id, {
+        skuId,
+        unit: 'قلم',
+        purchasePrice: 82_000,
+        currency: 'IRT',
+        effectiveDate: new Date(),
+    }, ADMIN_ID);
+    const prices = await supplierSvc.listSupplierPrices(supplier.id);
+    check('price history append-only (2 rows)', prices.length === 2, { count: prices.length });
+    check('price history kept both versions', prices.map((p) => p.purchasePrice).sort().join(',') === '80000,82000');
+
+    console.log('2. purchase request → submit → approve');
+    const req = await purchaseSvc.createRequest(
+        { supplierId: supplier.id, notes: 'آزمون P0-C', items: [{ skuId, quantity: PO_QTY, unit: 'قلم' }] },
+        ADMIN_ID,
+    );
+    check('request created', req.id !== undefined && req.status === 'draft');
+    const submitted = await purchaseSvc.moveRequest(req.id, 'submit');
+    check('request submitted', submitted.status === 'submitted');
+    const approved = await purchaseSvc.moveRequest(req.id, 'approve');
+    check('request approved', approved.status === 'approved');
+
+    // Reject-then-convert guard: convertRequest requires 'approved'.
+    console.log('3. approved request → purchase order');
+    const order = await purchaseSvc.convertRequest(req.id, ADMIN_ID);
+    check('order created from request', order.id !== undefined && order.status === 'draft');
+    check('order carries requestId link', order.requestId === req.id);
+
+    // Update order unit cost for the line.
+    console.log('4. order edit in draft');
+    await purchaseSvc.updateOrder(order.id, { items: [{ skuId, quantity: PO_QTY, unit: 'قلم', unitCost: PO_UNIT_COST }] }, ADMIN_ID);
+    const order2 = await purchaseSvc.getOrder(order.id);
+    const line = order2.items[0];
+    check('order line unitCost set', Number(line?.unitCost) === PO_UNIT_COST, { unitCost: line?.unitCost });
+
+    // Receipt goods — inventory ledger + legacy cache + payable.
+    console.log('5. receive goods (50)');
+    const receipt = await purchaseSvc.createReceipt(order.id, {
+        items: [{ purchaseItemId: line!.id, quantity: PO_RECEIVE, unitCost: PO_UNIT_COST }],
+    }, ADMIN_ID);
+    check('receipt posted', receipt.id !== undefined && receipt.status === 'posted');
+
+    // Inventory invariant: cache == Σ ledger at shelf location.
+    const skuRow = await db.select({ id: skus.id }).from(skus).where(eq(skus.legacyItemId, itemId));
+    const orderSkuId = skuRow[0]?.id ?? itemId;
+    const shelfLed = await ledgerQty(orderSkuId, shelfLocationId());
+    const shelfCache = await cacheQty(orderSkuId, shelfLocationId());
+    check('inventory cache == Σ ledger after receipt', shelfCache === shelfLed, { cache: shelfCache, ledger: shelfLed });
+    check('stock cache reflects received qty', shelfCache >= PO_RECEIVE, { cache: shelfCache });
+
+    // Ledger movement traceability.
+    const receiptMovements = await movementsFor(receipt.id, 'purchase_receipt');
+    check('receipt has PURCHASE_RECEIPT ledger moves', receiptMovements.length > 0, { count: receiptMovements.length });
+    const untraced = receiptMovements.filter((m) => !m.actorId || !m.referenceId);
+    check('receipt movements traced to actor', untraced.length === 0, { bad: untraced.length });
+
+    // Payable posted (separate from EXPENSE supply costs).
+    const payables = await db
+        .select({ dir: financialTransactions.direction, amount: financialTransactions.amount })
+        .from(financialTransactions)
+        .where(
+            and(
+                eq(financialTransactions.txnType, 'PAYABLE'),
+                eq(financialTransactions.counterpartyId, supplier.id),
+            ),
+        );
+    const payableTotal = payables.reduce((s, r) => s + Number(r.amount), 0);
+    check('payable posted for receipt value', payableTotal === PO_QTY * PO_UNIT_COST, { payable: payableTotal, expected: PO_QTY * PO_UNIT_COST });
+
+    // P0-C: supply cost + landed-cost allocation.
+    console.log('6. supply cost + landed cost allocation');
+    const cost = await purchaseSvc.addSupplyCost(order.id, {
+        costType: 'shipping',
+        description: 'حمل و نقل آزمون',
+        amount: SUPPLY_COST,
+        currency: 'IRT',
+        allocationMethod: 'by_value',
+    }, ADMIN_ID);
+    check('supply cost created', cost.id !== undefined);
+
+    // Σ allocations == amount (largest-remainder invariant).
+    const allocs = await db
+        .select({ amount: supplyCostAllocations.amount })
+        .from(supplyCostAllocations)
+        .where(eq(supplyCostAllocations.costId, cost.id));
+    const allocSum = allocs.reduce((s, a) => s + Number(a.amount), 0);
+    check('Σ allocations == cost amount', allocSum === SUPPLY_COST, { sum: allocSum, expected: SUPPLY_COST });
+
+    // Landed cost = purchase cost + allocated cost per line.
+    const order3 = await purchaseSvc.getOrder(order.id);
+    const landed = order3.landedCost[0];
+    const expectedLanded = PO_QTY * PO_UNIT_COST + SUPPLY_COST;
+    check('landed cost == purchase cost + allocated', landed !== undefined && landed.landed === expectedLanded, {
+        got: landed?.landed, expected: expectedLanded,
+    });
+
+    // Audit trail for cost creation.
+    await assertAudited('supply-cost', cost.id, 'create');
+
+    // Order status progressed to partially_received/received.
+    const orderFinal = await purchaseSvc.getOrder(order.id);
+    check('order status progressed after receipt', orderFinal.status === 'received' || orderFinal.status === 'partially_received', { status: orderFinal.status });
+    // --- cleanup: remove P0-C test fixture entities (supplier + chain) ---
+    await db.delete(supplyCostAllocations).where(inArray(supplyCostAllocations.costId, (await db.select({ id: supplyCosts.id }).from(supplyCosts).where(eq(supplyCosts.purchaseId, order.id))).map((c) => c.id)));
+    await db.delete(supplyCosts).where(eq(supplyCosts.purchaseId, order.id));
+    await db.delete(purchaseReceiptItems).where(inArray(purchaseReceiptItems.receiptId, (await db.select({ id: purchaseReceipts.id }).from(purchaseReceipts).where(eq(purchaseReceipts.purchaseId, order.id))).map((r) => r.id)));
+    await db.delete(purchaseReceipts).where(eq(purchaseReceipts.purchaseId, order.id));
+    await db.delete(purchaseItems).where(eq(purchaseItems.purchaseId, order.id));
+    await db.delete(purchases).where(eq(purchases.id, order.id));
+    await db.delete(purchaseRequestItems).where(eq(purchaseRequestItems.requestId, req.id));
+    await db.delete(purchaseRequests).where(eq(purchaseRequests.id, req.id));
+    await db.delete(supplierPrices).where(eq(supplierPrices.supplierId, supplier.id));
+    await db.delete(suppliers).where(eq(suppliers.id, supplier.id));
+
+    console.log('  P0-C section complete (test fixtures cleaned up)');
+}
+
 
 async function main(): Promise<void> {
     console.log('\n▶ P0-B acceptance (dev DB, real services)\n');
@@ -509,6 +674,9 @@ async function main(): Promise<void> {
         debt: await getSellerBalance(seller.id),
     });
     await assertDebtMatchesFinancial(seller.id, 'after cleanup');
+    // ------------------------------------------------------------------ P0-C
+    console.log('\n▶ P0-C: Supply chain (supplier → request → order → receipt → costs)\n');
+    await runP0CSection();
 
     console.log(`\n▶ ${checks - failures}/${checks} checks passed`);
     if (failures > 0) {

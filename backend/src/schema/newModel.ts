@@ -119,14 +119,25 @@ export const suppliers = mysqlTable(
         id: varchar('id', { length: 36 }).primaryKey(),
         code: varchar('code', { length: 32 }).unique(),
         name: varchar('name', { length: 255 }).notNull(),
+        contactPerson: varchar('contact_person', { length: 255 }),
         phone: varchar('phone', { length: 32 }),
+        email: varchar('email', { length: 255 }),
+        address: varchar('address', { length: 512 }),
+        isActive: boolean('is_active').notNull().default(true),
+        cooperationTerms: text('cooperation_terms'),
+        paymentTerms: varchar('payment_terms', { length: 255 }),
+        paymentDueDays: int('payment_due_days'),
+        minOrderAmount: bigint('min_order_amount', { mode: 'number' }),
         note: text('note'),
         createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
         updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
         deletedAt: datetime('deleted_at'),
         deletedBy: varchar('deleted_by', { length: 36 }),
     },
-    (t) => [index('suppliers_deleted_at_idx').on(t.deletedAt)],
+    (t) => [
+        index('suppliers_deleted_at_idx').on(t.deletedAt),
+        index('suppliers_active_idx').on(t.isActive),
+    ],
 );
 
 export const customers = mysqlTable(
@@ -201,8 +212,15 @@ export const purchases = mysqlTable(
         id: varchar('id', { length: 36 }).primaryKey(),
         code: varchar('code', { length: 32 }).unique(),
         supplierId: varchar('supplier_id', { length: 36 }).notNull(),
+        requestId: varchar('request_id', { length: 36 }),
+        // draft → ordered (= legacy 'confirmed') → partially_received → received | cancelled
         status: varchar('status', { length: 32 }).notNull().default('draft'),
+        orderDate: datetime('order_date'),
+        expectedDate: datetime('expected_date'),
+        subtotal: bigint('subtotal', { mode: 'number' }).notNull().default(0),
+        additionalCosts: bigint('additional_costs', { mode: 'number' }).notNull().default(0),
         totalAmount: bigint('total_amount', { mode: 'number' }).notNull().default(0),
+        paymentTerms: varchar('payment_terms', { length: 255 }),
         note: text('note'),
         actorId: varchar('actor_id', { length: 36 }),
         createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -213,6 +231,7 @@ export const purchases = mysqlTable(
     (t) => [
         index('purchases_supplier_id_idx').on(t.supplierId),
         index('purchases_status_idx').on(t.status),
+        index('purchases_request_id_idx').on(t.requestId),
     ],
 );
 
@@ -223,6 +242,7 @@ export const purchaseItems = mysqlTable(
         purchaseId: varchar('purchase_id', { length: 36 }).notNull(),
         skuId: varchar('sku_id', { length: 36 }).notNull(),
         quantity: int('quantity').notNull(),
+        unit: varchar('unit', { length: 32 }),
         unitCost: bigint('unit_cost', { mode: 'number' }).notNull(),
         receivedQuantity: int('received_quantity').notNull().default(0),
     },
@@ -231,6 +251,164 @@ export const purchaseItems = mysqlTable(
         index('purchase_items_sku_id_idx').on(t.skuId),
     ],
 );
+
+// ===== P0-C supply (items 14/15/16): supplier prices, requests, receipts, costs =====
+// SKU is the product reference (P0-B canonical); supplierPrices.skuId is the
+// "product" the spec asks for. Price rows are append-only history — a price
+// change inserts a new row, never updates the current one in place.
+
+export const supplierPrices = mysqlTable(
+    'supplier_prices',
+    {
+        id: varchar('id', { length: 36 }).primaryKey(),
+        supplierId: varchar('supplier_id', { length: 36 }).notNull(),
+        skuId: varchar('sku_id', { length: 36 }).notNull(),
+        unit: varchar('unit', { length: 32 }),
+        purchasePrice: bigint('purchase_price', { mode: 'number' }).notNull(),
+        currency: varchar('currency', { length: 8 }).notNull().default('IRT'),
+        effectiveDate: datetime('effective_date').notNull().default(sql`CURRENT_TIMESTAMP`),
+        expiresAt: datetime('expires_at'),
+        minQuantity: int('min_quantity'),
+        notes: text('notes'),
+        createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+        updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    },
+    (t) => [
+        index('supplier_prices_supplier_id_idx').on(t.supplierId),
+        index('supplier_prices_sku_id_idx').on(t.skuId),
+        index('supplier_prices_effective_idx').on(t.supplierId, t.skuId, t.effectiveDate),
+    ],
+);
+
+// Purchase request: draft → submitted → approved|rejected → converted | cancelled
+export const purchaseRequests = mysqlTable(
+    'purchase_requests',
+    {
+        id: varchar('id', { length: 36 }).primaryKey(),
+        code: varchar('code', { length: 32 }).unique(),
+        requestedBy: varchar('requested_by', { length: 36 }),
+        requestDate: datetime('request_date').notNull().default(sql`CURRENT_TIMESTAMP`),
+        supplierId: varchar('supplier_id', { length: 36 }),
+        status: varchar('status', { length: 32 }).notNull().default('draft'),
+        notes: text('notes'),
+        createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+        updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    },
+    (t) => [
+        index('purchase_requests_status_idx').on(t.status),
+        index('purchase_requests_supplier_id_idx').on(t.supplierId),
+    ],
+);
+
+export const purchaseRequestItems = mysqlTable(
+    'purchase_request_items',
+    {
+        id: varchar('id', { length: 36 }).primaryKey(),
+        requestId: varchar('request_id', { length: 36 }).notNull(),
+        skuId: varchar('sku_id', { length: 36 }).notNull(),
+        quantity: int('quantity').notNull(),
+        unit: varchar('unit', { length: 32 }),
+        notes: text('notes'),
+    },
+    (t) => [
+        index('purchase_request_items_request_id_idx').on(t.requestId),
+        index('purchase_request_items_sku_id_idx').on(t.skuId),
+    ],
+);
+
+// Goods receipt: independent record per delivery, traceable to its purchase.
+export const purchaseReceipts = mysqlTable(
+    'purchase_receipts',
+    {
+        id: varchar('id', { length: 36 }).primaryKey(),
+        code: varchar('code', { length: 32 }).unique(),
+        purchaseId: varchar('purchase_id', { length: 36 }).notNull(),
+        supplierId: varchar('supplier_id', { length: 36 }).notNull(),
+        warehouseId: varchar('warehouse_id', { length: 36 }),
+        locationId: varchar('location_id', { length: 36 }),
+        receivedDate: datetime('received_date').notNull().default(sql`CURRENT_TIMESTAMP`),
+        receivedBy: varchar('received_by', { length: 36 }),
+        status: varchar('status', { length: 32 }).notNull().default('posted'),
+        notes: text('notes'),
+        createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    },
+    (t) => [
+        index('purchase_receipts_purchase_id_idx').on(t.purchaseId),
+        index('purchase_receipts_supplier_id_idx').on(t.supplierId),
+        index('purchase_receipts_date_idx').on(t.receivedDate),
+    ],
+);
+
+export const purchaseReceiptItems = mysqlTable(
+    'purchase_receipt_items',
+    {
+        id: varchar('id', { length: 36 }).primaryKey(),
+        receiptId: varchar('receipt_id', { length: 36 }).notNull(),
+        purchaseItemId: varchar('purchase_item_id', { length: 36 }).notNull(),
+        skuId: varchar('sku_id', { length: 36 }).notNull(),
+        quantity: int('quantity').notNull(),
+        unitCost: bigint('unit_cost', { mode: 'number' }),
+    },
+    (t) => [
+        index('purchase_receipt_items_receipt_id_idx').on(t.receiptId),
+        index('purchase_receipt_items_purchase_item_id_idx').on(t.purchaseItemId),
+        index('purchase_receipt_items_sku_id_idx').on(t.skuId),
+    ],
+);
+
+// Supply cost type vocabulary (append-only). Kept OUT of financial_transactions:
+// a supply cost is an EXPENSE on the purchase, while the supplier payable is a
+// PAYABLE to the supplier — different rows, different counterparties.
+export type SupplyCostType =
+    | 'shipping'
+    | 'packaging'
+    | 'loading'
+    | 'unloading'
+    | 'customs'
+    | 'commission'
+    | 'other';
+
+export type CostAllocationMethod = 'by_value' | 'by_quantity';
+
+export const supplyCosts = mysqlTable(
+    'supply_costs',
+    {
+        id: varchar('id', { length: 36 }).primaryKey(),
+        purchaseId: varchar('purchase_id', { length: 36 }).notNull(),
+        costType: varchar('cost_type', { length: 32 }).notNull().default('other'),
+        description: varchar('description', { length: 512 }),
+        amount: bigint('amount', { mode: 'number' }).notNull(),
+        currency: varchar('currency', { length: 8 }).notNull().default('IRT'),
+        costDate: datetime('cost_date').notNull().default(sql`CURRENT_TIMESTAMP`),
+        partyType: varchar('party_type', { length: 32 }),
+        partyId: varchar('party_id', { length: 36 }),
+        allocationMethod: varchar('allocation_method', { length: 32 }).notNull().default('by_value'),
+        notes: text('notes'),
+        createdBy: varchar('created_by', { length: 36 }),
+        createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+        updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    },
+    (t) => [
+        index('supply_costs_purchase_id_idx').on(t.purchaseId),
+        index('supply_costs_type_idx').on(t.costType),
+        index('supply_costs_date_idx').on(t.costDate),
+    ],
+);
+
+export const supplyCostAllocations = mysqlTable(
+    'supply_cost_allocations',
+    {
+        id: varchar('id', { length: 36 }).primaryKey(),
+        costId: varchar('cost_id', { length: 36 }).notNull(),
+        purchaseItemId: varchar('purchase_item_id', { length: 36 }).notNull(),
+        amount: bigint('amount', { mode: 'number' }).notNull(),
+    },
+    (t) => [
+        index('supply_cost_alloc_cost_id_idx').on(t.costId),
+        index('supply_cost_alloc_item_id_idx').on(t.purchaseItemId),
+    ],
+);
+
 
 // ===== Sales (P0-D workflows; minimal service in P0-B for tests) =====
 

@@ -15,7 +15,7 @@ import * as damage from './controllers/damageController.js';
 import * as todos from './controllers/todoController.js';
 import * as backups from '../backups/controllers/backupController.js';
 import * as outboundNotifications from '../../modules/notifications/notificationsController.js';
-
+import supplyRouter from '../../modules/supply/supplyRouter.js';
 /**
  * Workshop (business-tracking) routes. Mounted at /api/workshop and, during
  * the migration window, at the legacy /api prefix as well. Every route here
@@ -133,5 +133,9 @@ router.put('/notifications/:id/read', inAppNotifications.readWorkshopNotificatio
 
 // Scheduled delivery: mark a pending handover as physically delivered.
 router.post('/consignments/:id/deliver', consignments.deliverConsignment);
+
+// P0-C supply module: suppliers, purchase requests, purchase orders, receipts,
+// costs, landed cost. Mounted at /api/workshop/supply.
+router.use('/supply', supplyRouter);
 
 export default router;

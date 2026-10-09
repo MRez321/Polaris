@@ -731,3 +731,132 @@ export interface BackupFileMeta {
   automatic: boolean;
 }
 
+
+// ---------------------------------------------------------------------------
+// P0-C: Supply chain — suppliers, purchase requests/orders, receipts, costs
+// ---------------------------------------------------------------------------
+
+export interface Supplier {
+  id: string;
+  code: string;
+  name: string;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  is_active: boolean;
+  cooperationTerms?: string;
+  paymentTerms?: string;
+  paymentDueDays?: number;
+  minOrderAmount?: number;
+  note?: string;
+  createdBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PurchaseRequestStatus = 'draft' | 'submitted' | 'approved' | 'rejected' | 'cancelled' | 'converted';
+export type PurchaseOrderStatus = 'draft' | 'ordered' | 'partially_received' | 'received' | 'cancelled';
+export type SupplyCostType = 'shipping' | 'packaging' | 'loading' | 'unloading' | 'customs' | 'commission' | 'other';
+export type CostAllocationMethod = 'by_value' | 'by_quantity';
+
+export interface PurchaseRequestItem {
+  id: string;
+  requestId: string;
+  skuId: string;
+  quantity: number;
+  unit?: string;
+  notes?: string;
+}
+
+export interface PurchaseRequest {
+  id: string;
+  code: string;
+  supplierId?: string;
+  status: PurchaseRequestStatus;
+  requestedBy?: string;
+  requestDate: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  items?: PurchaseRequestItem[];
+}
+
+export interface PurchaseOrderItem {
+  id: string;
+  purchaseId: string;
+  skuId: string;
+  quantity: number;
+  receivedQuantity: number;
+  unitCost: number;
+  unit?: string;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  code: string;
+  supplierId: string;
+  requestId?: string;
+  status: PurchaseOrderStatus;
+  subtotal: number;
+  additionalCosts: number;
+  totalAmount: number;
+  expectedDate?: string;
+  paymentTerms?: string;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+  items: PurchaseOrderItem[];
+  receipts: PurchaseReceipt[];
+  costs: SupplyCost[];
+  landedCost: LandedCostLine[];
+  timeline: { action: string; entityType: string; entityId: string; details: string; createdAt: string }[];
+}
+
+export interface PurchaseReceiptItem {
+  id: string;
+  receiptId: string;
+  purchaseItemId: string;
+  skuId: string;
+  quantity: number;
+  unitCost?: number;
+}
+
+export interface PurchaseReceipt {
+  id: string;
+  code: string;
+  purchaseId: string;
+  supplierId: string;
+  receivedDate: string;
+  status: string;
+  items: PurchaseReceiptItem[];
+}
+
+export interface SupplyCost {
+  id: string;
+  purchaseId: string;
+  costType: SupplyCostType;
+  description?: string;
+  amount: number;
+  currency: string;
+  costDate: string;
+  allocationMethod: CostAllocationMethod;
+  notes?: string;
+  allocations: SupplyCostAllocation[];
+}
+
+export interface SupplyCostAllocation {
+  id: string;
+  costId: string;
+  purchaseItemId: string;
+  amount: number;
+}
+
+export interface LandedCostLine {
+  purchaseItemId: string;
+  skuId: string;
+  purchaseCost: number;
+  allocated: number;
+  landed: number;
+  landedUnit: number | null;
+}

@@ -15,6 +15,7 @@ backend/
       auth/          better-auth service + requireAuth/requireRole middleware + /api/auth mount
       workshop/      router.ts + controllers/ (10) + services/inventoryService.ts (39KB core logic)
       cms/           blog, company, website, gallery controllers
+      supply/        supplier CRUD, purchase requests/orders, receipts, supply costs, landed cost (P0-C)
       notifications/ settings + Telegram/SMS (Melipayamak) senders
     controllers/     health, orders (customer), addresses (customer)
     schema/          drizzle table definitions — auth, workshop, orders, cms, company, notifications, audit, userAddresses, clientId
@@ -35,8 +36,9 @@ backend/
 /api/blog*                                 requireRole('admin','author')
 --- requireRole('admin') ---
 /api/company*, /api/website/settings, /api/uploads, /api/gallery*
-/api/workshop/*  (workshopAdminChain: requireAuth → requireRole('admin') → workshopRouter)
-```
+:/api/workshop/*  (workshopAdminChain: requireAuth → requireRole('admin') → workshopRouter)
+:/api/workshop/supply/*  (mounted in workshopRouter; requirePermission gates per-op)
+
 
 Legacy `/api/workshop-legacy` inline mount was removed in Phase 5 — `/api/workshop` is the only path; smoke suites assert 404 on legacy.
 
@@ -59,6 +61,20 @@ GET/POST/PUT/DELETE /todos (workshop todo list: id, text, priority low|medium|hi
 GET /backups (list), POST /backups/run/:kind (kind: database|website|full|cpanel), GET /backups/download/:id (base64url id, traversal-guarded), DELETE /backups/:id, GET/PUT /backups/settings (scheduleHours, retention, autoKind, autoEnabled, notifyTelegram, cpanel creds)
 ```
 
+## Supply router endpoints (P0-C: backend/src/modules/supply/supplyRouter.ts, mounted at `/api/workshop/supply`)
+```
+GET  /suppliers, POST /suppliers, GET/GET-detail /suppliers/:id, PATCH /suppliers/:id
+POST /suppliers/:id/activate, POST /suppliers/:id/deactivate
+GET /suppliers/:id/prices, POST /suppliers/:id/prices  (price history is append-only — UPDATE inserts a new row)
+GET /purchase-requests, POST /purchase-requests, GET /purchase-requests/:id, PATCH /purchase-requests/:id
+POST /purchase-requests/:id/{submit|approve|reject|cancel}  (transition guarded), POST /purchase-requests/:id/convert  (approved-only → purchase order)
+GET /purchase-orders, POST /purchase-orders, GET /purchase-orders/:id, PATCH /purchase-orders/:id, POST /purchase-orders/:id/cancel
+POST /purchase-orders/:id/receipts, GET /purchase-orders/:id/receipts, GET /receipts/:id
+POST /purchase-orders/:id/costs, PATCH/DELETE /purchase-orders/:id/costs/:costId, GET /purchase-orders/:id/costs
+GET /purchase-orders/:id/landed-cost
+```
+Permissions: `suppliers.view/manage`, `purchasing.view/manage/approve/receive`, `supplycosts.manage`, `purchasefinance.view`. All admin-only via the workshopAdminChain. See `docs/superpowers/specs/2026-10-poc-supply.md` for full design.
+
 `/api/company` (companyController): GET returns the full CompanyBranding JSON from `company_settings.data`; PUT validates with `companySchema` (Zod) which includes optional `analyticsSettings {gaMeasurementId, websiteUrl}` and `dashboardPrefs` (v2 layout object `{version: 2, order, hidden, cols, collapsed, presets}` — see FRONTEND.md) — `updateCompany` shallow-merges fields into the JSON blob (nested objects replace wholesale, so callers always send the complete nested object).
 
 Notes from the old API reference:
@@ -72,14 +88,14 @@ Controllers are thin (parse → service call → res.json); business logic lives
 ## Conventions
 
 - Zod validation at every controller boundary; error shape `{ error: string }` (smoke-tested).
-- Audit logging via `logAudit(user, action, entity, details, ip?)` from `core/services/auditService.ts` — `audit_logs` table, column is `details` NOT `description`. Only successful logins audited automatically (better-auth session-create hook).
+- Audit logging via `recordAudit()` / `entityActor(tx, userId)` from `core/services/auditService.ts` — `audit_logs` table, columns are `entity_type`/`entity_id`/`action`/`details`. P0-C supply actions (supplier CRUD, price append, request/order/receipt/cost changes) all audit with the session actor. Only successful logins audited automatically (better-auth session-create hook).
 - TS: ESM (`"type": "module"`), `.js` import suffixes, no top-level await in server.ts (broke cPanel startup once — see commit f0ad94a).
 - Node >=18; running on Node 22 locally, cPanel runs its own selector version.
 
 ## Smoke suites (cwd backend/, backend must be running on 3016)
 
+- `node scripts/test-acceptance.mts` — full invariant suite (P0-B + P0-C): runs real services against dev MySQL; asserts cache == Σledger, Σ allocations == cost amount, payables separate from expenses, every movement audited + actor-traced. Expects 79/79 checks (57 P0-B + 22 P0-C). RUN after any backend change.
 - `node scripts/smoke.mjs` — full flow: sign-in, role check, CRUD, expenses, profit distribution, audit, error shape. RUN after any backend change.
-- `smoke-phase2.mjs`, `smoke-phase3.mjs` — phase-scoped regression suites.
 
 ## Starting the backend
 

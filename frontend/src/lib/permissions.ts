@@ -35,6 +35,15 @@ export const PERMISSIONS = [
     'returns.manage',
     // Blog CMS (/console/website/blog)
     'blog.manage',
+    // Supply / purchasing (P0-C: /console/supply)
+    'suppliers.view',
+    'suppliers.manage',
+    'purchasing.view',
+    'purchasing.manage',
+    'purchasing.approve',
+    'purchasing.receive',
+    'supplycosts.manage',
+    'purchasefinance.view',
     // Backups module (console settings → پشتیبان‌گیری)
     'backup.read',
     'backup.run',
@@ -64,6 +73,8 @@ const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
         'returns.view',
         'analytics.view',
         'reports.view',
+        'suppliers.view',
+        'purchasing.view',
     ],
 };
 

@@ -31,6 +31,7 @@ import FinancesPage from '@/modules/workshop/pages/FinancesPage';
 import SettingsPage from '@/modules/workshop/pages/SettingsPage';
 import ReturnsPage from '@/modules/workshop/returns/ReturnsPage';
 import AnalyticsPage from '@/modules/workshop/analytics/AnalyticsPage';
+import SupplyPage from '@/modules/workshop/supply/SupplyPage';
 import EntityProfilePage from '@/modules/workshop/pages/EntityProfilePage';
 import WebsiteSettingsPage from '@/pages/controlpanel/WebsiteSettingsPage';
 import ThemeSettingsPage from '@/pages/controlpanel/ThemeSettingsPage';
@@ -99,6 +100,11 @@ function App() {
                         <Route element={<RequirePermission permission="people.view" />}>
                           <Route path="people" element={<PeoplePage />} />
                           <Route path="people/staff" element={<PeoplePage />} />
+                        </Route>
+                        <Route element={<RequirePermission permission="suppliers.view" />}>
+                          <Route path="supply" element={<SupplyPage />} />
+                          <Route path="supply/suppliers/:id" element={<SupplyPage />} />
+                          <Route path="supply/purchase-orders/:id" element={<SupplyPage />} />
                         </Route>
                         <Route element={<RequirePermission permission="finances.view" />}>
                           <Route path="finances" element={<FinancesPage />} />

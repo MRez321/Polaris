@@ -10,17 +10,29 @@ import type {
   DamageRecord,
   DashboardStats,
   GarmentItem,
+  LandedCostLine,
   Order,
   OrderPaymentMethod,
   OrderStatus,
+  PublicCatalogItem,
+  PublicCompanyInfo,
+  PurchaseOrder,
+  PurchaseReceipt,
+  PurchaseRequest,
+  PurchaseRequestItem,
+  PurchaseOrderItem,
+  PurchaseReceiptItem,
+  PurchaseRequestStatus,
+  PurchaseOrderStatus,
+  SupplyCostType,
+  Seller,
+  StaffMember,
+  SupplyCost,
+  Supplier,
   UserAddress,
   Owner,
   PaymentRecord,
   ProfitShareDistribution,
-  PublicCatalogItem,
-  PublicCompanyInfo,
-  Seller,
-  StaffMember,
   WorkshopExpense,
   WebsiteSettings,
   NotificationSettings,
@@ -414,4 +426,162 @@ export const backupApi = {
       .then((r) => r.data),
   download: (id: string) => `${W}/backups/${encodeURIComponent(id)}/download`,
   remove: (id: string) => api.delete<{ message: string }>(`${W}/backups/${id}`).then((r) => r.data),
+};
+
+// --- P0-C: Supply chain (suppliers, purchase requests/orders, receipts, costs) ---
+const S = `${W}/supply`;
+
+export interface SupplierListParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  isActive?: boolean;
+  sort?: 'name' | 'code' | 'createdAt';
+  dir?: 'asc' | 'desc';
+}
+
+export interface PurchaseRequestListParams {
+  page?: number;
+  limit?: number;
+  status?: string;
+  supplierId?: string;
+}
+
+export interface PurchaseOrderListParams {
+  page?: number;
+  limit?: number;
+  status?: string;
+  supplierId?: string;
+}
+
+export interface SupplierPayload {
+  code?: string;
+  name: string;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  is_active?: boolean;
+  cooperationTerms?: string;
+  paymentTerms?: string;
+  paymentDueDays?: number;
+  minOrderAmount?: number;
+  note?: string;
+}
+
+export interface SupplierPricePayload {
+  skuId: string;
+  unit?: string;
+  purchasePrice: number;
+  currency?: string;
+  effectiveDate?: string;
+  minQuantity?: number;
+  notes?: string;
+}
+
+export interface PurchaseRequestPayload {
+  supplierId?: string;
+  notes?: string;
+  items: { skuId: string; quantity: number; unit?: string; notes?: string }[];
+}
+
+export interface PurchaseOrderPayload {
+  supplierId: string;
+  requestId?: string;
+  expectedDate?: string;
+  paymentTerms?: string;
+  note?: string;
+  additionalCosts?: number;
+  items: { skuId: string; quantity: number; unit?: string; unitCost: number }[];
+}
+
+export interface PurchaseReceiptPayload {
+  warehouseId?: string;
+  locationId?: string;
+  notes?: string;
+  items: { purchaseItemId: string; quantity: number; unitCost?: number }[];
+}
+
+export interface SupplyCostPayload {
+  costType: string;
+  description?: string;
+  amount: number;
+  currency?: string;
+  costDate?: string;
+  partyType?: string;
+  partyId?: string;
+  allocationMethod?: 'by_value' | 'by_quantity';
+  notes?: string;
+}
+
+export const supplyApi = {
+  // --- Suppliers ---
+  listSuppliers: (params?: SupplierListParams) =>
+    api.get<{ rows: Supplier[]; total: number }>(S + '/suppliers', { params }).then((r) => r.data),
+  getSupplier: (id: string) => api.get<Supplier>(`${S}/suppliers/${encodeURIComponent(id)}`).then((r) => r.data),
+  getSupplierDetail: (id: string) => api.get<Supplier>(`${S}/suppliers/${encodeURIComponent(id)}/detail`).then((r) => r.data),
+  createSupplier: (input: SupplierPayload) => api.post<Supplier>(S + '/suppliers', input).then((r) => r.data),
+  updateSupplier: (id: string, input: Partial<SupplierPayload>) => api.patch<Supplier>(`${S}/suppliers/${encodeURIComponent(id)}`, input).then((r) => r.data),
+  activateSupplier: (id: string) => api.put<Supplier>(`${S}/suppliers/${encodeURIComponent(id)}/activate`, {}).then((r) => r.data),
+  deactivateSupplier: (id: string) => api.put<Supplier>(`${S}/suppliers/${encodeURIComponent(id)}/deactivate`, {}).then((r) => r.data),
+  listPrices: (id: string, skuId?: string) =>
+    api.get<unknown[]>(`${S}/suppliers/${encodeURIComponent(id)}/prices`, { params: skuId ? { skuId } : undefined }).then((r) => r.data),
+  addPrice: (id: string, input: SupplierPricePayload) =>
+    api.post<unknown>(`${S}/suppliers/${encodeURIComponent(id)}/prices`, input).then((r) => r.data),
+
+  // --- Purchase requests ---
+  listRequests: (params?: PurchaseRequestListParams) =>
+    api.get<{ rows: PurchaseRequest[]; total: number }>(S + '/purchase-requests', { params }).then((r) => r.data),
+  getRequest: (id: string) => api.get<PurchaseRequest>(`${S}/purchase-requests/${encodeURIComponent(id)}`).then((r) => r.data),
+  createRequest: (input: PurchaseRequestPayload) => api.post<PurchaseRequest>(S + '/purchase-requests', input).then((r) => r.data),
+  updateRequest: (id: string, input: Partial<PurchaseRequestPayload>) =>
+    api.patch<PurchaseRequest>(`${S}/purchase-requests/${encodeURIComponent(id)}`, input).then((r) => r.data),
+  moveRequest: (id: string, action: 'submit' | 'approve' | 'reject' | 'cancel') =>
+    api.post<PurchaseRequest>(`${S}/purchase-requests/${encodeURIComponent(id)}/${action}`, {}).then((r) => r.data),
+  convertRequest: (requestId: string) =>
+    api.post<PurchaseOrder>(`${S}/purchase-requests/${encodeURIComponent(requestId)}/convert`, {}).then((r) => r.data),
+
+  // --- Purchase orders ---
+  listOrders: (params?: PurchaseOrderListParams) =>
+    api.get<{ rows: PurchaseOrder[]; total: number }>(S + '/purchase-orders', { params }).then((r) => r.data),
+  getOrder: (id: string) => api.get<PurchaseOrder>(`${S}/purchase-orders/${encodeURIComponent(id)}`).then((r) => r.data),
+  createOrder: (input: PurchaseOrderPayload) => api.post<PurchaseOrder>(S + '/purchase-orders', input).then((r) => r.data),
+  updateOrder: (id: string, input: Partial<PurchaseOrderPayload>) =>
+    api.patch<PurchaseOrder>(`${S}/purchase-orders/${encodeURIComponent(id)}`, input).then((r) => r.data),
+  cancelOrder: (id: string) => api.put<PurchaseOrder>(`${S}/purchase-orders/${encodeURIComponent(id)}/cancel`, {}).then((r) => r.data),
+  getLandedCost: (id: string) =>
+    api.get<{ purchaseId: string; landedCost: LandedCostLine[] }>(`${S}/purchase-orders/${encodeURIComponent(id)}/landed-cost`).then((r) => r.data),
+
+  // --- Receipts ---
+  listReceipts: (orderId: string) => api.get<PurchaseReceipt[]>(`${S}/purchase-orders/${encodeURIComponent(orderId)}/receipts`).then((r) => r.data),
+  getReceipt: (id: string) => api.get<PurchaseReceipt>(`${S}/receipts/${encodeURIComponent(id)}`).then((r) => r.data),
+  createReceipt: (orderId: string, input: PurchaseReceiptPayload) =>
+    api.post<PurchaseReceipt>(`${S}/purchase-orders/${encodeURIComponent(orderId)}/receipts`, input).then((r) => r.data),
+
+  // --- Supply costs ---
+  listCosts: (orderId: string) => api.get<SupplyCost[]>(`${S}/purchase-orders/${encodeURIComponent(orderId)}/costs`).then((r) => r.data),
+  getCost: (orderId: string, id: string) =>
+    api.get<SupplyCost>(`${S}/purchase-orders/${encodeURIComponent(orderId)}/costs/${encodeURIComponent(id)}`).then((r) => r.data),
+  addCost: (orderId: string, input: SupplyCostPayload) =>
+    api.post<SupplyCost>(`${S}/purchase-orders/${encodeURIComponent(orderId)}/costs`, input).then((r) => r.data),
+  updateCost: (orderId: string, id: string, input: Partial<SupplyCostPayload>) =>
+    api.patch<SupplyCost>(`${S}/purchase-orders/${encodeURIComponent(orderId)}/costs/${encodeURIComponent(id)}`, input).then((r) => r.data),
+  deleteCost: (orderId: string, id: string) =>
+    api.delete<{ message: string }>(`${S}/purchase-orders/${encodeURIComponent(orderId)}/costs/${encodeURIComponent(id)}`).then((r) => r.data),
+};
+
+// Re-export supply domain types for consumers importing from api.ts only.
+export type {
+  Supplier,
+  PurchaseOrder,
+  PurchaseOrderStatus,
+  PurchaseRequestStatus,
+  PurchaseRequest as PurchaseRequestType,
+  PurchaseRequestItem,
+  PurchaseOrderItem,
+  PurchaseReceipt,
+  PurchaseReceiptItem,
+  SupplyCost,
+  SupplyCostType,
+  LandedCostLine,
 };
