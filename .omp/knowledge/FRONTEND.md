@@ -5,6 +5,13 @@
 `src/main.tsx` → `src/App.tsx` — providers wrap BrowserRouter: Theme → Brand → Network → Auth → Cart → Favorites. Route table lives in App.tsx (see START-HERE). Guard: `ConsoleLayout` (anon → `/login?next=%2Fconsole`, non-console role → `/dashboard`) + per-route `RequirePermission` (→ `/console`); legacy `/workshop*` + `/controlpanel*` redirect client-side to `/console` equivalents.
 `/console/supply` (Permission `suppliers.view`) → SupplyPage with tabs: Suppliers / Orders / Receipts / Costs; `/console/supply/suppliers/:id` and `/console/supply/purchase-orders/:id` render the same page (self-fetching via `supplyApi`).
 
+P0-D Unified Sales routes (`/console/*`):
+- `/console/sales-orders` (Permission `sales.view`) → SalesOrdersPage — list/create orders, status transitions, SALE movements
+- `/console/seller-sales` (Permission `seller-sales.view`) → SellerSalesPage — list/create seller sales, commission view, settlement flow
+- `/console/customers` (Permission `customers.view`) → CustomersPage — list/create/edit customers with credit/debt tracking
+- `/console/sales-channels` (Permission `channels.view`) → SalesChannelsPage — manage sales channels (website, instagram, etc.)
+- `/console/sales-payments` (Permission `payments.view`) → SalesPaymentsPage — list payments (order payments + seller settlements)
+
 Two app surfaces:
 - **Public storefront** — `src/pages/public/*` inside `PublicLayout` (`src/components/public/`).
 - **Unified console** — `src/modules/workshop/` routed at `/console/*` inside `ConsoleLayout` (merged from the former `/workshop` AppLayout + `/controlpanel` ControlPanelLayout). All management code isolated here (Phase 5 separation); only shared logic/components stay outside. The 4 website pages (`pages/controlpanel/`) render at `/console/website/*`.
@@ -17,7 +24,7 @@ src/
   pages/                   public/*, controlpanel/* (website pages for /console/website/*), LoginPage, SignupPage
   modules/workshop/        THE admin panel
     supply/                SupplyPage (suppliers/orders/receipts/costs tabs; self-fetching via supplyApi) — P0-C
-    pages/                 Dashboard, Orders, Inventory, Consignments, People, Finances, Returns, Analytics, Settings, EntityProfile (`profile/:type/:id` for items/sellers/staff/owners)
+    pages/                 Dashboard, Orders, Inventory, Consignments, People, Finances, Returns, Analytics, Settings, EntityProfile, SalesOrders, SellerSales, Customers, SalesChannels, SalesPayments — P0-D
     layout/                ConsoleLayout (role guard + index landing + scroll-to-top on route change), Sidebar (permission-filtered nav + «نبض کارگاه» pulse card), Header (quick handover/payment gated on consignments.manage), MobileNav (workshop roles only; bottom bar + actions popover with Plus-badged pills), SideMenu (permission-filtered sheet; quick-trigger buttons removed — actions live in MobileNav popover)
     context/               DataContext (workshop data + CompanyBranding `workshopInfo`), UIContext (drawers/modals)
     inventory/consignments/payments/staff/sellers/people/settings/audit/finances/  Manager components per domain

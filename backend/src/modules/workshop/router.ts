@@ -15,6 +15,11 @@ import * as damage from './controllers/damageController.js';
 import * as todos from './controllers/todoController.js';
 import * as backups from '../backups/controllers/backupController.js';
 import * as outboundNotifications from '../../modules/notifications/notificationsController.js';
+import * as salesOrders from './controllers/salesController.js';
+import * as sellerSales from './controllers/sellerSalesController.js';
+import * as salesPayments from './controllers/salesPaymentsController.js';
+import * as customers from './controllers/customersController.js';
+import * as salesChannels from './controllers/salesChannelsController.js';
 import supplyRouter from '../../modules/supply/supplyRouter.js';
 /**
  * Workshop (business-tracking) routes. Mounted at /api/workshop and, during
@@ -133,8 +138,35 @@ router.put('/notifications/:id/read', inAppNotifications.readWorkshopNotificatio
 
 // Scheduled delivery: mark a pending handover as physically delivered.
 router.post('/consignments/:id/deliver', consignments.deliverConsignment);
+// ---------------------------------------------------------------------------
+// P0-D: Unified Sales — orders, seller sales, payments, customers, channels
+// ---------------------------------------------------------------------------
 
-// P0-C supply module: suppliers, purchase requests, purchase orders, receipts,
+// Sales orders (retail, wholesale, consignment, manual)
+router.get('/sales-orders', requirePermission('sales.view'), salesOrders.listSalesOrders);
+router.post('/sales-orders', requirePermission('sales.manage'), salesOrders.createSalesOrder);
+router.get('/sales-orders/:id', requirePermission('sales.view'), salesOrders.getSalesOrder);
+router.put('/sales-orders/:id/status', requirePermission('sales.manage'), salesOrders.transitionOrderStatus);
+
+// Seller sales (street sellers' actual sales)
+router.get('/seller-sales', requirePermission('seller-sales.view'), sellerSales.listSellerSales);
+router.post('/seller-sales', requirePermission('seller-sales.manage'), sellerSales.createSellerSale);
+router.get('/seller-sales/:id', requirePermission('seller-sales.view'), sellerSales.getSellerSale);
+router.put('/seller-sales/:id/status', requirePermission('seller-sales.manage'), sellerSales.transitionSellerSaleStatus);
+
+// Sales payments (customer payments + seller settlements)
+router.get('/sales-payments', requirePermission('payments.view'), salesPayments.listSalesPayments);
+router.post('/sales-payments', requirePermission('payments.manage'), salesPayments.createSalesPayment);
+// Customers
+router.get('/customers', requirePermission('customers.view'), customers.listCustomers);
+router.get('/customers/:id', requirePermission('customers.view'), customers.getCustomer);
+router.post('/customers', requirePermission('customers.manage'), customers.createCustomer);
+router.put('/customers/:id', requirePermission('customers.manage'), customers.updateCustomer);
+
+// Sales channels (read-only; seeded via migration)
+router.get('/sales-channels', requirePermission('channels.view'), salesChannels.listSalesChannels);
+router.get('/sales-channels/:id', requirePermission('channels.view'), salesChannels.getSalesChannel);
+
 // costs, landed cost. Mounted at /api/workshop/supply.
 router.use('/supply', supplyRouter);
 

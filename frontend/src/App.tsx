@@ -37,6 +37,11 @@ import WebsiteSettingsPage from '@/pages/controlpanel/WebsiteSettingsPage';
 import ThemeSettingsPage from '@/pages/controlpanel/ThemeSettingsPage';
 import ShopManagementPage from '@/pages/controlpanel/ShopManagementPage';
 import BlogManagerPage from '@/pages/controlpanel/BlogManagerPage';
+import SalesOrdersPage from '@/modules/workshop/pages/SalesOrdersPage';
+import SellerSalesPage from '@/modules/workshop/pages/SellerSalesPage';
+import CustomersPage from '@/modules/workshop/pages/CustomersPage';
+import SalesChannelsPage from '@/modules/workshop/pages/SalesChannelsPage';
+import SalesPaymentsPage from '@/modules/workshop/pages/SalesPaymentsPage';
 
 // Legacy /workshop subpaths map 1:1 onto /console (same page names).
 function WorkshopLegacyRedirect() {
@@ -135,6 +140,22 @@ function App() {
                         </Route>
                         <Route element={<RequirePermission permission="blog.manage" />}>
                           <Route path="website/blog" element={<BlogManagerPage />} />
+                        </Route>
+                        {/* P0-D: Unified Sales routes */}
+                        <Route element={<RequirePermission permission="sales.view" />}>
+                          <Route path="sales-orders" element={<SalesOrdersPage />} />
+                        </Route>
+                        <Route element={<RequirePermission permission="seller-sales.view" />}>
+                          <Route path="seller-sales" element={<SellerSalesPage />} />
+                        </Route>
+                        <Route element={<RequirePermission permission="customers.view" />}>
+                          <Route path="customers" element={<CustomersPage />} />
+                        </Route>
+                        <Route element={<RequirePermission permission="channels.view" />}>
+                          <Route path="sales-channels" element={<SalesChannelsPage />} />
+                        </Route>
+                        <Route element={<RequirePermission permission="payments.view" />}>
+                          <Route path="sales-payments" element={<SalesPaymentsPage />} />
                         </Route>
                         <Route path="*" element={<Navigate to="/console" replace />} />
                       </Route>

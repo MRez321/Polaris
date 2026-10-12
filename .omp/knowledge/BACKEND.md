@@ -58,8 +58,22 @@ GET /trash, POST /trash/restore/:type/:id, PUT /trash/edit-and-restore/:type/:id
 GET/PUT /notifications/settings, POST /notifications/test/{telegram,sms}
 GET /notifications/feed (+ ?limit), POST /notifications/feed/read (one), POST /notifications/feed/read-all  (workshop notifications center: derived + event notifications, per-item read marks)
 GET/POST/PUT/DELETE /todos (workshop todo list: id, text, priority low|medium|high|urgent, dueDate, done, doneAt), POST /todos/clear-done (returns {cleared: n})
-GET /backups (list), POST /backups/run/:kind (kind: database|website|full|cpanel), GET /backups/download/:id (base64url id, traversal-guarded), DELETE /backups/:id, GET/PUT /backups/settings (scheduleHours, retention, autoKind, autoEnabled, notifyTelegram, cpanel creds)
 ```
+
+## P0-D: Unified Sales routes (backend/src/modules/workshop/router.ts)
+```
+GET/POST/GET-detail/PUT /sales-orders + PUT /sales-orders/:id/status  (retail, wholesale, consignment, manual)
+GET/POST/GET-detail/PUT /seller-sales + PUT /seller-sales/:id/status  (street seller sales)
+GET/POST /sales-payments
+GET/GET-detail/POST/PUT /customers
+GET/GET-detail /sales-channels
+```
+Sales order lifecycle: `draft → pending → confirmed → paid → picking → packed → shipped → delivered → returned → refunded`.
+Stock movement on `confirmed` (SALE out) and `returned`/`cancelled` (RETURN_IN). See `docs/sales/`.
+Sales controllers: `salesController.ts`, `sellerSalesController.ts`, `salesPaymentsController.ts`, `customersController.ts`, `salesChannelsController.ts`.
+Sales services: `salesService.ts` (orders + customers + channels), `sellerSalesService.ts`, `salesPaymentService.ts`.
+Acceptance: `npx tsx scripts/test-acceptance.mts` → expects 125/125 (57 P0-B + 22 P0-C + 46 P0-D).
+Migration: `node scripts/verify-migration.mjs` → expects 20/20.
 
 ## Supply router endpoints (P0-C: backend/src/modules/supply/supplyRouter.ts, mounted at `/api/workshop/supply`)
 ```

@@ -39,7 +39,7 @@ export function logAudit(
     details: string,
     ip?: string,
 ): void {
-    recordAudit({
+    void recordAudit({
         actor,
         action,
         entityType: entity,
@@ -105,14 +105,13 @@ export interface RecordAuditInput {
 }
 
 /**
- * Fire-and-forget enriched audit writer. Strips secrets from before/after/
- * metadata (deep, key-name based), fills entity (legacy column) from
- * entityType for backward compatibility, and never throws — auditing must
- * not break business operations. Pass `tx` to write on the caller's
- * transaction connection instead of the pool (the row commits/rolls back
- * with the business operation).
+ * Enriched audit writer. Strips secrets from before/after/metadata (deep,
+ * key-name based), fills entity (legacy column) from entityType for backward
+ * compatibility, and never throws — auditing must not break business operations.
+ * Pass `tx` to write within the caller's transaction so the row commits/rolls
+ * back with the business operation. Returns a promise the caller can await.
  */
-export function recordAudit(input: RecordAuditInput): void {
+export async function recordAudit(input: RecordAuditInput): Promise<void> {
     const parsed = recordAuditPayloadSchema.safeParse(input);
     if (!parsed.success) {
         console.error('⚠️ recordAudit payload rejected:', parsed.error.message);
@@ -136,13 +135,14 @@ export function recordAudit(input: RecordAuditInput): void {
         ...(v.ip !== undefined ? { ipAddress: v.ip } : {}),
     };
     const runner: { insert: DbTx['insert'] } = input.tx ?? db;
-    void runner
+    await runner
         .insert(auditLogs)
         .values(row)
         .catch((err: unknown) => {
             console.error('⚠️ Failed to write audit log:', err);
         });
 }
+
 /**
  * Resolves a structured audit actor from a user id, looked up on the given
  * runner (a transaction whose row ordering matters, or the pool for

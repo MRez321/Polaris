@@ -431,7 +431,33 @@ const itemStock = (code) => {
             if (r.affectedRows > 0) { fresh = true; console.log(`+ هزینه: ${e.title} — ${e.amount.toLocaleString('fa-IR')} تومان`); }
         }
 
+        // ---- P0-D: sales channels (idempotent, deterministic ids) ----
+        const SALES_CHANNELS = [
+            { code: 'website', name: 'فروشگاه آنلاین', type: 'website', description: 'وب‌سایت و اپلیکیشن موبایلی', sortOrder: 0 },
+            { code: 'instagram', name: 'اینستاگرام', type: 'instagram', description: 'حساب اینستاگرام', sortOrder: 1 },
+            { code: 'telegram', name: 'تلگرام', type: 'telegram', description: 'کانال تلگرام', sortOrder: 2 },
+            { code: 'bale', name: 'بله', type: 'bale', description: 'اپلیکیشن بله', sortOrder: 3 },
+            { code: 'eitaa', name: 'ایتا', type: 'eitaa', description: 'اپلیکیشن ایتا', sortOrder: 4 },
+            { code: 'basalam', name: 'بازار بزرگ الماس', type: 'basalam', description: 'فروشگاه الماس', sortOrder: 5 },
+            { code: 'wholesale', name: 'عمده‌فروشی', type: 'wholesale', description: 'فروش عمده', sortOrder: 6 },
+            { code: 'consignment', name: 'سفارش مشتری', type: 'consignment', description: 'فروش از طریق واگذاری', sortOrder: 7 },
+            { code: 'manual_retail', name: 'فروش حضوری', type: 'manual_retail', description: 'فروش حضوری در فروشگاه', sortOrder: 8 },
+        ];
+        for (const ch of SALES_CHANNELS) {
+            const [r] = await pool.query(
+                `INSERT IGNORE INTO sales_channels
+                    (id, code, name, type, description, is_active, sort_order, created_at, updated_at)
+                 VALUES (?,?,?,?,?,?,?,?,?)`,
+                [
+                    fixedId(`channel-${ch.code}`), ch.code, ch.name, ch.type, ch.description,
+                    1, ch.sortOrder, d(2026, 6, 15), d(2026, 8, 25),
+                ],
+            );
+            if (r.affectedRows > 0) { fresh = true; console.log(`+ کانال فروش: ${ch.name} (${ch.code})`); }
+        }
+
         // ---- profit distribution (5-part preset, units mode, approved) ----
+
         {
             const grossRevenue = 320_000_000;
             const totalExpenses = EXPENSES.reduce((s, e) => s + e.amount, 0);

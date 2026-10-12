@@ -163,6 +163,11 @@ export interface Seller {
     totalHandoversValue: number;
     totalPaid: number;
     status: 'active' | 'suspended' | 'settled';
+    // P0-D: seller commission + settlement scheduling (salesService reads these for seller-sale math).
+    commissionType: 'percentage' | 'fixed' | 'none';
+    commissionRate: number;
+    settlementCycleDays: number;
+    lastSettlementAt?: string;
     avatarUrl?: string;
     notes?: string;
     createdAt: string;
@@ -562,4 +567,199 @@ export interface SmsNotificationSettings {
 export interface NotificationSettings {
     telegram: TelegramNotificationSettings;
     sms: SmsNotificationSettings;
+}
+
+// ---------------------------------------------------------------------------
+// P0-D: Unified Sales — channels, customers, orders, seller sales, payments
+// ---------------------------------------------------------------------------
+
+export type SalesChannelType =
+    | 'website'
+    | 'instagram'
+    | 'telegram'
+    | 'bale'
+    | 'eitaa'
+    | 'basalam'
+    | 'wholesale'
+    | 'consignment'
+    | 'manual_retail';
+
+export type SalesOrderType = 'retail' | 'wholesale' | 'consignment' | 'manual';
+
+export type SalesOrderStatus =
+    | 'draft'
+    | 'pending'
+    | 'confirmed'
+    | 'paid'
+    | 'picking'
+    | 'packed'
+    | 'shipped'
+    | 'delivered'
+    | 'returned'
+    | 'refunded'
+    | 'cancelled';
+
+export type SalesPaymentStatus = 'pending' | 'partial' | 'paid' | 'refunded' | 'voided';
+
+export type SellerSaleStatus = 'draft' | 'submitted' | 'confirmed' | 'settled' | 'cancelled';
+
+export type CommissionType = 'percentage' | 'fixed' | 'none';
+
+export type SalesPaymentMethod = 'cash' | 'card_transfer' | 'bank_transfer' | 'pos' | 'cheque';
+
+export type CurrencyCode = 'IRT' | 'USD';
+
+export interface SalesChannel {
+    id: string;
+    code: string;
+    name: string;
+    type: SalesChannelType;
+    description?: string;
+    isActive: boolean;
+    sortOrder: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface Customer {
+    id: string;
+    code: string;
+    name: string;
+    phone?: string;
+    email?: string;
+    province?: string;
+    city?: string;
+    address?: string;
+    postalCode?: string;
+    creditLimit: number;
+    currentDebt: number;
+    totalPurchases: number;
+    orderCount: number;
+    firstOrderAt?: string;
+    lastOrderAt?: string;
+    acquisitionChannelId?: string;
+    tags?: string[];
+    notes?: string;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+    isDeleted?: boolean;
+    deletedAt?: string;
+}
+
+export interface SalesOrderLine {
+    id: string;
+    orderId: string;
+    itemId?: string;
+    sku?: string;
+    itemCode?: string;
+    itemName?: string;
+    size?: string;
+    color?: string;
+    quantity: number;
+    unitPrice: number;
+    discountAmount: number;
+    lineTotal: number;
+    snapshot?: Record<string, unknown>;
+    createdAt: string;
+}
+
+export interface SalesOrder {
+    id: string;
+    code: string;
+    orderType: SalesOrderType;
+    channelId: string;
+    channelCode?: string;
+    channelName?: string;
+    customerId?: string;
+    sellerId?: string;
+    customerName?: string;
+    customerPhone?: string;
+    customerAddress?: string;
+    status: SalesOrderStatus;
+    paymentStatus: SalesPaymentStatus;
+    subtotal: number;
+    discountAmount: number;
+    shippingAmount: number;
+    taxAmount: number;
+    totalAmount: number;
+    paidAmount: number;
+    remainingAmount: number;
+    currency: CurrencyCode;
+    sourceReference?: string;
+    utmSource?: string;
+    utmMedium?: string;
+    utmCampaign?: string;
+    trackingCode?: string;
+    note?: string;
+    confirmedAt?: string;
+    paidAt?: string;
+    shippedAt?: string;
+    deliveredAt?: string;
+    cancelledAt?: string;
+    createdBy?: string;
+    createdAt: string;
+    updatedAt: string;
+    isDeleted?: boolean;
+    deletedAt?: string;
+    lines?: SalesOrderLine[];
+}
+
+export interface SellerSaleLine {
+    id: string;
+    sellerSaleId: string;
+    itemId?: string;
+    itemCode?: string;
+    itemName?: string;
+    size?: string;
+    color?: string;
+    quantity: number;
+    unitPrice: number;
+    lineTotal: number;
+    createdAt: string;
+}
+
+export interface SellerSale {
+    id: string;
+    code: string;
+    sellerId: string;
+    sellerName?: string;
+    channelId: string;
+    channelCode?: string;
+    saleDate: string;
+    status: SellerSaleStatus;
+    subtotal: number;
+    commissionAmount: number;
+    netSettlementAmount: number;
+    settledAmount: number;
+    remainingSettlement: number;
+    note?: string;
+    submittedBy?: string;
+    confirmedBy?: string;
+    confirmedAt?: string;
+    createdAt: string;
+    updatedAt: string;
+    isDeleted?: boolean;
+    deletedAt?: string;
+    lines?: SellerSaleLine[];
+}
+
+export interface SalesPayment {
+    id: string;
+    code: string;
+    orderId?: string;
+    sellerSaleId?: string;
+    customerId?: string;
+    sellerId?: string;
+    amount: number;
+    paymentMethod: SalesPaymentMethod;
+    paymentDate: string;
+    trackingNumber?: string;
+    status: 'pending' | 'completed' | 'failed' | 'refunded';
+    note?: string;
+    createdBy?: string;
+    createdAt: string;
+    updatedAt: string;
+    isDeleted?: boolean;
+    deletedAt?: string;
 }

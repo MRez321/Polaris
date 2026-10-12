@@ -211,7 +211,13 @@ export const sellers = mysqlTable(
         isDeleted: boolean('is_deleted').notNull().default(false),
         deletedAt: datetime('deleted_at'),
         // P0-B (item 28): who archived this row — NULL for all pre-existing deletes.
+
         deletedBy: varchar('deleted_by', { length: 36 }),
+        // P0-D: seller commission + settlement scheduling fields.
+        commissionType: varchar('commission_type', { length: 32 }).notNull().default('percentage'),
+        commissionRate: decimal('commission_rate', { precision: 5, scale: 2, mode: 'number' }).notNull().default(0),
+        settlementCycleDays: int('settlement_cycle_days').notNull().default(7),
+        lastSettlementAt: datetime('last_settlement_at'),
     },
     (t) => [index('sellers_is_deleted_idx').on(t.isDeleted)],
 );

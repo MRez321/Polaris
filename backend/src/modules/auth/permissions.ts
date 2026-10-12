@@ -57,6 +57,17 @@ export const PERMISSIONS = [
     'backup.download',
     'backup.delete',
     'backup.restore',
+    // P0-D: Unified Sales — orders, seller sales, payments, customers, channels
+    'sales.view',
+    'sales.manage',
+    'seller-sales.view',
+    'seller-sales.manage',
+    'customers.view',
+    'customers.manage',
+    'channels.view',
+    'channels.manage',
+    'payments.view',
+    'payments.manage',
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -77,6 +88,12 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
         'reports.view',
         'suppliers.view',
         'purchasing.view',
+        // P0-D: staff-level view access to sales data.
+        'sales.view',
+        'seller-sales.view',
+        'customers.view',
+        'channels.view',
+        'payments.view',
     ],
 };
 

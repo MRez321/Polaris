@@ -4,6 +4,15 @@
 
 Local: `127.0.0.1:3306`, db `polaris`, user `MRez` / `64321608`, charset utf8mb4 (persian_ci). Server: cPanel MySQL (`.env` only, differs from local — never assume prod creds).
 Schema definitions: `backend/src/schema/*.ts` (auth, workshop, orders, cms, company, notifications, audit, userAddresses, clientId, **newModel** = P0-C supply: suppliers extended, supplier_prices, purchase_requests(+items), purchases(+items receipt tracking), purchase_receipts(+items), supply_costs, supply_cost_allocations); migrations: `backend/drizzle/00*` (17: 0000–0016 — 0015 workshop todos, 0016 P0-C supply chain). Local schema applied: 52 tables.
+52 tables.
+P0-D Unified Sales tables (schema in `newModel.ts` for existing stubs + `schema/sales.ts` for seller sales):
+`sales_channels` (id, code, name, type, description, is_active, sort_order),
+`customers` (id, code, name, phone, email, province, city, address, postal_code, credit_limit, current_debt, total_purchases, order_count, first/last_order_at, acquisition_channel_id, tags JSON, notes, is_active, deleted_by),
+`sales_orders` (id, code, order_type, channel_id, customer_id, seller_id, customer details snapshot, status, payment_status, subtotal, discount, shipping, tax, total, paid, remaining, currency, utm fields, tracking_code, note, status timestamps, created_by, is_deleted),
+`sales_order_lines` (id, sales_order_id, item_id, sku, item_code, item_name, size, color, quantity, unit_price, discount, line_total, snapshot JSON),
+`seller_sales` (id, code, seller_id, channel_id, sale_date, status, subtotal, commission, net_settlement, settled, remaining, note, submitted/confirmed by+at, is_deleted),
+`seller_sale_lines` (id, seller_sale_id, item_code, quantity, unit_price, line_total),
+`sales_payments` (id, code, order_id, seller_sale_id, customer_id, seller_id, amount, payment_method, payment_date, tracking_number, status, note, created_by, is_deleted).
 
 **Ad-hoc DB queries** (bash, cwd `backend/` — module resolution needs it):
 

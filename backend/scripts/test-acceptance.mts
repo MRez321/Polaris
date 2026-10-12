@@ -17,15 +17,15 @@
  *   items cache == Σ ledger | debt cache == Σ financial | every movement has
  *   reference + actor | every sensitive action audited.
  */
-import { and, desc, eq, inArray, sql } from 'drizzle-orm';
-
 import { db } from '../src/config/drizzle.js';
+import { like, sql, and, desc, eq, inArray } from 'drizzle-orm';
 import { getSellerBalance } from '../src/core/services/financialService.js';
 import {
     recordMovements,
     resolveLegacySku,
     shelfLocationId,
     shopLocationId,
+    sellerCustodyLocationId,
     syncLegacyStockCache,
     type DbTx,
 } from '../src/core/services/inventoryLedgerService.js';
@@ -42,6 +42,10 @@ import {
     softDeleteSeller,
 } from '../src/modules/workshop/inventoryService.js';
 import { createOrder, updateOrderStatus } from '../src/services/ordersService.js';
+import { createSalesOrder, listSalesOrders, getSalesOrder, transitionSalesOrderStatus } from '../src/modules/workshop/services/salesService.js';
+import { createSellerSale, getSellerSale, transitionSellerSaleStatus } from '../src/modules/workshop/services/sellerSalesService.js';
+import { createSalesPayment, listSalesPayments } from '../src/modules/workshop/services/salesPaymentService.js';
+import { canTransition, type SalesOrderStatus } from '../src/modules/workshop/services/salesOrderStatus.js';
 import * as supplierSvc from '../src/modules/supply/supplierService.js';
 import * as purchaseSvc from '../src/modules/supply/purchaseService.js';
 import { shelfLocationId } from '../src/core/services/inventoryLedgerService.js';
@@ -65,6 +69,13 @@ import {
     supplyCostAllocations,
     suppliers,
     supplierPrices,
+    salesChannels,
+    salesOrders,
+    salesOrderLines,
+    salesPayments,
+    customers,
+    sellerSales,
+    sellerSaleLines,
 } from '../src/schema/index.js';
 
 const SUPPLIER_NAME = 'تأمین‌کننده آزمون پذیرش';
@@ -349,7 +360,372 @@ async function runP0CSection(): Promise<void> {
     console.log('  P0-C section complete (test fixtures cleaned up)');
 }
 
+// ---------------------------------------------------------------------------
+// P0-D: Unified Sales acceptance
+// ---------------------------------------------------------------------------
 
+async function runP0DSection(): Promise<void> {
+    // Find the acceptance test item created in P0-B step 1.
+    const itemRows = await db
+        .select({ id: items.id, name: items.name, retailPrice: items.retailPrice, costPrice: items.costPrice, consignmentPrice: items.consignmentPrice })
+        .from(items)
+        .where(sql`name LIKE 'کالای آزمون پذیرش%'`)
+        .orderBy(desc(items.createdAt))
+        .limit(1);
+    const testItem = itemRows[0];
+    check('found acceptance item for P0-D tests', testItem !== undefined, { testItem });
+
+    // Stock the test item at the shop location (3 units for SALE on order confirm).
+    const testSku = await resolveLegacySku(db, testItem.id);
+    if (testSku) {
+        await recordMovements(db, [
+            {
+                skuId: testSku,
+                locationId: shopLocationId(),
+                movementType: 'ADJUSTMENT_IN',
+                quantityDelta: 3,
+                referenceType: 'acceptance-test',
+                referenceId: testItem.id,
+                reason: 'موجودی آزمون P0-D برای سفارش فروش',
+                unitCost: Number(testItem.costPrice),
+                actorId: ADMIN_ID,
+            },
+        ]);
+        await syncLegacyStockCache(db, testItem.id);
+    } else {
+        check('resolved SKU for P0-D test item', testSku !== undefined, { testSku });
+    }
+    // P0-D step 1: find the seeded website sales channel (from seed-workshop.js).
+    console.log('1. sales channel lookup (seeded)');
+    const channelRows = await db.select().from(salesChannels).where(eq(salesChannels.code, 'website')).limit(1);
+    const channel = channelRows[0];
+    check('website sales channel seeded', channel !== undefined, { code: channel?.code });
+    if (!channel) return;
+
+    // P0-D step 2: create a customer for testing.
+    console.log('2. customer creation');
+    const customerCode = `CUST-ACC-${Date.now()}`;
+    const customerRows = await db
+        .select()
+        .from(customers)
+        .where(eq(customers.code, customerCode))
+        .limit(1);
+    if (customerRows[0]) {
+        await db.delete(customers).where(eq(customers.code, customerCode));
+    }
+    await db.insert(customers).values({
+        id: crypto.randomUUID(),
+        code: customerCode,
+        name: 'مشتری آزمون پذیرش',
+        phone: '09120000000',
+        creditLimit: 0,
+        currentDebt: 0,
+        totalPurchases: 0,
+        orderCount: 0,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isDeleted: false,
+    });
+    const customerRowsNew = await db.select().from(customers).where(eq(customers.code, customerCode)).limit(1);
+    check('customer created', customerRowsNew[0]?.code === customerCode, { code: customerRowsNew[0]?.code });
+    const customerId = customerRowsNew[0]?.id;
+
+    // P0-D step 3: create a sales order — server-side total calculation.
+    console.log('3. sales order creation (server-side totals)');
+    const qty = 3;
+    const expectedSubtotal = Number(testItem.retailPrice) * qty;
+    const order = await createSalesOrder(
+        {
+            orderType: 'retail',
+            channelId: channel.id,
+            customerId: customerId ?? undefined,
+            customerName: 'مشتری آزمون پذیرش',
+            customerPhone: '09120000000',
+            customerAddress: 'تهران، میدان ولیعصر',
+            lines: [{ itemId: testItem.id, quantity: qty }],
+            shippingAmount: 50_000,
+            taxAmount: 0,
+            note: `آزمون P0-D ${Date.now()}`,
+        },
+        { ip: '127.0.0.1', userAgent: 'acceptance-test' },
+        ADMIN_ID,
+    );
+    check('order created in draft status', order.status === 'draft', { status: order.status });
+    check('order code is SOO-prefixed', order.code.startsWith('SOO-'), { code: order.code });
+    check('server-side subtotal matches retail price * qty', order.subtotal === expectedSubtotal, {
+        expected: expectedSubtotal,
+        actual: order.subtotal,
+    });
+    check('server-side total = subtotal + shipping', order.totalAmount === expectedSubtotal + 50_000, {
+        expected: expectedSubtotal + 50_000,
+        actual: order.totalAmount,
+    });
+    check('remainingAmount == totalAmount (nothing paid yet)', order.remainingAmount === order.totalAmount, {
+        remaining: order.remainingAmount,
+        total: order.totalAmount,
+    });
+    check('order has 1 line', order.lines?.length === 1, { lines: order.lines?.length });
+    check('line unitPrice matches retailPrice (not client-provided)', order.lines?.[0]?.unitPrice === Number(testItem.retailPrice), {
+        expected: testItem.retailPrice,
+        actual: order.lines?.[0]?.unitPrice,
+    });
+
+    // P0-D step 4: invalid status transition rejected.
+    console.log('4. invalid status transition rejected');
+    let transitionThrew = false;
+    try {
+        await transitionSalesOrderStatus(order.id, 'shipped' as SalesOrderStatus, { ip: '127.0.0.1' }, ADMIN_ID);
+    } catch (e) {
+        transitionThrew = true;
+    }
+    check('draft → shipped transition is rejected', transitionThrew, { threw: transitionThrew });
+
+    // P0-D step 5: valid transitions draft → pending → confirmed (stock movement).
+    console.log('5. valid status transitions (stock movement on confirm)');
+    const pendingOrder = await transitionSalesOrderStatus(order.id, 'pending', { ip: '127.0.0.1' }, ADMIN_ID);
+    check('order transitioned to pending', pendingOrder.status === 'pending', { status: pendingOrder.status });
+
+    const confirmedOrder = await transitionSalesOrderStatus(order.id, 'confirmed', { ip: '127.0.0.1' }, ADMIN_ID);
+    check('order transitioned to confirmed', confirmedOrder.status === 'confirmed', { status: confirmedOrder.status });
+    check('confirmedAt is set', !!confirmedOrder.confirmedAt);
+
+    // SALE movement should have been posted.
+    const saleMoves = await db
+        .select()
+        .from(inventoryLedger)
+        .where(eq(inventoryLedger.referenceType, 'sales-order'))
+        .orderBy(inventoryLedger.createdAt);
+    const hasSaleMove = saleMoves.some((m) => m.referenceId === order.id && m.movementType === 'SALE');
+    check('SALE ledger movement posted on confirm', hasSaleMove, { count: saleMoves.length });
+
+    // Audit entries for order creation + status transitions.
+    const orderAudits = await db
+        .select()
+        .from(auditLogs)
+        .where(like(auditLogs.details, `%${order.code}%`));
+    check('audit entries created for order operations', orderAudits.length >= 2, { count: orderAudits.length });
+
+    // P0-D step 6: create a payment against the sales order.
+    console.log('6. sales payment (order payment)');
+    const partialAmount = Math.floor(order.totalAmount / 2);
+    const payment = await createSalesPayment(
+        {
+            orderId: order.id,
+            customerId: customerId ?? undefined,
+            amount: partialAmount,
+            paymentMethod: 'card_transfer',
+            note: 'پرداخت جزئی آزمون',
+        },
+        { ip: '127.0.0.1', userAgent: 'acceptance-test' },
+        ADMIN_ID,
+    );
+    check('payment created with PYM code', payment.code.startsWith('PYM-'), { code: payment.code });
+    check('payment amount matches', payment.amount === partialAmount, { amount: payment.amount });
+
+    // Verify order was updated by the payment.
+    const updatedOrder = await db.select().from(salesOrders).where(eq(salesOrders.id, order.id)).limit(1);
+    const updated = updatedOrder[0];
+    check('order paidAmount incremented', Number(updated.paidAmount) === partialAmount, { paid: Number(updated.paidAmount), expected: partialAmount });
+    check('order paymentStatus is partial', updated.paymentStatus === 'partial', { status: updated.paymentStatus });
+
+    // Full payment.
+    const remainingAmount = Number(updated.remainingAmount);
+    const fullPayment = await createSalesPayment(
+        {
+            orderId: order.id,
+            amount: remainingAmount,
+            paymentMethod: 'cash',
+            note: 'پرداخت نهایی',
+        },
+        { ip: '127.0.0.1' },
+        ADMIN_ID,
+    );
+    check('full payment created', fullPayment.amount === remainingAmount, { amount: fullPayment.amount });
+    const finalOrder = await db.select().from(salesOrders).where(eq(salesOrders.id, order.id)).limit(1);
+    check('order paymentStatus is paid after full payment', finalOrder[0]?.paymentStatus === 'paid', {
+        status: finalOrder[0]?.paymentStatus,
+    });
+    check('order remainingAmount is 0 after full payment', Number(finalOrder[0]?.remainingAmount) === 0, {
+        remaining: Number(finalOrder[0]?.remainingAmount),
+    });
+    check('order paidAt is set after full payment', !!finalOrder[0]?.paidAt);
+
+    // P0-D step 7: overpayment rejected.
+    console.log('7. overpayment rejection');
+    let overpayThrew = false;
+    try {
+        await createSalesPayment(
+            { orderId: order.id, amount: 1_000_000, paymentMethod: 'cash' },
+            { ip: '127.0.0.1' },
+            ADMIN_ID,
+        );
+    } catch (e) {
+        overpayThrew = true;
+    }
+    check('overpayment against zero-remaining order is rejected', overpayThrew);
+
+    // P0-D step 8: seller sale with server-side commission.
+    console.log('8. seller sale (server-side commission)');
+    const sellerRows = await db
+        .select()
+        .from(sellers)
+        .where(eq(sellers.isDeleted, false))
+        .orderBy(sellers.createdAt)
+        .limit(1);
+    const testSeller = sellerRows[0];
+    check('found a seller for seller-sale test', testSeller !== undefined);
+    if (!testSeller) return;
+    // Stock the test item at the seller's custody location (2 units for SALE on confirm).
+    const sellerSku = await resolveLegacySku(db, testItem.id);
+    if (sellerSku) {
+        await recordMovements(db, [
+            {
+                skuId: sellerSku,
+                locationId: sellerCustodyLocationId(testSeller.id),
+                movementType: 'ADJUSTMENT_IN',
+                quantityDelta: 2,
+                referenceType: 'acceptance-test',
+                referenceId: testItem.id,
+                reason: 'موجودی آزمون P0-D برای فروش فروشنده',
+                unitCost: Number(testItem.costPrice),
+                actorId: ADMIN_ID,
+            },
+        ]);
+        await syncLegacyStockCache(db, testItem.id);
+    }
+
+    // Ensure the seller has commission fields.
+    const sale = await createSellerSale(
+        {
+            sellerId: testSeller.id,
+            channelId: channel.id,
+            saleDate: new Date().toISOString(),
+            lines: [{ itemId: testItem.id, quantity: 2 }],
+        },
+        { ip: '127.0.0.1', userAgent: 'acceptance-test' },
+        ADMIN_ID,
+    );
+    check('seller sale created in draft', sale.status === 'draft', { status: sale.status });
+    check('seller sale code is SSL-prefixed', sale.code.startsWith('SSL-'), { code: sale.code });
+
+    // Commission calculated server-side: percentage-based.
+    const expectedCommission =
+        testSeller.commissionType === 'percentage'
+            ? Math.round((Number(testItem.consignmentPrice) * 2 * Number(testSeller.commissionRate)) / 100)
+            : 0;
+    check(
+        'server-side commission matches expected',
+        Number(sale.commissionAmount) === expectedCommission,
+        {
+            expected: expectedCommission,
+            actual: Number(sale.commissionAmount),
+            type: testSeller.commissionType,
+            rate: Number(testSeller.commissionRate),
+        },
+    );
+    check('netSettlementAmount = subtotal - commission', Number(sale.netSettlementAmount) === Number(sale.subtotal) - Number(sale.commissionAmount), {
+        subtotal: Number(sale.subtotal),
+        commission: Number(sale.commissionAmount),
+        net: Number(sale.netSettlementAmount),
+    });
+    check('remainingSettlement == netSettlementAmount initially', Number(sale.remainingSettlement) === Number(sale.netSettlementAmount), {
+        remaining: Number(sale.remainingSettlement),
+        net: Number(sale.netSettlementAmount),
+    });
+
+    // Confirm the seller sale before settlement (settlement requires confirmed).
+    // Transition path: draft → submitted → confirmed (posts SALE to seller custody).
+    const submittedSale = await transitionSellerSaleStatus(
+        sale.id,
+        'submitted',
+        { ip: '127.0.0.1', userAgent: 'acceptance-test' },
+        ADMIN_ID,
+    );
+    check('seller sale transitioned to submitted', submittedSale.status === 'submitted', { status: submittedSale.status });
+    const confirmedSale = await transitionSellerSaleStatus(
+        sale.id,
+        'confirmed',
+        { ip: '127.0.0.1', userAgent: 'acceptance-test' },
+        ADMIN_ID,
+    );
+    check('seller sale transitioned to confirmed', confirmedSale.status === 'confirmed', { status: confirmedSale.status });
+    // P0-D step 9: seller sale payment (settlement).
+    console.log('9. seller sale settlement payment');
+    const settlePayment = await createSalesPayment(
+        {
+            sellerSaleId: sale.id,
+            amount: Number(sale.netSettlementAmount),
+            paymentMethod: 'bank_transfer',
+            note: 'تسویه فروش فروشنده',
+        },
+        { ip: '127.0.0.1' },
+        ADMIN_ID,
+    );
+    check('settlement payment created', settlePayment.code.startsWith('PYM-'), { code: settlePayment.code });
+
+    const settledSale = await getSellerSale(sale.id);
+    check('seller sale remainingSettlement is 0 after settlement', Number(settledSale.remainingSettlement) === 0, {
+        remaining: Number(settledSale.remainingSettlement),
+    });
+
+    // P0-D step 10: invalid payment target rejected (both orderId + sellerSaleId).
+    console.log('10. dual-target and zero-amount payment rejection');
+    let dualTargetThrew = false;
+    try {
+        await createSalesPayment(
+            { orderId: order.id, sellerSaleId: sale.id, amount: 1000, paymentMethod: 'cash' },
+            { ip: '127.0.0.1' },
+            ADMIN_ID,
+        );
+    } catch (e) {
+        dualTargetThrew = true;
+    }
+    check('payment with both orderId + sellerSaleId is rejected', dualTargetThrew);
+
+    let noTargetThrew = false;
+    try {
+        await createSalesPayment(
+            { amount: 1000, paymentMethod: 'cash' },
+            { ip: '127.0.0.1' },
+            ADMIN_ID,
+        );
+    } catch (e) {
+        noTargetThrew = true;
+    }
+    check('payment with no target is rejected', noTargetThrew);
+
+    // P0-D step 11: canTransition correctness.
+    console.log('11. lifecycle transition matrix validation');
+    check('draft → pending is valid', canTransition('draft', 'pending') === true);
+    check('draft → confirmed is invalid', canTransition('draft', 'confirmed') === false);
+    check('pending → confirmed is valid', canTransition('pending', 'confirmed') === true);
+    check('confirmed → cancelled is valid', canTransition('confirmed', 'cancelled') === true);
+    check('shipped → pending is invalid', canTransition('shipped', 'pending') === false);
+    check('delivered → returned is valid', canTransition('delivered', 'returned') === true);
+    check('returned → refunded is valid', canTransition('returned', 'refunded') === true);
+    check('refunded → anything is invalid', canTransition('refunded', 'cancelled') === false);
+    check('self-transition is invalid', canTransition('confirmed', 'confirmed') === false);
+
+    // ------------------------------------------------------------------ cleanup
+    const testOrderIds = [order.id];
+    const testSaleIds = [sale.id];
+    for (const oid of testOrderIds) {
+        await db.delete(salesOrderLines).where(eq(salesOrderLines.salesOrderId, oid));
+        await db.delete(salesOrders).where(eq(salesOrders.id, oid));
+    }
+    for (const sid of testSaleIds) {
+        await db.delete(sellerSaleLines).where(eq(sellerSaleLines.sellerSaleId, sid));
+        await db.delete(sellerSales).where(eq(sellerSales.id, sid));
+    }
+    const testPaymentIds = await db.select({ id: salesPayments.id }).from(salesPayments).where(inArray(salesPayments.code, [payment.code, fullPayment.code, settlePayment.code]));
+    for (const p of testPaymentIds) {
+        await db.delete(salesPayments).where(eq(salesPayments.id, p.id));
+    }
+    if (customerId) await db.delete(customers).where(eq(customers.id, customerId));
+
+    console.log('  P0-D section complete (test fixtures cleaned up)');
+}
 async function main(): Promise<void> {
     console.log('\n▶ P0-B acceptance (dev DB, real services)\n');
 
@@ -678,7 +1054,12 @@ async function main(): Promise<void> {
     console.log('\n▶ P0-C: Supply chain (supplier → request → order → receipt → costs)\n');
     await runP0CSection();
 
+    // ------------------------------------------------------------------ P0-D
+    console.log('\n▶ P0-D: Unified Sales (channels, customers, orders, seller sales, payments)\n');
+    await runP0DSection();
+
     console.log(`\n▶ ${checks - failures}/${checks} checks passed`);
+
     if (failures > 0) {
         console.log(`\n✗ acceptance FAILED (${failures} failing check(s))`);
         process.exit(1);

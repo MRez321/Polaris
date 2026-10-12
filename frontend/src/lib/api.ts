@@ -43,6 +43,14 @@ import type {
   WorkshopTodo,
   WorkshopTodoInput,
   WorkshopNotification,
+  Customer,
+  SalesChannel,
+  SalesOrder,
+  SalesOrderStatus,
+  SellerSale,
+  SellerSaleStatus,
+  SalesPayment,
+  SalesPaymentMethod,
 } from '@/types';
 
 /**
@@ -584,4 +592,93 @@ export type {
   SupplyCost,
   SupplyCostType,
   LandedCostLine,
+};
+
+// --- P0-D: Unified Sales ---
+export interface SalesOrderLinePayload {
+  itemId?: string;
+  sku?: string;
+  quantity: number;
+  size?: string;
+  color?: string;
+  discountAmount?: number;
+}
+
+export interface SalesOrderPayload {
+  orderType?: 'retail' | 'wholesale' | 'consignment' | 'manual';
+  channelId: string;
+  customerId?: string;
+  sellerId?: string;
+  customerName?: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  lines: SalesOrderLinePayload[];
+  shippingAmount?: number;
+  taxAmount?: number;
+  note?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+}
+
+export interface SellerSaleLinePayload {
+  itemId?: string;
+  itemCode?: string;
+  quantity: number;
+}
+
+export interface SellerSalePayload {
+  sellerId: string;
+  channelId: string;
+  saleDate?: string;
+  lines: SellerSaleLinePayload[];
+  note?: string;
+}
+
+export interface SalesPaymentPayload {
+  orderId?: string;
+  sellerSaleId?: string;
+  customerId?: string;
+  sellerId?: string;
+  amount: number;
+  paymentMethod: SalesPaymentMethod;
+  trackingNumber?: string;
+  note?: string;
+}
+
+export const salesOrdersApi = {
+  list: (params?: Record<string, string>) =>
+    api.get<SalesOrder[]>(`${W}/sales-orders`, { params }).then((r) => r.data),
+  get: (id: string) => api.get<SalesOrder>(`${W}/sales-orders/${encodeURIComponent(id)}`).then((r) => r.data),
+  create: (data: SalesOrderPayload) => api.post<SalesOrder>(`${W}/sales-orders`, data).then((r) => r.data),
+  transitionStatus: (id: string, status: SalesOrderStatus, trackingCode?: string) =>
+    api.put<SalesOrder>(`${W}/sales-orders/${encodeURIComponent(id)}/status`, { status, trackingCode }).then((r) => r.data),
+};
+
+export const sellerSalesApi = {
+  list: (params?: Record<string, string>) =>
+    api.get<SellerSale[]>(`${W}/seller-sales`, { params }).then((r) => r.data),
+  get: (id: string) => api.get<SellerSale>(`${W}/seller-sales/${encodeURIComponent(id)}`).then((r) => r.data),
+  create: (data: SellerSalePayload) => api.post<SellerSale>(`${W}/seller-sales`, data).then((r) => r.data),
+  transitionStatus: (id: string, status: SellerSaleStatus) =>
+    api.put<SellerSale>(`${W}/seller-sales/${encodeURIComponent(id)}/status`, { status }).then((r) => r.data),
+};
+
+export const salesPaymentsApi = {
+  list: (params?: Record<string, string>) =>
+    api.get<SalesPayment[]>(`${W}/sales-payments`, { params }).then((r) => r.data),
+  create: (data: SalesPaymentPayload) => api.post<SalesPayment>(`${W}/sales-payments`, data).then((r) => r.data),
+};
+
+export const customersApi = {
+  list: () => api.get<Customer[]>(`${W}/customers`).then((r) => r.data),
+  get: (id: string) => api.get<Customer>(`${W}/customers/${encodeURIComponent(id)}`).then((r) => r.data),
+  create: (data: Partial<Customer>) => api.post<Customer>(`${W}/customers`, data).then((r) => r.data),
+  update: (id: string, data: Partial<Customer>) =>
+    api.put<Customer>(`${W}/customers/${encodeURIComponent(id)}`, data).then((r) => r.data),
+};
+
+export const salesChannelsApi = {
+  list: () => api.get<SalesChannel[]>(`${W}/sales-channels`).then((r) => r.data),
+  get: (id: string) => api.get<SalesChannel>(`${W}/sales-channels/${encodeURIComponent(id)}`).then((r) => r.data),
 };

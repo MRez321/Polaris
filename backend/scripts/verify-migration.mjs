@@ -131,6 +131,15 @@ const FKS_0018 = [
     ['sales_orders', 'sales_orders_channel_id_fk'],
     ['sales_payments', 'sales_payments_order_id_fk'],
     ['purchase_items', 'purchase_items_purchase_id_purchases_id_fk'],
+    // P0-D new tables
+    ['seller_sales', 'seller_sales_seller_id_fk'],
+    ['seller_sales', 'seller_sales_channel_id_fk'],
+    ['seller_sale_lines', 'seller_sale_lines_sale_id_fk'],
+    ['sales_payments', 'sales_payments_seller_sale_id_fk'],
+    ['sales_payments', 'sales_payments_customer_id_fk'],
+    ['sales_payments', 'sales_payments_seller_id_fk'],
+    // P0-D FK on sales_order_lines.item_id → items
+    ['sales_order_lines', 'sales_order_lines_item_id_fk'],
 ];
 
 let failures = 0;
@@ -267,6 +276,83 @@ async function main() {
     );
     if (untraceable.n > 0) bad(`${untraceable.n} ledger row(s) lack reference_type/reference_id`, []);
     else ok('every movement carries a reference_type + reference_id (append-only traceability)');
+
+    // ---------------------------------------------------------------- P0-D schema
+    log('\n▶ schema: P0-D new tables (0022)');
+    const P0D_TABLES = ['seller_sales', 'seller_sale_lines'];
+    const missingP0dTables = P0D_TABLES.filter((t) => !present.has(t));
+    if (missingP0dTables.length > 0) bad(`${missingP0dTables.length} P0-D table(s) missing`, missingP0dTables);
+    else ok(`all ${P0D_TABLES.length} P0-D tables exist`);
+
+    // P0-D column additions on existing new-model tables.
+    const P0D_COLUMNS = {
+        sales_channels: ['description', 'sort_order', 'updated_at'],
+        customers: ['name', 'email', 'province', 'city', 'postal_code', 'credit_limit', 'current_debt', 'total_purchases', 'order_count', 'first_order_at', 'last_order_at', 'acquisition_channel_id', 'tags', 'notes', 'is_active', 'created_at', 'updated_at', 'is_deleted', 'deleted_at'],
+        sales_orders: ['order_type', 'seller_id', 'customer_name', 'customer_phone', 'customer_address', 'payment_status', 'subtotal', 'discount_amount', 'shipping_amount', 'tax_amount', 'paid_amount', 'remaining_amount', 'currency', 'source_reference', 'utm_source', 'utm_medium', 'utm_campaign', 'tracking_code', 'confirmed_at', 'paid_at', 'shipped_at', 'delivered_at', 'cancelled_at', 'created_by', 'updated_at', 'is_deleted', 'deleted_at'],
+        sales_order_lines: ['item_id', 'sku', 'item_code', 'item_name', 'size', 'color', 'discount_amount', 'line_total', 'snapshot', 'created_at'],
+        sales_payments: ['code', 'order_id', 'seller_sale_id', 'customer_id', 'seller_id', 'payment_method', 'payment_date', 'tracking_number', 'status', 'created_by', 'updated_at', 'is_deleted', 'deleted_at'],
+        sellers: ['commission_type', 'commission_rate', 'settlement_cycle_days', 'last_settlement_at'],
+    };
+    // Extend columnsByTable with P0-D tables.
+    for (const table of P0D_TABLES) {
+        if (present.has(table)) {
+            const [cols] = await conn.query(`SHOW COLUMNS FROM \`${table}\``);
+            columnsByTable.set(table, new Set(cols.map((c) => c.Field)));
+        }
+    }
+    log('\n▶ schema: P0-D column additions (0022)');
+    for (const [table, expectedCols] of Object.entries(P0D_COLUMNS)) {
+        const actual = columnsByTable.get(table);
+        if (!actual) {
+            bad(`table ${table} not found`, []);
+            continue;
+        }
+        const missing = expectedCols.filter((c) => !actual.has(c));
+        if (missing.length > 0) {
+            bad(`${table} missing ${missing.length} P0-D column(s)`, missing);
+        } else {
+            ok(`${table} has all ${expectedCols.length} P0-D columns`);
+        }
+    }
+
+    // P0-D indexes.
+    const P0D_INDEXES = [
+        ['seller_sales_seller_id_idx', 'seller_sales'],
+        ['seller_sales_channel_id_idx', 'seller_sales'],
+        ['seller_sales_code_idx', 'seller_sales'],
+        ['seller_sales_status_idx', 'seller_sales'],
+        ['seller_sales_is_deleted_idx', 'seller_sales'],
+        ['seller_sale_lines_sale_id_idx', 'seller_sale_lines'],
+        ['seller_sale_lines_item_id_idx', 'seller_sale_lines'],
+        ['sales_orders_payment_status_idx', 'sales_orders'],
+        ['sales_orders_is_deleted_idx', 'sales_orders'],
+        ['sales_order_lines_item_id_idx', 'sales_order_lines'],
+    ];
+    for (const table of P0D_INDEXES.map(([, t]) => t)) {
+        if (!indexesByTable.has(table)) {
+            const [idx] = await conn.query(`SHOW INDEX FROM \`${table}\``);
+            indexesByTable.set(table, new Set(idx.map((r) => r.Key_name)));
+        }
+    }
+    log('\n▶ schema: P0-D indexes (0022)');
+    const missingP0dIdx = P0D_INDEXES.filter(([name, table]) => !(indexesByTable.get(table) ?? new Set()).has(name));
+    if (missingP0dIdx.length > 0) {
+        bad(`${missingP0dIdx.length} P0-D index(es) missing`, missingP0dIdx.map(([n, t]) => `${t}.${n}`));
+    } else {
+        ok(`all ${P0D_INDEXES.length} P0-D indexes exist`);
+    }
+
+    // P0-D seed: sales_channels must have the 9 seeded channels.
+    log('\n▶ data: P0-D seeds');
+    const expectedChannels = ['website', 'instagram', 'telegram', 'bale', 'eitaa', 'basalam', 'wholesale', 'consignment', 'manual_retail'];
+    const [channelRows] = await conn.query('SELECT code FROM sales_channels');
+    const seededChannels = new Set(channelRows.map((r) => r.code));
+    const missingChannels = expectedChannels.filter((c) => !seededChannels.has(c));
+    if (missingChannels.length > 0) {
+        bad(`${missingChannels.length} sales channel(s) not seeded`, missingChannels);
+    } else {
+        ok(`all ${expectedChannels.length} sales channels seeded`);
+    }
 
     await conn.end();
 
