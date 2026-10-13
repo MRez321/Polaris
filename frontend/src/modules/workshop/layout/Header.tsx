@@ -8,6 +8,7 @@ import {
   Bell,
   Receipt,
   Menu,
+  Search,
 } from 'lucide-react';
 import { toPersianDigits } from '@/utils/persian';
 import { useTheme } from '@/context/ThemeContext';
@@ -16,6 +17,7 @@ import { useUI } from '@/modules/workshop/context/UIContext';
 import { UserMenu } from '@/components/common/UserMenu';
 import { useBrand } from '@/context/BrandContext';
 import { SideMenu } from './SideMenu';
+import { GlobalSearch } from './GlobalSearch';
 import { NotificationsPanel } from './NotificationsPanel';
 import { notificationsApi } from '@/lib/api';
 
@@ -26,6 +28,7 @@ export const Header: React.FC = () => {
   const { company } = useBrand();
   const [sideMenuOpen, setSideMenuOpen] = React.useState(false);
   const [bellOpen, setBellOpen] = React.useState(false);
+  const [searchOpen, setSearchOpen] = React.useState(false);
   const [unreadCount, setUnreadCount] = React.useState(0);
 
   // Unread badge mirrors the notifications feed; refreshed with data cycle.
@@ -107,6 +110,17 @@ export const Header: React.FC = () => {
             </>
           )}
 
+          {/* Global search — always visible. Opens the Ctrl/Cmd+K overlay. */}
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            className="p-2 rounded-xl text-stone-700 dark:text-gray-300 glass-card hover:border-brand transition-all active:scale-95 shadow-sm shrink-0"
+            title="جستجوی سریع (Ctrl/Cmd + K)"
+            aria-label="جستجوی سریع"
+          >
+            <Search className="w-4 h-4" />
+          </button>
+
           {/* Notification center bell — always visible, opens the panel */}
           <button
             onClick={() => setBellOpen(true)}
@@ -142,6 +156,7 @@ export const Header: React.FC = () => {
 
       <SideMenu open={sideMenuOpen} onOpenChange={setSideMenuOpen} />
       <NotificationsPanel open={bellOpen} onOpenChange={(o) => { setBellOpen(o); if (!o) void refreshUnread(); }} />
+      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
     </header>
   );
 };

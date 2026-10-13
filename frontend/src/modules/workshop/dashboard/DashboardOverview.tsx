@@ -7,7 +7,6 @@ import {
   Settings,
   X,
   Clock,
-  Landmark,
   ChartColumn,
   ChevronDown,
   ChevronUp,
@@ -49,6 +48,8 @@ import { Badge } from '@/components/common/Badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Switch } from '@/components/ui/switch';
 import { ORDER_STATUS_META } from '@/lib/orderStatus';
+import { ActivityTimeline } from '@/modules/workshop/audit/ActivityTimeline';
+import { ManagerActionCenter } from '@/modules/workshop/dashboard/ManagerActionCenter';
 
 interface DashboardOverviewProps {
   stats: DashboardStats;
@@ -607,23 +608,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     ),
 
 
-    liquidBalance: (
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
-          <Landmark className="w-6 h-6" />
-        </div>
-        <div>
-          <p className="text-xs font-semibold text-stone-500 dark:text-gray-400">موجودی صندوق کارگاه</p>
-          <p className="text-2xl font-black mt-1 tracking-tight text-stone-900 dark:text-white font-mono">
-            {formatToman(stats?.liquidBalance || 0)}
-          </p>
-          <p className="text-[11px] text-stone-500 dark:text-gray-400 mt-1">
-            دریافتی‌ها منهای هزینه‌های جاری کارگاه
-          </p>
-        </div>
-      </div>
-    ),
-
     incomeWindowStats: (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col justify-between">
@@ -672,6 +656,19 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         </div>
       </div>
     ),
+
+    actionCenter: (
+      <ManagerActionCenter
+        overdueConsignments={overdueConsignments}
+        lowStockItems={safeItems.filter(
+          (i) => (i.stockQuantity || 0) <= (i.minStockThreshold || 0)
+        )}
+        pendingOrders={safeOrders}
+        onSelectConsignment={onSelectConsignment}
+        onGoToTab={onGoToTab}
+      />
+    ),
+    activityTimeline: <ActivityTimeline limit={15} />,
   };
 
   // ---- Render --------------------------------------------------------------

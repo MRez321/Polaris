@@ -1,121 +1,116 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import {
-  LayoutDashboard,
-  Package,
-  ShoppingBag,
-  Users,
-  UserCheck,
-  Truck,
-  ArrowLeftRight,
-  CreditCard,
-  Settings,
-  BarChart3,
-  Globe,
-  Palette,
-  Newspaper,
-  type LucideIcon,
-} from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { toPersianDigits } from '@/utils/persian';
-import { useData } from '@/modules/workshop/context/DataContext';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
-import type { Permission } from '@/lib/permissions';
-
-interface NavItem {
-  to: string;
-  label: string;
-  icon: LucideIcon;
-  end?: boolean;
-  badge?: number;
-  /** Absent = visible to every signed-in console user (the console home). */
-  permission?: Permission;
-}
+import { useWorkshopAlerts } from '@/modules/workshop/layout/useWorkshopAlerts';
+import {
+  NAV_GROUPS,
+  BADGE_VARIANT_CLASS,
+  type NavItemConfig,
+} from '@/modules/workshop/layout/nav-config';
 
 export const Sidebar: React.FC = () => {
-  const { consignments, items } = useData();
   const { hasPermission } = useAuth();
   const navigate = useNavigate();
+  const { overdueCount, lowStockCount } = useWorkshopAlerts();
 
-  const overdueCount = consignments.filter(
-    (c) => (c.remainingAmount || 0) > 0 && new Date(c.dueDate).getTime() < Date.now()
-  ).length;
-  // Mirrors InventoryManager's low-stock rule: at or below the threshold.
-  const lowStockCount = items.filter((i) => (i.stockQuantity || 0) <= (i.minStockThreshold || 0)).length;
+  // Filter items by permission, then drop groups that become empty.
+  const visibleGroups = NAV_GROUPS.map((g) => ({
+    ...g,
+    items: g.items.filter((i) => !i.permission || hasPermission(i.permission)),
+  })).filter((g) => g.items.length > 0);
 
-  const allNavItems: NavItem[] = [
-    { to: '/console', label: 'داشبورد', icon: LayoutDashboard, end: true, permission: 'analytics.view' },
-    { to: '/console/orders', label: 'سفارش‌های فروشگاه', icon: ShoppingBag, permission: 'orders.view' },
-    { to: '/console/inventory', label: 'انبار و موجودی اجناس', icon: Package, permission: 'inventory.view' },
-    {
-      to: '/console/consignments',
-      label: 'حواله‌ها و تحویل امانی',
-      icon: ArrowLeftRight,
-      badge: overdueCount > 0 ? overdueCount : undefined,
-      permission: 'consignments.view',
-    },
-    { to: '/console/people', label: 'فروشندگان و پرسنل', icon: Users, permission: 'people.view' },
-    { to: '/console/supply', label: 'تأمین و خرید', icon: Truck, permission: 'suppliers.view' },
-    { to: '/console/analytics', label: 'تحلیل فروش', icon: BarChart3, permission: 'analytics.view' },
-    // P0-D: Unified Sales nav group
-    { to: '/console/sales-orders', label: 'سفارشات فروش', icon: ShoppingBag, permission: 'sales.view' },
-    { to: '/console/seller-sales', label: 'فروش فروشندگان', icon: Users, permission: 'seller-sales.view' },
-    { to: '/console/customers', label: 'مشتریان', icon: UserCheck, permission: 'customers.view' },
-    { to: '/console/sales-channels', label: 'کانال‌های فروش', icon: Globe, permission: 'channels.view' },
-    { to: '/console/sales-payments', label: 'پرداخت‌های فروش', icon: CreditCard, permission: 'payments.view' },
-    { to: '/console/finances', label: 'امور مالی، درآمد و هزینه‌ها', icon: CreditCard, permission: 'finances.view' },
-    { to: '/console/settings', label: 'تنظیمات و مدیریت', icon: Settings, permission: 'settings.manage' },
-    { to: '/console/website/website', label: 'تنظیمات وب‌سایت', icon: Globe, permission: 'website.manage' },
-    { to: '/console/website/theme', label: 'تنظیمات ظاهری', icon: Palette, permission: 'website.manage' },
-    { to: '/console/website/shop', label: 'مدیریت فروشگاه', icon: ShoppingBag, permission: 'website.manage' },
-    { to: '/console/website/blog', label: 'مدیریت وبلاگ', icon: Newspaper, permission: 'blog.manage' },
-  ];
-  const navItems = allNavItems.filter((item) => !item.permission || hasPermission(item.permission));
+  // Collapsible groups (all expanded by default; state is ephemeral — mobile
+  // uses MobileNav, so desktop-only persistence is unnecessary).
+  const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>(() =>
+    Object.fromEntries(visibleGroups.map((g) => [g.id, true]))
+  );
+  const toggleGroup = (id: string) =>
+    setOpenGroups((prev) => ({ ...prev, [id]: !prev[id] }));
+
+  const alertCount = (item: NavItemConfig) =>
+    item.badge === 'overdue' ? overdueCount : item.badge === 'lowStock' ? lowStockCount : 0;
 
   return (
     <aside className="w-64 shrink-0 hidden md:block">
-      <div className="sticky top-20 glass-panel rounded-2xl p-3 shadow-xl space-y-1.5 transition-all">
+      <div className="sticky top-20 flex flex-col glass-panel rounded-2xl p-2 shadow-xl transition-all">
         <div className="px-3 py-2 text-[11px] font-black text-stone-600 dark:text-gray-400 tracking-wider">
           سیستم مدیریت پولاریس
         </div>
 
-        {navItems.map((item) => {
-          const Icon = item.icon;
+        {/* Scrollable nav so the sidebar never overflows on shorter viewports. */}
+        <nav className="flex-1 overflow-y-auto min-h-0 space-y-1">
+          {visibleGroups.map((group) => {
+            const isOpen = openGroups[group.id] !== false;
+            return (
+              <div key={group.id} className="space-y-0.5">
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group.id)}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-black text-stone-600 dark:text-gray-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5 transition-all"
+                  aria-expanded={isOpen}
+                >
+                  <span>{group.label}</span>
+                  <ChevronLeft
+                    className={cn(
+                      'w-3.5 h-3.5 transition-transform',
+                      isOpen ? 'rotate-180' : 'rotate-0'
+                    )}
+                  />
+                </button>
 
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                `w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all text-right ${
-                  isActive
-                    ? 'bg-brand text-brand-on font-black shadow-md'
-                    : 'text-stone-800 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5 font-bold'
-                }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <div className="flex items-center gap-3">
-                    <Icon
-                      className={`w-4 h-4 shrink-0 ${isActive ? 'text-black' : 'text-brand-ink'}`}
-                    />
-                    <span className={isActive ? 'text-black' : 'text-stone-800 dark:text-gray-200'}>
-                      {item.label}
-                    </span>
-                  </div>
+                {isOpen &&
+                  group.items.map((item) => {
+                    const Icon = item.icon;
+                    const count = alertCount(item);
+                    return (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        end={item.end}
+                        className={({ isActive }) =>
+                          `w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all text-right ${
+                            isActive
+                              ? 'bg-brand text-brand-on font-black shadow-md'
+                              : 'text-stone-800 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5 font-bold'
+                          }`
+                        }
+                      >
+                        {({ isActive }) => (
+                          <>
+                            <div className="flex items-center gap-3">
+                              <Icon
+                                className={`w-4 h-4 shrink-0 ${isActive ? 'text-black' : 'text-brand-ink'}`}
+                              />
+                              <span
+                                className={isActive ? 'text-black' : 'text-stone-800 dark:text-gray-200'}
+                              >
+                                {item.label}
+                              </span>
+                            </div>
 
-                  {item.badge && (
-                    <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black">
-                      {toPersianDigits(item.badge)}
-                    </span>
-                  )}
-                </>
-              )}
-            </NavLink>
-          );
-        })}
+                            {item.badge && count > 0 ? (
+                              <span
+                                className={`px-2 py-0.5 rounded-full ${BADGE_VARIANT_CLASS[item.badge]} text-[10px] font-black`}
+                              >
+                                {toPersianDigits(count)}
+                              </span>
+                            ) : null}
+                          </>
+                        )}
+                      </NavLink>
+                    );
+                  })}
+              </div>
+            );
+          })}
+        </nav>
 
+        {/* نبض کارگاه — preserved live summary (overdue + low stock) so the
+            workshop pulse stays visible at a glance; nav-item badges mirror
+            the same real counts. */}
         {(hasPermission('consignments.view') || hasPermission('inventory.view')) && (
           <div className="pt-3 mt-3 border-t border-stone-200 dark:border-white/5 px-1">
             <div className="p-3 rounded-xl bg-brand/10 dark:bg-brand/15 border border-brand/20 dark:border-brand/30">

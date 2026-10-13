@@ -34,8 +34,9 @@ export const DASHBOARD_WIDGETS: DashboardWidgetDef[] = [
   { id: 'latestReturns', label: 'آخرین مرجوعی‌ها', cols: 1 },
   { id: 'topItems', label: 'پرفروش‌ترین اقلام', cols: 1 },
   { id: 'scheduledDeliveries', label: 'تحویل‌های زمان‌بندی‌شده', cols: 1 },
-  { id: 'liquidBalance', label: 'موجودی صندوق کارگاه', cols: 1 },
   { id: 'incomeWindowStats', label: 'درآمد هفتگی و ماهانه', cols: 3 },
+  { id: 'actionCenter', label: 'مرکز اقدام مدیریتی', cols: 2 },
+  { id: 'activityTimeline', label: 'جریان فعالیت‌ها', cols: 1 },
 ];
 
 /** The pristine default layout (also the shape saved as a preset). */

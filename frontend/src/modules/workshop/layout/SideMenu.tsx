@@ -1,19 +1,15 @@
 import React from 'react';
-import { useNavigate, useLocation, NavLink } from 'react-router-dom';
+import { useNavigate, NavLink, useLocation } from 'react-router-dom';
+import { Home, Scissors } from 'lucide-react';
+import { toPersianDigits } from '@/utils/persian';
+import { useBrand } from '@/context/BrandContext';
+import { useAuth } from '@/context/AuthContext';
+import { useWorkshopAlerts } from '@/modules/workshop/layout/useWorkshopAlerts';
 import {
-  LayoutDashboard,
-  ArrowLeftRight,
-  Package,
-  Users,
-  CreditCard,
-  Settings,
-  RotateCcw,
-  BarChart3,
-  ShoppingBag,
-  Globe,
-  Home,
-  Scissors,
-} from 'lucide-react';
+  NAV_GROUPS,
+  BADGE_VARIANT_CLASS,
+  type NavItemConfig,
+} from '@/modules/workshop/layout/nav-config';
 import {
   Sheet,
   SheetContent,
@@ -21,11 +17,6 @@ import {
   SheetTitle,
   SheetDescription,
 } from '@/components/ui/sheet';
-import { useData } from '@/modules/workshop/context/DataContext';
-import { toPersianDigits } from '@/utils/persian';
-import { useBrand } from '@/context/BrandContext';
-import { useAuth } from '@/context/AuthContext';
-import type { Permission } from '@/lib/permissions';
 
 interface SideMenuProps {
   open: boolean;
@@ -33,25 +24,17 @@ interface SideMenuProps {
 }
 
 /**
- * Workshop hamburger side menu (mobile-only entry in the Header). Contains
- * every navigation destination — workshop-only tools, then a gold separator
- * label «فروشگاه» for website-only links, with Settings pinned to the
- * bottom. All items close the sheet on activation.
+ * Workshop hamburger side menu (mobile Header entry). Mirrors the desktop
+ * Sidebar IA (Item 29) via the shared NAV_GROUPS config, so the two surfaces
+ * never drift. Section headers label each IA group; operational badges mirror
+ * the real overdue / low-stock counts from DataContext.
  */
 export const SideMenu: React.FC<SideMenuProps> = ({ open, onOpenChange }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { consignments } = useData();
   const { company } = useBrand();
   const { hasPermission } = useAuth();
-
-  // Same gate as the desktop sidebar: a role without the permission never
-  // sees the destination. Author therefore keeps only the blog entry.
-  const can = (permission: Permission) => hasPermission(permission);
-
-  const overdueCount = consignments.filter(
-    (c) => (c.remainingAmount || 0) > 0 && new Date(c.dueDate).getTime() < Date.now()
-  ).length;
+  const { overdueCount, lowStockCount } = useWorkshopAlerts();
 
   // Close on any navigation (route or modal-triggered).
   React.useEffect(() => {
@@ -63,9 +46,6 @@ export const SideMenu: React.FC<SideMenuProps> = ({ open, onOpenChange }) => {
     navigate(to);
   };
 
-
-  const isActive = (to: string) => location.pathname === to;
-
   const itemClass = (active: boolean) =>
     `flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${
       active
@@ -73,13 +53,16 @@ export const SideMenu: React.FC<SideMenuProps> = ({ open, onOpenChange }) => {
         : 'border border-transparent text-stone-700 dark:text-gray-300 hover:bg-stone-100 dark:hover:bg-white/5 hover:text-black dark:hover:text-white'
     }`;
 
+  const alertCount = (item: NavItemConfig) =>
+    item.badge === 'overdue' ? overdueCount : item.badge === 'lowStock' ? lowStockCount : 0;
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="start" showCloseButton={false} className="w-80 p-0 bg-white dark:bg-[#141416] border-e border-stone-200 dark:border-white/10">
         <SheetHeader className="p-4 pb-2 border-b border-stone-200 dark:border-white/5">
           <SheetTitle className="flex items-center gap-2.5 text-base font-black text-stone-900 dark:text-white">
             <span className="w-9 h-9 rounded-xl bg-brand text-brand-on flex items-center justify-center shadow-md overflow-hidden">
-            {company?.logoUrl ? (
+              {company?.logoUrl ? (
                 <img src={company.logoUrl} alt={company.brandName || 'لوگو'} className="w-full h-full object-cover" />
               ) : (
                 <Scissors className="w-5 h-5 -rotate-45 text-black" />
@@ -92,107 +75,53 @@ export const SideMenu: React.FC<SideMenuProps> = ({ open, onOpenChange }) => {
           </SheetDescription>
         </SheetHeader>
 
-        {/* Scrollable nav sections */}
-        <nav className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-1">
-          <p className="px-3 pb-1 text-[11px] font-black tracking-wide text-stone-500 dark:text-gray-500">
-            کارگاه
-          </p>
+        {/* IA groups */}
+        <nav className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-3">
+          {NAV_GROUPS.map((group) => {
+            const visibleItems = group.items.filter((i) => !i.permission || hasPermission(i.permission));
+            if (!visibleItems.length) return null;
+            return (
+              <div key={group.id} className="space-y-0.5">
+                <p className="px-3 pb-1.5 text-[11px] font-black tracking-wide text-stone-500 dark:text-gray-500">
+                  {group.label}
+                </p>
+                {visibleItems.map((item) => {
+                  const Icon = item.icon;
+                  const count = alertCount(item);
+                  return (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      end={item.end}
+                      onClick={() => onOpenChange(false)}
+                      className={({ isActive }) => itemClass(isActive)}
+                    >
+                      <span className="relative flex items-center gap-3">
+                        <Icon className="w-4.5 h-4.5 shrink-0" />
+                        <span className="truncate">{item.label}</span>
+                        {item.badge && count > 0 ? (
+                          <span
+                            className={`absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full ${BADGE_VARIANT_CLASS[item.badge]} text-white text-[9px] flex items-center justify-center font-black`}
+                          >
+                            {toPersianDigits(count)}
+                          </span>
+                        ) : null}
+                      </span>
+                    </NavLink>
+                  );
+                })}
+              </div>
+            );
+          })}
 
-          {can('analytics.view') && (
-            <NavLink to="/console" end onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
-              <LayoutDashboard className="w-4.5 h-4.5 shrink-0" />
-              داشبورد
-            </NavLink>
-          )}
-
-          {can('consignments.view') && (
-            <NavLink to="/console/consignments" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
-              <span className="relative">
-                <ArrowLeftRight className="w-4.5 h-4.5 shrink-0" />
-                {overdueCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-600 text-white text-[9px] flex items-center justify-center font-black">
-                    {toPersianDigits(overdueCount)}
-                  </span>
-                )}
-              </span>
-              حواله‌ها و تحویل امانی
-            </NavLink>
-          )}
-
-          {can('inventory.view') && (
-            <NavLink to="/console/inventory" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
-              <Package className="w-4.5 h-4.5 shrink-0" />
-              انبار و موجودی اجناس
-            </NavLink>
-          )}
-
-          {can('people.view') && (
-            <NavLink to="/console/people" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
-              <Users className="w-4.5 h-4.5 shrink-0" />
-              فروشندگان و پرسنل
-            </NavLink>
-          )}
-
-          {can('finances.view') && (
-            <NavLink to="/console/finances" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
-              <CreditCard className="w-4.5 h-4.5 shrink-0" />
-              امور مالی
-            </NavLink>
-          )}
-
-          {can('returns.view') && (
-            <NavLink to="/console/returns" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
-              <RotateCcw className="w-4.5 h-4.5 shrink-0" />
-              مرجوعی‌ها و خرابی‌ها
-            </NavLink>
-          )}
-
-          {can('analytics.view') && (
-            <NavLink to="/console/analytics" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
-              <BarChart3 className="w-4.5 h-4.5 shrink-0" />
-              تحلیل فروش
-            </NavLink>
-          )}
-
-          {/* Gold gradient separator + website section */}
-          <div className="my-3 mx-1 flex items-center gap-2">
-            <span className="flex-1 h-px bg-gradient-to-l from-transparent via-brand/60 to-transparent" />
-            <span className="text-[11px] font-black text-brand-ink flex items-center gap-1">
-              <Globe className="w-3 h-3" />
-              فروشگاه
-            </span>
-            <span className="flex-1 h-px bg-gradient-to-l from-transparent via-brand/60 to-transparent" />
-          </div>
-
-          {can('orders.view') && (
-            <NavLink to="/console/orders" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
-              <ShoppingBag className="w-4.5 h-4.5 shrink-0" />
-              سفارش‌های فروشگاه
-            </NavLink>
-          )}
-
-          {can('blog.manage') && (
-            <button type="button" onClick={() => go('/console/website/blog')} className={itemClass(isActive('/console/website/blog'))}>
-              <Globe className="w-4.5 h-4.5 shrink-0" />
-              مدیریت وب‌سایت
+          {/* Public site link — always available, closes the sheet. */}
+          <div className="mt-auto border-t border-stone-200 dark:border-white/5 pt-3">
+            <button type="button" onClick={() => go('/')} className={itemClass(false)}>
+              <Home className="w-4.5 h-4.5 shrink-0" />
+              بازگشت به سایت اصلی
             </button>
-          )}
-
-          <button type="button" onClick={() => go('/')} className={itemClass(false)}>
-            <Home className="w-4.5 h-4.5 shrink-0" />
-            بازگشت به سایت اصلی
-          </button>
-        </nav>
-
-        {/* Settings pinned to the bottom */}
-        {can('settings.manage') && (
-          <div className="p-3 border-t border-stone-200 dark:border-white/5">
-            <NavLink to="/console/settings" onClick={() => onOpenChange(false)} className={({ isActive }) => itemClass(isActive)}>
-              <Settings className="w-4.5 h-4.5 shrink-0" />
-              تنظیمات و مدیریت
-            </NavLink>
           </div>
-        )}
+        </nav>
       </SheetContent>
     </Sheet>
   );

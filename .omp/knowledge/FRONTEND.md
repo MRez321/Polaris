@@ -25,10 +25,10 @@ src/
   modules/workshop/        THE admin panel
     supply/                SupplyPage (suppliers/orders/receipts/costs tabs; self-fetching via supplyApi) — P0-C
     pages/                 Dashboard, Orders, Inventory, Consignments, People, Finances, Returns, Analytics, Settings, EntityProfile, SalesOrders, SellerSales, Customers, SalesChannels, SalesPayments — P0-D
-    layout/                ConsoleLayout (role guard + index landing + scroll-to-top on route change), Sidebar (permission-filtered nav + «نبض کارگاه» pulse card), Header (quick handover/payment gated on consignments.manage), MobileNav (workshop roles only; bottom bar + actions popover with Plus-badged pills), SideMenu (permission-filtered sheet; quick-trigger buttons removed — actions live in MobileNav popover)
+    layout/        ConsoleLayout (role guard + index landing + scroll-to-top on route change); Sidebar (`nav-config.ts` IA-group nav — 6 permission-gated, collapsible groups + «نبض کارگاه» pulse card with overdue/low-stock badges from `useWorkshopAlerts.ts`) | Header (quick handover/payment gated on consignments.manage + Ctrl/Cmd+K `GlobalSearch.tsx` overlay) | MobileNav (workshop roles only; bottom bar + actions popover with Plus-badged pills) | SideMenu (mobile IA-group sheet mirroring Sidebar groups, collapsible, permission-gated)
     context/               DataContext (workshop data + CompanyBranding `workshopInfo`), UIContext (drawers/modals)
     inventory/consignments/payments/staff/sellers/people/settings/audit/finances/  Manager components per domain
-    dashboard/             DashboardOverview (widget visibility panel), StatsCard, TopSellersCard, SalesDebtChart, OverdueAlertBanner
+    dashboard/             DashboardOverview (`dashboardLayout.ts` `DASHBOARD_WIDGETS` registry — 16 widgets incl. actionCenter + activityTimeline, rendered via collapsible `WidgetShell`) + StatsCard, TopSellersCard, SalesDebtChart, OverdueAlertBanner, TodoWidget, + new ActivityTimeline (`audit/ActivityTimeline.tsx`) & ManagerActionCenter (`dashboard/ManagerActionCenter.tsx`) — see docs/frontend/dashboard-widgets.md and docs/frontend/global-search.md
     returns/               ReturnsPage (damage/consignment-return tracking: record → fix (restock) / dispose (write-off))
     analytics/             AnalyticsPage (GA measurement-id save), FinancialReports
     pwa/                   PwaInstallPrompt, ConnectionGuardian

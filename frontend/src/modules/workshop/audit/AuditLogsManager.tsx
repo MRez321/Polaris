@@ -3,28 +3,15 @@ import { toast } from 'sonner';
 import {
   History as HistoryIcon,
   Search,
-  User,
-  Clock,
-  Shield,
-  FileText,
-  Package,
-  CreditCard,
-  ShoppingBag,
-  ArrowLeftRight,
-  Coins,
   ChevronDown,
   Loader2,
   Globe,
-  Receipt,
-  TrendingUp,
-  Bell,
-  ClipboardList,
-  Archive,
 } from 'lucide-react';
 import type { AuditLog } from '@/types';
 import { auditApi, getApiErrorMessage } from '@/lib/api';
 import { toJalaliDateTime, toPersianDigits } from '@/utils/persian';
 import { SelectMenu } from '@/components/ui/select-menu';
+import { getEntityIcon, getEntityLabel, getActionLabel, getRoleLabel } from './auditUtils';
 const PAGE_SIZE = 20;
 
 export const AuditLogsManager: React.FC = () => {
@@ -70,104 +57,6 @@ export const AuditLogsManager: React.FC = () => {
     const matchesAction = selectedAction === 'all' || log.action === selectedAction;
     return matchesSearch && matchesEntity && matchesAction;
   });
-  const getEntityIcon = (entity: AuditLog['entity']) => {
-    switch (entity) {
-      case 'item':
-        return <Package className="w-4 h-4 text-amber-500" />;
-      case 'seller':
-        return <User className="w-4 h-4 text-blue-500" />;
-      case 'consignment':
-        return <FileText className="w-4 h-4 text-brand" />;
-      case 'payment':
-        return <CreditCard className="w-4 h-4 text-emerald-500" />;
-      case 'staff':
-        return <Shield className="w-4 h-4 text-orange-500" />;
-      case 'return':
-        return <HistoryIcon className="w-4 h-4 text-rose-500" />;
-      case 'cost':
-        return <Receipt className="w-4 h-4 text-amber-500" />;
-      case 'profit':
-        return <TrendingUp className="w-4 h-4 text-emerald-500" />;
-      case 'notifications':
-        return <Bell className="w-4 h-4 text-blue-500" />;
-      case 'todo':
-        return <ClipboardList className="w-4 h-4 text-sky-500" />;
-      case 'backup':
-        return <Archive className="w-4 h-4 text-violet-500" />;
-      case 'order':
-        return <ShoppingBag className="w-4 h-4 text-brand" />;
-      case 'inventory-ledger':
-        return <ArrowLeftRight className="w-4 h-4 text-sky-500" />;
-      case 'financial-ledger':
-        return <Coins className="w-4 h-4 text-emerald-500" />;
-      default:
-        return <Clock className="w-4 h-4 text-stone-400" />;
-    }
-  };
-
-  const getEntityLabel = (entity: AuditLog['entity']) => {
-    switch (entity) {
-      case 'item':
-        return 'انبار و کالا';
-      case 'seller':
-        return 'فروشندگان';
-      case 'consignment':
-        return 'واگذاری امانی';
-      case 'payment':
-        return 'دریافت وجه و تسویه';
-      case 'staff':
-        return 'پرسنل و هم‌بنیان‌گذاران';
-      case 'return':
-        return 'مرجوعی کالا';
-      case 'cost':
-        return 'هزینه‌ها';
-      case 'notifications':
-        return 'اطلاع‌رسانی';
-      case 'todo':
-        return 'کارهای کارگاه';
-      case 'backup':
-        return 'پشتیبان‌گیری';
-      case 'profit':
-        return 'توزیع سود';
-      case 'settings':
-        return 'تنظیمات و برند';
-      case 'order':
-        return 'سفارش‌ها';
-      case 'inventory-ledger':
-        return 'دفتر موجودی';
-      case 'financial-ledger':
-        return 'دفتر مالی';
-      case 'auth':
-        return 'ورود و امنیت';
-      default:
-        return 'عملیات';
-    }
-  };
-
-  const getActionLabel = (action: string) => {
-    switch (action) {
-      case 'create':
-        return 'ایجاد';
-      case 'update':
-        return 'ویرایش';
-      case 'delete':
-        return 'حذف';
-      case 'restore':
-        return 'بازیابی';
-      case 'archive':
-        return 'بایگانی';
-      case 'login':
-        return 'ورود';
-      default:
-        return action;
-    }
-  };
-
-  const getRoleLabel = (role: string | null | undefined) => {
-    if (role === 'admin') return 'مدیر';
-    if (role === 'staff') return 'کاربر';
-    return role || '';
-  };
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto text-stone-900 dark:text-white">
@@ -186,7 +75,7 @@ export const AuditLogsManager: React.FC = () => {
         </div>
 
         <div className="text-left bg-stone-100 dark:bg-black/40 px-3.5 py-2 rounded-xl border border-black/5 dark:border-white/5">
-          <span className="text-[10px] text-stone-400 block">کل رویدادهای مانیتور شده:</span>
+          <span className="text-[10px] text-stone-400 block">کل سرویس‌های مانیتور شده:</span>
           <span className="text-sm font-black text-brand font-mono">
             {toPersianDigits(total)} رویداد
           </span>
@@ -216,7 +105,7 @@ export const AuditLogsManager: React.FC = () => {
             { value: 'payment', label: 'دریافت وجه و تسویه' },
             { value: 'item', label: 'انبار و کالا' },
             { value: 'seller', label: 'پرونده فروشندگان' },
-            { value: 'staff', label: 'پرسنل و کادر کارگاه' },
+            { value: 'staff', label: 'کارمندان و هم‌بنیان‌گذاران' },
             { value: 'return', label: 'مرجوعی کالا' },
             { value: 'cost', label: 'هزینه‌های کارگاه' },
             { value: 'order', label: 'سفارش‌ها' },
@@ -255,7 +144,7 @@ export const AuditLogsManager: React.FC = () => {
           </div>
         ) : filteredLogs.length === 0 ? (
           <div className="p-8 text-center glass-panel rounded-2xl text-xs text-stone-400">
-            هیچ لاگ و رویدادی منطبق با جستجوی شما یافت نشد.
+            هیچ لاگ و رویدادی منطبق بر جستجوی شما یافت نشد.
           </div>
         ) : (
           filteredLogs.map((log) => {
