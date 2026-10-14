@@ -5,10 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
-import { Plus, Trash2 } from 'lucide-react';
 import type { Supplier } from '@/types';
 import type { SupplierPayload } from '@/lib/api';
-import { toPersianDigits } from '@/utils/persian';
 
 interface SupplierFormModalProps {
   isOpen: boolean;

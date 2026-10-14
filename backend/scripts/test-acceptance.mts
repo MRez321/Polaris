@@ -321,7 +321,7 @@ async function runP0CSection(): Promise<void> {
         amount: SUPPLY_COST,
         currency: 'IRT',
         allocationMethod: 'by_value',
-    }, ADMIN_ID);
+    }, { ip: '127.0.0.1', userAgent: 'acceptance-test' }, ADMIN_ID);
     check('supply cost created', cost.id !== undefined);
 
     // Σ allocations == amount (largest-remainder invariant).

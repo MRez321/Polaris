@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { ShoppingCart, Receipt, Tag, Truck, Plus, Eye, Edit, Trash2, Check, X as XIcon, Search } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { ShoppingCart, Receipt, Tag, Truck, Plus, Edit, Trash2, Check, X as XIcon } from 'lucide-react';
 import { supplyApi, getApiErrorMessage } from '@/lib/api';
 import { toast } from 'sonner';
-import type { Supplier, PurchaseOrder, PurchaseOrderStatus } from '@/types';
+import type { Supplier, PurchaseOrder } from '@/types';
 import type { SupplierPayload, PurchaseOrderPayload } from '@/lib/api';
 import { toPersianDigits, formatToman } from '@/utils/persian';
 import { useAuth } from '@/context/AuthContext';
@@ -80,27 +79,6 @@ export const SupplyPage: React.FC = () => {
     return () => { cancelled = true; };
   }, []);
 
-  const reload = () => {
-    let cancelled = false;
-    async function load() {
-      setLoading(true);
-      try {
-        const [sRes, oRes] = await Promise.all([
-          supplyApi.listSuppliers({ limit: 100 }).catch(() => ({ rows: [], total: 0 })),
-          supplyApi.listOrders({ limit: 100 }).catch(() => ({ rows: [], total: 0 })),
-        ]);
-        if (!cancelled) {
-          setSuppliers(sRes.rows);
-          setOrders(oRes.rows);
-        }
-      } catch (e: unknown) {
-        if (!cancelled) setError(getApiErrorMessage(e));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    void load();
-  };
 
   // --- Supplier CRUD ---
   const handleCreateSupplier = async (data: SupplierPayload) => {
@@ -190,7 +168,7 @@ export const SupplyPage: React.FC = () => {
   };
 
   const pendingReceipts = orders.filter(
-    (o) => o.status === 'ordered' || o.status === 'partially_received' || o.status === 'confirmed'
+    (o) => o.status === 'ordered' || o.status === 'partially_received',
   );
 
   const activeSuppliers = suppliers.filter((s) => s.is_active !== false).length;

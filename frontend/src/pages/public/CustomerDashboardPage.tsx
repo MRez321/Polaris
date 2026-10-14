@@ -10,6 +10,7 @@ import {
   MapPin,
   Package,
   PenLine,
+  Pencil,
   Plus,
   RefreshCw,
   Settings2,
@@ -207,9 +208,9 @@ export const CustomerDashboardPage: React.FC = () => {
             </TabsList>
             <TabsContent value="orders" className="mt-0">
               <OrdersTab
+                userId={user.id}
                 orders={orders}
                 error={ordersError}
-                loading={ordersLoading}
                 onRetry={() => {
                   setOrdersLoading(true);
                   ordersApi
