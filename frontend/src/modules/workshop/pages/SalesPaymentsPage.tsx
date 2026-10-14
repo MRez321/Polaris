@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Loader2,
   RefreshCw,
@@ -9,6 +9,7 @@ import {
   Banknote,
   Smartphone,
   Building,
+  Filter,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SalesPayment, SalesPaymentMethod } from '@/types';
@@ -38,11 +39,27 @@ const PAYMENT_STATUS_LABELS = {
   refunded: 'بازپرداخت شده',
 } as const;
 
+const PAYMENT_STATUS_COLOR: Record<string, string> = {
+  pending: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+  completed: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  failed: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+  refunded: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+};
+
 /** Admin sales payments management: customer payments + seller settlements. */
 export const SalesPaymentsPage: React.FC = () => {
   const [payments, setPayments] = useState<SalesPayment[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  const FILTERS: { id: string; label: string }[] = [
+    { id: 'all', label: 'همه' },
+    { id: 'completed', label: 'موفق' },
+    { id: 'pending', label: 'در انتظار' },
+    { id: 'failed', label: 'ناموفق' },
+    { id: 'refunded', label: 'بازپرداخت' },
+  ];
 
   const load = useCallback(async () => {
     try {
@@ -60,25 +77,61 @@ export const SalesPaymentsPage: React.FC = () => {
 
   const filtered = useCallback(() => {
     if (!payments) return [];
-    if (!searchTerm) return payments;
+    let result = payments;
+    if (statusFilter !== 'all') {
+      result = result.filter((p) => p.status === statusFilter);
+    }
+    if (!searchTerm) return result;
     const term = searchTerm.toLowerCase();
-    return payments.filter(
+    return result.filter(
       (p) =>
         (p.code ?? '').toLowerCase().includes(term) ||
         (p.orderId ?? '').toLowerCase().includes(term) ||
         (p.sellerSaleId ?? '').toLowerCase().includes(term) ||
         (p.customerId ?? '').toLowerCase().includes(term),
     );
-  }, [payments, searchTerm]);
+  }, [payments, searchTerm, statusFilter]);
 
   const list = filtered();
   const totalAmount = list.reduce((sum, p) => sum + p.amount, 0);
   const completedCount = list.filter((p) => p.status === 'completed').length;
+  const pendingCount = list.filter((p) => p.status === 'pending').length;
+  const pendingAmount = list.filter((p) => p.status === 'pending').reduce((sum, p) => sum + p.amount, 0);
 
   if (!payments) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-brand" />
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold">پرداخت‌های فروش</h1>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-20 rounded-2xl bg-stone-100 dark:bg-stone-800 animate-pulse" />
+          ))}
+        </div>
+        <div className="border border-stone-200 dark:border-stone-700 rounded-xl overflow-hidden bg-white dark:bg-stone-900">
+          <table className="w-full text-sm">
+            <thead className="bg-stone-50 dark:bg-stone-800/50">
+              <tr>
+                <th className="text-right py-2.5 px-3">کد</th>
+                <th className="text-right py-2.5 px-3">مبنا</th>
+                <th className="text-right py-2.5 px-3">مبلغ</th>
+                <th className="text-right py-2.5 px-3">روش</th>
+                <th className="text-center py-2.5 px-3">وضعیت</th>
+                <th className="text-right py-2.5 px-3">تاریخ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i} className="border-t border-stone-200 dark:border-stone-700">
+                  <td className="py-2.5 px-3" colSpan={6}>
+                    <div className="h-4 rounded bg-stone-100 dark:bg-stone-700 animate-pulse" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   }
@@ -109,8 +162,8 @@ export const SalesPaymentsPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="border border-stone-200 dark:border-stone-700 rounded-xl p-4 bg-white dark:bg-stone-900">
           <div className="text-sm text-stone-500 dark:text-stone-400 mb-1">کل پرداخت‌ها</div>
           <div className="text-xl font-bold">
@@ -123,18 +176,49 @@ export const SalesPaymentsPage: React.FC = () => {
             {toPersianDigits(completedCount.toString())}
           </div>
         </div>
+        <div className="border border-stone-200 dark:border-stone-700 rounded-xl p-4 bg-white dark:bg-stone-900">
+          <div className="text-sm text-stone-500 dark:text-stone-400 mb-1">در انتظار</div>
+          <div className="text-xl font-bold text-amber-600">
+            {toPersianDigits(pendingCount.toString())}
+          </div>
+        </div>
+        <div className="border border-stone-200 dark:border-stone-700 rounded-xl p-4 bg-white dark:bg-stone-900">
+          <div className="text-sm text-stone-500 dark:text-stone-400 mb-1">مبلغ معوق</div>
+          <div className="text-xl font-bold text-amber-600">
+            {toPersianDigits(pendingAmount.toLocaleString('fa-IR'))} تومان
+          </div>
+        </div>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-        <input
-          type="text"
-          placeholder="جستجو در پرداخت‌ها..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pr-10 pl-3 py-2 text-sm border border-stone-300 dark:border-stone-600 rounded-lg bg-white dark:bg-stone-800 focus:outline-none focus:ring-1 focus:ring-brand"
-        />
+      {/* Search + Filter */}
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+          <input
+            type="text"
+            placeholder="جستجو در پرداخت‌ها..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pr-10 pl-3 py-2 text-sm border border-stone-300 dark:border-stone-600 rounded-lg bg-white dark:bg-stone-800 focus:outline-none focus:ring-1 focus:ring-brand"
+          />
+        </div>
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+          <Filter className="w-4 h-4 text-stone-400 shrink-0" />
+          {FILTERS.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setStatusFilter(f.id)}
+              className={cn(
+                'px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
+                statusFilter === f.id
+                  ? 'bg-brand text-brand-on shadow'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800',
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {list.length === 0 ? (
@@ -148,7 +232,7 @@ export const SalesPaymentsPage: React.FC = () => {
             <thead className="bg-stone-50 dark:bg-stone-800/50">
               <tr>
                 <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">کد</th>
-                <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">مبنا</th>
+                <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">مرجع</th>
                 <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">مبلغ</th>
                 <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">روش</th>
                 <th className="text-center py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">وضعیت</th>
@@ -197,13 +281,8 @@ export const SalesPaymentsPage: React.FC = () => {
                     <span
                       className={cn(
                         'px-2 py-0.5 text-xs rounded-full',
-                        p.status === 'completed'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                          : p.status === 'failed'
-                          ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
-                          : p.status === 'refunded'
-                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-                          : 'bg-stone-100 text-stone-800 dark:bg-stone-700 dark:text-stone-300',
+                        PAYMENT_STATUS_COLOR[p.status] ??
+                          'bg-stone-100 text-stone-800 dark:bg-stone-700 dark:text-stone-300',
                       )}
                     >
                       {PAYMENT_STATUS_LABELS[p.status as keyof typeof PAYMENT_STATUS_LABELS] ?? p.status}

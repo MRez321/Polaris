@@ -1,9 +1,12 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, LogIn, LogOut, Settings2, UserRound } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { LayoutDashboard, LogIn, LogOut, Settings2, UserRound, ShoppingBag, Heart, Package, MapPin } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useCart } from '@/context/CartContext';
+import { useFavorites } from '@/context/FavoritesContext';
 import { cn } from '@/lib/utils';
 import { CONSOLE_ACCESS } from '@/lib/permissions';
+import { toPersianDigits } from '@/utils/persian';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,10 +77,11 @@ interface UserMenuProps {
 }
 
 /**
- * Role-aware account menu, one component for all surfaces (public website,
- * console). Avatar shows the profile picture; the dropdown links to the
- * account dashboard, the website settings/blog (permission-gated), and the
- * console (admin).
+ * Role-aware account menu, shared across the public storefront and the
+ * console header. On the public site the dropdown exposes shop quick-access
+ * (cart, favorites, my orders, addresses); inside the console it shows the
+ * admin-panel link for admins plus website/blog settings for permissioned
+ * roles. Logout is always the destructive last item.
  */
 export const UserMenu: React.FC<UserMenuProps> = ({
   className,
@@ -85,7 +89,14 @@ export const UserMenu: React.FC<UserMenuProps> = ({
   showName = true,
 }) => {
   const { user, isAdmin, hasPermission, signOut } = useAuth();
+  const { count: cartCount, openCart } = useCart();
+  const { favorites } = useFavorites();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Cart/favorites are storefront concepts — only relevant outside the console.
+  const isConsole = location.pathname.startsWith('/console');
+  const showShopLinks = !isConsole;
 
   if (!user) {
     return (
@@ -126,7 +137,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
           </span>
         )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-52">
+      <DropdownMenuContent align="end" className="min-w-52" dir="rtl">
         <DropdownMenuGroup>
           <DropdownMenuGroupLabel>
             <span className="block truncate">{user.name}</span>
@@ -134,10 +145,78 @@ export const UserMenu: React.FC<UserMenuProps> = ({
               {user.email}
             </span>
           </DropdownMenuGroupLabel>
-          <DropdownMenuItem render={<Link to="/dashboard" />}>
+
+          {/* حساب کاربری — always first */}
+          <DropdownMenuItem
+            render={<Link to="/dashboard" />}
+            onClick={() => navigate('/dashboard')}
+          >
             <UserRound />
-            حساب کاربری من
+            حساب کاربری
           </DropdownMenuItem>
+
+          {/* Shop quick-access: cart, favorites, orders, addresses */}
+          {showShopLinks && (
+            <>
+              <DropdownMenuItem
+                onClick={() => {
+                  openCart();
+                  navigate('/shop');
+                }}
+              >
+                <ShoppingBag />
+                <span className="flex items-center justify-between w-full">
+                  <span>سبد خرید</span>
+                  {cartCount > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-brand-deep text-white">
+                      {toPersianDigits(cartCount)}
+                    </span>
+                  )}
+                </span>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                render={<Link to="/dashboard" />}
+                onClick={() => navigate('/dashboard')}
+              >
+                <Heart />
+                <span className="flex items-center justify-between w-full">
+                  <span>مورد علاقه ها</span>
+                  {favorites.length > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-600 text-white">
+                      {toPersianDigits(favorites.length)}
+                    </span>
+                  )}
+                </span>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                render={<Link to="/dashboard" />}
+                onClick={() => navigate('/dashboard')}
+              >
+                <Package />
+                سفارش‌های من
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                render={<Link to="/dashboard" />}
+                onClick={() => navigate('/dashboard')}
+              >
+                <MapPin />
+                آدرس‌های من
+              </DropdownMenuItem>
+            </>
+          )}
+
+          {/* Admin panel entry — only for admins */}
+          {isAdmin && (
+            <DropdownMenuItem render={<Link to="/console" />}>
+              <LayoutDashboard />
+              پنل کارگاه
+            </DropdownMenuItem>
+          )}
+
+          {/* Console-only management links */}
           {isConsoleUser && hasPermission('website.manage') && (
             <DropdownMenuItem render={<Link to="/console/website/website" />}>
               <Settings2 />
@@ -150,17 +229,11 @@ export const UserMenu: React.FC<UserMenuProps> = ({
               مدیریت وبلاگ
             </DropdownMenuItem>
           )}
-          {isAdmin && (
-            <DropdownMenuItem render={<Link to="/console" />}>
-              <LayoutDashboard />
-              پنل کارگاه
-            </DropdownMenuItem>
-          )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onClick={handleSignOut}>
           <LogOut />
-          خروج از حساب
+          خروج از حساب کاربری
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

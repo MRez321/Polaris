@@ -9,7 +9,6 @@ import {
   LogOut,
   MapPin,
   Package,
-  Pencil,
   PenLine,
   Plus,
   RefreshCw,
@@ -25,6 +24,7 @@ import { authClient, mapAuthError } from '@/lib/auth';
 import { usePageMeta } from '@/lib/usePageMeta';
 import { useAuth } from '@/context/AuthContext';
 import { useFavorites } from '@/context/FavoritesContext';
+import { useCart } from '@/context/CartContext';
 import { formatToman, toJalaliDateTime, toPersianDigits } from '@/utils/persian';
 import { SafeImage } from '@/components/common/SafeImage';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
@@ -71,28 +71,10 @@ const TRACKING_META: Record<OrderStatus, { label: string; description: string }>
   cancelled: { label: 'لغو سفارش', description: 'این سفارش لغو شده است. در صورت پرداخت، مبلغ به شما بازگردانده می‌شود.' },
 };
 
-
-const ROLE_LABELS: Record<string, string> = {
-  admin: 'مدیر',
-  author: 'نویسنده',
-  user: 'کاربر وب‌سایت',
-  staff: 'کارمند',
-};
-
-const ROLE_DESCRIPTIONS: Record<string, string> = {
-  admin: 'دسترسی کامل به مدیریت کارگاه (تولید، موجودی، مالی) و مدیریت وب‌سایت و وبلاگ.',
-  author: 'دسترسی به نوشتن و مدیریت مطالب وبلاگ.',
-  user: 'حساب کاربری وب‌سایت برای خرید، پیگیری سفارش‌ها و علاقه‌مندی‌ها.',
-};
-
-/**
- * Panel entry points per role — an explicit allowlist, so unknown or legacy
- * roles render no links. These buttons are navigation sugar only: /console
- * re-checks the role in its layout guard, and every API enforces access
- * server-side (requireRole), so a hand-crafted URL or a tampered DOM grants
- * no access.
- */
-const PANEL_LINKS: Record<
+/** Admin panel quick-entry per role — shown on the profile tab only for
+ *  roles with console access. Navigation sugar only: /console re-checks the
+ *  role in its layout guard, and every API enforces access server-side. */
+const CONSOLE_LINKS: Record<
   string,
   { to: string; label: string; icon: React.ComponentType<{ className?: string }>; primary?: boolean }[]
 > = {
@@ -115,93 +97,155 @@ function initials(name: string): string {
 }
 
 /**
- * Customer account area for website users: order history, favorites and
- * profile. Lives inside the public layout — no workshop/admin data is ever
- * loaded here.
+ * Customer account area for website users: order history, favorites, addresses
+ * and profile. Lives inside the public layout — no workshop/admin data is ever
+ * loaded here. The top banner and role/display cards were removed in favor of
+ * a clean professional shop dashboard with quick stats in the sidebar.
  */
 export const CustomerDashboardPage: React.FC = () => {
   const { user, isLoading, signOut } = useAuth();
+  const { favorites } = useFavorites();
+  const { count: cartCount } = useCart();
+  const [orders, setOrders] = useState<Order[] | null>(null);
+  const [ordersError, setOrdersError] = useState<string | null>(null);
+  const [ordersLoading, setOrdersLoading] = useState(true);
 
-  usePageMeta(
-    'حساب کاربری',
-    'پیگیری سفارش‌ها و مدیریت حساب کاربری در فروشگاه پولاریس استایل.',
-    '/dashboard'
-  );
+  usePageMeta('حساب کاربری', 'پیگیری سفارش‌ها و مدیریت حساب کاربری در فروشگاه پولاریس استایل.', '/dashboard');
+
+  useEffect(() => {
+    if (!user) return;
+    setOrdersLoading(true);
+    ordersApi
+      .mine()
+      .then((data) => { setOrders(data); setOrdersError(null); })
+      .catch((err) => setOrdersError(getApiErrorMessage(err)))
+      .finally(() => setOrdersLoading(false));
+  }, [user]);
 
   if (isLoading) return null;
   if (!user) return <Navigate to="/login?next=/dashboard" replace />;
 
+  const pendingOrders = (orders ?? []).filter((o) => !['delivered', 'cancelled', 'refunded'].includes(o.status)).length;
+  const deliveredOrders = (orders ?? []).filter((o) => o.status === 'delivered').length;
+
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-      {/* Profile header */}
-      <div className="rounded-3xl border border-stone-200/80 dark:border-white/8 bg-white dark:bg-[#16161a] p-5 sm:p-6 flex items-center gap-4 mb-6">
-        <span className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-brand text-brand-on text-lg sm:text-xl font-black flex items-center justify-center shadow-lg shadow-brand/25">
-          {initials(user.name)}
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-base sm:text-lg font-black text-stone-900 dark:text-white truncate">
-              {user.name}
-            </h1>
-            <Badge variant="outline" className="border-brand/40 text-brand-ink text-[10px]">
-              {ROLE_LABELS[user.role] ?? user.role}
-            </Badge>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <div className="grid lg:grid-cols-12 gap-6">
+        {/* Sidebar — professional quick stats + nav */}
+        <aside className="lg:col-span-4 xl:col-span-3">
+          <div className="rounded-3xl border border-stone-200/80 dark:border-white/8 bg-white dark:bg-[#16161a] p-5 sm:p-6 sticky top-24">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="w-11 h-11 rounded-2xl bg-brand text-brand-on text-sm font-black flex items-center justify-center shadow-md shadow-brand/25">
+                {initials(user.name)}
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-black text-stone-900 dark:text-white truncate">
+                  {user.name}
+                </p>
+                <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate" dir="ltr">
+                  {user.email}
+                </p>
+              </div>
+            </div>
+
+            <Tabs defaultValue="orders">
+              <TabsList className="flex-col items-stretch gap-1 bg-transparent p-0">
+                <TabsTrigger value="orders" className="justify-start gap-2">
+                  <Package className="w-4 h-4" />
+                  سفارش‌ها
+                </TabsTrigger>
+                <TabsTrigger value="favorites" className="justify-start gap-2">
+                  <Heart className="w-4 h-4" />
+                  علاقه‌مندی‌ها
+                </TabsTrigger>
+                <TabsTrigger value="addresses" className="justify-start gap-2">
+                  <MapPin className="w-4 h-4" />
+                  آدرس‌ها
+                </TabsTrigger>
+                <TabsTrigger value="profile" className="justify-start gap-2">
+                  <UserRound className="w-4 h-4" />
+                  پروفایل
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            <div className="mt-5 space-y-2 pt-4 border-t border-stone-200/50 dark:border-white/5 text-xs">
+              <div className="flex justify-between">
+                <span className="text-stone-500 dark:text-stone-400">سبد خرید</span>
+                <span className="font-bold text-stone-900 dark:text-white">
+                  {toPersianDigits(cartCount)} کالا
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-stone-500 dark:text-stone-400">علاقه‌مندی</span>
+                <span className="font-bold text-stone-900 dark:text-white">
+                  {toPersianDigits(favorites.length)} عدد
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-stone-500 dark:text-stone-400">سفارشات در حالت انتظار</span>
+                <span className="font-bold text-brand-ink">{toPersianDigits(pendingOrders)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-stone-500 dark:text-stone-400">تحویل داده‌شده</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                  {toPersianDigits(deliveredOrders)}
+                </span>
+              </div>
+            </div>
           </div>
-          <p className="text-xs sm:text-sm text-stone-500 dark:text-stone-400 truncate" dir="ltr">
-            {user.email}
-          </p>
-        </div>
+        </aside>
+
+        {/* Main content — same Tabs structure, sidebar triggers them */}
+        <main className="lg:col-span-8 xl:col-span-9">
+          <Tabs defaultValue="orders" className="w-full">
+            <TabsList className="hidden">
+              <TabsTrigger value="orders" />
+              <TabsTrigger value="favorites" />
+              <TabsTrigger value="addresses" />
+              <TabsTrigger value="profile" />
+            </TabsList>
+            <TabsContent value="orders" className="mt-0">
+              <OrdersTab
+                orders={orders}
+                error={ordersError}
+                loading={ordersLoading}
+                onRetry={() => {
+                  setOrdersLoading(true);
+                  ordersApi
+                    .mine()
+                    .then((data) => { setOrders(data); setOrdersError(null); })
+                    .catch((err) => setOrdersError(getApiErrorMessage(err)))
+                    .finally(() => setOrdersLoading(false));
+                }}
+              />
+            </TabsContent>
+            <TabsContent value="favorites" className="mt-0">
+              <FavoritesTab />
+            </TabsContent>
+            <TabsContent value="addresses" className="mt-0">
+              <AddressBookSection />
+            </TabsContent>
+            <TabsContent value="profile" className="mt-0">
+              <ProfileTab onSignOut={signOut} />
+            </TabsContent>
+          </Tabs>
+        </main>
       </div>
-
-      <Tabs defaultValue="orders">
-        <TabsList className="w-full sm:w-fit flex-wrap">
-          <TabsTrigger value="orders">
-            <Package className="w-4 h-4" />
-            سفارش‌ها
-          </TabsTrigger>
-          <TabsTrigger value="favorites">
-            <Heart className="w-4 h-4" />
-            علاقه‌مندی‌ها
-          </TabsTrigger>
-          <TabsTrigger value="profile">
-            <UserRound className="w-4 h-4" />
-            پروفایل
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="orders" className="mt-6">
-          <OrdersTab userId={user.id} />
-        </TabsContent>
-        <TabsContent value="favorites" className="mt-6">
-          <FavoritesTab />
-        </TabsContent>
-        <TabsContent value="profile" className="mt-6">
-          <ProfileTab onSignOut={signOut} />
-        </TabsContent>
-      </Tabs>
     </div>
   );
 };
 
 // --- Orders ---------------------------------------------------------------
 
-const OrdersTab: React.FC<{ userId: string }> = ({ userId }) => {
-  const [orders, setOrders] = useState<Order[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+const OrdersTab: React.FC<{
+  userId: string;
+  orders: Order[] | null;
+  error: string | null;
+  loading: boolean;
+  onRetry: () => void;
+}> = ({ orders, error, loading, onRetry }) => {
   const [openId, setOpenId] = useState<string | null>(null);
-
-  const load = useCallback(() => {
-    setError(null);
-    setOrders(null);
-    ordersApi
-      .mine()
-      .then(setOrders)
-      .catch((err) => setError(getApiErrorMessage(err)));
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load, userId]);
 
   if (error) {
     return (
@@ -212,13 +256,13 @@ const OrdersTab: React.FC<{ userId: string }> = ({ userId }) => {
         <EmptyTitle>خطا در بارگذاری سفارش‌ها</EmptyTitle>
         <EmptyDescription>{error}</EmptyDescription>
         <EmptyContent>
-          <Button variant="outline" onClick={load}>تلاش دوباره</Button>
+          <Button variant="outline" onClick={onRetry}>تلاش دوباره</Button>
         </EmptyContent>
       </Empty>
     );
   }
 
-  if (!orders) {
+  if (loading || !orders) {
     return (
       <div className="space-y-3">
         <Skeleton className="h-36 rounded-3xl" />
@@ -226,7 +270,6 @@ const OrdersTab: React.FC<{ userId: string }> = ({ userId }) => {
       </div>
     );
   }
-
   if (orders.length === 0) {
     return (
       <Empty className="border border-dashed border-stone-200 dark:border-white/10 rounded-3xl p-10">
@@ -564,14 +607,11 @@ const ProfileTab: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut })
   };
 
   return (
-    <div className="space-y-4">
-      <div className="grid sm:grid-cols-2 gap-4 items-start">
-        <form
-          onSubmit={handleSave}
-          className="rounded-3xl border border-stone-200/80 dark:border-white/8 bg-white dark:bg-[#16161a] p-5 sm:p-6 space-y-4"
-        >
-          <h2 className="text-sm font-black text-stone-900 dark:text-white">ویرایش پروفایل</h2>
-
+    <div className="space-y-6">
+      {/* Profile edit form */}
+      <div className="rounded-3xl border border-stone-200/80 dark:border-white/8 bg-white dark:bg-[#16161a] p-5 sm:p-6">
+        <h2 className="text-sm font-black text-stone-900 dark:text-white mb-4">اطلاعات حساب</h2>
+        <form onSubmit={handleSave} className="grid sm:grid-cols-2 gap-4">
           <Field data-invalid={!!nameError || undefined}>
             <FieldLabel htmlFor="profile-name">نام و نام خانوادگی</FieldLabel>
             <Input
@@ -588,66 +628,49 @@ const ProfileTab: React.FC<{ onSignOut: () => Promise<void> }> = ({ onSignOut })
             <Input id="profile-email" value={user?.email ?? ''} disabled dir="ltr" />
           </Field>
 
-          <Button type="submit" loading={saving} className="bg-brand hover:bg-brand-hover text-brand-on font-black">
-            ذخیره تغییرات
-          </Button>
-        </form>
-
-        <div className="space-y-4">
-          {/* Role & panel access */}
-          <div className="rounded-3xl border border-stone-200/80 dark:border-white/8 bg-white dark:bg-[#16161a] p-5 sm:p-6 space-y-3">
-            <h2 className="text-sm font-black text-stone-900 dark:text-white">نقش و دسترسی</h2>
-            <div>
-              <Badge variant="outline" className="border-brand/40 text-brand-ink text-[10px]">
-                {ROLE_LABELS[user?.role ?? ''] ?? user?.role ?? '—'}
-              </Badge>
-            </div>
-            <p className="text-xs leading-6 text-stone-500 dark:text-stone-400">
-              {ROLE_DESCRIPTIONS[user?.role ?? ''] ??
-                'حساب کاربری وب‌سایت برای خرید و پیگیری سفارش‌ها.'}
-            </p>
-            {(PANEL_LINKS[user?.role ?? ''] ?? []).length > 0 && (
-            <div className="flex flex-col gap-2 pt-1">
-              {(PANEL_LINKS[user?.role ?? ''] ?? []).map((link) => (
-                <Button
-                  key={link.to}
-                  render={<Link to={link.to} />}
-                  variant={link.primary ? 'default' : 'outline'}
-                  className={cn(
-                    'w-full justify-start',
-                    link.primary && 'bg-brand hover:bg-brand-hover text-brand-on font-black'
-                  )}
-                >
-                  <link.icon className="w-4 h-4" />
-                  {link.label}
-                </Button>
-              ))}
-            </div>
-            )}
-          </div>
-
-          {/* Session */}
-          <div className="rounded-3xl border border-stone-200/80 dark:border-white/8 bg-white dark:bg-[#16161a] p-5 sm:p-6 space-y-4">
-            <h2 className="text-sm font-black text-stone-900 dark:text-white">نشست حساب</h2>
-            <p className="text-xs leading-6 text-stone-500 dark:text-stone-400">
-              از این حساب برای پیگیری سفارش‌ها و ثبت سفارش‌های جدید استفاده می‌شود. با خروج
-              از حساب، سبد خرید شما روی همین دستگاه ذخیره می‌ماند.
-            </p>
-            <Button
-              variant="destructive"
-              loading={signingOut}
-              onClick={handleSignOut}
-              className={cn('w-full')}
-            >
-              <LogOut />
-              خروج از حساب کاربری
+          <div className="sm:col-span-2">
+            <Button type="submit" loading={saving} className="bg-brand hover:bg-brand-hover text-brand-on font-black">
+              ذخیره تغییرات
             </Button>
           </div>
-        </div>
+        </form>
       </div>
 
-      {/* Address book — full-width below the profile cards */}
-      <AddressBookSection />
+      {/* Console access — only for roles with console entry, not a banner */}
+      {(CONSOLE_LINKS[user?.role ?? ''] ?? []).length > 0 && (
+        <div className="rounded-3xl border border-stone-200/80 dark:border-white/8 bg-white dark:bg-[#16161a] p-5 sm:p-6 space-y-3">
+          <h2 className="text-sm font-black text-stone-900 dark:text-white">دسترسی‌های مدیریتی</h2>
+          <div className="flex flex-col gap-2">
+            {(CONSOLE_LINKS[user?.role ?? ''] ?? []).map((link) => (
+              <Button
+                key={link.to}
+                render={<Link to={link.to} />}
+                variant={link.primary ? 'default' : 'outline'}
+                className={cn(
+                  'w-full justify-start',
+                  link.primary && 'bg-brand hover:bg-brand-hover text-brand-on font-black'
+                )}
+              >
+                <link.icon className="w-4 h-4" />
+                {link.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Logout — simple action card, no banner */}
+      <div className="rounded-3xl border border-stone-200/80 dark:border-white/8 bg-white dark:bg-[#16161a] p-5 sm:p-6">
+        <Button
+          variant="destructive"
+          loading={signingOut}
+          onClick={handleSignOut}
+          className="w-full"
+        >
+          <LogOut />
+          خروج از حساب کاربری
+        </Button>
+      </div>
     </div>
   );
 };

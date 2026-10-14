@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Loader2, RefreshCw, Users, Plus, Edit2, Search } from 'lucide-react';
+import { Loader2, RefreshCw, Users, Plus, Edit2, Trash2, Search, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Customer } from '@/types';
 import { getApiErrorMessage, customersApi } from '@/lib/api';
 import { toPersianDigits } from '@/utils/persian';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
+import { CustomerFormModal } from '../components/CustomerFormModal';
 
 const CUSTOMER_STATUS_LABELS = {
   active: 'فعال',
@@ -17,6 +18,9 @@ export const CustomersPage: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [saving, setSaving] = useState(false);
   const { hasPermission } = useAuth();
   const canManage = hasPermission('customers.manage');
 
@@ -42,7 +46,8 @@ export const CustomersPage: React.FC = () => {
       (c) =>
         c.name.toLowerCase().includes(term) ||
         (c.phone ?? '').toLowerCase().includes(term) ||
-        (c.code ?? '').toLowerCase().includes(term),
+        (c.code ?? '').toLowerCase().includes(term) ||
+        (c.email ?? '').toLowerCase().includes(term),
     );
   }, [customers, searchTerm]);
 
@@ -63,10 +68,60 @@ export const CustomersPage: React.FC = () => {
     }
   };
 
+  const handleDelete = async (customer: Customer) => {
+    if (!confirm(`آیا از حذف مشتری ${customer.name} مطمئن هستید؟`)) return;
+    try {
+      await customersApi.update(customer.id, { isActive: false });
+      setCustomers((prev) => (prev ?? []).filter((c) => c.id !== customer.id));
+      toast.success(`مشتری ${customer.name} حذف شد`);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    }
+  };
+
+  const handleSaved = (customer: Customer) => {
+    if (editingCustomer) {
+      setCustomers((prev) =>
+        (prev ?? []).map((c) => (c.id === customer.id ? customer : c)),
+      );
+    } else {
+      setCustomers((prev) => (prev ? [customer, ...prev] : [customer]));
+    }
+  };
+
+  const activeCount = customers?.filter((c) => c.isActive).length ?? 0;
+  const inactiveCount = customers ? customers.length - activeCount : 0;
+  const totalDebt = customers?.reduce((sum, c) => sum + (c.currentDebt ?? 0), 0) ?? 0;
+  const list = filtered();
+
   if (!customers) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-brand" />
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold">مشتریان</h1>
+        </div>
+        <div className="border border-stone-200 dark:border-stone-700 rounded-xl overflow-hidden bg-white dark:bg-stone-900">
+          <table className="w-full text-sm">
+            <thead className="bg-stone-50 dark:bg-stone-800/50">
+              <tr>
+                <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">کد</th>
+                <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">نام</th>
+                <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">تلفیحی</th>
+                <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">بدهی</th>
+                <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">وضعیت</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i} className="border-t border-stone-200 dark:border-stone-700">
+                  <td className="py-2.5 px-3" colSpan={5}>
+                    <div className="h-4 rounded bg-stone-100 dark:bg-stone-700 animate-pulse" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   }
@@ -82,8 +137,6 @@ export const CustomersPage: React.FC = () => {
     );
   }
 
-  const list = filtered();
-
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
       <div className="flex items-center justify-between">
@@ -94,11 +147,11 @@ export const CustomersPage: React.FC = () => {
         <div className="flex items-center gap-2">
           {canManage && (
             <button
-              onClick={() => toast.info('استفاده از بستر خلق مشتری در سفارشات فروش')}
-              className="px-3 py-1.5 text-xs font-medium bg-brand text-white rounded-lg hover:bg-brand/90 transition-colors flex items-center gap-1"
+              onClick={() => { setEditingCustomer(null); setModalOpen(true); }}
+              className="px-3 py-1.5 text-xs font-medium bg-brand text-brand-on rounded-lg hover:bg-brand-hover transition-colors flex items-center gap-1"
             >
               <Plus className="w-3.5 h-3.5" />
-              افزودن مشتری
+              مشتری جدید
             </button>
           )}
           <button
@@ -108,6 +161,19 @@ export const CustomersPage: React.FC = () => {
             <RefreshCw className="w-4 h-4" />
           </button>
         </div>
+      </div>
+
+      {/* Summary badges */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="px-2.5 py-0.5 text-[10px] font-medium rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+          {toPersianDigits(activeCount)} فعال
+        </span>
+        <span className="px-2.5 py-0.5 text-[10px] font-medium rounded-full bg-stone-100 text-stone-800 dark:bg-stone-700 dark:text-stone-300">
+          {toPersianDigits(inactiveCount)} غیرفعال
+        </span>
+        <span className="px-2.5 py-0.5 text-[10px] font-medium rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+          مجموع بدهی: {toPersianDigits(totalDebt.toLocaleString('fa-IR'))} تومان
+        </span>
       </div>
 
       {/* Search */}
@@ -132,28 +198,15 @@ export const CustomersPage: React.FC = () => {
           <table className="w-full text-sm">
             <thead className="bg-stone-50 dark:bg-stone-800/50">
               <tr>
-                <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">
-                  کد
-                </th>
-                <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">
-                  نام
-                </th>
-                <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">
-                  تلفیحی
-                </th>
-                <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">
-                  بدهی
-                </th>
-                <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">
-                  اعتبار
-                </th>
-                <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">
-                  وضعیت
-                </th>
+                <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">کد</th>
+                <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">نام</th>
+                <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">تلفیحی</th>
+                <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">بدهی</th>
+                <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">اعتبار</th>
+                <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">سفارشات</th>
+                <th className="text-right py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">وضعیت</th>
                 {canManage && (
-                  <th className="text-center py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">
-                    عملیات
-                  </th>
+                  <th className="text-center py-2.5 px-3 font-medium text-stone-600 dark:text-stone-400">عملیات</th>
                 )}
               </tr>
             </thead>
@@ -164,11 +217,11 @@ export const CustomersPage: React.FC = () => {
                   className="border-t border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800/30"
                 >
                   <td className="py-2.5 px-3 text-stone-600 dark:text-stone-400">
-                    {toPersianDigits(customer.code)}
+                    {customer.code ? toPersianDigits(customer.code) : '-'}
                   </td>
                   <td className="py-2.5 px-3 font-medium">{customer.name}</td>
                   <td className="py-2.5 px-3 text-stone-600 dark:text-stone-400">
-                    {customer.phone ?? '-'}
+                    {toPersianDigits(customer.phone ?? '-')}
                   </td>
                   <td className="py-2.5 px-3">
                     <span
@@ -184,6 +237,9 @@ export const CustomersPage: React.FC = () => {
                   </td>
                   <td className="py-2.5 px-3 text-stone-600 dark:text-stone-400">
                     {toPersianDigits((customer.creditLimit ?? 0).toLocaleString('fa-IR'))} تومان
+                  </td>
+                  <td className="py-2.5 px-3 text-stone-600 dark:text-stone-400">
+                    {toPersianDigits(customer.orderCount ?? 0)}
                   </td>
                   <td className="py-2.5 px-3">
                     <span
@@ -201,13 +257,33 @@ export const CustomersPage: React.FC = () => {
                   </td>
                   {canManage && (
                     <td className="py-2.5 px-3 text-center">
-                      <button
-                        onClick={() => handleToggleActive(customer)}
-                        className="p-1 rounded hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-                        title={customer.isActive ? 'غیرفعال کنید' : 'فعال کنید'}
-                      >
-                        <Edit2 className="w-3.5 h-3.5 text-stone-500" />
-                      </button>
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => { setEditingCustomer(customer); setModalOpen(true); }}
+                          className="p-1 rounded hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                          title="ویرایش"
+                        >
+                          <Edit2 className="w-3.5 h-3.5 text-stone-500" />
+                        </button>
+                        <button
+                          onClick={() => handleToggleActive(customer)}
+                          className="p-1 rounded hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                          title={customer.isActive ? 'غیرفعال کنید' : 'فعال کنید'}
+                        >
+                          {customer.isActive ? (
+                            <Edit2 className="w-3.5 h-3.5 text-rose-500" />
+                          ) : (
+                            <Edit2 className="w-3.5 h-3.5 text-emerald-500" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(customer)}
+                          className="p-1 rounded hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                          title="حذف"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-stone-500" />
+                        </button>
+                      </div>
                     </td>
                   )}
                 </tr>
@@ -216,6 +292,16 @@ export const CustomersPage: React.FC = () => {
           </table>
         </div>
       )}
+
+      {/* Customer Form Modal */}
+      <CustomerFormModal
+        isOpen={modalOpen}
+        onClose={() => { setModalOpen(false); setEditingCustomer(null); }}
+        onSaved={handleSaved}
+        editCustomer={editingCustomer}
+        saving={saving}
+        onSavingChange={setSaving}
+      />
     </div>
   );
 };

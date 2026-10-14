@@ -13,6 +13,12 @@ import { requestUserAgent } from '../../core/utils/requestMeta.js';
 
 const actor = (req: Request): string | undefined => req.auth?.user.id;
 
+/** Shared request meta for audit logging. */
+const requestMeta = (req: Request): { ip?: string; userAgent?: string } => ({
+    ip: req.ip,
+    userAgent: requestUserAgent(req),
+});
+
 const supplierSchema = z.object({
     code: z.string().optional(),
     name: z.string().min(1, 'نام تأمین‌کننده الزامی است'),
@@ -71,26 +77,26 @@ export async function getSupplierDetail(req: Request, res: Response): Promise<vo
 
 export async function createSupplier(req: Request, res: Response): Promise<void> {
     const input = supplierSchema.parse(req.body);
-    const row = await supplierSvc.createSupplier(input, actor(req));
+    const row = await supplierSvc.createSupplier(input, requestMeta(req), actor(req));
     res.status(201).json(row);
 }
 
 export async function updateSupplier(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه تأمین‌کننده');
     const input = supplierSchema.partial().parse(req.body);
-    const row = await supplierSvc.updateSupplier(id, input, actor(req));
+    const row = await supplierSvc.updateSupplier(id, input, requestMeta(req), actor(req));
     res.json(row);
 }
 
 export async function activateSupplier(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه تأمین‌کننده');
-    const row = await supplierSvc.setSupplierActive(id, true, actor(req));
+    const row = await supplierSvc.setSupplierActive(id, true, requestMeta(req), actor(req));
     res.json(row);
 }
 
 export async function deactivateSupplier(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه تأمین‌کننده');
-    const row = await supplierSvc.setSupplierActive(id, false, actor(req));
+    const row = await supplierSvc.setSupplierActive(id, false, requestMeta(req), actor(req));
     res.json(row);
 }
 
@@ -103,7 +109,7 @@ export async function listSupplierPrices(req: Request, res: Response): Promise<v
 export async function addSupplierPrice(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه تأمین‌کننده');
     const input = priceSchema.parse(req.body);
-    const row = await supplierSvc.appendSupplierPrice(id, input, actor(req));
+    const row = await supplierSvc.appendSupplierPrice(id, input, requestMeta(req), actor(req));
     res.status(201).json(row);
 }
 
@@ -162,7 +168,7 @@ export async function moveRequest(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه درخواست خرید');
     const action = req.params.action as 'submit' | 'approve' | 'reject' | 'cancel';
     const row = await purchaseSvc.moveRequest(id, action);
-    void requestUserAgent(req);
+
     res.json(row);
 }
 export async function convertRequest(req: Request, res: Response): Promise<void> {
@@ -205,7 +211,7 @@ export async function listOrders(req: Request, res: Response): Promise<void> {
 
 export async function createOrder(req: Request, res: Response): Promise<void> {
     const input = orderSchema.parse(req.body);
-    const row = await purchaseSvc.createOrder(input, actor(req));
+    const row = await purchaseSvc.createOrder(input, requestMeta(req), actor(req));
     res.status(201).json(row);
 }
 
@@ -226,13 +232,13 @@ export async function updateOrder(req: Request, res: Response): Promise<void> {
             items: z.array(orderItemSchema).optional(),
         })
         .parse(req.body);
-    const row = await purchaseSvc.updateOrder(id, input, actor(req));
+    const row = await purchaseSvc.updateOrder(id, input, requestMeta(req), actor(req));
     res.json(row);
 }
 
 export async function cancelOrder(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه سفارش خرید');
-    const row = await purchaseSvc.cancelOrder(id, actor(req));
+    const row = await purchaseSvc.cancelOrder(id, requestMeta(req), actor(req));
     res.json(row);
 }
 
@@ -266,7 +272,7 @@ export async function getReceipt(req: Request, res: Response): Promise<void> {
 export async function createReceipt(req: Request, res: Response): Promise<void> {
     const purchaseId = pathParam(req, 'id', 'شناسه سفارش خرید');
     const input = receiptSchema.parse(req.body);
-    const row = await purchaseSvc.createReceipt(purchaseId, input, actor(req));
+    const row = await purchaseSvc.createReceipt(purchaseId, input, requestMeta(req), actor(req));
     res.status(201).json(row);
 }
 
@@ -295,20 +301,20 @@ export async function listCosts(req: Request, res: Response): Promise<void> {
 export async function addCost(req: Request, res: Response): Promise<void> {
     const purchaseId = pathParam(req, 'id', 'شناسه سفارش خرید');
     const input = costSchema.parse(req.body);
-    const row = await purchaseSvc.addSupplyCost(purchaseId, input, actor(req));
+    const row = await purchaseSvc.addSupplyCost(purchaseId, input, requestMeta(req), actor(req));
     res.status(201).json(row);
 }
 
 export async function updateCost(req: Request, res: Response): Promise<void> {
     const costId = pathParam(req, 'costId', 'شناسه هزینه');
     const input = patchCostSchema.parse(req.body);
-    const row = await purchaseSvc.updateCost(costId, input, actor(req));
+    const row = await purchaseSvc.updateCost(costId, input, requestMeta(req), actor(req));
     res.json(row);
 }
 
 export async function deleteCost(req: Request, res: Response): Promise<void> {
     const costId = pathParam(req, 'costId', 'شناسه هزینه');
-    const result = await purchaseSvc.deleteCost(costId, actor(req));
+    const result = await purchaseSvc.deleteCost(costId, requestMeta(req), actor(req));
     res.json(result);
 }
 

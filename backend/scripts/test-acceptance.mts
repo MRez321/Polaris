@@ -215,6 +215,7 @@ async function runP0CSection(): Promise<void> {
     console.log('1. supplier CRUD + append-only price history');
     const supplier = await supplierSvc.createSupplier(
         { name: `${SUPPLIER_NAME}${Date.now()}`, contactPerson: 'احمد آزمون' },
+        { ip: '127.0.0.1', userAgent: 'acceptance-test' },
         ADMIN_ID,
     );
     check('supplier created', supplier.id !== undefined && supplier.name.startsWith(SUPPLIER_NAME));
@@ -242,14 +243,14 @@ async function runP0CSection(): Promise<void> {
         purchasePrice: 80_000,
         currency: 'IRT',
         effectiveDate: new Date(),
-    }, ADMIN_ID);
+    }, { ip: '127.0.0.1', userAgent: 'acceptance-test' }, ADMIN_ID);
     await supplierSvc.appendSupplierPrice(supplier.id, {
         skuId,
         unit: 'قلم',
         purchasePrice: 82_000,
         currency: 'IRT',
         effectiveDate: new Date(),
-    }, ADMIN_ID);
+    }, { ip: '127.0.0.1', userAgent: 'acceptance-test' }, ADMIN_ID);
     const prices = await supplierSvc.listSupplierPrices(supplier.id);
     check('price history append-only (2 rows)', prices.length === 2, { count: prices.length });
     check('price history kept both versions', prices.map((p) => p.purchasePrice).sort().join(',') === '80000,82000');
@@ -273,7 +274,7 @@ async function runP0CSection(): Promise<void> {
 
     // Update order unit cost for the line.
     console.log('4. order edit in draft');
-    await purchaseSvc.updateOrder(order.id, { items: [{ skuId, quantity: PO_QTY, unit: 'قلم', unitCost: PO_UNIT_COST }] }, ADMIN_ID);
+    await purchaseSvc.updateOrder(order.id, { items: [{ skuId, quantity: PO_QTY, unit: 'قلم', unitCost: PO_UNIT_COST }] }, { ip: '127.0.0.1', userAgent: 'acceptance-test' }, ADMIN_ID);
     const order2 = await purchaseSvc.getOrder(order.id);
     const line = order2.items[0];
     check('order line unitCost set', Number(line?.unitCost) === PO_UNIT_COST, { unitCost: line?.unitCost });
@@ -282,7 +283,7 @@ async function runP0CSection(): Promise<void> {
     console.log('5. receive goods (50)');
     const receipt = await purchaseSvc.createReceipt(order.id, {
         items: [{ purchaseItemId: line!.id, quantity: PO_RECEIVE, unitCost: PO_UNIT_COST }],
-    }, ADMIN_ID);
+    }, { ip: '127.0.0.1', userAgent: 'acceptance-test' }, ADMIN_ID);
     check('receipt posted', receipt.id !== undefined && receipt.status === 'posted');
 
     // Inventory invariant: cache == Σ ledger at shelf location.

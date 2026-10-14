@@ -108,8 +108,6 @@ function App() {
                         </Route>
                         <Route element={<RequirePermission permission="suppliers.view" />}>
                           <Route path="supply" element={<SupplyPage />} />
-                          <Route path="supply/suppliers/:id" element={<SupplyPage />} />
-                          <Route path="supply/purchase-orders/:id" element={<SupplyPage />} />
                         </Route>
                         <Route element={<RequirePermission permission="finances.view" />}>
                           <Route path="finances" element={<FinancesPage />} />

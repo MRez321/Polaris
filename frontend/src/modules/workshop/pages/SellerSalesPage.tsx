@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronUp,
   FileText,
+  Filter,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { SellerSale, SellerSaleStatus } from '@/types';
@@ -38,8 +39,18 @@ export const SellerSalesPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const { hasPermission } = useAuth();
   const canManage = hasPermission('seller-sales.manage');
+
+  const FILTERS: { id: string; label: string }[] = [
+    { id: 'all', label: 'همه' },
+    { id: 'draft', label: 'پیش‌نویس' },
+    { id: 'submitted', label: 'ارسال شده' },
+    { id: 'confirmed', label: 'تأیید شده' },
+    { id: 'settled', label: 'تسویه شده' },
+    { id: 'cancelled', label: 'لغو شده' },
+  ];
 
   const load = useCallback(async () => {
     try {
@@ -84,18 +95,38 @@ export const SellerSalesPage: React.FC = () => {
 
   const sorted = useMemo(() => {
     if (!sales) return [];
-    return [...sales].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }, [sales]);
+    let result = [...sales].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    if (statusFilter !== 'all') {
+      result = result.filter((s) => s.status === statusFilter);
+    }
+    return result;
+  }, [sales, statusFilter]);
 
   const totalSettlement = useMemo(
     () => (sales ?? []).filter((s) => s.status === 'confirmed').reduce((sum, s) => sum + s.netSettlementAmount, 0),
     [sales],
   );
 
+  const pendingSettlement = useMemo(
+    () => (sales ?? []).filter((s) => s.status === 'confirmed').reduce((sum, s) => sum + s.remainingSettlement, 0),
+    [sales],
+  );
+
   if (!sales) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-brand" />
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold">فروش فروشندگان</h1>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="h-20 rounded-2xl bg-stone-100 dark:bg-stone-800 animate-pulse" />
+          <div className="h-20 rounded-2xl bg-stone-100 dark:bg-stone-800 animate-pulse" />
+        </div>
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-20 rounded-2xl bg-stone-100 dark:bg-stone-800 animate-pulse" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -125,13 +156,39 @@ export const SellerSalesPage: React.FC = () => {
               {toPersianDigits(totalSettlement.toLocaleString('fa-IR'))} تومان
             </span>
           </div>
+          <div className="text-sm text-stone-600 dark:text-stone-400">
+            <span>باقی‌مانده تسویه:</span>
+            <span className="font-bold mr-1 text-brand">
+              {toPersianDigits(pendingSettlement.toLocaleString('fa-IR'))} تومان
+            </span>
+          </div>
           <button
             onClick={load}
             className="p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-            disabled={!sales}
           >
             <RefreshCw className="w-4 h-4" />
           </button>
+        </div>
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <Filter className="w-4 h-4 text-stone-400 shrink-0" />
+        <div className="flex items-center gap-1.5 whitespace-nowrap">
+          {FILTERS.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setStatusFilter(f.id)}
+              className={cn(
+                'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+                statusFilter === f.id
+                  ? 'bg-brand text-brand-on shadow'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800',
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -222,7 +279,7 @@ export const SellerSalesPage: React.FC = () => {
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-stone-500">مبلغ تسویه شده:</span>
+                        <span className="text-stone-500">مبنای تسویه شده:</span>
                         <span className="font-medium">
                           {toPersianDigits(sale.settledAmount.toLocaleString('fa-IR'))} تومان
                         </span>

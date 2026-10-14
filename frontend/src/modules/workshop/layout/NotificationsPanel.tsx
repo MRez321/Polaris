@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck, AlertOctagon, AlarmClock, Info, Settings2 } from 'lucide-react';
+import { Bell, CheckCheck, AlertOctagon, AlarmClock, Info, Settings2, X } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
 import { notificationsApi } from '@/lib/api';
@@ -116,10 +116,14 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ open, on
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="start" className="w-[22rem] sm:w-[26rem] p-0 bg-white dark:bg-[#141416] border-e border-stone-200 dark:border-white/10">
+      <SheetContent
+        side="start"
+        showCloseButton={false}
+        className="w-[22rem] sm:w-[26rem] p-0 bg-white dark:bg-[#141416] border-e border-stone-200 dark:border-white/10"
+      >
         <SheetHeader className="p-4 pb-3 border-b border-stone-200 dark:border-white/5">
-          <SheetTitle className="flex items-center justify-between text-base font-black text-stone-900 dark:text-white">
-            <span className="flex items-center gap-2">
+          <div className="flex items-center justify-between">
+            <SheetTitle className="flex items-center gap-2 text-base font-black text-stone-900 dark:text-white">
               <Bell className="w-5 h-5 text-brand" />
               مرکز اعلان‌ها
               {unreadCount > 0 && (
@@ -127,19 +131,30 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ open, on
                   {toPersianDigits(unreadCount)} جدید
                 </span>
               )}
-            </span>
-            {unreadCount > 0 && (
+            </SheetTitle>
+            {/* Close + read-all sit side by side — never overlapping */}
+            <div className="flex items-center gap-1">
+              {unreadCount > 0 && (
+                <button
+                  onClick={() => void markAllRead()}
+                  disabled={busy}
+                  className="flex items-center gap-1 text-[11px] font-bold text-brand hover:text-brand-hover disabled:opacity-50"
+                  title="همه اعلان‌ها را خوانده‌شده علامت بزن"
+                >
+                  <CheckCheck className="w-3.5 h-3.5" />
+                  خواندن همه
+                </button>
+              )}
               <button
-                onClick={() => void markAllRead()}
-                disabled={busy}
-                className="flex items-center gap-1 text-[11px] font-bold text-brand hover:text-brand-hover disabled:opacity-50"
-                title="همه اعلان‌ها را خوانده‌شده علامت بزن"
+                onClick={() => onOpenChange(false)}
+                className="p-1 rounded-lg text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-white/5 transition-colors"
+                aria-label="بستن"
+                title="بستن"
               >
-                <CheckCheck className="w-3.5 h-3.5" />
-                خواندن همه
+                <X className="w-4 h-4" />
               </button>
-            )}
-          </SheetTitle>
+            </div>
+          </div>
           <SheetDescription className="text-[11px] font-medium text-stone-600 dark:text-gray-400">
             رخدادها و وضعیت‌های نیازمند توجه کارگاه
           </SheetDescription>

@@ -331,6 +331,7 @@ export async function createOrder(
         additionalCosts?: number;
         items: OrderItemInput[];
     },
+    meta: { ip?: string; userAgent?: string },
     actorId?: string,
 ) {
     if (!input.supplierId) throw badRequest('تأمین‌کننده الزامی است');
@@ -379,8 +380,12 @@ export async function createOrder(
             action: 'create',
             entityType: 'purchase',
             entityId: id,
+            before: null,
+            after: { id, supplierId: input.supplierId, status: 'draft', subtotal, additionalCosts, totalAmount: total, itemCount: input.items.length, code: genCode('PO') },
             details: `سفارش خرید ${id.slice(0, 8)} ایجاد شد`,
             metadata: { supplierId: input.supplierId, itemCount: input.items.length, totalAmount: total },
+            ...(meta.ip ? { ip: meta.ip } : {}),
+            ...(meta.userAgent ? { userAgent: meta.userAgent } : {}),
             tx,
         });
     });
@@ -390,8 +395,10 @@ export async function createOrder(
 export async function updateOrder(
     id: string,
     input: { expectedDate?: Date; paymentTerms?: string; note?: string; additionalCosts?: number; items?: OrderItemInput[] },
+    meta: { ip?: string; userAgent?: string },
     actorId?: string,
 ) {
+    const before = await getOrder(id);
     await db.transaction(async (tx) => {
         const rows = await tx.select().from(purchases).where(eq(purchases.id, id));
         const header = rows[0];
@@ -441,35 +448,48 @@ export async function updateOrder(
                 updatedAt: new Date(),
             })
             .where(eq(purchases.id, id));
-    });
-    recordAudit({
-        actor: actorId ? { user: { id: actorId, name: actorId } } : null,
-        action: 'update',
-        entityType: 'purchase',
-        entityId: id,
-        details: 'سفارش خرید ویرایش شد',
-        metadata: input,
+        const afterHeader = (await tx.select().from(purchases).where(eq(purchases.id, id)))[0]!;
+        await recordAudit({
+            actor: await entityActor(tx, actorId),
+            action: 'update',
+            entityType: 'purchase',
+            entityId: id,
+            before,
+            after: afterHeader,
+            details: 'سفارش خرید ویرایش شد',
+            metadata: input,
+            ...(meta.ip ? { ip: meta.ip } : {}),
+            ...(meta.userAgent ? { userAgent: meta.userAgent } : {}),
+            tx,
+        });
     });
     return getOrder(id);
 }
 
-export async function cancelOrder(id: string, actorId?: string) {
+export async function cancelOrder(id: string, meta: { ip?: string; userAgent?: string }, actorId?: string) {
     const rows = await db.select().from(purchases).where(eq(purchases.id, id));
     const header = rows[0];
     if (!header || header.deletedAt) throw notFound('سفارش خرید یافت نشد');
     if (header.status === 'received' || header.status === 'cancelled') {
         throw badRequest('این سفارش قابل لغو نیست');
     }
+    const before = { ...header };
     await db.update(purchases).set({ status: 'cancelled', updatedAt: new Date() }).where(eq(purchases.id, id));
+    const after = (await db.select().from(purchases).where(eq(purchases.id, id)))[0];
     recordAudit({
-        actor: actorId ? { user: { id: actorId, name: actorId } } : null,
+        actor: await entityActor(db, actorId),
         action: 'update',
         entityType: 'purchase',
         entityId: id,
+        before,
+        after,
         details: 'سفارش خرید لغو شد',
+        ...(meta.ip ? { ip: meta.ip } : {}),
+        ...(meta.userAgent ? { userAgent: meta.userAgent } : {}),
     });
     return getOrder(id);
 }
+
 
 /** Recomputes order status from received quantities (called inside receipt tx). */
 export function nextPurchaseStatus(items: { quantity: number; receivedQuantity: number }[]): 'partially_received' | 'received' {
@@ -514,7 +534,7 @@ export interface ReceiptInput {
  * ledger moves (stock ↑) + legacy cache sync + receivedQuantity bump + PO status.
  * Over-receipt is rejected (received > remaining).
  */
-export async function createReceipt(purchaseId: string, input: ReceiptInput, actorId?: string) {
+export async function createReceipt(purchaseId: string, input: ReceiptInput, meta: { ip?: string; userAgent?: string }, actorId?: string) {
     assertReceiptItems(input.items);
     const now = new Date();
     let receiptId = '';
@@ -625,8 +645,12 @@ export async function createReceipt(purchaseId: string, input: ReceiptInput, act
             action: 'create',
             entityType: 'purchase-receipt',
             entityId: receiptId,
+            before: null,
+            after: { purchaseId, supplierId: header.supplierId, itemCount: input.items.length, receiptItems: input.items.length },
             details: `دریافت کالا برای سفارش ${purchaseId}`,
             metadata: { purchaseId, supplierId: header.supplierId, itemCount: input.items.length },
+            ...(meta.ip ? { ip: meta.ip } : {}),
+            ...(meta.userAgent ? { userAgent: meta.userAgent } : {}),
             tx,
         });
     });
@@ -667,7 +691,7 @@ const SUPPLY_COST_TYPES: Record<string, true> = {
     other: true,
 };
 
-export async function addSupplyCost(purchaseId: string, input: SupplyCostInput, actorId?: string) {
+export async function addSupplyCost(purchaseId: string, input: SupplyCostInput, meta: { ip?: string; userAgent?: string }, actorId?: string) {
     if (!SUPPLY_COST_TYPES[input.costType]) throw badRequest('نوع هزینه نامعتبر است');
     if (!Number.isFinite(input.amount) || input.amount < 0) throw badRequest('مبنای هزینه باید صفر یا بیشتر باشد');
         const poItems = await db.select().from(purchaseItems).where(eq(purchaseItems.purchaseId, purchaseId));
@@ -697,8 +721,12 @@ export async function addSupplyCost(purchaseId: string, input: SupplyCostInput, 
             action: 'create',
             entityType: 'supply-cost',
             entityId: costId,
+            before: null,
+            after: { costId, purchaseId, costType: input.costType, amount: input.amount, allocationMethod: input.allocationMethod ?? 'by_value' },
             details: `هزینه ${input.costType} به مبلغ ${Number(input.amount).toLocaleString('fa-IR')} ثبت شد`,
             metadata: { purchaseId, costType: input.costType, allocationMethod: input.allocationMethod ?? 'by_value' },
+            ...(meta.ip ? { ip: meta.ip } : {}),
+            ...(meta.userAgent ? { userAgent: meta.userAgent } : {}),
             tx,
         });
     });
@@ -750,7 +778,7 @@ export async function listCosts(purchaseId: string) {
     return withAllocations;
 }
 
-export async function updateCost(costId: string, input: PatchSupplyCostInput, actorId?: string) {
+export async function updateCost(costId: string, input: PatchSupplyCostInput, meta: { ip?: string; userAgent?: string }, actorId?: string) {
     const existing = await db.select().from(supplyCosts).where(eq(supplyCosts.id, costId));
     const prev = existing[0];
     if (!prev) throw notFound('هزینه یافت نشد');
@@ -779,6 +807,8 @@ export async function updateCost(costId: string, input: PatchSupplyCostInput, ac
             before: prev,
             after: { ...prev, ...next },
             details: 'هزینه تأمین به‌روزرسانی شد',
+            ...(meta.ip ? { ip: meta.ip } : {}),
+            ...(meta.userAgent ? { userAgent: meta.userAgent } : {}),
             tx,
         });
     });
@@ -797,7 +827,7 @@ export interface PatchSupplyCostInput {
     notes?: string;
 }
 
-export async function deleteCost(costId: string, actorId?: string) {
+export async function deleteCost(costId: string, meta: { ip?: string; userAgent?: string }, actorId?: string) {
     const existing = await db.select().from(supplyCosts).where(eq(supplyCosts.id, costId));
     const prev = existing[0];
     if (!prev) throw notFound('هزینه یافت نشد');
@@ -811,11 +841,14 @@ export async function deleteCost(costId: string, actorId?: string) {
             entityId: costId,
             before: prev,
             details: 'هزینه تأمین حذف شد',
+            ...(meta.ip ? { ip: meta.ip } : {}),
+            ...(meta.userAgent ? { userAgent: meta.userAgent } : {}),
             tx,
         });
     });
     return { id: costId };
 }
+
 
 /**
  * Integer allocation by largest-remainder so Σ allocations == amount exactly.

@@ -94,7 +94,7 @@ export async function getSupplier(id: string) {
     return row;
 }
 
-export async function createSupplier(input: SupplierInput, actorId?: string) {
+export async function createSupplier(input: SupplierInput, meta: { ip?: string; userAgent?: string }, actorId?: string) {
     if (!input.name || input.name.trim().length === 0) throw badRequest('نام تأمین‌کننده الزامی است');
     if (input.code) {
         const dup = await db.select({ id: suppliers.id }).from(suppliers).where(eq(suppliers.code, input.code));
@@ -119,18 +119,25 @@ export async function createSupplier(input: SupplierInput, actorId?: string) {
         updatedAt: now,
     };
     await db.insert(suppliers).values(row);
+    const after = (await db.select().from(suppliers).where(eq(suppliers.id, id)))[0]!;
     recordAudit({
-        actor: actorId ? { user: { id: actorId, name: actorId } } : null,
+        actor: await entityActor(db, actorId),
         action: 'create',
         entityType: 'supplier',
         entityId: id,
+        before: null,
+        after,
         details: `تأمین‌کننده ${input.name} ایجاد شد`,
         metadata: { code: row.code, name: input.name },
+        ...(meta.ip ? { ip: meta.ip } : {}),
+        ...(meta.userAgent ? { userAgent: meta.userAgent } : {}),
     });
-    return (await db.select().from(suppliers).where(eq(suppliers.id, id)))[0]!;
+    return after;
+
 }
-export async function updateSupplier(id: string, input: Partial<SupplierInput>, actorId?: string) {
+export async function updateSupplier(id: string, input: Partial<SupplierInput>, meta: { ip?: string; userAgent?: string }, actorId?: string) {
     const existing = await getSupplier(id);
+    const before = { ...existing };
     if (input.code && input.code !== existing.code) {
         const dup = await db.select({ id: suppliers.id }).from(suppliers).where(eq(suppliers.code, input.code));
         if (dup.length > 0) throw badRequest('کد تأمین‌کننده تکراری است');
@@ -153,32 +160,44 @@ export async function updateSupplier(id: string, input: Partial<SupplierInput>, 
             updatedAt: new Date(),
         })
         .where(eq(suppliers.id, id));
+    const after = await getSupplier(id);
     recordAudit({
-        actor: actorId ? { user: { id: actorId, name: actorId } } : null,
+        actor: await entityActor(db, actorId),
         action: 'update',
         entityType: 'supplier',
         entityId: id,
+        before,
+        after,
         details: 'تأمین‌کننده ویرایش شد',
         metadata: input,
+        ...(meta.ip ? { ip: meta.ip } : {}),
+        ...(meta.userAgent ? { userAgent: meta.userAgent } : {}),
     });
-    return getSupplier(id);
+    return after;
 }
 
-export async function setSupplierActive(id: string, active: boolean, actorId?: string) {
-    await getSupplier(id);
+
+export async function setSupplierActive(id: string, active: boolean, meta: { ip?: string; userAgent?: string }, actorId?: string) {
+    const before = await getSupplier(id);
     await db.update(suppliers).set({ isActive: active, updatedAt: new Date() }).where(eq(suppliers.id, id));
+    const after = await getSupplier(id);
     recordAudit({
-        actor: actorId ? { user: { id: actorId, name: actorId } } : null,
+        actor: await entityActor(db, actorId),
         action: active ? 'activate' : 'deactivate',
         entityType: 'supplier',
         entityId: id,
-        details: `تأمین‌کننده ${active ? 'فعال' : 'غیرفعال'} شد`,
+        before,
+        after,
+        details: `تأمین‌کننده ${active ? 'فعال' : 'غیرفععال'} شد`,
+        ...(meta.ip ? { ip: meta.ip } : {}),
+        ...(meta.userAgent ? { userAgent: meta.userAgent } : {}),
     });
-    return getSupplier(id);
+    return after;
 }
 
+
 /** Append-only: a price change inserts a new row, never updates in place. */
-export async function appendSupplierPrice(supplierId: string, input: SupplierPriceInput, actorId?: string) {
+export async function appendSupplierPrice(supplierId: string, input: SupplierPriceInput, meta: { ip?: string; userAgent?: string }, actorId?: string) {
     await getSupplier(supplierId);
     if (!Number.isFinite(input.purchasePrice) || input.purchasePrice < 0) {
         throw badRequest('قیمت خراب باید صفر یا بیشتر باشد');
@@ -200,16 +219,22 @@ export async function appendSupplierPrice(supplierId: string, input: SupplierPri
         createdAt: now,
         updatedAt: now,
     });
+    const after = (await db.select().from(supplierPrices).where(eq(supplierPrices.id, id)))[0]!;
     recordAudit({
-        actor: actorId ? { user: { id: actorId, name: actorId } } : null,
+        actor: await entityActor(db, actorId),
         action: 'create',
         entityType: 'supplier-price',
         entityId: id,
+        before: null,
+        after,
         details: `قیمت خرید ${Number(input.purchasePrice).toLocaleString('fa-IR')} برای SKU ${input.skuId} ثبت شد`,
         metadata: { supplierId, skuId: input.skuId, purchasePrice: input.purchasePrice },
+        ...(meta.ip ? { ip: meta.ip } : {}),
+        ...(meta.userAgent ? { userAgent: meta.userAgent } : {}),
     });
-    return (await db.select().from(supplierPrices).where(eq(supplierPrices.id, id)))[0]!;
+    return after;
 }
+
 
 export async function listSupplierPrices(supplierId: string, skuId?: string) {
     await getSupplier(supplierId);

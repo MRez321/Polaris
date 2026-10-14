@@ -9,6 +9,7 @@ import {
   Package,
   User,
   Calendar,
+  Filter,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { SalesOrder, SalesOrderStatus } from '@/types';
@@ -31,11 +32,33 @@ const STATUS_LABELS: Record<SalesOrderStatus, string> = {
   cancelled: 'لغو شده',
 };
 
+const STATUS_COLOR: Record<SalesOrderStatus, string> = {
+  draft: 'bg-stone-100 text-stone-800 dark:bg-stone-700 dark:text-stone-300',
+  pending: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+  confirmed: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  paid: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
+  picking: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
+  packed: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300',
+  shipped: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+  delivered: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  returned: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
+  refunded: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300',
+  cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+};
+
 const TYPE_LABELS: Record<SalesOrder['orderType'], string> = {
   retail: 'خرده‌فروشی',
   wholesale: 'عمده‌فروشی',
   consignment: 'سفارش امانی',
   manual: 'دستی',
+};
+
+const PAYMENT_STATUS_LABELS: Record<string, string> = {
+  pending: 'در انتظار پرداخت',
+  partial: 'پرداخت جزئی',
+  paid: 'کامل',
+  refunded: 'بازپرداخت شده',
+  voided: 'لغو شده',
 };
 
 /** Admin sales order management: unified orders across all channels. */
@@ -44,8 +67,20 @@ export const SalesOrdersPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const { hasPermission } = useAuth();
   const canManage = hasPermission('sales.manage');
+
+  const FILTERS: { id: string; label: string }[] = [
+    { id: 'all', label: 'همه' },
+    { id: 'pending', label: 'در انتظار' },
+    { id: 'confirmed', label: 'تأیید شده' },
+    { id: 'paid', label: 'پرداخت شده' },
+    { id: 'picking', label: 'بسته‌بندی' },
+    { id: 'shipped', label: 'ارسال شده' },
+    { id: 'delivered', label: 'تحویل' },
+    { id: 'cancelled', label: 'لغو شده' },
+  ];
 
   const load = useCallback(async () => {
     try {
@@ -96,13 +131,24 @@ export const SalesOrdersPage: React.FC = () => {
 
   const sorted = useMemo(() => {
     if (!orders) return [];
-    return [...orders].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }, [orders]);
+    let result = [...orders].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    if (statusFilter !== 'all') {
+      result = result.filter((o) => o.status === statusFilter);
+    }
+    return result;
+  }, [orders, statusFilter]);
 
   if (!orders) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-brand" />
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold">سفارشات فروش</h1>
+        </div>
+        <div className="space-y-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-24 rounded-2xl bg-stone-100 dark:bg-stone-800 animate-pulse" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -128,10 +174,30 @@ export const SalesOrdersPage: React.FC = () => {
         <button
           onClick={load}
           className="p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-          disabled={!orders}
         >
           <RefreshCw className="w-4 h-4" />
         </button>
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <Filter className="w-4 h-4 text-stone-400 shrink-0" />
+        <div className="flex items-center gap-1.5 whitespace-nowrap">
+          {FILTERS.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setStatusFilter(f.id)}
+              className={cn(
+                'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+                statusFilter === f.id
+                  ? 'bg-brand text-brand-on shadow'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-black dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800',
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {sorted.length === 0 ? (
@@ -161,28 +227,20 @@ export const SalesOrdersPage: React.FC = () => {
                       <div className="font-medium">{order.code}</div>
                       <div className="text-sm text-stone-500 dark:text-stone-400">
                         {TYPE_LABELS[order.orderType]}{' • '}
-                        کانال: <span className="font-medium">{order.channelName ?? order.channelId}</span>
+                        کانال: <span className="font-medium">{order.channelName ?? order.channelCode ?? order.channelId}</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <span
-                      className={cn(
-                        'px-2.5 py-0.5 text-xs font-medium rounded-full',
-                        order.status === 'delivered'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                          : order.status === 'cancelled'
-                          ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
-                          : order.status === 'confirmed'
-                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-                          : order.status === 'shipped'
-                          ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
-                          : 'bg-stone-100 text-stone-800 dark:bg-stone-700 dark:text-stone-300',
-                      )}
-                    >
+                    <span className={cn('px-2.5 py-0.5 text-xs font-medium rounded-full', STATUS_COLOR[order.status])}>
                       {STATUS_LABELS[order.status]}
                     </span>
+                    {order.paymentStatus && (
+                      <span className="px-2 py-0.5 text-[10px] rounded-full bg-stone-100 text-stone-700 dark:bg-stone-700 dark:text-stone-300">
+                        {PAYMENT_STATUS_LABELS[order.paymentStatus] ?? order.paymentStatus}
+                      </span>
+                    )}
                     {expandedId === order.id ? (
                       <ChevronUp className="w-4 h-4 text-stone-400" />
                     ) : (

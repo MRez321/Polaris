@@ -10,17 +10,11 @@ import {
   ChartColumn,
   ChevronDown,
   ChevronUp,
-  Save,
   RotateCcw,
-  Play,
-  Trash2,
-  Columns3,
-  GripVertical,
 } from 'lucide-react';
 import type {
   DashboardStats,
   DashboardLayout,
-  DashboardPreset,
   DashboardWidgetCols,
   Consignment,
   Seller,
@@ -39,8 +33,6 @@ import {
   DASHBOARD_WIDGETS,
   defaultLayout,
   normalizeLayout,
-  layoutSnapshot,
-  applyPreset,
   spanClass,
 } from './dashboardLayout';
 import { formatToman, toJalaliDate, toJalaliDateTime, toPersianDigits } from '@/utils/persian';
@@ -122,39 +114,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 }) => {
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [now, setNow] = React.useState(() => new Date());
-  const [presetName, setPresetName] = React.useState('');
-
-  // ---- Drag reorder (HTML5 DnD, works alongside the up/down buttons) ----
-  const [dragId, setDragId] = React.useState<string | null>(null);
-  const [dragOverId, setDragOverId] = React.useState<string | null>(null);
-  // Ref mirror: the drop handler must read the live value even when dragstart→drop
-  // land in the same React render (synthetic tests, fast sequences).
-  const dragIdRef = React.useRef<string | null>(null);
-
-  const clearDrag = () => {
-    dragIdRef.current = null;
-    setDragId(null);
-    setDragOverId(null);
-  };
-
-  const handleDrop = (targetId: string) => {
-    const sourceId = dragIdRef.current;
-    if (!sourceId || sourceId === targetId) {
-      clearDrag();
-      return;
-    }
-    const order = [...layout.order];
-    const from = order.indexOf(sourceId);
-    const to = order.indexOf(targetId);
-    if (from < 0 || to < 0) {
-      clearDrag();
-      return;
-    }
-    order.splice(from, 1);
-    order.splice(to, 0, sourceId);
-    updateLayout({ order });
-    clearDrag();
-  };
 
   // Live Jalali clock — one tick per second.
   React.useEffect(() => {
@@ -186,39 +145,8 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       : [...layout.collapsed, id];
     updateLayout({ collapsed });
   };
-  const setCols = (id: string, cols: DashboardWidgetCols) => {
-    updateLayout({ cols: { ...layout.cols, [id]: cols } });
-  };
-  const move = (id: string, dir: -1 | 1) => {
-    const order = [...layout.order];
-    const idx = order.indexOf(id);
-    const next = idx + dir;
-    if (idx < 0 || next < 0 || next >= order.length) return;
-    [order[idx], order[next]] = [order[next], order[idx]];
-    updateLayout({ order });
-  };
   const resetLayout = () => {
-    onDashboardPrefsChange({ ...defaultLayout(), presets: layout.presets });
-  };
-
-  const savePreset = () => {
-    const name = presetName.trim();
-    if (!name) return;
-    const preset: DashboardPreset = {
-      id: `preset-${Date.now()}`,
-      name,
-      data: layoutSnapshot(layout),
-    };
-    updateLayout({ presets: [...layout.presets, preset] });
-    setPresetName('');
-  };
-  const applyPresetById = (id: string) => {
-    const preset = layout.presets.find((p) => p.id === id);
-    if (!preset) return;
-    onDashboardPrefsChange(applyPreset(layout, preset));
-  };
-  const deletePreset = (id: string) => {
-    updateLayout({ presets: layout.presets.filter((p) => p.id !== id) });
+    onDashboardPrefsChange({ ...defaultLayout() });
   };
 
   // ---- Derived data ------------------------------------------------------
@@ -277,7 +205,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             <p className="text-3xl sm:text-4xl font-black font-mono tabular-nums tracking-tight text-stone-900 dark:text-white">
               {new Intl.DateTimeFormat('fa-IR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(now)}
             </p>
-            <p className="text-xs text-stone-500 dark:text-gray-400 font-bold mt-1">ساعت کارگاه</p>
           </div>
         </div>
         <div className="text-center sm:text-left">
@@ -674,7 +601,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   // ---- Render --------------------------------------------------------------
   return (
     <div className="space-y-6">
-      {/* Widget arrangement settings (gear) */}
+      {/* Widget display settings (gear) — show/hide toggles only */}
       <div className="flex justify-end">
         <Collapsible
           open={settingsOpen}
@@ -683,167 +610,45 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         >
           <CollapsibleTrigger className="inline-flex items-center gap-2 text-xs font-bold px-3.5 py-2 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-stone-700 dark:text-gray-200 hover:bg-stone-100 dark:hover:bg-white/10 transition-all active:scale-95">
             {settingsOpen ? <X className="w-4 h-4" /> : <Settings className="w-4 h-4" />}
-            تنظیمات چیدمان داشبورد
+            تنظیمات نمایش داشبورد
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <div className="glass-panel p-4 rounded-2xl mt-3 border border-brand/20 shadow-xl space-y-4">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="glass-panel p-4 rounded-2xl mt-3 border border-brand/20 shadow-xl">
+              <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
                 <p className="text-xs font-black text-stone-700 dark:text-gray-300">
-                  ترتیب، نمایش و ستون‌های بخش‌های داشبورد (برای جابه‌جایی، ردیف را بکشید یا از دکمه‌های بالا و پایین استفاده کنید):
+                  نمایش/عدم نمایش بخش‌های داشبورد:
                 </p>
                 <button
                   onClick={resetLayout}
                   className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-black/10 dark:border-white/10 text-stone-600 dark:text-gray-300 hover:bg-stone-100 dark:hover:bg-white/10 transition-colors"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  بازنشانی چیدمان
+                  بازنشانی نمایش
                 </button>
               </div>
-              <div className="space-y-2">
-                {layout.order.map((id, idx) => {
+              <div className="space-y-1.5">
+                {layout.order.map((id) => {
                   const def = DASHBOARD_WIDGETS.find((w) => w.id === id);
                   if (!def) return null;
                   return (
                     <div
                       key={id}
-                      draggable
-                      onDragStart={(e) => {
-                        dragIdRef.current = id;
-                        setDragId(id);
-                        e.dataTransfer.effectAllowed = 'move';
-                        try { e.dataTransfer.setData('text/plain', id); } catch { /* IE quirk guard */ }
-                      }}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        e.dataTransfer.dropEffect = 'move';
-                        setDragOverId(id);
-                      }}
-                      onDragLeave={() => setDragOverId((prev) => (prev === id ? null : prev))}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        handleDrop(id);
-                      }}
-                      onDragEnd={clearDrag}
-                      className={`flex items-center justify-between gap-2 p-2.5 rounded-xl border cursor-grab active:cursor-grabbing transition-colors ${
-                        dragId === id
-                          ? 'opacity-40 border-brand/50'
-                          : dragOverId === id
-                            ? 'border-brand bg-brand/5'
-                            : isVisible(id)
-                              ? 'border-black/5 dark:border-white/10 bg-white/50 dark:bg-white/5'
-                              : 'border-black/5 dark:border-white/10 bg-white/30 dark:bg-white/[0.02] opacity-60'
+                      className={`flex items-center justify-between gap-2 p-2.5 rounded-xl border transition-colors ${
+                        isVisible(id)
+                          ? 'border-black/5 dark:border-white/10 bg-white/50 dark:bg-white/5'
+                          : 'border-black/5 dark:border-white/10 bg-white/30 dark:bg-white/[0.02] opacity-60'
                       }`}
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <GripVertical className="w-3.5 h-3.5 text-stone-300 dark:text-gray-600 shrink-0" />
-                        <span className="text-[10px] font-black text-stone-400 dark:text-gray-500 font-mono w-5 text-center">
-                          {toPersianDigits(idx + 1)}
-                        </span>
-                        <span className="text-xs font-bold text-stone-800 dark:text-gray-200 truncate">
-                          {def.label}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {/* Reorder: up/down. RTL means visually right-to-left; arrows use logical direction. */}
-                        <button
-                          onClick={() => move(id, -1)}
-                          disabled={idx === 0}
-                          className="p-1.5 rounded-lg border border-black/10 dark:border-white/10 text-stone-600 dark:text-gray-300 hover:bg-stone-100 dark:hover:bg-white/10 disabled:opacity-30 transition-colors"
-                          title="جابه‌جایی به بالا"
-                        >
-                          <ChevronUp className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => move(id, 1)}
-                          disabled={idx === layout.order.length - 1}
-                          className="p-1.5 rounded-lg border border-black/10 dark:border-white/10 text-stone-600 dark:text-gray-300 hover:bg-stone-100 dark:hover:bg-white/10 disabled:opacity-30 transition-colors"
-                          title="جابه‌جایی به پایین"
-                        >
-                          <ChevronDown className="w-3.5 h-3.5" />
-                        </button>
-                        {/* Desktop column span (lg only) */}
-                        <span className="flex items-center gap-0.5 ms-1 border-s border-black/10 dark:border-white/10 ps-1.5">
-                          <Columns3 className="w-3.5 h-3.5 text-stone-400 dark:text-gray-500" />
-                          {([1, 2, 3] as DashboardWidgetCols[]).map((c) => (
-                            <button
-                              key={c}
-                              onClick={() => setCols(id, c)}
-                              className={`w-6 h-6 rounded-md text-[10px] font-black transition-colors ${
-                                (layout.cols[id] ?? def.cols) === c
-                                  ? 'bg-brand text-brand-on'
-                                  : 'text-stone-500 dark:text-gray-400 hover:bg-stone-100 dark:hover:bg-white/10'
-                              }`}
-                              title={`اشغال ${toPersianDigits(c)} ستون در دسکتاپ`}
-                            >
-                              {toPersianDigits(c)}
-                            </button>
-                          ))}
-                        </span>
-                        <Switch
-                          checked={isVisible(id)}
-                          onCheckedChange={(checked: boolean) => toggleHidden(id, checked)}
-                        />
-                      </div>
+                      <span className="text-xs font-bold text-stone-800 dark:text-gray-200 truncate">
+                        {def.label}
+                      </span>
+                      <Switch
+                        checked={isVisible(id)}
+                        onCheckedChange={(checked: boolean) => toggleHidden(id, checked)}
+                      />
                     </div>
                   );
                 })}
-              </div>
-
-              {/* Presets */}
-              <div className="border-t border-black/10 dark:border-white/10 pt-3 space-y-2">
-                <p className="text-xs font-black text-stone-700 dark:text-gray-300 flex items-center gap-1.5">
-                  <Save className="w-3.5 h-3.5 text-brand" />
-                  چیدمان‌های ذخیره‌شده (قابل اشتراک بین کاربران):
-                </p>
-                <div className="flex gap-2">
-                  <input
-                    value={presetName}
-                    onChange={(e) => setPresetName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') savePreset();
-                    }}
-                    placeholder="نام چیدمان جدید..."
-                    className="flex-1 min-w-0 text-xs font-bold px-3 py-2 rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-brand/50"
-                  />
-                  <button
-                    onClick={savePreset}
-                    disabled={!presetName.trim()}
-                    className="shrink-0 inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl bg-brand hover:bg-brand-hover text-brand-on transition-colors active:scale-95 disabled:opacity-50"
-                  >
-                    <Save className="w-3.5 h-3.5" />
-                    ذخیره چیدمان فعلی
-                  </button>
-                </div>
-                {layout.presets.length > 0 && (
-                  <div className="space-y-1.5">
-                    {layout.presets.map((p) => (
-                      <div
-                        key={p.id}
-                        className="flex items-center justify-between gap-2 p-2 rounded-xl bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/10"
-                      >
-                        <span className="text-xs font-bold text-stone-800 dark:text-gray-200 truncate">
-                          {p.name}
-                        </span>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <button
-                            onClick={() => applyPresetById(p.id)}
-                            className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-brand/10 text-brand-ink dark:text-brand hover:bg-brand/20 transition-colors"
-                          >
-                            <Play className="w-3 h-3" />
-                            اعمال
-                          </button>
-                          <button
-                            onClick={() => deletePreset(p.id)}
-                            className="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 dark:hover:text-red-400 hover:bg-rose-500/10 transition-colors"
-                            title="حذف چیدمان"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           </CollapsibleContent>
@@ -856,11 +661,11 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           if (!isVisible(id)) return null;
           const def = DASHBOARD_WIDGETS.find((w) => w.id === id);
           if (!def) return null;
+          const cols = def.cols;
 
-          // Widgets with their own panel chrome render bare inside the shell.
           if (id === 'todoWidget') {
             return (
-              <div key={id} className={spanClass(layout.cols[id] ?? def.cols)}>
+              <div key={id} className={spanClass(cols)}>
                 <TodoWidget
                   collapsed={isCollapsed(id)}
                   onToggleCollapse={() => toggleCollapsed(id)}
@@ -869,13 +674,12 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             );
           }
           if (id === 'overdueAlerts') {
-            // No overdues → nothing to render (not even the shell).
             if (overdueConsignments.length === 0) return null;
             return (
-              <div key={id} className={spanClass(layout.cols[id] ?? def.cols)}>
+              <div key={id} className={spanClass(cols)}>
                 <WidgetShell
                   title="هشدار سرسیدهای گذشته"
-                  cols={layout.cols[id] ?? def.cols}
+                  cols={cols}
                   collapsed={isCollapsed(id)}
                   onToggleCollapse={() => toggleCollapsed(id)}
                   icon={<AlertOctagon className="w-4 h-4 text-rose-600 dark:text-red-400" />}
@@ -896,7 +700,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             <WidgetShell
               key={id}
               title={def.label}
-              cols={layout.cols[id] ?? def.cols}
+              cols={cols}
               collapsed={isCollapsed(id)}
               onToggleCollapse={() => toggleCollapsed(id)}
             >
