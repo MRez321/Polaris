@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Loader2, RefreshCw, Globe, ShoppingBag, Send, Truck, UsersRound, Search, BarChart3 } from 'lucide-react';
+import { RefreshCw, Globe, ShoppingBag, Send, Truck, UsersRound, Search } from 'lucide-react';
 import type { SalesChannel, SalesChannelType } from '@/types';
 import { getApiErrorMessage, salesChannelsApi } from '@/lib/api';
 import { toPersianDigits } from '@/utils/persian';

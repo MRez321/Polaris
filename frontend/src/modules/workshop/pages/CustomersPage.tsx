@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Loader2, RefreshCw, Users, Plus, Edit2, Trash2, Search, Globe } from 'lucide-react';
+import { RefreshCw, Users, Plus, Edit2, Trash2, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Customer } from '@/types';
 import { getApiErrorMessage, customersApi } from '@/lib/api';

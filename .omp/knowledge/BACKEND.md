@@ -102,7 +102,7 @@ Controllers are thin (parse → service call → res.json); business logic lives
 ## Conventions
 
 - Zod validation at every controller boundary; error shape `{ error: string }` (smoke-tested).
-- Audit logging via `recordAudit()` / `entityActor(tx, userId)` from `core/services/auditService.ts` — `audit_logs` table, columns are `entity_type`/`entity_id`/`action`/`details`. P0-C supply actions (supplier CRUD, price append, request/order/receipt/cost changes) all audit with the session actor. Only successful logins audited automatically (better-auth session-create hook).
+- Audit logging via `recordAudit()` / `entityActor(tx, userId)` from `core/services/auditService.ts` — `audit_logs` table, columns are `entity_type`/`entity_id`/`action`/`details` plus `before_json`/`after_json`/`metadata`/`ip_address`/`user_agent`. P0-C supply actions (supplier CRUD, price append, request/order/receipt/cost changes) all audit with the session actor. Every audit call now receives `meta: { ip, userAgent }` from the controller's `requestMeta(req)` helper and resolves the real actor name/role via `entityActor(runner, actorId)` (never the old `{ user: { id: actorId, name: actorId } }` shorthand). `before`/`after` snapshots are captured for all create/update/delete operations. Only successful logins audited automatically (better-auth session-create hook).
 - TS: ESM (`"type": "module"`), `.js` import suffixes, no top-level await in server.ts (broke cPanel startup once — see commit f0ad94a).
 - Node >=18; running on Node 22 locally, cPanel runs its own selector version.
 

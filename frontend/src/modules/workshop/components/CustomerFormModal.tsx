@@ -3,7 +3,6 @@ import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Customer } from '@/types';
 import { customersApi, getApiErrorMessage } from '@/lib/api';
-import { toPersianDigits } from '@/utils/persian';
 import { toast } from 'sonner';
 
 interface CustomerFormModalProps {

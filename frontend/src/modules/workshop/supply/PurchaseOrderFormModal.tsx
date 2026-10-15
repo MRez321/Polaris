@@ -7,8 +7,7 @@ import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { SelectMenu } from '@/components/ui/select-menu';
 import { Plus, Trash2 } from 'lucide-react';
 import type { Supplier, PurchaseOrder, PurchaseOrderItem } from '@/types';
-import type { PurchaseOrderPayload, SupplierPricePayload } from '@/lib/api';
-import { supplyApi } from '@/lib/api';
+import type { PurchaseOrderPayload } from '@/lib/api';
 import { toPersianDigits } from '@/utils/persian';
 
 interface PurchaseOrderFormModalProps {

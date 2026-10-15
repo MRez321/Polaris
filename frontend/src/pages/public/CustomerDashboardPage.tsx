@@ -211,6 +211,7 @@ export const CustomerDashboardPage: React.FC = () => {
                 userId={user.id}
                 orders={orders}
                 error={ordersError}
+                loading={ordersLoading}
                 onRetry={() => {
                   setOrdersLoading(true);
                   ordersApi
