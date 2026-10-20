@@ -3,6 +3,7 @@ import { Link, Navigate } from 'react-router-dom';
 import {
   CheckCircle2,
   ChevronDown,
+  Clock,
   Heart,
   LayoutDashboard,
   Loader2,
@@ -110,6 +111,7 @@ export const CustomerDashboardPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [ordersError, setOrdersError] = useState<string | null>(null);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('orders');
 
   usePageMeta('حساب کاربری', 'پیگیری سفارش‌ها و مدیریت حساب کاربری در فروشگاه پولاریس استایل.', '/dashboard');
 
@@ -149,11 +151,15 @@ export const CustomerDashboardPage: React.FC = () => {
               </div>
             </div>
 
-            <Tabs defaultValue="orders">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="flex-col items-stretch gap-1 bg-transparent p-0">
                 <TabsTrigger value="orders" className="justify-start gap-2">
                   <Package className="w-4 h-4" />
                   سفارش‌ها
+                </TabsTrigger>
+                <TabsTrigger value="order-history" className="justify-start gap-2">
+                  <Clock className="w-4 h-4" />
+                  تاریخچه سفارش‌ها
                 </TabsTrigger>
                 <TabsTrigger value="favorites" className="justify-start gap-2">
                   <Heart className="w-4 h-4" />
@@ -197,11 +203,12 @@ export const CustomerDashboardPage: React.FC = () => {
           </div>
         </aside>
 
-        {/* Main content — same Tabs structure, sidebar triggers them */}
+        {/* Main content — controlled Tabs, synced with sidebar triggers via activeTab */}
         <main className="lg:col-span-8 xl:col-span-9">
-          <Tabs defaultValue="orders" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="hidden">
               <TabsTrigger value="orders" />
+              <TabsTrigger value="order-history" />
               <TabsTrigger value="favorites" />
               <TabsTrigger value="addresses" />
               <TabsTrigger value="profile" />
@@ -221,6 +228,9 @@ export const CustomerDashboardPage: React.FC = () => {
                     .finally(() => setOrdersLoading(false));
                 }}
               />
+            </TabsContent>
+            <TabsContent value="order-history" className="mt-0">
+              <OrdersHistoryTab />
             </TabsContent>
             <TabsContent value="favorites" className="mt-0">
               <FavoritesTab />
@@ -1008,6 +1018,24 @@ const AddressBookSection: React.FC = () => {
         onConfirm={() => void confirmDeleteAddress()}
       />
     </section>
+  );
+};
+
+
+// --- Order history (placeholder) -------------------------------------------
+
+const OrdersHistoryTab: React.FC = () => {
+  return (
+    <Empty className="border border-dashed border-stone-200 dark:border-white/10 rounded-3xl p-10">
+      <EmptyMedia variant="icon">
+        <Clock className="w-8 h-8" />
+      </EmptyMedia>
+      <EmptyTitle>تاریخچه سفارش‌ها</EmptyTitle>
+      <EmptyDescription>
+        این بخش در دست توسعه است. به زودی می‌توانید تمام سفارش‌های تکمیل‌شده
+        و تاریخچه پرداختی خود را در اینجا مرور کنید.
+      </EmptyDescription>
+    </Empty>
   );
 };
 

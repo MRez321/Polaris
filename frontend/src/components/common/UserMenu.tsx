@@ -1,11 +1,10 @@
 import React from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, LogIn, LogOut, Settings2, UserRound, ShoppingBag, Heart, Package, MapPin } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, LogIn, LogOut, UserRound, ShoppingBag, Heart } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { useFavorites } from '@/context/FavoritesContext';
 import { cn } from '@/lib/utils';
-import { CONSOLE_ACCESS } from '@/lib/permissions';
 import { toPersianDigits } from '@/utils/persian';
 import {
   DropdownMenu,
@@ -78,25 +77,18 @@ interface UserMenuProps {
 
 /**
  * Role-aware account menu, shared across the public storefront and the
- * console header. On the public site the dropdown exposes shop quick-access
- * (cart, favorites, my orders, addresses); inside the console it shows the
- * admin-panel link for admins plus website/blog settings for permissioned
- * roles. Logout is always the destructive last item.
+ * console header. Exposes account, cart, favorites (always visible), a
+ * workshop-panel quick-entry for admins, and logout (destructive last item).
  */
 export const UserMenu: React.FC<UserMenuProps> = ({
   className,
   loginTo = '/login',
   showName = true,
 }) => {
-  const { user, isAdmin, hasPermission, signOut } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
   const { count: cartCount, openCart } = useCart();
   const { favorites } = useFavorites();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  // Cart/favorites are storefront concepts — only relevant outside the console.
-  const isConsole = location.pathname.startsWith('/console');
-  const showShopLinks = !isConsole;
 
   if (!user) {
     return (
@@ -113,8 +105,6 @@ export const UserMenu: React.FC<UserMenuProps> = ({
       </button>
     );
   }
-
-  const isConsoleUser = CONSOLE_ACCESS.some((role) => role === (user.role || 'user'));
 
   const handleSignOut = async () => {
     await signOut();
@@ -155,78 +145,44 @@ export const UserMenu: React.FC<UserMenuProps> = ({
             حساب کاربری
           </DropdownMenuItem>
 
-          {/* Shop quick-access: cart, favorites, orders, addresses */}
-          {showShopLinks && (
-            <>
-              <DropdownMenuItem
-                onClick={() => {
-                  openCart();
-                  navigate('/shop');
-                }}
-              >
-                <ShoppingBag />
-                <span className="flex items-center justify-between w-full">
-                  <span>سبد خرید</span>
-                  {cartCount > 0 && (
-                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-brand-deep text-white">
-                      {toPersianDigits(cartCount)}
-                    </span>
-                  )}
+          {/* Shop quick-access: cart, favorites */}
+          <DropdownMenuItem
+            onClick={() => {
+              openCart();
+              navigate('/shop');
+            }}
+          >
+            <ShoppingBag />
+            <span className="flex items-center justify-between w-full">
+              <span>سبد خرید</span>
+              {cartCount > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-brand-deep text-white">
+                  {toPersianDigits(cartCount)}
                 </span>
-              </DropdownMenuItem>
+              )}
+            </span>
+          </DropdownMenuItem>
 
-              <DropdownMenuItem
-                render={<Link to="/dashboard" />}
-                onClick={() => navigate('/dashboard')}
-              >
-                <Heart />
-                <span className="flex items-center justify-between w-full">
-                  <span>مورد علاقه ها</span>
-                  {favorites.length > 0 && (
-                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-600 text-white">
-                      {toPersianDigits(favorites.length)}
-                    </span>
-                  )}
+          <DropdownMenuItem
+            render={<Link to="/dashboard" />}
+            onClick={() => navigate('/dashboard')}
+          >
+            <Heart />
+            <span className="flex items-center justify-between w-full">
+              <span>مورد علاقه ها</span>
+              {favorites.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-600 text-white">
+                  {toPersianDigits(favorites.length)}
                 </span>
-              </DropdownMenuItem>
+              )}
+            </span>
+          </DropdownMenuItem>
 
-              <DropdownMenuItem
-                render={<Link to="/dashboard" />}
-                onClick={() => navigate('/dashboard')}
-              >
-                <Package />
-                سفارش‌های من
-              </DropdownMenuItem>
-
-              <DropdownMenuItem
-                render={<Link to="/dashboard" />}
-                onClick={() => navigate('/dashboard')}
-              >
-                <MapPin />
-                آدرس‌های من
-              </DropdownMenuItem>
-            </>
-          )}
-
-          {/* Admin panel entry — only for admins */}
+          {/* Workshop panel — only for admins */}
           {isAdmin && (
             <DropdownMenuItem render={<Link to="/console" />}>
               <LayoutDashboard />
               پنل کارگاه
-            </DropdownMenuItem>
-          )}
-
-          {/* Console-only management links */}
-          {isConsoleUser && hasPermission('website.manage') && (
-            <DropdownMenuItem render={<Link to="/console/website/website" />}>
-              <Settings2 />
-              تنظیمات وب‌سایت
-            </DropdownMenuItem>
-          )}
-          {isConsoleUser && hasPermission('blog.manage') && (
-            <DropdownMenuItem render={<Link to="/console/website/blog" />}>
-              <Settings2 />
-              مدیریت وبلاگ
             </DropdownMenuItem>
           )}
         </DropdownMenuGroup>

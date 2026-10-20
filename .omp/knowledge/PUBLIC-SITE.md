@@ -12,10 +12,15 @@ The customer-facing site. Distinct context from the workshop (see DOMAIN.md). Al
 | `/blog`, `/blog/:slug` | `src/pages/public/BlogPage.tsx`, `BlogPostPage.tsx` |
 | `/contact` | `src/pages/public/ContactPage.tsx` |
 | `/checkout` | `src/pages/public/CheckoutPage.tsx` |
-| `/dashboard` | `src/pages/public/CustomerDashboardPage.tsx` (customer account: orders, addresses) |
+| `/dashboard` | `src/pages/public/CustomerDashboardPage.tsx` (customer account: orders, order-history, favorites, addresses, profile) |
 | `/login`, `/signup` | `src/pages/{LoginPage,SignupPage}.tsx` |
 
 Wrapped in `PublicLayout` (`src/components/public/`). Marketing site works anonymous; checkout/customer pages need a session (any role).
+## User menu & dashboard
+
+`UserMenu` (`src/components/common/UserMenu.tsx`) is the shared role-aware dropdown triggered by the avatar/name in both the public header (`PublicHeader.tsx`) and the console header (`layout/Header.tsx`). It always shows: **حساب کاربری** (→ `/dashboard`), **سبد خرید** (open cart → `/shop`), **علاقه‌مندی‌ها** (→ `/dashboard`), and **خروج** (logout). The **پنل کارگاه** (workshop panel, → `/console`) entry appears only for `admin` role. Website/blog settings links were removed from the menu — use `/console/website/*` directly.
+
+`CustomerDashboardPage` (`/dashboard`) renders a sidebar + main content with shared `activeTab` state. Tabs: **سفارش‌ها** (live orders with tracking timeline), **تاریخچه سفارش‌ها** (placeholder), **علاقه‌مندی‌ها** (favorite products), **آدرس‌ها** (address book), **پروفایل** (name/email edit + console quick-entry per role + sign out). The sidebar TabsList triggers and the main content TabsList share the same `value`/`onValueChange` — clicking a sidebar tab switches the main content panel.
 
 ## API surfaces used (from `src/lib/api.ts` + better-auth client)
 

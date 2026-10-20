@@ -16,6 +16,7 @@ Format: [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/) — newes
 - Unified `/console` permission system: `PERMISSIONS` + `ROLE_PERMISSIONS` in `backend/src/modules/auth/permissions.ts` (admin=all, author=`blog.manage`, staff=view subset) mirrored by `frontend/src/lib/permissions.ts` with `CONSOLE_ACCESS` roles and `useAuth().hasPermission()`.
 - GlobalSearch quick-search overlay (Ctrl/Cmd+K) in the console Header — searches live `DataContext` entities (items, sellers, consignments, payments, returns, staff, owners) with deep-link navigation, rendered inside `<Modal>` via `layout/GlobalSearch.tsx`. See `docs/frontend/global-search.md`.
 - Dashboard widgets `ActivityTimeline` (`audit/ActivityTimeline.tsx`, live audit-log stream from `GET /api/workshop/audit-logs`, reuses shared `auditUtils.tsx`) and `ManagerActionCenter` (consolidated overdue + low-stock + pending-order alerts); see `docs/frontend/dashboard-widgets.md`.
+- Customer dashboard "History of Orders" tab (`تاریخچه سفارش‌ها`) with a placeholder page using the `Empty` pattern — wired into the sidebar nav and main content; full implementation deferred. See `docs/frontend/user-dashboard.md`.
 
 ### Changed
 - Dashboard clock widget title changed from «ساعت زنده کارگاه» to «ساعت کارگاه».
@@ -25,9 +26,11 @@ Format: [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/) — newes
 - Acceptance cleanup (spec item 28): test-acceptance step 7 logically deletes all test entities via inverse `ADJUSTMENT_OUT` + soft deletes; item-28 grep sweeps pass — no `stockQuantity` writes outside the ledger `syncLegacyStockCache` + sanctioned `createItem` opening stock, no hard deletes on ledger/financial/audit/order/payment tables.
 - Workshop Sidebar and mobile SideMenu refactored to a permission-gated IA-group structure (`nav-config.ts` `NAV_GROUPS`, collapsible via `useSidebarGroupEnabled`), replacing the flat permission-filtered nav; alert counts centralized in `useWorkshopAlerts.ts`.
 - Removed the `liquidBalance` dashboard widget (folded into ManagerActionCenter); `DashboardStats.liquidBalance` retained in the type for API compatibility with the still-running dashboard-stats endpoint.
+- UserMenu (account dropdown, shared by public header and console header) simplified to only show Account, Cart, Favorites, Workshop Panel (admin-only) and Logout; removed My Orders, My Addresses, Website Settings, and Blog Management links from the menu and the `showShopLinks` context conditional.
 
 ### Fixed
 - Smoke suites `smoke-phase2.mjs` and `smoke-phase3.mjs` now send the required `province` field when placing test orders (schema drift from the checkout CitySelector work); all three suites pass again.
+- Customer dashboard tab switching: sidebar tab triggers and main content panels were backed by two independent `Tabs` components (`defaultValue`), so clicking a sidebar trigger did not switch the content panel. Both now share a single `activeTab` state via `value`/`onValueChange`.
 
 ## [v0.5.6] - 2026-09-09
 
