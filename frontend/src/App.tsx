@@ -22,6 +22,7 @@ import SignupPage from '@/pages/SignupPage';
 import InventoryPage from '@/modules/workshop/pages/InventoryPage';
 import ConsignmentsPage from '@/modules/workshop/pages/ConsignmentsPage';
 import PeoplePage from '@/modules/workshop/pages/PeoplePage';
+import PeoplePreviewPage from '@/modules/workshop/pages/PeoplePreviewPage';
 import FinancesPage from '@/modules/workshop/pages/FinancesPage';
 import SettingsPage from '@/modules/workshop/pages/SettingsPage';
 import NotificationsPage from '@/modules/workshop/pages/NotificationsPage';
@@ -104,12 +105,12 @@ function App() {
                           <Route path="consignments" element={<ConsignmentsPage />} />
                         </Route>
                         <Route element={<RequirePermission permission="people.view" />}>
-                          <Route path="people" element={<PeoplePage />} />
+                          <Route path="people" element={<PeoplePreviewPage />} />
                           <Route path="people/sellers" element={<PeoplePage />} />
                           <Route path="people/staff" element={<PeoplePage />} />
                         </Route>
                         <Route element={<RequirePermission permission="suppliers.view" />}>
-                          <Route path="people/suppliers" element={<PeoplePage />} />
+                          <Route path="people/suppliers" element={<SuppliersPage />} />
                           <Route path="supply" element={<SupplyPage />} />
                           <Route path="suppliers" element={<SuppliersPage />} />
                           <Route path="profile/supplier/:id" element={<SupplierProfilePage />} />
@@ -127,10 +128,10 @@ function App() {
                           <Route path="finances/reports" element={<FinancesPage />} />
                         </Route>
                         <Route element={<RequirePermission permission="settings.manage" />}>
+                          <Route path="people/users" element={<UsersPage />} />
+                          <Route path="notifications" element={<NotificationsPage />} />
+                          <Route path="gallery" element={<GalleryPage />} />
                           <Route path="settings" element={<SettingsPage />} />
-                          <Route path="settings/notifications" element={<NotificationsPage />} />
-                          <Route path="settings/users" element={<UsersPage />} />
-                          <Route path="settings/gallery" element={<GalleryPage />} />
                         </Route>
                         <Route element={<RequirePermission permission="returns.view" />}>
                           <Route path="returns" element={<ReturnsPage />} />

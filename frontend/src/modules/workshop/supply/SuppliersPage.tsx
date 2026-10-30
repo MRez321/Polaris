@@ -40,7 +40,7 @@ export const SuppliersPage: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await supplyApi.listSuppliers({ limit: 200 }).catch(() => ({ rows: [], total: 0 }));
+        const res = await supplyApi.listSuppliers({ limit: 100 }).catch(() => ({ rows: [], total: 0 }));
         if (!cancelled) {
           setSuppliers(res.rows);
         }

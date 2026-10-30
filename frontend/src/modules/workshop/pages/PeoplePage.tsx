@@ -24,7 +24,7 @@ const PeoplePage: React.FC = () => {
   } = useData();
   const { openQuickHandover, openQuickPayment, setSelectedConsignment } = useUI();
 
-  const initialSubTab = location.pathname === '/console/people/suppliers' ? 'suppliers' : location.pathname === '/console/people/staff' ? 'staff' : location.pathname === '/console/people/sellers' ? 'sellers' : 'sellers';
+  const initialSubTab = location.pathname === '/console/people/staff' ? 'staff' : 'sellers';
 
   return (
     <PeopleManager

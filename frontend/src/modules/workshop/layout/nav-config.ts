@@ -28,6 +28,8 @@ import {
   Newspaper,
   Bell,
   Images,
+  Briefcase,
+  Truck,
   RotateCcw,
 } from 'lucide-react';
 
@@ -111,12 +113,16 @@ export const NAV_GROUPS: NavGroupConfig[] = [
       },
     ],
   },
-  // === مدیریت ===
+  // === اشخاص ===
   {
-    id: 'management',
-    label: 'مدیریت',
+    id: 'people',
+    label: 'اشخاص',
     items: [
       { to: '/console/people', label: 'افراد', icon: Users, permission: 'people.view' },
+      { to: '/console/people/staff', label: 'کارکنان', icon: Briefcase, permission: 'people.view' },
+      { to: '/console/people/suppliers', label: 'تأمین‌کنندگان', icon: Truck, permission: 'suppliers.view' },
+      { to: '/console/people/sellers', label: 'فروشندگان', icon: UserCheck, permission: 'people.view' },
+      { to: '/console/people/users', label: 'کاربران', icon: Users, permission: 'settings.manage' },
     ],
   },
   // === مالی و گزارش ===
@@ -145,9 +151,8 @@ export const NAV_GROUPS: NavGroupConfig[] = [
     label: 'مدیریت سیستم',
     items: [
       { to: '/console/settings', label: 'تنظیمات و مدیریت', icon: Settings, permission: 'settings.manage' },
-      { to: '/console/settings/notifications', label: 'اطلاع‌رسانی', icon: Bell, permission: 'settings.manage' },
-      { to: '/console/settings/users', label: 'مدیریت کاربران', icon: Users, permission: 'settings.manage' },
-      { to: '/console/settings/gallery', label: 'گالری تصاویر', icon: Images, permission: 'settings.manage' },
+      { to: '/console/notifications', label: 'اطلاع‌رسانی', icon: Bell, permission: 'settings.manage' },
+      { to: '/console/gallery', label: 'گالری تصاویر', icon: Images, permission: 'settings.manage' },
     ],
   },
 ];

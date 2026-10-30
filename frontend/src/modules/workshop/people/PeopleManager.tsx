@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Users,
-  Briefcase,
-  Truck,
-} from 'lucide-react';
+import { Users, Briefcase } from 'lucide-react';
 import type {
   Seller,
   Consignment,
@@ -16,7 +12,6 @@ import type {
 import { SellersManager } from '../sellers/SellersManager';
 import { StaffManager } from '../staff/StaffManager';
 import { toPersianDigits } from '@/utils/persian';
-import { SuppliersPage } from '../supply/SuppliersPage';
 
 interface PeopleManagerProps {
   sellers: Seller[];
@@ -35,7 +30,7 @@ interface PeopleManagerProps {
   onAddStaff: (data: Partial<StaffMember>) => void;
   onUpdateStaff: (id: string, data: Partial<StaffMember>) => void;
   onDeleteStaff: (id: string) => void;
-  initialSubTab?: 'sellers' | 'staff' | 'suppliers';
+  initialSubTab?: 'sellers' | 'staff';
 }
 
 export const PeopleManager: React.FC<PeopleManagerProps> = ({
@@ -58,11 +53,10 @@ export const PeopleManager: React.FC<PeopleManagerProps> = ({
   initialSubTab = 'sellers',
 }) => {
   const navigate = useNavigate();
-  const [activeSubTab, setActiveSubTab] = useState<'sellers' | 'staff' | 'suppliers'>(initialSubTab);
-  const TAB_ROUTES: Record<'sellers' | 'staff' | 'suppliers', string> = {
+  const [activeSubTab, setActiveSubTab] = useState<'sellers' | 'staff'>(initialSubTab);
+  const TAB_ROUTES: Record<'sellers' | 'staff', string> = {
     sellers: '/console/people/sellers',
     staff: '/console/people/staff',
-    suppliers: '/console/people/suppliers',
   };
   const subTabs = [
     {
@@ -76,12 +70,6 @@ export const PeopleManager: React.FC<PeopleManagerProps> = ({
       label: 'کارکنان کارگاه',
       icon: Briefcase,
       badge: staff.length + owners.length > 0 ? toPersianDigits(staff.length + owners.length) : undefined,
-    },
-    {
-      id: 'suppliers' as const,
-      label: 'تأمین‌کنندگان',
-      icon: Truck,
-      badge: undefined,
     },
   ];
 
@@ -159,10 +147,6 @@ export const PeopleManager: React.FC<PeopleManagerProps> = ({
           onUpdateStaff={onUpdateStaff}
           onDeleteStaff={onDeleteStaff}
         />
-      )}
-
-      {activeSubTab === 'suppliers' && (
-        <SuppliersPage />
       )}
     </div>
   );

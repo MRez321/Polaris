@@ -68,8 +68,8 @@ export const SupplyOrdersPage: React.FC = () => {
       setError(null);
       try {
         const [supRes, orderRes] = await Promise.all([
-          supplyApi.listSuppliers({ limit: 200 }).catch(() => ({ rows: [] as Supplier[], total: 0 })),
-          supplyApi.listOrders({ limit: 200 }).catch(() => ({ rows: [] as PurchaseOrder[], total: 0 })),
+          supplyApi.listSuppliers({ limit: 100 }).catch(() => ({ rows: [] as Supplier[], total: 0 })),
+          supplyApi.listOrders({ limit: 100 }).catch(() => ({ rows: [] as PurchaseOrder[], total: 0 })),
         ]);
         if (!cancelled) {
           setSuppliers(supRes.rows);

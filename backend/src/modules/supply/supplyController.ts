@@ -81,7 +81,8 @@ export async function getSupplier(req: Request, res: Response): Promise<void> {
 export async function getSupplierDetail(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه تأمین‌کننده');
     const detail = await supplierSvc.getSupplierDetail(id);
-    res.json({ ...detail, profile: toSupplierDto(detail.profile) });
+    const dto = toSupplierDto(detail.profile);
+    res.json({ ...dto, suppliedSkus: detail.suppliedSkus, latestPrices: detail.latestPrices, priceHistory: detail.priceHistory, purchaseHistory: detail.purchaseHistory, openOrders: detail.openOrders, receipts: detail.receipts, payableBalance: detail.payableBalance, auditTrail: detail.audit });
 }
 
 export async function createSupplier(req: Request, res: Response): Promise<void> {

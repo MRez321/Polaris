@@ -18,7 +18,7 @@ router.patch('/suppliers/:id', requirePermission('suppliers.manage'), c.updateSu
 router.post('/suppliers/:id/activate', requirePermission('suppliers.manage'), c.activateSupplier);
 router.post('/suppliers/:id/deactivate', requirePermission('suppliers.manage'), c.deactivateSupplier);
 router.get('/suppliers/:id/prices', requirePermission('suppliers.view'), c.listSupplierPrices);
-router.post('/suppliers/:id/prices', requirePermission('suppliers.manage'), c.addSupplierPrice);
+router.get('/suppliers/:id/detail', requirePermission('suppliers.view'), c.getSupplierDetail);
 
 // --- Purchase requests ---
 router.get('/purchase-requests', requirePermission('purchasing.view'), c.listRequests);
