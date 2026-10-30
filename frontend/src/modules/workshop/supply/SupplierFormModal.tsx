@@ -4,11 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { FormField } from '@/components/common/FormField';
 import { X } from 'lucide-react';
 import type { Supplier } from '@/types';
 import type { SupplierPayload } from '@/lib/api';
-import { toPersianDigits } from '@/utils/persian';
 import { toast } from 'sonner';
 
 interface ContactPersonInput {
@@ -28,10 +26,11 @@ interface SupplierFormModalProps {
 /** Form for creating and editing suppliers.
  *  - Auto-generated code (not shown/editable)
  *  - No email field
- *  - Shop name + contact persons + phone numbers + city + categories as main fields
+ *  - Shop name + contact persons (with phones inline) + city + categories
  *  - Required fields: shop name, contact person name, city
- *  - New contact/phone entries appear below existing ones
+ *  - New contact person entries appear below existing ones
  *  - Categories separated by comma (,) and Persian comma (،)
+ *  - Placeholders replace under-input label text
  */
 export const SupplierFormModal: React.FC<SupplierFormModalProps> = ({
   isOpen,
@@ -42,7 +41,6 @@ export const SupplierFormModal: React.FC<SupplierFormModalProps> = ({
 }) => {
   const [shopName, setShopName] = useState('');
   const [contacts, setContacts] = useState<ContactPersonInput[]>([]);
-  const [phones, setPhones] = useState<string[]>(['']);
   const [city, setCity] = useState('');
   const [address, setAddress] = useState('');
   const [categories, setCategories] = useState('');
@@ -75,13 +73,9 @@ export const SupplierFormModal: React.FC<SupplierFormModalProps> = ({
           ? editSupplier.contactPersons.map((c) => ({ id: c.id || `c_${Math.random().toString(36).slice(2, 9)}`, name: c.name ?? '', phone: c.phone ?? '' }))
           : [{ id: `c_${Math.random().toString(36).slice(2, 9)}`, name: '', phone: '' }];
       setContacts(contactList);
-
-      const phoneList = editSupplier.phones && editSupplier.phones.length > 0 ? editSupplier.phones : [''];
-      setPhones(phoneList);
     } else {
       setShopName('');
       setContacts([{ id: 'c_' + Math.random().toString(36).slice(2, 9), name: '', phone: '' }]);
-      setPhones(['']);
       setCity('');
       setAddress('');
       setCategories('');
@@ -103,28 +97,12 @@ export const SupplierFormModal: React.FC<SupplierFormModalProps> = ({
   };
 
   const removeContact = (id: string) => {
+    if (contacts.length === 1) return;
     setContacts(contacts.filter((c) => c.id !== id));
   };
 
   const updateContact = (id: string, field: 'name' | 'phone', value: string) => {
     setContacts(contacts.map((c) => (c.id === id ? { ...c, [field]: value } : c)));
-  };
-
-  // --- Phone numbers management ---
-  const addPhone = () => {
-    // New entries appear below existing ones
-    setPhones([...phones, '']);
-  };
-
-  const removePhone = (index: number) => {
-    if (phones.length === 1) return;
-    setPhones(phones.filter((_, i) => i !== index));
-  };
-
-  const updatePhone = (index: number, value: string) => {
-    const updated = [...phones];
-    updated[index] = value;
-    setPhones(updated);
   };
 
   // --- Validation ---
@@ -164,7 +142,7 @@ export const SupplierFormModal: React.FC<SupplierFormModalProps> = ({
       return;
     }
 
-    // Filter out empty contacts
+    // Filter out empty contacts and collect phones from contacts
     const validContacts = contacts
       .filter((c) => c.name.trim() || c.phone.trim())
       .map((c) => ({
@@ -173,8 +151,11 @@ export const SupplierFormModal: React.FC<SupplierFormModalProps> = ({
         phone: c.phone.trim() || undefined,
       }));
 
-    // Filter out empty phones
-    const validPhones = phones.filter((p) => p.trim());
+    // Collect all non-empty phones from contacts for the phones array
+    const allPhones = contacts
+      .filter((c) => c.name.trim() || c.phone.trim())
+      .map((c) => c.phone.trim())
+      .filter((p) => p.length > 0);
 
     // Parse categories - support both Persian and English commas
     const categoryList = categories
@@ -186,7 +167,7 @@ export const SupplierFormModal: React.FC<SupplierFormModalProps> = ({
       ...(editSupplier?.code && { code: editSupplier.code }),
       shopName: shopName.trim(),
       contactPersons: validContacts.length > 0 ? validContacts : undefined,
-      phones: validPhones.length > 0 ? validPhones : undefined,
+      phones: allPhones.length > 0 ? allPhones : undefined,
       city: city.trim(),
       address: address || undefined,
       categories: categoryList.length > 0 ? categoryList : undefined,
@@ -215,47 +196,53 @@ export const SupplierFormModal: React.FC<SupplierFormModalProps> = ({
     >
       <form onSubmit={handleSubmit} className="space-y-4 text-stone-900 dark:text-white">
         {/* Shop Name - Required */}
-        <FormField
-          id="supplier-shop-name"
-          label="نام فروشگاه"
-          required
-          error={shopNameError}
-          hint="مثلاً: پارچه‌فروشی اصفهان"
-        >
+        <div>
+          <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1 flex items-center gap-1">
+            نام فروشگاه <span className="text-rose-600">*</span>
+          </label>
           <Input
             value={shopName}
             onChange={(e) => setShopName(e.target.value)}
-            placeholder="نام فروشگاه تأمین‌کننده"
+            placeholder="مثلاً: پارچه‌فروشی اصفهان"
             aria-invalid={!!shopNameError}
             aria-describedby={shopNameError ? 'supplier-shop-name-error' : undefined}
+            className={shopNameError ? 'border-rose-500' : ''}
           />
-        </FormField>
+          {shopNameError && (
+            <span id="supplier-shop-name-error" className="text-xs text-rose-600 dark:text-rose-400 mt-1 block">
+              {shopNameError}
+            </span>
+          )}
+        </div>
 
         {/* City - Required */}
-        <FormField
-          id="supplier-city"
-          label="شهر"
-          required
-          error={cityError}
-          hint="مثلاً: اصفهان، تهران، مشهد"
-        >
+        <div>
+          <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1 flex items-center gap-1">
+            شهر <span className="text-rose-600">*</span>
+          </label>
           <Input
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            placeholder="شهر فعالیت تأمین‌کننده"
+            placeholder="مثلاً: اصفهان، تهران، مشهد"
             aria-invalid={!!cityError}
             aria-describedby={cityError ? 'supplier-city-error' : undefined}
+            className={cityError ? 'border-rose-500' : ''}
           />
-        </FormField>
+          {cityError && (
+            <span id="supplier-city-error" className="text-xs text-rose-600 dark:text-rose-400 mt-1 block">
+              {cityError}
+            </span>
+          )}
+        </div>
 
         {/* Contact Person(s) — multiple, new ones appear below existing */}
-        <div className="p-3.5 rounded-2xl glass-card space-y-3">
+        <div className="p-4 rounded-2xl glass-card space-y-4 border border-black/5 dark:border-white/5">
           <div className="flex items-center justify-between">
             <label className="text-xs font-bold text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
               افراد تماس
             </label>
             <span className="text-[11px] text-stone-400">
-              {toPersianDigits(contacts.length)} شخص
+              {contacts.length} شخص
             </span>
           </div>
 
@@ -263,33 +250,25 @@ export const SupplierFormModal: React.FC<SupplierFormModalProps> = ({
             {contacts.map((contact, index) => (
               <div key={contact.id} className="grid sm:grid-cols-3 gap-3 items-end">
                 <div className="sm:col-span-1">
-                  <FormField
-                    id={`contact-name-${contact.id}`}
-                    label="نام"
-                    hint="مثلاً: علی احمدی"
-                  >
-                    <Input
-                      id={`contact-name-${contact.id}`}
-                      value={contact.name}
-                      onChange={(e) => updateContact(contact.id, 'name', e.target.value)}
-                      placeholder="نام شخص تماس"
-                    />
-                  </FormField>
+                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                    نام
+                  </label>
+                  <Input
+                    value={contact.name}
+                    onChange={(e) => updateContact(contact.id, 'name', e.target.value)}
+                    placeholder="مثلاً: علی احمدی"
+                  />
                 </div>
                 <div className="sm:col-span-1">
-                  <FormField
-                    id={`contact-phone-${contact.id}`}
-                    label="شماره موبایل"
-                    hint="مثلاً: 09121234567"
-                  >
-                    <Input
-                      id={`contact-phone-${contact.id}`}
-                      dir="ltr"
-                      value={contact.phone}
-                      onChange={(e) => updateContact(contact.id, 'phone', e.target.value)}
-                      placeholder="0912..."
-                    />
-                  </FormField>
+                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                    موبایل
+                  </label>
+                  <Input
+                    dir="ltr"
+                    value={contact.phone}
+                    onChange={(e) => updateContact(contact.id, 'phone', e.target.value)}
+                    placeholder="مثلاً: ۰۹۱۲۳۴۵۶۷۸۹"
+                  />
                 </div>
                 <div className="sm:col-span-1 flex items-end justify-end">
                   {index === contacts.length - 1 ? (
@@ -319,167 +298,96 @@ export const SupplierFormModal: React.FC<SupplierFormModalProps> = ({
           </div>
         </div>
 
-        {/* Phone Numbers — multiple, new ones appear below existing */}
-        <div className="p-3.5 rounded-2xl glass-card space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
-              شماره‌های تماس
-            </label>
-            <span className="text-[11px] text-stone-400">
-              {toPersianDigits(phones.filter((p) => p.trim()).length)} شماره
-            </span>
-          </div>
-
-          <div className="space-y-2">
-            {phones.map((phone, index) => (
-              <div key={index} className="flex gap-2 items-end">
-                <div className="flex-1">
-                  <FormField
-                    id={`phone-${index}`}
-                    label={`شماره ${index + 1}`}
-                    hint="مثلاً: 09121234567"
-                  >
-                    <Input
-                      id={`phone-${index}`}
-                      dir="ltr"
-                      value={phone}
-                      onChange={(e) => updatePhone(index, e.target.value)}
-                      placeholder="0912..."
-                    />
-                  </FormField>
-                </div>
-                <div className="flex items-end mb-1">
-                  {index === phones.length - 1 ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={addPhone}
-                      className="text-xs font-bold"
-                    >
-                      + افزودن شماره
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => removePhone(index)}
-                      className="text-xs font-bold"
-                    >
-                      <X className="w-3 h-3" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Categories */}
-        <FormField
-          id="supplier-categories"
-          label="دسته‌بندی‌ها"
-          hint="با کاما یا ویرگول فارسی جدا کنید، مثلاً: پارچه، لباس مردانه، لباس زنانه"
-        >
+        <div>
+          <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+            دسته‌بندی‌ها
+          </label>
           <Input
-            id="supplier-categories"
             value={categories}
             onChange={(e) => setCategories(e.target.value)}
-            placeholder="پارچه، لباس مردانه، ..."
+            placeholder="با کاما جدا کنید، مثلاً: پارچه، لباس مردانه، لباس زنانه"
           />
-        </FormField>
+        </div>
 
         {/* Address */}
-        <FormField
-          id="supplier-address"
-          label="آدرس"
-          hint="آدرس کامل تأمین‌کننده"
-        >
+        <div>
+          <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+            آدرس
+          </label>
           <Textarea
-            id="supplier-address"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             placeholder="آدرس کامل تأمین‌کننده..."
             rows={3}
           />
-        </FormField>
+        </div>
 
         {/* Cooperation & Payment Terms */}
         <div className="grid sm:grid-cols-2 gap-4">
-          <FormField
-            id="supplier-coop"
-            label="شرایط همکاری"
-            hint="مثلاً: پیش‌پرداخت ۵۰٪"
-          >
+          <div>
+            <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+              شرایط همکاری
+            </label>
             <Input
-              id="supplier-coop"
               value={cooperationTerms}
               onChange={(e) => setCooperationTerms(e.target.value)}
-              placeholder="شرایط همکاری"
+              placeholder="مثلاً: پیش‌پرداخت ۵۰٪"
             />
-          </FormField>
+          </div>
 
-          <FormField
-            id="supplier-payment-terms"
-            label="شرایط پرداخت"
-            hint="مثلاً: نقدی یا اقساطی"
-          >
+          <div>
+            <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+              شرایط پرداخت
+            </label>
             <Input
-              id="supplier-payment-terms"
               value={paymentTerms}
               onChange={(e) => setPaymentTerms(e.target.value)}
-              placeholder="شرایط پرداخت"
+              placeholder="مثلاً: نقدی یا اقساطی"
             />
-          </FormField>
+          </div>
         </div>
 
         <div className="grid sm:grid-cols-2 gap-4">
-          <FormField
-            id="supplier-due-days"
-            label="مهلت پرداخت (روز)"
-            hint="مثلاً: ۳۰"
-          >
+          <div>
+            <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+              مهلت پرداخت (روز)
+            </label>
             <Input
-              id="supplier-due-days"
               type="number"
               min="0"
               value={paymentDueDays}
               onChange={(e) => setPaymentDueDays(e.target.value)}
               placeholder="۳۰"
             />
-          </FormField>
+          </div>
 
-          <FormField
-            id="supplier-min-order"
-            label="حداقل سفارش (تومان)"
-            hint="اختیاری"
-          >
+          <div>
+            <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+              حداقل سفارش (تومان)
+            </label>
             <Input
-              id="supplier-min-order"
               type="number"
               min="0"
               value={minOrderAmount}
               onChange={(e) => setMinOrderAmount(e.target.value)}
               placeholder="مثلاً: 5000000"
             />
-          </FormField>
+          </div>
         </div>
 
         {/* Note */}
-        <FormField
-          id="supplier-note"
-          label="یادداشت"
-          hint="یادداشت‌های داخلی..."
-        >
+        <div>
+          <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+            یادداشت
+          </label>
           <Textarea
-            id="supplier-note"
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="یادداشت‌های داخلی..."
             rows={3}
           />
-        </FormField>
+        </div>
 
         {/* Active Toggle & Actions */}
         <div className="flex items-center justify-between pt-4 border-t border-stone-200 dark:border-white/10">

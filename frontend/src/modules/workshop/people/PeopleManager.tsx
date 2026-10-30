@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Users,
   Briefcase,
+  Truck,
 } from 'lucide-react';
 import type {
   Seller,
@@ -14,6 +16,7 @@ import type {
 import { SellersManager } from '../sellers/SellersManager';
 import { StaffManager } from '../staff/StaffManager';
 import { toPersianDigits } from '@/utils/persian';
+import { SuppliersPage } from '../supply/SuppliersPage';
 
 interface PeopleManagerProps {
   sellers: Seller[];
@@ -32,7 +35,7 @@ interface PeopleManagerProps {
   onAddStaff: (data: Partial<StaffMember>) => void;
   onUpdateStaff: (id: string, data: Partial<StaffMember>) => void;
   onDeleteStaff: (id: string) => void;
-  initialSubTab?: 'sellers' | 'staff';
+  initialSubTab?: 'sellers' | 'staff' | 'suppliers';
 }
 
 export const PeopleManager: React.FC<PeopleManagerProps> = ({
@@ -54,8 +57,13 @@ export const PeopleManager: React.FC<PeopleManagerProps> = ({
   onDeleteStaff,
   initialSubTab = 'sellers',
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'sellers' | 'staff'>(initialSubTab);
-
+  const navigate = useNavigate();
+  const [activeSubTab, setActiveSubTab] = useState<'sellers' | 'staff' | 'suppliers'>(initialSubTab);
+  const TAB_ROUTES: Record<'sellers' | 'staff' | 'suppliers', string> = {
+    sellers: '/console/people/sellers',
+    staff: '/console/people/staff',
+    suppliers: '/console/people/suppliers',
+  };
   const subTabs = [
     {
       id: 'sellers' as const,
@@ -68,6 +76,12 @@ export const PeopleManager: React.FC<PeopleManagerProps> = ({
       label: 'کارکنان کارگاه',
       icon: Briefcase,
       badge: staff.length + owners.length > 0 ? toPersianDigits(staff.length + owners.length) : undefined,
+    },
+    {
+      id: 'suppliers' as const,
+      label: 'تأمین‌کنندگان',
+      icon: Truck,
+      badge: undefined,
     },
   ];
 
@@ -98,7 +112,7 @@ export const PeopleManager: React.FC<PeopleManagerProps> = ({
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveSubTab(tab.id)}
+                onClick={() => { setActiveSubTab(tab.id); navigate(TAB_ROUTES[tab.id]); }}
                 className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
                   isActive
                     ? 'bg-brand text-brand-on shadow-md font-black'
@@ -145,6 +159,10 @@ export const PeopleManager: React.FC<PeopleManagerProps> = ({
           onUpdateStaff={onUpdateStaff}
           onDeleteStaff={onDeleteStaff}
         />
+      )}
+
+      {activeSubTab === 'suppliers' && (
+        <SuppliersPage />
       )}
     </div>
   );

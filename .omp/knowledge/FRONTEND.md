@@ -3,8 +3,11 @@
 ## Entry & routing
 
 `src/main.tsx` → `src/App.tsx` — providers wrap BrowserRouter: Theme → Brand → Network → Auth → Cart → Favorites. Route table lives in App.tsx (see START-HERE). Guard: `ConsoleLayout` (anon → `/login?next=%2Fconsole`, non-console role → `/dashboard`) + per-route `RequirePermission` (→ `/console`); legacy `/workshop*` + `/controlpanel*` redirect client-side to `/console` equivalents.
-:`/console/suppliers` (Permission `suppliers.view`) → SuppliersPage — grid of SupplierCard components with search, city/category/status filters; `SupplierFormModal` for add/edit (inline modal); `/console/profile/supplier/:id` → SupplierProfilePage for detail view.
-:`/console/supply-orders` (Permission `purchasing.view`) → SupplyOrdersPage with tabs: Orders / Receipts / Costs; inline `PurchaseOrderFormModal` for add/edit with searchable supplier input + quick-create.
+:`/console/people` (Permission `people.view`) → PeoplePage — tabbed hub with فروشندگان (SellersManager), کارکنان کارگاه (StaffManager), and تأمین‌کنندگان (SuppliersPage embedded); each tab navigates to its own route (`/console/people/sellers`, `/console/people/staff`, `/console/people/suppliers`)
+:`/console/supply-orders` (Permission `purchasing.view`) → SupplyOrdersPage with tabs: Orders / Receipts / Costs; inline `PurchaseOrderFormModal` for add/edit with searchable supplier input + full `SupplierFormModal` for new supplier creation
+:`/console/settings/notifications` (Permission `settings.manage`) → NotificationsPage — notification settings manager
+:`/console/settings/users` (Permission `settings.manage`) → UsersPage — user management
+:`/console/settings/gallery` (Permission `settings.manage`) → GalleryPage — image gallery manager
 
 P0-D Unified Sales routes (`/console/*`), all with status filter tabs + loading skeleton placeholders:
 - `/console/sales-orders` (Permission `sales.view`) → SalesOrdersPage — list + status transitions, payment status badges, SALE movements
@@ -78,5 +81,20 @@ src/
 
 ## Website pages (`/console/website/*`, inside ConsoleLayout)
 
-- `ThemeSettingsPage`, `WebsiteSettingsPage` (marketing site settings — website_settings JSON blob), `ShopManagementPage`, `BlogManagerPage` (live in `pages/controlpanel/`, merged from the former separate `/controlpanel` surface).
-- Access: `website.manage` (website/theme/shop) and `blog.manage` (blog) via `RequirePermission`; author holds `blog.manage` only.
+
+## Console Sidebar Navigation (nav-config.ts)
+
+Desktop sidebar is **non-collapsible** with always-visible section headers. Menu groups:
+
+| Group | Items |
+|-------|-------|
+| (Dashboard) | داشبورد (`/console`) |
+| **انبار و موجودی** | انبار و موجودی, سفارشات خرید, مرجوعی و خرابی |
+| **توزیع و فروش** | فروش امانی و حواله‌ها, سفارش‌های فروشگاه |
+| **درحال توسعه** | سفارشات فروش, فروش فروشندگان, مشتریان, کانال‌های فروش, پرداخت‌های فروش |
+| **مدیریت** | افراد (`/console/people` — tabbed hub with sellers/staff/suppliers) |
+| **مالی و گزارش** | امور مالی, گزارش و تحلیل |
+| **وب‌سایت و فروشگاه** | تنظیمات وب‌سایت, ظاهر وب‌سایت, فروشگاه آنلاین, مدیریت وبلاگ |
+| **مدیریت سیستم** | تنظیمات و مدیریت, اطلاع‌رسانی, مدیریت کاربران, گالری تصاویر |
+
+## Website pages (`/console/website/*`, inside ConsoleLayout)

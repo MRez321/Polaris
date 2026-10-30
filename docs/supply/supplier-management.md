@@ -105,15 +105,16 @@ A card-based UI component following the SellersManager pattern:
 
 ### SupplierFormModal (`SupplierFormModal.tsx`)
 
-- **FormField pattern**: consistent label/hint/error with required markers
-- **Auto-generated ID/code**: not shown or editable
-- **Shop name**: required, validated
-- **Contact persons**: multiple entries, new entries appear below existing ones
-- **Phone numbers**: multiple entries, new entries appear below existing ones
+- **Placeholder-based labels**: no text under inputs; label text and hint examples are in the input placeholder
+- **Auto-generated code**: not shown or editable
+- **Shop name**: required, validated (red asterisk, error message below input)
+- **Contact persons**: multiple entries, each with name + mobile phone fields; new entries appear below existing ones
 - **City**: required, validated (supports Persian province names)
-- **Categories**: comma (`,`) and Persian comma (`،`) separated input
+- **Categories**: comma (`,`) and Persian comma (`،`) separated input with placeholder instructions
+- **Optional fields**: address, cooperation terms, payment terms, payment due days, min order amount, note
 - **Toggle switch** for active/inactive status
 - **Validation**: required fields checked before submit; error toasts on missing fields
+- **glass-card sections** matching SellerFormModal styling
 
 ### PurchaseOrderFormModal (`PurchaseOrderFormModal.tsx`)
 
@@ -146,31 +147,16 @@ A card-based UI component following the SellersManager pattern:
 
 The desktop sidebar is non-collapsible with always-visible section headers (matching the mobile SideMenu pattern). Menu groups:
 
-| Group | Route | Permission |
-|-------|-------|------------|
-| (Dashboard) | `/console` | `analytics.view` |
-| **انبار و موجودی** | — | — |
-| | انبار و موجودی | `/console/inventory` | `inventory.view` |
-| | تأمین‌کنندگان | `/console/suppliers` | `suppliers.view` |
-| | سفارشات خرید | `/console/supply-orders` | `purchasing.view` |
-| | مرجوعی و خرابی | `/console/returns` | `returns.view` |
-| **توزیع و فروش** | — | — |
-| | فروش امانی و حواله‌ها | `/console/consignments` | `consignments.view` |
-| | سفارش‌های فروشگاه | `/console/orders` | `orders.view` |
-| **درحال توسعه** | — | — |
-| | سفارشات فروش | `/console/sales-orders` | `sales.view` |
-| | فروش فروشندگان | `/console/seller-sales` | `seller-sales.view` |
-| | مشتریان | `/console/customers` | `customers.view` |
-| | کانال‌های فروش | `/console/sales-channels` | `channels.view` |
-| | پرداخت‌های فروش | `/console/sales-payments` | `payments.view` |
-| **اشخاص** | — | — |
-| | افراد | `/console/people` | `people.view` |
-| | کارکنان | `/console/people/staff` | `people.view` |
-| | تأمین‌کنندگان | `/console/suppliers` | `suppliers.view` |
-| | فروشندگان | `/console/people` | `people.view` |
-| **مالی و گزارش** | — | — |
-| | امور مالی | `/console/finances` | `finances.view` |
-| | گزارش و تحلیل | `/console/analytics` | `analytics.view` |
+| Group | Items | Routes | Permissions |
+|-------|-------|--------|-------------|
+| (Dashboard) | داشبورد | `/console` | `analytics.view` |
+| **انبار و موجودی** | انبار و موجودی, سفارشات خرید, مرجوعی و خرابی | `/console/inventory`, `/console/supply-orders`, `/console/returns` | `inventory.view`, `purchasing.view`, `returns.view` |
+| **توزیع و فروش** | فروش امانی و حواله‌ها, سفارش‌های فروشگاه | `/console/consignments`, `/console/orders` | `consignments.view`, `orders.view` |
+| **درحال توسعه** | سفارشات فروش, فروش فروشندگان, مشتریان, کانال‌های فروش, پرداخت‌های فروش | `/console/sales-orders`, `/console/seller-sales`, `/console/customers`, `/console/sales-channels`, `/console/sales-payments` | `sales.view`, `seller-sales.view`, `customers.view`, `channels.view`, `payments.view` |
+| **مدیریت** | افراد (tabbed hub: فروشندگان, کارکنان کارگاه, تأمین‌کنندگان) | `/console/people`, `/console/people/sellers`, `/console/people/staff`, `/console/people/suppliers` | `people.view`, `suppliers.view` |
+| **مالی و گزارش** | امور مالی, گزارش و تحلیل | `/console/finances`, `/console/analytics` | `finances.view`, `analytics.view` |
+| **وب‌سایت و فروشگاه** | تنظیمات وب‌سایت, ظاهر وب‌سایت, فروشگاه آنلاین, مدیریت وبلاگ | `/console/website/*` | `website.manage`, `blog.manage` |
+| **مدیریت سیستم** | تنظیمات و مدیریت, اطلاع‌رسانی, مدیریت کاربران, گالری تصاویر | `/console/settings`, `/console/settings/notifications`, `/console/settings/users`, `/console/settings/gallery` | `settings.manage` |
 
 ## Validation Rules
 
@@ -178,8 +164,8 @@ The desktop sidebar is non-collapsible with always-visible section headers (matc
 |-------|------|
 | `shopName` | Required, min 2 chars |
 | `city` | Required |
-| `contactPersons[*].name` | Required if contact person is filled |
-| `phones[*]` | Optional, but if filled must match Iranian phone format |
+| `contactPersons[*].name` | Required if contact person entry is present |
+| `contactPersons[*].phone` | Optional, but if filled must match Iranian phone format |
 | `categories` | Parsed by `,` and `،` separators |
 
 ## Usage Examples

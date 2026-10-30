@@ -24,12 +24,15 @@ import ConsignmentsPage from '@/modules/workshop/pages/ConsignmentsPage';
 import PeoplePage from '@/modules/workshop/pages/PeoplePage';
 import FinancesPage from '@/modules/workshop/pages/FinancesPage';
 import SettingsPage from '@/modules/workshop/pages/SettingsPage';
-import ReturnsPage from '@/modules/workshop/returns/ReturnsPage';
-import AnalyticsPage from '@/modules/workshop/analytics/AnalyticsPage';
+import NotificationsPage from '@/modules/workshop/pages/NotificationsPage';
+import UsersPage from '@/modules/workshop/pages/UsersPage';
+import GalleryPage from '@/modules/workshop/pages/GalleryPage';
 import SupplyPage from '@/modules/workshop/supply/SupplyPage';
 import SuppliersPage from '@/modules/workshop/supply/SuppliersPage';
 import SupplyOrdersPage from '@/modules/workshop/supply/SupplyOrdersPage';
 import SupplierProfilePage from '@/modules/workshop/supply/SupplierProfilePage';
+import ReturnsPage from '@/modules/workshop/returns/ReturnsPage';
+import AnalyticsPage from '@/modules/workshop/analytics/AnalyticsPage';
 import EntityProfilePage from '@/modules/workshop/pages/EntityProfilePage';
 import WebsiteSettingsPage from '@/pages/controlpanel/WebsiteSettingsPage';
 import ThemeSettingsPage from '@/pages/controlpanel/ThemeSettingsPage';
@@ -102,9 +105,11 @@ function App() {
                         </Route>
                         <Route element={<RequirePermission permission="people.view" />}>
                           <Route path="people" element={<PeoplePage />} />
+                          <Route path="people/sellers" element={<PeoplePage />} />
                           <Route path="people/staff" element={<PeoplePage />} />
                         </Route>
                         <Route element={<RequirePermission permission="suppliers.view" />}>
+                          <Route path="people/suppliers" element={<PeoplePage />} />
                           <Route path="supply" element={<SupplyPage />} />
                           <Route path="suppliers" element={<SuppliersPage />} />
                           <Route path="profile/supplier/:id" element={<SupplierProfilePage />} />
@@ -123,6 +128,9 @@ function App() {
                         </Route>
                         <Route element={<RequirePermission permission="settings.manage" />}>
                           <Route path="settings" element={<SettingsPage />} />
+                          <Route path="settings/notifications" element={<NotificationsPage />} />
+                          <Route path="settings/users" element={<UsersPage />} />
+                          <Route path="settings/gallery" element={<GalleryPage />} />
                         </Route>
                         <Route element={<RequirePermission permission="returns.view" />}>
                           <Route path="returns" element={<ReturnsPage />} />

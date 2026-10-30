@@ -5,7 +5,7 @@ import * as supplierSvc from './supplierService.js';
 import * as purchaseSvc from './purchaseService.js';
 import { badRequest, pathParam } from '../../core/utils/apiError.js';
 import { requestUserAgent } from '../../core/utils/requestMeta.js';
-
+import { toSupplierDto } from '../../models/mappers.js';
 // Zod schemas mirror the service interfaces but are enforced at the API
 // boundary (spec: Zod at every boundary, error shape { error: string }).
 // Actor id comes from the authenticated session (req.auth), populated by
@@ -69,44 +69,44 @@ export async function listSuppliers(req: Request, res: Response): Promise<void> 
         ...params,
         isActive: params.isActive === undefined ? undefined : params.isActive === 'true',
     });
-    res.json(result);
+    res.json({ rows: result.rows.map(toSupplierDto), total: result.total });
 }
 
 export async function getSupplier(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه تأمین‌کننده');
     const supplier = await supplierSvc.getSupplier(id);
-    res.json(supplier);
+    res.json(toSupplierDto(supplier));
 }
 
 export async function getSupplierDetail(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه تأمین‌کننده');
     const detail = await supplierSvc.getSupplierDetail(id);
-    res.json(detail);
+    res.json({ ...detail, profile: toSupplierDto(detail.profile) });
 }
 
 export async function createSupplier(req: Request, res: Response): Promise<void> {
     const input = supplierSchema.parse(req.body);
     const row = await supplierSvc.createSupplier(input, requestMeta(req), actor(req));
-    res.status(201).json(row);
+    res.status(201).json(toSupplierDto(row));
 }
 
 export async function updateSupplier(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه تأمین‌کننده');
     const input = supplierSchema.partial().parse(req.body);
     const row = await supplierSvc.updateSupplier(id, input, requestMeta(req), actor(req));
-    res.json(row);
+    res.json(toSupplierDto(row));
 }
 
 export async function activateSupplier(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه تأمین‌کننده');
     const row = await supplierSvc.setSupplierActive(id, true, requestMeta(req), actor(req));
-    res.json(row);
+    res.json(toSupplierDto(row));
 }
 
 export async function deactivateSupplier(req: Request, res: Response): Promise<void> {
     const id = pathParam(req, 'id', 'شناسه تأمین‌کننده');
     const row = await supplierSvc.setSupplierActive(id, false, requestMeta(req), actor(req));
-    res.json(row);
+    res.json(toSupplierDto(row));
 }
 
 export async function listSupplierPrices(req: Request, res: Response): Promise<void> {

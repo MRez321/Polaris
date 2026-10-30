@@ -763,3 +763,38 @@ export interface SalesPayment {
     isDeleted?: boolean;
     deletedAt?: string;
 }
+
+export interface SupplierContact {
+    id?: string;
+    name: string;
+    phone?: string;
+}
+
+export interface Supplier {
+    id: string;
+    code: string;
+    name: string;
+    shopName: string;
+    contactPersons?: SupplierContact[];
+    phones?: string[];
+    city?: string;
+    address?: string;
+    categories?: string[];
+    contactPerson?: string;
+    phone?: string;
+    email?: string;
+    isActive: boolean;
+    cooperationTerms?: string;
+    paymentTerms?: string;
+    paymentDueDays?: number;
+    minOrderAmount?: number;
+    note?: string;
+    totalPurchases?: number;
+    totalPaid?: number;
+    orderCount?: number;
+    createdBy?: string;
+    createdAt: string;
+    updatedAt: string;
+    deletedAt?: string;
+    deletedBy?: string;
+}

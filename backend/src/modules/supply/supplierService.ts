@@ -14,7 +14,9 @@ import {
 } from '../../schema/index.js';
 import { badRequest, notFound } from '../../core/utils/apiError.js';
 import { entityActor, recordAudit } from '../../core/services/auditService.js';
-// ---------------------------------------------------------------------------
+
+type SupplierRow = typeof suppliers.$inferSelect;
+type SupplierPriceRow = typeof supplierPrices.$inferSelect;
 // Supplier service (P0-C): suppliers + append-only price history.
 // isActive is a soft toggle; rows are never deleted here (trash owns that).
 // ---------------------------------------------------------------------------
@@ -73,7 +75,7 @@ function genCode(prefix: string): string {
         .padStart(2, '0')}`;
 }
 
-export async function listSuppliers(params: SupplierListParams): Promise<{ rows: unknown[]; total: number }> {
+export async function listSuppliers(params: SupplierListParams): Promise<{ rows: SupplierRow[]; total: number }> {
     const page = Math.max(1, Math.floor(params.page ?? 1));
     const limit = Math.min(100, Math.max(1, Math.floor(params.limit ?? 20)));
     const conds = [isNull(suppliers.deletedAt)];
@@ -102,14 +104,14 @@ export async function listSuppliers(params: SupplierListParams): Promise<{ rows:
     return { rows, total };
 }
 
-export async function getSupplier(id: string) {
+export async function getSupplier(id: string): Promise<SupplierRow> {
     const rows = await db.select().from(suppliers).where(and(eq(suppliers.id, id), isNull(suppliers.deletedAt)));
     const row = rows[0];
     if (!row) throw notFound('تأمین‌کننده یافت نشد');
     return row;
 }
 
-export async function createSupplier(input: SupplierInput, meta: { ip?: string; userAgent?: string }, actorId?: string) {
+export async function createSupplier(input: SupplierInput, meta: { ip?: string; userAgent?: string }, actorId?: string): Promise<SupplierRow> {
     const supplierName = input.shopName || input.name;
     if (!supplierName || supplierName.trim().length === 0) throw badRequest('نام فروشگاه تأمین‌کننده الزامی است');
     if (input.code) {
@@ -154,7 +156,7 @@ export async function createSupplier(input: SupplierInput, meta: { ip?: string; 
     return after;
 
 }
-export async function updateSupplier(id: string, input: Partial<SupplierInput>, meta: { ip?: string; userAgent?: string }, actorId?: string) {
+export async function updateSupplier(id: string, input: Partial<SupplierInput>, meta: { ip?: string; userAgent?: string }, actorId?: string): Promise<SupplierRow> {
     const existing = await getSupplier(id);
     const before = { ...existing };
     if (input.code && input.code !== existing.code) {
@@ -200,7 +202,7 @@ export async function updateSupplier(id: string, input: Partial<SupplierInput>, 
 }
 
 
-export async function setSupplierActive(id: string, active: boolean, meta: { ip?: string; userAgent?: string }, actorId?: string) {
+export async function setSupplierActive(id: string, active: boolean, meta: { ip?: string; userAgent?: string }, actorId?: string): Promise<SupplierRow> {
     const before = await getSupplier(id);
     await db.update(suppliers).set({ isActive: active, updatedAt: new Date() }).where(eq(suppliers.id, id));
     const after = await getSupplier(id);

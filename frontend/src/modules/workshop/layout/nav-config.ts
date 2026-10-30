@@ -18,7 +18,7 @@ import {
   ShoppingBag,
   Users,
   UserCheck,
-  Truck,
+  ShoppingCart,
   ArrowLeftRight,
   CreditCard,
   Settings,
@@ -26,9 +26,9 @@ import {
   Globe,
   Palette,
   Newspaper,
-  ShoppingCart,
+  Bell,
+  Images,
   RotateCcw,
-  Briefcase,
 } from 'lucide-react';
 
 export interface NavItemConfig {
@@ -63,7 +63,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
       { to: '/console', label: 'داشبورد', icon: LayoutDashboard, end: true, permission: 'analytics.view' },
     ],
   },
-  // === انبار و موجودی (renamed from تأمین و موجودی) ===
+  // === انبار و موجودی ===
   {
     id: 'inventory',
     label: 'انبار و موجودی',
@@ -75,12 +75,11 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         badge: 'lowStock',
         permission: 'inventory.view',
       },
-      { to: '/console/suppliers', label: 'تأمین‌کنندگان', icon: Truck, permission: 'suppliers.view' },
       { to: '/console/supply-orders', label: 'سفارشات خرید', icon: ShoppingCart, permission: 'purchasing.view' },
       { to: '/console/returns', label: 'مرجوعی و خرابی', icon: RotateCcw, permission: 'returns.view' },
     ],
   },
-  // === توزیع و فروش (renamed from فروش و مشتری) ===
+  // === توزیع و فروش ===
   {
     id: 'distribution',
     label: 'توزیع و فروش',
@@ -95,7 +94,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
       { to: '/console/orders', label: 'سفارش‌های فروشگاه', icon: ShoppingBag, permission: 'orders.view' },
     ],
   },
-  // === درحال توسعه (Development) ===
+  // === درحال توسعه ===
   {
     id: 'development',
     label: 'درحال توسعه',
@@ -112,17 +111,15 @@ export const NAV_GROUPS: NavGroupConfig[] = [
       },
     ],
   },
-  // === اشخاص (People) ===
+  // === مدیریت ===
   {
-    id: 'people',
-    label: 'اشخاص',
+    id: 'management',
+    label: 'مدیریت',
     items: [
       { to: '/console/people', label: 'افراد', icon: Users, permission: 'people.view' },
-      { to: '/console/people/staff', label: 'کارکنان', icon: Briefcase, permission: 'people.view' },
-      { to: '/console/suppliers', label: 'تأمین‌کنندگان', icon: Truck, permission: 'suppliers.view' },
-      { to: '/console/people', label: 'فروشندگان', icon: UserCheck, permission: 'people.view' },
     ],
   },
+  // === مالی و گزارش ===
   {
     id: 'financials',
     label: 'مالی و گزارش',
@@ -131,6 +128,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
       { to: '/console/analytics', label: 'گزارش و تحلیل', icon: BarChart3, permission: 'analytics.view' },
     ],
   },
+  // === وب‌سایت و فروشگاه ===
   {
     id: 'website',
     label: 'وب‌سایت و فروشگاه',
@@ -141,11 +139,15 @@ export const NAV_GROUPS: NavGroupConfig[] = [
       { to: '/console/website/blog', label: 'مدیریت وبلاگ', icon: Newspaper, permission: 'blog.manage' },
     ],
   },
+  // === مدیریت سیستم ===
   {
     id: 'system',
-    label: 'سیستم',
+    label: 'مدیریت سیستم',
     items: [
       { to: '/console/settings', label: 'تنظیمات و مدیریت', icon: Settings, permission: 'settings.manage' },
+      { to: '/console/settings/notifications', label: 'اطلاع‌رسانی', icon: Bell, permission: 'settings.manage' },
+      { to: '/console/settings/users', label: 'مدیریت کاربران', icon: Users, permission: 'settings.manage' },
+      { to: '/console/settings/gallery', label: 'گالری تصاویر', icon: Images, permission: 'settings.manage' },
     ],
   },
 ];

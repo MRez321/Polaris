@@ -417,3 +417,37 @@ export function toSalesPaymentDto(row: SalesPaymentRow): SalesPayment {
         ...(row.deletedAt ? { deletedAt: iso(row.deletedAt) } : {}),
     };
 }
+
+// ---------------------------------------------------------------------------
+// P0-C: Supply chain — Supplier DTO (snake_case DB → camelCase frontend)
+// ---------------------------------------------------------------------------
+
+import type { Supplier as SupplierDto } from '../types/index.js';
+type SupplierRow = typeof schema.suppliers.$inferSelect;
+
+export function toSupplierDto(row: SupplierRow): SupplierDto {
+    return {
+        id: row.id,
+        code: row.code ?? '',
+        name: row.name ?? row.shopName ?? '',
+        shopName: row.shopName ?? row.name ?? '',
+        contactPersons: row.contactPersons ?? undefined,
+        phones: row.phones ?? undefined,
+        city: row.city ?? undefined,
+        address: row.address ?? undefined,
+        categories: row.categories ?? undefined,
+        contactPerson: row.contactPerson ?? undefined,
+        phone: row.phone ?? undefined,
+        email: row.email ?? undefined,
+        isActive: row.isActive,
+        cooperationTerms: row.cooperationTerms ?? undefined,
+        paymentTerms: row.paymentTerms ?? undefined,
+        paymentDueDays: row.paymentDueDays ?? undefined,
+        minOrderAmount: row.minOrderAmount ? Number(row.minOrderAmount) : undefined,
+        note: row.note ?? undefined,
+        createdAt: iso(row.createdAt),
+        updatedAt: iso(row.updatedAt),
+        ...(row.deletedAt ? { deletedAt: iso(row.deletedAt) } : {}),
+        ...(row.deletedBy ? { deletedBy: row.deletedBy } : {}),
+    };
+}
