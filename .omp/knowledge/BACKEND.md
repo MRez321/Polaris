@@ -87,7 +87,10 @@ POST /purchase-orders/:id/receipts, GET /purchase-orders/:id/receipts, GET /rece
 POST /purchase-orders/:id/costs, PATCH/DELETE /purchase-orders/:id/costs/:costId, GET /purchase-orders/:id/costs
 GET /purchase-orders/:id/landed-cost
 ```
-Permissions: `suppliers.view/manage`, `purchasing.view/manage/approve/receive`, `supplycosts.manage`, `purchasefinance.view`. All admin-only via the workshopAdminChain. See `docs/superpowers/specs/2026-10-poc-supply.md` for full design.
+- Supplier CRUD endpoints return camelCase DTOs via `toSupplierDto()` (mappers.ts),
+  converting snake_case DB columns (shop_name, is_active, contact_persons) to
+  frontend-facing fields (shopName, isActive, contactPersons). The service layer
+  returns raw rows; the controller layer applies the mapper.
 
 `/api/company` (companyController): GET returns the full CompanyBranding JSON from `company_settings.data`; PUT validates with `companySchema` (Zod) which includes optional `analyticsSettings {gaMeasurementId, websiteUrl}` and `dashboardPrefs` (v2 layout object `{version: 2, order, hidden, cols, collapsed, presets}` — see FRONTEND.md) — `updateCompany` shallow-merges fields into the JSON blob (nested objects replace wholesale, so callers always send the complete nested object).
 
