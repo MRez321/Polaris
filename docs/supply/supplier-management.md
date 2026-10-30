@@ -117,11 +117,14 @@ A card-based UI component following the SellersManager pattern:
 
 ### PurchaseOrderFormModal (`PurchaseOrderFormModal.tsx`)
 
-- **Searchable supplier input**: type to filter suppliers, click to select
-- **Add supplier button**: opens quick-create form for suppliers (inline)
-- **Persian Calendar** (`DatePicker` component with Shamsi calendar)
-- **Line items**: dynamic table for SKU, quantity, unit, unit cost
-- **Auto-calculated totals**: subtotal, additional costs, grand total
+- **Searchable supplier input**: all suppliers shown by default; type to filter; click to select
+- **Add supplier button**: opens the full `SupplierFormModal` via `onRequestAddSupplier` callback for creating a new supplier
+- **Persian Calendar** (`DatePicker` component with Shamsi calendar) for expected delivery date
+- **Transportation cost** field (تومان)
+- **Post tracking code** field for postal tracking
+- **Line items**: dynamic table with item name/SKU, type, quantity, unit, unit cost (mimics ItemFormModal styling)
+- **Auto-calculated totals**: subtotal, transportation cost, additional costs, grand total
+- **glass-card sections** with `FormField` pattern matching SellerFormModal/ItemFormModal styling
 - **Persian digit formatting** throughout
 
 ### SupplierProfilePage (`SupplierProfilePage.tsx`)
@@ -138,6 +141,36 @@ A card-based UI component following the SellersManager pattern:
 | admin | ✓ | ✓ | ✓ |
 | author | ✓ | (via blog.manage) | ✗ |
 | staff | ✓ | (limited) | (limited) |
+
+## Console Sidebar Navigation
+
+The desktop sidebar is non-collapsible with always-visible section headers (matching the mobile SideMenu pattern). Menu groups:
+
+| Group | Route | Permission |
+|-------|-------|------------|
+| (Dashboard) | `/console` | `analytics.view` |
+| **انبار و موجودی** | — | — |
+| | انبار و موجودی | `/console/inventory` | `inventory.view` |
+| | تأمین‌کنندگان | `/console/suppliers` | `suppliers.view` |
+| | سفارشات خرید | `/console/supply-orders` | `purchasing.view` |
+| | مرجوعی و خرابی | `/console/returns` | `returns.view` |
+| **توزیع و فروش** | — | — |
+| | فروش امانی و حواله‌ها | `/console/consignments` | `consignments.view` |
+| | سفارش‌های فروشگاه | `/console/orders` | `orders.view` |
+| **درحال توسعه** | — | — |
+| | سفارشات فروش | `/console/sales-orders` | `sales.view` |
+| | فروش فروشندگان | `/console/seller-sales` | `seller-sales.view` |
+| | مشتریان | `/console/customers` | `customers.view` |
+| | کانال‌های فروش | `/console/sales-channels` | `channels.view` |
+| | پرداخت‌های فروش | `/console/sales-payments` | `payments.view` |
+| **اشخاص** | — | — |
+| | افراد | `/console/people` | `people.view` |
+| | کارکنان | `/console/people/staff` | `people.view` |
+| | تأمین‌کنندگان | `/console/suppliers` | `suppliers.view` |
+| | فروشندگان | `/console/people` | `people.view` |
+| **مالی و گزارش** | — | — |
+| | امور مالی | `/console/finances` | `finances.view` |
+| | گزارش و تحلیل | `/console/analytics` | `analytics.view` |
 
 ## Validation Rules
 
@@ -171,7 +204,10 @@ const supplier = await supplyApi.createSupplier({
 const order = await supplyApi.createPurchaseOrder({
   supplierId: 'uuid',
   expectedDate: '2024-10-20',
-  items: [{ skuId: 'sku-uuid', quantity: 100, unit: 'بسته', unitCost: 500000 }],
+  paymentTerms: '۳۰ روزه',
   additionalCosts: 50000,
+  transportationCost: 20000,
+  trackingCode: '1234567890123',
+  items: [{ skuId: 'sku-uuid', quantity: 100, unit: 'بسته', unitCost: 500000 }],
 });
 ```

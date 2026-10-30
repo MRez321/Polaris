@@ -28,6 +28,7 @@ import {
   Newspaper,
   ShoppingCart,
   RotateCcw,
+  Briefcase,
 } from 'lucide-react';
 
 export interface NavItemConfig {
@@ -54,26 +55,36 @@ export interface NavGroupConfig {
  * Order within a group is the recommended left-to-right reading order.
  */
 export const NAV_GROUPS: NavGroupConfig[] = [
+  // Dashboard is its own group, first thing in the menu.
   {
-    id: 'management',
-    label: 'مدیریت',
+    id: 'dashboard',
+    label: '',
     items: [
       { to: '/console', label: 'داشبورد', icon: LayoutDashboard, end: true, permission: 'analytics.view' },
     ],
   },
+  // === انبار و موجودی (renamed from تأمین و موجودی) ===
   {
-    id: 'supply-stock',
-    label: 'تأمین و موجودی',
+    id: 'inventory',
+    label: 'انبار و موجودی',
     items: [
       {
         to: '/console/inventory',
-        label: 'کالا و موجودی',
+        label: 'انبار و موجودی',
         icon: Package,
         badge: 'lowStock',
         permission: 'inventory.view',
       },
       { to: '/console/suppliers', label: 'تأمین‌کنندگان', icon: Truck, permission: 'suppliers.view' },
       { to: '/console/supply-orders', label: 'سفارشات خرید', icon: ShoppingCart, permission: 'purchasing.view' },
+      { to: '/console/returns', label: 'مرجوعی و خرابی', icon: RotateCcw, permission: 'returns.view' },
+    ],
+  },
+  // === توزیع و فروش (renamed from فروش و مشتری) ===
+  {
+    id: 'distribution',
+    label: 'توزیع و فروش',
+    items: [
       {
         to: '/console/consignments',
         label: 'فروش امانی و حواله‌ها',
@@ -81,13 +92,14 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         badge: 'overdue',
         permission: 'consignments.view',
       },
+      { to: '/console/orders', label: 'سفارش‌های فروشگاه', icon: ShoppingBag, permission: 'orders.view' },
     ],
   },
+  // === درحال توسعه (Development) ===
   {
-    id: 'sales-customer',
-    label: 'فروش و مشتری',
+    id: 'development',
+    label: 'درحال توسعه',
     items: [
-      { to: '/console/orders', label: 'سفارش‌های فروشگاه', icon: ShoppingBag, permission: 'orders.view' },
       { to: '/console/sales-orders', label: 'سفارشات فروش', icon: ShoppingBag, permission: 'sales.view' },
       { to: '/console/seller-sales', label: 'فروش فروشندگان', icon: Users, permission: 'seller-sales.view' },
       { to: '/console/customers', label: 'مشتریان', icon: UserCheck, permission: 'customers.view' },
@@ -98,8 +110,17 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         icon: CreditCard,
         permission: 'payments.view',
       },
-      { to: '/console/people', label: 'افراد (پرسنل و فروشندگان)', icon: Users, permission: 'people.view' },
-      { to: '/console/returns', label: 'مرجوعی و خرابی', icon: RotateCcw, permission: 'returns.view' },
+    ],
+  },
+  // === اشخاص (People) ===
+  {
+    id: 'people',
+    label: 'اشخاص',
+    items: [
+      { to: '/console/people', label: 'افراد', icon: Users, permission: 'people.view' },
+      { to: '/console/people/staff', label: 'کارکنان', icon: Briefcase, permission: 'people.view' },
+      { to: '/console/suppliers', label: 'تأمین‌کنندگان', icon: Truck, permission: 'suppliers.view' },
+      { to: '/console/people', label: 'فروشندگان', icon: UserCheck, permission: 'people.view' },
     ],
   },
   {

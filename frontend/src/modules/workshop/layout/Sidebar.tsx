@@ -27,19 +27,17 @@ export const Sidebar: React.FC = () => {
   return (
     <aside className="w-64 shrink-0 hidden md:block">
       <div className="sticky top-20 flex flex-col glass-panel rounded-2xl p-2 shadow-xl transition-all">
-        <div className="px-3 py-2 text-[11px] font-black text-stone-600 dark:text-gray-400 tracking-wider">
-          سیستم مدیریت پولاریس
-        </div>
-
         {/* Scrollable nav so the sidebar never overflows on shorter viewports. */}
         <nav className="flex-1 overflow-y-auto min-h-0 space-y-1">
           {visibleGroups.map((group) => {
             return (
               <div key={group.id} className="mb-4 last:mb-0">
                 {/* Section header — always visible, non-collapsible */}
-                <p className="px-3 pb-2 text-[10px] font-black tracking-wider text-stone-500 dark:text-gray-500 uppercase">
-                  {group.label}
-                </p>
+                {group.label && (
+                  <p className="px-3 pb-2 text-[10px] font-black tracking-wider text-stone-500 dark:text-gray-500 uppercase">
+                    {group.label}
+                  </p>
+                )}
 
                 <div className="space-y-0.5">
                   {group.items.map((item) => {

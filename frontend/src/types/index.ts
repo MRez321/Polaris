@@ -810,6 +810,8 @@ export interface PurchaseOrderItem {
   id: string;
   purchaseId: string;
   skuId: string;
+  name?: string;
+  type?: string;
   quantity: number;
   receivedQuantity: number;
   unitCost: number;
@@ -826,6 +828,7 @@ export interface PurchaseOrder {
   additionalCosts: number;
   totalAmount: number;
   expectedDate?: string;
+  trackingCode?: string;
   paymentTerms?: string;
   note?: string;
   createdAt: string;

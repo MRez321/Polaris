@@ -503,6 +503,8 @@ export interface PurchaseOrderPayload {
   paymentTerms?: string;
   note?: string;
   additionalCosts?: number;
+  transportationCost?: number;
+  trackingCode?: string;
   items: { skuId: string; quantity: number; unit?: string; unitCost: number }[];
 }
 

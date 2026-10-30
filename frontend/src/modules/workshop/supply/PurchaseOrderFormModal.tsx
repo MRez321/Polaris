@@ -5,12 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { FormField } from '@/components/common/FormField';
 import { DatePicker } from '@/components/ui/date-picker';
-import { Plus, Trash2, Search } from 'lucide-react';
+import { Plus, Trash2, Search, Package } from 'lucide-react';
 import type { Supplier, PurchaseOrder, PurchaseOrderItem } from '@/types';
 import type { PurchaseOrderPayload } from '@/lib/api';
-import { toPersianDigits } from '@/utils/persian';
-import { supplyApi, getApiErrorMessage } from '@/lib/api';
-import { toast } from 'sonner';
+import { toPersianDigits, formatToman } from '@/utils/persian';
 import { useAuth } from '@/context/AuthContext';
 
 interface PurchaseOrderFormModalProps {
@@ -20,11 +18,13 @@ interface PurchaseOrderFormModalProps {
   editOrder?: PurchaseOrder | null;
   suppliers: Supplier[];
   saving?: boolean;
-  onAddSupplier?: (supplier: Supplier) => void;
+  onRequestAddSupplier?: () => void;
 }
 
 interface LineForm {
   skuId: string;
+  itemName: string;
+  itemType: string;
   quantity: string;
   unit: string;
   unitCost: string;
@@ -41,39 +41,40 @@ export const PurchaseOrderFormModal: React.FC<PurchaseOrderFormModalProps> = ({
   editOrder,
   suppliers,
   saving,
-  onAddSupplier,
-}) => {
+  onRequestAddSupplier,
+}
+ ) => {
   const { hasPermission } = useAuth();
   const [supplierId, setSupplierId] = useState('');
   const [expectedDate, setExpectedDate] = useState<Date | null>(null);
   const [paymentTerms, setPaymentTerms] = useState('');
   const [additionalCosts, setAdditionalCosts] = useState('');
+  const [transportationCost, setTransportationCost] = useState('');
+  const [postTrackingCode, setPostTrackingCode] = useState('');
   const [note, setNote] = useState('');
-  const [lines, setLines] = useState<LineForm[]>([{ skuId: '', quantity: '', unit: '', unitCost: '' }]);
+  const [lines, setLines] = useState<LineForm[]>([{ skuId: '', itemName: '', itemType: '', quantity: '', unit: '', unitCost: '' }]);
   const [supplierNameError, setSupplierNameError] = useState<string | null>(null);
-
-  // Supplier quick-create
   const [supplierSearch, setSupplierSearch] = useState('');
-  const [showQuickCreate, setShowQuickCreate] = useState(false);
-  const [quickSupplierName, setQuickSupplierName] = useState('');
-  const [quickSupplierCity, setQuickSupplierCity] = useState('');
-  const [creatingSupplier, setCreatingSupplier] = useState(false);
 
   const canManageSupplier = hasPermission('suppliers.manage') || hasPermission('purchasing.manage');
-
-  // Filter active suppliers by search
+  // Show all suppliers by default (no search), filtered when searching
   const filteredSupplierOptions = useMemo(() => {
     const query = supplierSearch.toLowerCase();
+    if (!query) {
+      // Show all active suppliers by default, limited for performance
+      return suppliers
+        .filter((s) => s.isActive !== false)
+        .slice(0, 30);
+    }
     return suppliers
       .filter((s) => s.isActive !== false)
       .filter((s) => {
-        if (!query) return true;
         return (
           s.shopName?.toLowerCase().includes(query) ||
           s.code?.toLowerCase().includes(query)
         );
       })
-      .slice(0, 20); // Limit to 20 options for performance
+      .slice(0, 20);
   }, [suppliers, supplierSearch]);
 
   useEffect(() => {
@@ -82,26 +83,30 @@ export const PurchaseOrderFormModal: React.FC<PurchaseOrderFormModalProps> = ({
       setExpectedDate(editOrder.expectedDate ? new Date(editOrder.expectedDate) : null);
       setPaymentTerms(editOrder.paymentTerms ?? '');
       setAdditionalCosts(editOrder.additionalCosts?.toString() ?? '');
+      setPostTrackingCode(editOrder.trackingCode ?? '');
       setNote(editOrder.note ?? '');
       if (editOrder.items && editOrder.items.length > 0) {
         setLines(
           editOrder.items.map((item: PurchaseOrderItem) => ({
             skuId: item.skuId ?? '',
+            itemName: item.name ?? '',
+            itemType: item.type ?? '',
             quantity: item.quantity.toString(),
             unit: item.unit ?? '',
             unitCost: item.unitCost.toString(),
           }))
         );
       } else {
-        setLines([{ skuId: '', quantity: '', unit: '', unitCost: '' }]);
+        setLines([{ skuId: '', itemName: '', itemType: '', quantity: '', unit: '', unitCost: '' }]);
       }
     } else {
       setSupplierId('');
       setExpectedDate(null);
       setPaymentTerms('');
       setAdditionalCosts('');
+      setPostTrackingCode('');
       setNote('');
-      setLines([{ skuId: '', quantity: '', unit: '', unitCost: '' }]);
+      setLines([{ skuId: '', itemName: '', itemType: '', quantity: '', unit: '', unitCost: '' }]);
     }
     setSupplierNameError(null);
   }, [editOrder, isOpen]);
@@ -110,15 +115,12 @@ export const PurchaseOrderFormModal: React.FC<PurchaseOrderFormModalProps> = ({
   useEffect(() => {
     if (!isOpen) {
       setSupplierSearch('');
-      setShowQuickCreate(false);
-      setQuickSupplierName('');
-      setQuickSupplierCity('');
-      setCreatingSupplier(false);
     }
   }, [isOpen]);
 
+  // --- Line items ---
   const addLine = () => {
-    setLines([...lines, { skuId: '', quantity: '', unit: '', unitCost: '' }]);
+    setLines([...lines, { skuId: '', itemName: '', itemType: '', quantity: '', unit: '', unitCost: '' }]);
   };
 
   const removeLine = (idx: number) => {
@@ -137,39 +139,11 @@ export const PurchaseOrderFormModal: React.FC<PurchaseOrderFormModalProps> = ({
     return sum + qty * cost;
   }, 0);
 
-  const totalCost = subtotal + (Number(additionalCosts) || 0);
+  const transportation = Number(transportationCost) || 0;
+  const additional = Number(additionalCosts) || 0;
+  const totalCost = subtotal + transportation + additional;
 
-  // --- Quick supplier creation ---
-  const handleQuickCreateSupplier = async () => {
-    if (!quickSupplierName.trim()) {
-      toast.error('نام فروشگاه الزامی است');
-      return;
-    }
-    if (!quickSupplierCity.trim()) {
-      toast.error('شهر الزامی است');
-      return;
-    }
-    setCreatingSupplier(true);
-    try {
-      const created = await supplyApi.createSupplier({
-        shopName: quickSupplierName.trim(),
-        city: quickSupplierCity.trim(),
-      });
-      setShowQuickCreate(false);
-      setQuickSupplierName('');
-      setQuickSupplierCity('');
-      setSupplierId(created.id);
-      setSupplierNameError(null);
-      if (onAddSupplier) {
-        onAddSupplier(created);
-      }
-      toast.success(`تأمین‌کننده ${created.code} - ${created.shopName} اضافه و انتخاب شد`);
-    } catch (e) {
-      toast.error(getApiErrorMessage(e));
-    } finally {
-      setCreatingSupplier(false);
-    }
-  };
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,7 +157,9 @@ export const PurchaseOrderFormModal: React.FC<PurchaseOrderFormModalProps> = ({
       supplierId,
       expectedDate: expectedDate ? expectedDate.toISOString().split('T')[0] : undefined,
       paymentTerms: paymentTerms || undefined,
-      additionalCosts: additionalCosts ? Number(additionalCosts) : undefined,
+      additionalCosts: additional ? additional : undefined,
+      transportationCost: transportation ? transportation : undefined,
+      trackingCode: postTrackingCode || undefined,
       note: note || undefined,
       items: validLines.map((l) => ({
         skuId: l.skuId,
@@ -194,6 +170,8 @@ export const PurchaseOrderFormModal: React.FC<PurchaseOrderFormModalProps> = ({
     });
   };
 
+  const selectedSupplier = suppliers.find((s) => s.id === supplierId);
+
   return (
     <Modal
       isOpen={isOpen}
@@ -202,35 +180,43 @@ export const PurchaseOrderFormModal: React.FC<PurchaseOrderFormModalProps> = ({
       subtitle={editOrder ? 'به‌روزرسانی جزئیات سفارش' : 'ثبت سفارش خرید جدید از تأمین‌کننده'}
       maxWidth="4xl"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 text-stone-900 dark:text-white">
         {/* Supplier Selection with Search & Quick Create */}
-        <div className="space-y-2">
+        <div className="p-4 rounded-2xl glass-card space-y-3">
           <FormField
             id="po-supplier"
             label="تأمین‌کننده"
             required
             error={supplierNameError || undefined}
+            hint="جستجو و انتخاب تأمین‌کننده، یا ساخت تأمین‌کننده جدید"
           >
             <div className="space-y-2">
               {/* Search input */}
               <div className="relative">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-                <Input
-                  placeholder="جستجوی تأمین‌کننده..."
+                <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                <input
+                  type="text"
+                  placeholder="جستجوی تأمین‌کننده یا نمایش همه..."
                   value={supplierSearch}
                   onChange={(e) => setSupplierSearch(e.target.value)}
-                  className={supplierNameError ? 'border-rose-500 focus:ring-rose-500' : undefined}
+                  className={`w-full pl-4 pr-10 py-2.5 rounded-xl glass-input text-xs sm:text-sm focus:border-brand outline-none ${
+                    supplierNameError ? 'border-rose-500 focus:ring-rose-500' : undefined
+                  }`}
                 />
               </div>
 
               {/* Active selection display */}
-              {supplierId && (
-                <div className="flex items-center justify-between p-2 rounded-lg bg-stone-100 dark:bg-black/30">
-                  <span className="text-sm font-medium text-stone-900 dark:text-white">
-                    {suppliers.find((s) => s.id === supplierId)?.shopName ||
-                      suppliers.find((s) => s.id === supplierId)?.code ||
-                      'انتخاب شده'}
-                  </span>
+              {supplierId && selectedSupplier && (
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-stone-100 dark:bg-black/40 border border-black/5 dark:border-white/5">
+                  <div>
+                    <span className="text-sm font-black text-stone-900 dark:text-white">
+                      {selectedSupplier.shopName}
+                    </span>
+                    <span className="mx-2 text-stone-300">|</span>
+                    <span className="text-xs text-stone-400 font-mono">
+                      {toPersianDigits(selectedSupplier.code)}
+                    </span>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setSupplierId('')}
@@ -241,92 +227,56 @@ export const PurchaseOrderFormModal: React.FC<PurchaseOrderFormModalProps> = ({
                 </div>
               )}
 
-              {/* Dropdown of matching suppliers */}
-              {supplierSearch && !supplierId && (
-                <div className="max-h-48 overflow-y-auto border border-stone-200 dark:border-white/10 rounded-lg bg-white dark:bg-[#16161a]">
-                  {filteredSupplierOptions.length > 0 ? (
-                    filteredSupplierOptions.map((s) => (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => {
-                          setSupplierId(s.id);
-                          setSupplierSearch('');
-                          setSupplierNameError(null);
-                        }}
-                        className="w-full flex items-center justify-between p-2 text-right hover:bg-stone-100 dark:hover:bg-white/5 transition-colors first:rounded-t-lg last:rounded-b-lg"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-stone-400 dark:text-gray-500">
-                            {toPersianDigits(s.code)}
-                          </span>
-                          <span className="text-sm font-medium text-stone-900 dark:text-white">
-                            {s.shopName}
-                          </span>
-                        </div>
+              {/* Dropdown of matching suppliers or all suppliers */}
+              {!supplierId && filteredSupplierOptions.length > 0 && (
+                <div className="max-h-56 overflow-y-auto border border-stone-200 dark:border-white/10 rounded-xl bg-white dark:bg-[#16161a]">
+                  {filteredSupplierOptions.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => {
+                        setSupplierId(s.id);
+                        setSupplierSearch('');
+                        setSupplierNameError(null);
+                      }}
+                      className="w-full flex items-center justify-between p-3 text-right hover:bg-stone-100 dark:hover:bg-white/5 transition-colors first:rounded-t-xl last:rounded-b-xl border-b border-stone-100 dark:border-white/5 last:border-0"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono text-stone-400 dark:text-gray-500">
+                          {toPersianDigits(s.code)}
+                        </span>
+                        <span className="text-sm font-medium text-stone-900 dark:text-white">
+                          {s.shopName}
+                        </span>
+                      </div>
+                      <div className="text-left">
                         {s.city && (
                           <span className="text-[10px] text-stone-500 dark:text-gray-400">
                             {s.city}
                           </span>
                         )}
-                      </button>
-                    ))
-                  ) : (
-                    <p className="p-2 text-xs text-stone-400 text-center">
-                      تأمین‌کننده‌ای یافت نشد
-                    </p>
-                  )}
+                        {s.phones && s.phones.length > 0 && (
+                          <div className="text-[10px] text-stone-400 dark:text-gray-400 font-mono">
+                            {s.phones[0]}
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  ))}
                 </div>
               )}
 
-              {/* Quick create inline */}
-              {canManageSupplier && showQuickCreate && !supplierId && (
-                <div className="p-3 rounded-lg bg-brand/5 dark:bg-brand/10 border border-brand/20 dark:border-brand/30 space-y-2">
-                  <p className="text-xs font-bold text-stone-700 dark:text-gray-300">
-                    ساخت تأمین‌کننده جدید
-                  </p>
-                  <div className="grid sm:grid-cols-2 gap-2">
-                    <Input
-                      placeholder="نام فروشگاه"
-                      value={quickSupplierName}
-                      onChange={(e) => setQuickSupplierName(e.target.value)}
-                      className="text-xs h-8"
-                    />
-                    <Input
-                      placeholder="شهر"
-                      value={quickSupplierCity}
-                      onChange={(e) => setQuickSupplierCity(e.target.value)}
-                      className="text-xs h-8"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={handleQuickCreateSupplier}
-                      loading={creatingSupplier}
-                      className="text-xs font-black bg-brand hover:bg-brand-hover text-brand-on"
-                    >
-                      ساخت و انتخاب
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowQuickCreate(false)}
-                      className="text-xs"
-                    >
-                      لغو
-                    </Button>
-                  </div>
-                </div>
+              {!supplierId && supplierSearch && filteredSupplierOptions.length === 0 && (
+                <p className="p-2 text-xs text-stone-400 text-center">
+                  تأمین‌کننده‌ای یافت نشد
+                </p>
               )}
 
-              {/* Quick create toggle */}
-              {canManageSupplier && !showQuickCreate && !supplierId && (
+              {/* New supplier button — opens the full SupplierFormModal via parent */}
+              {canManageSupplier && !supplierId && onRequestAddSupplier && (
                 <button
                   type="button"
-                  onClick={() => setShowQuickCreate(true)}
+                  onClick={onRequestAddSupplier}
                   className="text-xs text-brand hover:underline font-bold flex items-center gap-1"
                 >
                   <Plus className="w-3 h-3" />
@@ -335,24 +285,39 @@ export const PurchaseOrderFormModal: React.FC<PurchaseOrderFormModalProps> = ({
               )}
             </div>
           </FormField>
-
-          {/* Expected Date - Persian Calendar */}
-          <div className="pt-2">
-            <FormField
-              id="po-expected-date"
-              label="تاریخ تحویل مقرر"
-              hint="تاریخ تحویل کالا به انبار"
-            >
-              <DatePicker
-                value={expectedDate}
-                onValueChange={setExpectedDate}
-                placeholder="انتخاب تاریخ..."
-                className="w-full"
-              />
-            </FormField>
-          </div>
         </div>
 
+        {/* Dates & Tracking */}
+        <div className="grid sm:grid-cols-2 gap-4">
+          <FormField
+            id="po-expected-date"
+            label="تاریخ تحویل مقرر"
+            hint="تاریخ تحویل کالا به انبار"
+            required
+          >
+            <DatePicker
+              value={expectedDate}
+              onValueChange={setExpectedDate}
+              placeholder="انتخاب تاریخ..."
+              className="w-full"
+            />
+          </FormField>
+
+          <FormField
+            id="po-tracking-code"
+            label="کد پستی / رهگیر"
+            hint="کد رهگیری ارسال یا شماره پست"
+          >
+            <Input
+              id="po-tracking-code"
+              value={postTrackingCode}
+              onChange={(e) => setPostTrackingCode(e.target.value)}
+              placeholder="مثلاً: 1234567890123"
+            />
+          </FormField>
+        </div>
+
+        {/* Terms & Costs */}
         <div className="grid sm:grid-cols-2 gap-4">
           <FormField
             id="po-payment-terms"
@@ -368,6 +333,23 @@ export const PurchaseOrderFormModal: React.FC<PurchaseOrderFormModalProps> = ({
           </FormField>
 
           <FormField
+            id="po-transport-cost"
+            label="هزینه حمل و نقل (تومان)"
+            hint="اختیاری"
+          >
+            <Input
+              id="po-transport-cost"
+              type="number"
+              min="0"
+              value={transportationCost}
+              onChange={(e) => setTransportationCost(e.target.value)}
+              placeholder="۰"
+            />
+          </FormField>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <FormField
             id="po-add-costs"
             label="هزینه‌های افزوده (تومان)"
             hint="صفر"
@@ -381,32 +363,35 @@ export const PurchaseOrderFormModal: React.FC<PurchaseOrderFormModalProps> = ({
               placeholder="۰"
             />
           </FormField>
+
+          <FormField
+            id="po-note"
+            label="یادداشت"
+            hint="یادداشت‌های سفارش..."
+          >
+            <Textarea
+              id="po-note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="یادداشت‌های سفارش..."
+              rows={3}
+            />
+          </FormField>
         </div>
 
-        <FormField
-          id="po-note"
-          label="یادداشت"
-          hint="یادداشت‌های سفارش..."
-        >
-          <Textarea
-            id="po-note"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="یادداشت‌های سفارش..."
-            rows={3}
-          />
-        </FormField>
-
         {/* Line items */}
-        <div className="pt-3 border-t border-stone-200 dark:border-white/10">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-black text-stone-900 dark:text-white">کالاها</p>
+        <div className="p-4 rounded-2xl glass-card space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-black text-stone-900 dark:text-white flex items-center gap-1.5">
+              <Package className="w-3.5 h-3.5 text-brand" />
+              کالاها
+            </p>
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={addLine}
-              className="flex items-center gap-1 text-xs"
+              className="flex items-center gap-1 text-xs font-bold"
             >
               <Plus className="w-3 h-3" />
               افزودن خط
@@ -415,8 +400,30 @@ export const PurchaseOrderFormModal: React.FC<PurchaseOrderFormModalProps> = ({
 
           <div className="space-y-3">
             {lines.map((line, idx) => (
-              <div key={idx} className="grid grid-cols-[1fr_60px_80px_100px_auto] gap-2 items-end">
-                <FormField id={`line-sku-${idx}`} label="کد کالا (SKU) *" hint="SKU-001">
+              <div key={idx} className="grid grid-cols-[1fr_60px_90px_90px_100px_auto] gap-2 items-end">
+                <FormField
+                  id={`line-name-${idx}`}
+                  label="نام کالا / SKU *"
+                  hint="مثلاً: پارچه پنیره‌ای A-001"
+                >
+                  <Input
+                    id={`line-name-${idx}`}
+                    value={line.itemName}
+                    onChange={(e) => {
+                      updateLine(idx, 'itemName', e.target.value);
+                      // Also fill skuId from itemName if it looks like a SKU
+                      if (!line.skuId) updateLine(idx, 'skuId', e.target.value);
+                    }}
+                    placeholder="نام کالا یا SKU"
+                    aria-label={`نام کالا خط ${idx + 1}`}
+                  />
+                </FormField>
+
+                <FormField
+                  id={`line-sku-${idx}`}
+                  label="SKU"
+                  hint="SKU-001"
+                >
                   <Input
                     id={`line-sku-${idx}`}
                     value={line.skuId}
@@ -425,7 +432,12 @@ export const PurchaseOrderFormModal: React.FC<PurchaseOrderFormModalProps> = ({
                     aria-label={`SKU خط ${idx + 1}`}
                   />
                 </FormField>
-                <FormField id={`line-qty-${idx}`} label="تعداد" hint="۰">
+
+                <FormField
+                  id={`line-qty-${idx}`}
+                  label="تعداد"
+                  hint="۰"
+                >
                   <Input
                     id={`line-qty-${idx}`}
                     type="number"
@@ -436,7 +448,12 @@ export const PurchaseOrderFormModal: React.FC<PurchaseOrderFormModalProps> = ({
                     aria-label={`تعداد خط ${idx + 1}`}
                   />
                 </FormField>
-                <FormField id={`line-unit-${idx}`} label="واحد" hint="مثلاً: بسته">
+
+                <FormField
+                  id={`line-unit-${idx}`}
+                  label="واحد"
+                  hint="مثلاً: بسته"
+                >
                   <Input
                     id={`line-unit-${idx}`}
                     value={line.unit}
@@ -445,7 +462,12 @@ export const PurchaseOrderFormModal: React.FC<PurchaseOrderFormModalProps> = ({
                     aria-label={`واحد خط ${idx + 1}`}
                   />
                 </FormField>
-                <FormField id={`line-cost-${idx}`} label="قیمت واحد (تومان)" hint="۰">
+
+                <FormField
+                  id={`line-cost-${idx}`}
+                  label="قیمت واحد (تومان)"
+                  hint="۰"
+                >
                   <Input
                     id={`line-cost-${idx}`}
                     type="number"
@@ -456,6 +478,7 @@ export const PurchaseOrderFormModal: React.FC<PurchaseOrderFormModalProps> = ({
                     aria-label={`قیمت واحد خط ${idx + 1}`}
                   />
                 </FormField>
+
                 <Button
                   type="button"
                   variant="ghost"
@@ -472,23 +495,29 @@ export const PurchaseOrderFormModal: React.FC<PurchaseOrderFormModalProps> = ({
         </div>
 
         {/* Totals */}
-        <div className="pt-3 border-t border-stone-200 dark:border-white/10 space-y-1 text-xs">
+        <div className="p-4 rounded-2xl glass-card space-y-1 text-xs">
           <div className="flex justify-between">
             <span className="text-stone-500 dark:text-stone-400">جمع کل خطوط:</span>
-            <span className="font-bold text-stone-900 dark:text-white">
-              {toPersianDigits(subtotal.toLocaleString('fa-IR'))} تومان
+            <span className="font-bold text-stone-900 dark:text-white font-mono" dir="ltr">
+              {toPersianDigits(formatToman(subtotal))}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-stone-500 dark:text-stone-400">هزینه حمل:</span>
+            <span className="font-bold text-stone-900 dark:text-white font-mono" dir="ltr">
+              {toPersianDigits(formatToman(transportation))}
             </span>
           </div>
           <div className="flex justify-between">
             <span className="text-stone-500 dark:text-stone-400">هزینه‌های افزوده:</span>
-            <span className="font-bold text-stone-900 dark:text-white">
-              {toPersianDigits((Number(additionalCosts) || 0).toLocaleString('fa-IR'))} تومان
+            <span className="font-bold text-stone-900 dark:text-white font-mono" dir="ltr">
+              {toPersianDigits(formatToman(additional))}
             </span>
           </div>
           <div className="flex justify-between font-black pt-1 border-t border-stone-200 dark:border-white/10">
             <span className="text-stone-900 dark:text-white">کل سفارش:</span>
-            <span className="text-brand-ink">
-              {toPersianDigits(totalCost.toLocaleString('fa-IR'))} تومان
+            <span className="text-brand-ink font-mono" dir="ltr">
+              {toPersianDigits(formatToman(totalCost))}
             </span>
           </div>
         </div>
