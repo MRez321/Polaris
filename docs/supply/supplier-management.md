@@ -153,10 +153,10 @@ The desktop sidebar is non-collapsible with always-visible section headers (matc
 | **انبار و موجودی** | انبار و موجودی, سفارشات خرید, مرجوعی و خرابی | `/console/inventory`, `/console/supply-orders`, `/console/returns` | `inventory.view`, `purchasing.view`, `returns.view` |
 | **توزیع و فروش** | فروش امانی و حواله‌ها, سفارش‌های فروشگاه | `/console/consignments`, `/console/orders` | `consignments.view`, `orders.view` |
 | **درحال توسعه** | سفارشات فروش, فروش فروشندگان, مشتریان, کانال‌های فروش, پرداخت‌های فروش | `/console/sales-orders`, `/console/seller-sales`, `/console/customers`, `/console/sales-channels`, `/console/sales-payments` | `sales.view`, `seller-sales.view`, `customers.view`, `channels.view`, `payments.view` |
-| **مدیریت** | افراد (tabbed hub: فروشندگان, کارکنان کارگاه, تأمین‌کنندگان) | `/console/people`, `/console/people/sellers`, `/console/people/staff`, `/console/people/suppliers` | `people.view`, `suppliers.view` |
+| **اشخاص** | افراد (preview page with counts), کارکنان, تأمین‌کنندگان, فروشندگان, کاربران | `/console/people`, `/console/people/staff`, `/console/people/suppliers`, `/console/people/sellers`, `/console/people/users` | `people.view`, `suppliers.view`, `settings.manage` |
 | **مالی و گزارش** | امور مالی, گزارش و تحلیل | `/console/finances`, `/console/analytics` | `finances.view`, `analytics.view` |
 | **وب‌سایت و فروشگاه** | تنظیمات وب‌سایت, ظاهر وب‌سایت, فروشگاه آنلاین, مدیریت وبلاگ | `/console/website/*` | `website.manage`, `blog.manage` |
-| **مدیریت سیستم** | تنظیمات و مدیریت, اطلاع‌رسانی, مدیریت کاربران, گالری تصاویر | `/console/settings`, `/console/settings/notifications`, `/console/settings/users`, `/console/settings/gallery` | `settings.manage` |
+| **مدیریت سیستم** | تنظیمات و مدیریت, اطلاع‌رسانی, گالری تصاویر | `/console/settings`, `/console/notifications`, `/console/gallery` | `settings.manage` |
 
 ## Validation Rules
 
