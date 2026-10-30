@@ -24,22 +24,27 @@ export interface SupplierListParams {
     limit?: number;
     search?: string;
     isActive?: boolean;
-    sort?: 'name' | 'code' | 'createdAt';
+    city?: string;
+    category?: string;
+    sort?: 'name' | 'code' | 'createdAt' | 'shopName';
     dir?: 'asc' | 'desc';
 }
 
 export interface SupplierInput {
     code?: string;
-    name: string;
-    contactPerson?: string;
-    phone?: string;
-    email?: string;
+    name?: string; // Legacy field, mapped to shopName for backward compatibility
+    shopName: string;
+    contactPersons?: Array<{ id?: string; name: string; phone?: string }>;
+    phones?: string[];
+    city?: string;
     address?: string;
+    categories?: string[];
     cooperationTerms?: string;
     paymentTerms?: string;
     paymentDueDays?: number;
     minOrderAmount?: number;
     note?: string;
+    isActive?: boolean;
 }
 
 export interface SupplierPriceInput {
@@ -54,6 +59,7 @@ export interface SupplierPriceInput {
 
 const SUPPLIER_SORT_COLUMNS = {
     name: suppliers.name,
+    shopName: suppliers.shopName,
     code: suppliers.code,
     createdAt: suppliers.createdAt,
 } as const;
@@ -72,9 +78,18 @@ export async function listSuppliers(params: SupplierListParams): Promise<{ rows:
     const limit = Math.min(100, Math.max(1, Math.floor(params.limit ?? 20)));
     const conds = [isNull(suppliers.deletedAt)];
     if (params.isActive !== undefined) conds.push(eq(suppliers.isActive, params.isActive));
+    if (params.city) {
+        conds.push(eq(suppliers.city, params.city));
+    }
+    // Category filtering is handled client-side since categories is a JSON array
     if (params.search) {
         const q = `%${params.search}%`;
-        conds.push(or(like(suppliers.name, q), like(suppliers.code, q), like(suppliers.phone, q))!);
+        conds.push(or(
+            like(suppliers.name, q),
+            like(suppliers.shopName, q),
+            like(suppliers.code, q),
+            like(suppliers.phone, q)
+        )!);
     }
     const where = and(...conds);
     const sortCol = SUPPLIER_SORT[params.sort ?? 'createdAt'] ?? suppliers.createdAt;
@@ -95,7 +110,8 @@ export async function getSupplier(id: string) {
 }
 
 export async function createSupplier(input: SupplierInput, meta: { ip?: string; userAgent?: string }, actorId?: string) {
-    if (!input.name || input.name.trim().length === 0) throw badRequest('نام تأمین‌کننده الزامی است');
+    const supplierName = input.shopName || input.name;
+    if (!supplierName || supplierName.trim().length === 0) throw badRequest('نام فروشگاه تأمین‌کننده الزامی است');
     if (input.code) {
         const dup = await db.select({ id: suppliers.id }).from(suppliers).where(eq(suppliers.code, input.code));
         if (dup.length > 0) throw badRequest('کد تأمین‌کننده تکراری است');
@@ -105,16 +121,19 @@ export async function createSupplier(input: SupplierInput, meta: { ip?: string; 
     const row = {
         id,
         code: input.code ?? genCode('SUP'),
-        name: input.name.trim(),
-        ...(input.contactPerson !== undefined ? { contactPerson: input.contactPerson } : {}),
-        ...(input.phone !== undefined ? { phone: input.phone } : {}),
-        ...(input.email !== undefined ? { email: input.email } : {}),
+        name: supplierName.trim(),
+        shopName: supplierName.trim(),
+        ...(input.contactPersons !== undefined ? { contactPersons: input.contactPersons } : {}),
+        ...(input.phones !== undefined ? { phones: input.phones } : {}),
+        ...(input.city !== undefined ? { city: input.city } : {}),
+        ...(input.categories !== undefined ? { categories: input.categories } : {}),
         ...(input.address !== undefined ? { address: input.address } : {}),
         ...(input.cooperationTerms !== undefined ? { cooperationTerms: input.cooperationTerms } : {}),
         ...(input.paymentTerms !== undefined ? { paymentTerms: input.paymentTerms } : {}),
         ...(input.paymentDueDays !== undefined ? { paymentDueDays: input.paymentDueDays } : {}),
         ...(input.minOrderAmount !== undefined ? { minOrderAmount: input.minOrderAmount } : {}),
         ...(input.note !== undefined ? { note: input.note } : {}),
+        ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
         createdAt: now,
         updatedAt: now,
     };
@@ -127,8 +146,8 @@ export async function createSupplier(input: SupplierInput, meta: { ip?: string; 
         entityId: id,
         before: null,
         after,
-        details: `تأمین‌کننده ${input.name} ایجاد شد`,
-        metadata: { code: row.code, name: input.name },
+        details: `تأمین‌کننده ${supplierName} ایجاد شد`,
+        metadata: { code: row.code, name: supplierName },
         ...(meta.ip ? { ip: meta.ip } : {}),
         ...(meta.userAgent ? { userAgent: meta.userAgent } : {}),
     });
@@ -142,21 +161,25 @@ export async function updateSupplier(id: string, input: Partial<SupplierInput>, 
         const dup = await db.select({ id: suppliers.id }).from(suppliers).where(eq(suppliers.code, input.code));
         if (dup.length > 0) throw badRequest('کد تأمین‌کننده تکراری است');
     }
-    if (input.name !== undefined && input.name.trim().length === 0) throw badRequest('نام تأمین‌کننده نمی‌تواند خالی باشد');
+    const supplierName = input.shopName || input.name;
+    if (supplierName !== undefined && supplierName!.trim().length === 0) throw badRequest('نام فروشگاه تأمین‌کننده نمی‌تواند خالی باشد');
     await db
         .update(suppliers)
         .set({
             ...(input.code !== undefined ? { code: input.code } : {}),
+            ...(input.shopName !== undefined ? { shopName: input.shopName.trim() } : {}),
             ...(input.name !== undefined ? { name: input.name.trim() } : {}),
-            ...(input.contactPerson !== undefined ? { contactPerson: input.contactPerson } : {}),
-            ...(input.phone !== undefined ? { phone: input.phone } : {}),
-            ...(input.email !== undefined ? { email: input.email } : {}),
+            ...(input.contactPersons !== undefined ? { contactPersons: input.contactPersons } : {}),
+            ...(input.phones !== undefined ? { phones: input.phones } : {}),
+            ...(input.city !== undefined ? { city: input.city } : {}),
+            ...(input.categories !== undefined ? { categories: input.categories } : {}),
             ...(input.address !== undefined ? { address: input.address } : {}),
             ...(input.cooperationTerms !== undefined ? { cooperationTerms: input.cooperationTerms } : {}),
             ...(input.paymentTerms !== undefined ? { paymentTerms: input.paymentTerms } : {}),
             ...(input.paymentDueDays !== undefined ? { paymentDueDays: input.paymentDueDays } : {}),
             ...(input.minOrderAmount !== undefined ? { minOrderAmount: input.minOrderAmount } : {}),
             ...(input.note !== undefined ? { note: input.note } : {}),
+            ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
             updatedAt: new Date(),
         })
         .where(eq(suppliers.id, id));

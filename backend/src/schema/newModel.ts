@@ -119,6 +119,12 @@ export const suppliers = mysqlTable(
         id: varchar('id', { length: 36 }).primaryKey(),
         code: varchar('code', { length: 32 }).unique(),
         name: varchar('name', { length: 255 }).notNull(),
+        // New fields for redesigned supplier model
+        shopName: varchar('shop_name', { length: 255 }).notNull(),
+        contactPersons: json('contact_persons').$type<Array<{ id?: string; name: string; phone?: string }>>(),
+        phones: json('phones').$type<string[]>(),
+        city: varchar('city', { length: 128 }),
+        categories: json('categories').$type<string[]>(),
         contactPerson: varchar('contact_person', { length: 255 }),
         phone: varchar('phone', { length: 32 }),
         email: varchar('email', { length: 255 }),
@@ -139,7 +145,6 @@ export const suppliers = mysqlTable(
         index('suppliers_active_idx').on(t.isActive),
     ],
 );
-
 export const customers = mysqlTable(
     'customers',
     {

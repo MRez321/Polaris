@@ -444,6 +444,8 @@ export interface SupplierListParams {
   limit?: number;
   search?: string;
   isActive?: boolean;
+  city?: string;
+  category?: string;
   sort?: 'name' | 'code' | 'createdAt';
   dir?: 'asc' | 'desc';
 }
@@ -464,12 +466,13 @@ export interface PurchaseOrderListParams {
 
 export interface SupplierPayload {
   code?: string;
-  name: string;
-  contactPerson?: string;
-  phone?: string;
-  email?: string;
+  shopName: string;
+  contactPersons?: { name: string; phone?: string }[];
+  phones?: string[];
+  city?: string;
   address?: string;
-  is_active?: boolean;
+  categories?: string[];
+  isActive?: boolean;
   cooperationTerms?: string;
   paymentTerms?: string;
   paymentDueDays?: number;

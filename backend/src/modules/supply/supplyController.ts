@@ -21,16 +21,23 @@ const requestMeta = (req: Request): { ip?: string; userAgent?: string } => ({
 
 const supplierSchema = z.object({
     code: z.string().optional(),
-    name: z.string().min(1, 'نام تأمین‌کننده الزامی است'),
-    contactPerson: z.string().optional(),
-    phone: z.string().optional(),
-    email: z.string().email('ایمیل نامعتبر').optional(),
+    name: z.string().optional(), // Legacy field
+    shopName: z.string().min(1, 'نام فروشگاه تأمین‌کننده الزامی است'),
+    contactPersons: z.array(z.object({
+        id: z.string().optional(),
+        name: z.string().min(1, 'نام شخص تماس الزامی است'),
+        phone: z.string().optional(),
+    })).optional(),
+    phones: z.array(z.string()).optional(),
+    city: z.string().optional(),
     address: z.string().optional(),
+    categories: z.array(z.string()).optional(),
     cooperationTerms: z.string().optional(),
     paymentTerms: z.string().optional(),
     paymentDueDays: z.number().int().nonnegative().optional(),
     minOrderAmount: z.number().nonnegative().optional(),
     note: z.string().optional(),
+    isActive: z.boolean().optional(),
 });
 
 const priceSchema = z.object({
@@ -48,7 +55,9 @@ const listSuppliersSchema = z.object({
     limit: z.coerce.number().int().positive().max(100).optional(),
     search: z.string().optional(),
     isActive: z.enum(['true', 'false']).optional(),
-    sort: z.enum(['name', 'code', 'createdAt']).optional(),
+    city: z.string().optional(),
+    category: z.string().optional(),
+    sort: z.enum(['name', 'shopName', 'code', 'createdAt']).optional(),
     dir: z.enum(['asc', 'desc']).optional(),
 });
 

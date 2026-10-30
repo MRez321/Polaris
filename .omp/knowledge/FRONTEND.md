@@ -3,7 +3,8 @@
 ## Entry & routing
 
 `src/main.tsx` → `src/App.tsx` — providers wrap BrowserRouter: Theme → Brand → Network → Auth → Cart → Favorites. Route table lives in App.tsx (see START-HERE). Guard: `ConsoleLayout` (anon → `/login?next=%2Fconsole`, non-console role → `/dashboard`) + per-route `RequirePermission` (→ `/console`); legacy `/workshop*` + `/controlpanel*` redirect client-side to `/console` equivalents.
-`/console/supply` (Permission `suppliers.view`) → SupplyPage with tabs: Suppliers / Orders / Receipts / Costs; inline `SupplierFormModal` and `PurchaseOrderFormModal` for add/edit (no separate detail routes — modals handle CRUD inline).
+:`/console/suppliers` (Permission `suppliers.view`) → SuppliersPage — grid of SupplierCard components with search, city/category/status filters; `SupplierFormModal` for add/edit (inline modal); `/console/profile/supplier/:id` → SupplierProfilePage for detail view.
+:`/console/supply-orders` (Permission `purchasing.view`) → SupplyOrdersPage with tabs: Orders / Receipts / Costs; inline `PurchaseOrderFormModal` for add/edit with searchable supplier input + quick-create.
 
 P0-D Unified Sales routes (`/console/*`), all with status filter tabs + loading skeleton placeholders:
 - `/console/sales-orders` (Permission `sales.view`) → SalesOrdersPage — list + status transitions, payment status badges, SALE movements

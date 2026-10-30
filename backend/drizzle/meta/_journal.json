@@ -158,6 +158,13 @@
       "when": 1796649600000,
       "tag": "0022_p0d_sales",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "5",
+      "when": 1793355860390,
+      "tag": "0023_p0c_supplier_columns",
+      "breakpoints": true
     }
   ]
 }

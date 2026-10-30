@@ -26,6 +26,7 @@ import {
   Globe,
   Palette,
   Newspaper,
+  ShoppingCart,
   RotateCcw,
 } from 'lucide-react';
 
@@ -56,7 +57,9 @@ export const NAV_GROUPS: NavGroupConfig[] = [
   {
     id: 'management',
     label: 'مدیریت',
-    items: [{ to: '/console', label: 'داشبورد', icon: LayoutDashboard, end: true, permission: 'analytics.view' }],
+    items: [
+      { to: '/console', label: 'داشبورد', icon: LayoutDashboard, end: true, permission: 'analytics.view' },
+    ],
   },
   {
     id: 'supply-stock',
@@ -69,7 +72,8 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         badge: 'lowStock',
         permission: 'inventory.view',
       },
-      { to: '/console/supply', label: 'تأمین و خرید', icon: Truck, permission: 'suppliers.view' },
+      { to: '/console/suppliers', label: 'تأمین‌کنندگان', icon: Truck, permission: 'suppliers.view' },
+      { to: '/console/supply-orders', label: 'سفارشات خرید', icon: ShoppingCart, permission: 'purchasing.view' },
       {
         to: '/console/consignments',
         label: 'فروش امانی و حواله‌ها',

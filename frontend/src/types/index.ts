@@ -741,20 +741,39 @@ export interface BackupFileMeta {
 // P0-C: Supply chain — suppliers, purchase requests/orders, receipts, costs
 // ---------------------------------------------------------------------------
 
+export interface SupplierContact {
+  id?: string;
+  name: string;
+  phone?: string;
+}
+
 export interface Supplier {
   id: string;
   code: string;
-  name: string;
-  contactPerson?: string;
-  phone?: string;
-  email?: string;
+  /** shopName — the name of their shop (e.g. "پارچه‌فروشی اصفهان") */
+  shopName: string;
+  /** contactPersons — option to add more than one contact person */
+  contactPersons?: SupplierContact[];
+  /** phones — option to add more than one phone number */
+  phones?: string[];
+  /** city — the city the supplier operates in */
+  city?: string;
+  /** address — full address of the supplier */
   address?: string;
-  is_active: boolean;
+  /** categories — what type of clothing they sell mainly (multiple allowed) */
+  categories?: string[];
+  isActive: boolean;
   cooperationTerms?: string;
   paymentTerms?: string;
   paymentDueDays?: number;
   minOrderAmount?: number;
   note?: string;
+  /** Total purchase amount from this supplier */
+  totalPurchases?: number;
+  /** Total amount paid to this supplier */
+  totalPaid?: number;
+  /** Number of purchase orders from this supplier */
+  orderCount?: number;
   createdBy?: string;
   createdAt: string;
   updatedAt: string;

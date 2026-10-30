@@ -1,18 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import './index.css';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { BrandProvider } from '@/context/BrandContext';
-
 import { NetworkProvider } from '@/context/NetworkContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 import { FavoritesProvider } from '@/context/FavoritesContext';
-import {
-  ConsoleLayout,
-  ConsoleIndex,
-  RequirePermission,
-  RequireProfilePermission,
-} from '@/modules/workshop/layout/ConsoleLayout';
 import { PublicLayout } from '@/components/public/PublicLayout';
+import { ConsoleLayout, ConsoleIndex, RequirePermission, RequireProfilePermission } from '@/modules/workshop/layout/ConsoleLayout';
 import HomePage from '@/pages/public/HomePage';
 import ShopPage from '@/pages/public/ShopPage';
 import ContactPage from '@/pages/public/ContactPage';
@@ -32,6 +27,9 @@ import SettingsPage from '@/modules/workshop/pages/SettingsPage';
 import ReturnsPage from '@/modules/workshop/returns/ReturnsPage';
 import AnalyticsPage from '@/modules/workshop/analytics/AnalyticsPage';
 import SupplyPage from '@/modules/workshop/supply/SupplyPage';
+import SuppliersPage from '@/modules/workshop/supply/SuppliersPage';
+import SupplyOrdersPage from '@/modules/workshop/supply/SupplyOrdersPage';
+import SupplierProfilePage from '@/modules/workshop/supply/SupplierProfilePage';
 import EntityProfilePage from '@/modules/workshop/pages/EntityProfilePage';
 import WebsiteSettingsPage from '@/pages/controlpanel/WebsiteSettingsPage';
 import ThemeSettingsPage from '@/pages/controlpanel/ThemeSettingsPage';
@@ -108,6 +106,11 @@ function App() {
                         </Route>
                         <Route element={<RequirePermission permission="suppliers.view" />}>
                           <Route path="supply" element={<SupplyPage />} />
+                          <Route path="suppliers" element={<SuppliersPage />} />
+                          <Route path="profile/supplier/:id" element={<SupplierProfilePage />} />
+                        </Route>
+                        <Route element={<RequirePermission permission="purchasing.view" />}>
+                          <Route path="supply-orders" element={<SupplyOrdersPage />} />
                         </Route>
                         <Route element={<RequirePermission permission="finances.view" />}>
                           <Route path="finances" element={<FinancesPage />} />

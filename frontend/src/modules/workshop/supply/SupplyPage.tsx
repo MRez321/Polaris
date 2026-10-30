@@ -87,7 +87,7 @@ export const SupplyPage: React.FC = () => {
       const created = await supplyApi.createSupplier(data);
       setSuppliers((prev) => [created, ...prev]);
       setSupplierModalOpen(false);
-      toast.success(`تأمین‌کننده ${created.code} - ${created.name} ایجاد شد`);
+      toast.success(`تأمین‌کننده ${created.code} - ${created.shopName} ایجاد شد`);
     } catch (e) {
       toast.error(getApiErrorMessage(e));
     } finally {
@@ -112,7 +112,7 @@ export const SupplyPage: React.FC = () => {
   };
 
   const handleDeleteSupplier = async (supplier: Supplier) => {
-    if (!confirm(`آیا از حذف تأمین‌کننده ${supplier.name} مطمئن هستید؟`)) return;
+    if (!confirm(`آیا از حذف تأمین‌کننده ${supplier.shopName} مطمئن هستید؟`)) return;
     try {
       await fetch(`/api/workshop/supply/suppliers/${supplier.id}`, { method: 'DELETE' });
       setSuppliers((prev) => prev.filter((s) => s.id !== supplier.id));
@@ -124,12 +124,12 @@ export const SupplyPage: React.FC = () => {
 
   const toggleSupplierActive = async (supplier: Supplier) => {
     try {
-      if (supplier.is_active === false) {
+      if (supplier.isActive === false) {
         await supplyApi.activateSupplier(supplier.id);
-        setSuppliers((prev) => prev.map((s) => (s.id === supplier.id ? { ...s, is_active: true } : s)));
+        setSuppliers((prev) => prev.map((s) => (s.id === supplier.id ? { ...s, isActive: true } : s)));
       } else {
         await supplyApi.deactivateSupplier(supplier.id);
-        setSuppliers((prev) => prev.map((s) => (s.id === supplier.id ? { ...s, is_active: false } : s)));
+        setSuppliers((prev) => prev.map((s) => (s.id === supplier.id ? { ...s, isActive: false } : s)));
       }
     } catch (e) {
       toast.error(getApiErrorMessage(e));
@@ -171,7 +171,7 @@ export const SupplyPage: React.FC = () => {
     (o) => o.status === 'ordered' || o.status === 'partially_received',
   );
 
-  const activeSuppliers = suppliers.filter((s) => s.is_active !== false).length;
+  const activeSuppliers = suppliers.filter((s) => s.isActive !== false).length;
   const inactiveSuppliers = suppliers.length - activeSuppliers;
 
   // ---- Render helpers ----
@@ -256,20 +256,23 @@ export const SupplyPage: React.FC = () => {
                 >
                   <div className="text-right min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-black text-stone-900 dark:text-white truncate">{s.name}</p>
+                      <p className="text-sm font-black text-stone-900 dark:text-white truncate">{s.shopName}</p>
                       <span className="text-[10px] text-stone-400 dark:text-stone-500" dir="ltr">
                         {s.code}
                       </span>
-                      {s.is_active === false && (
+                      {s.isActive === false && (
                         <span className="px-1.5 py-0.25 text-[9px] rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300">
                           غیرفعال
                         </span>
                       )}
                     </div>
                     <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-stone-500 dark:text-stone-400">
-                      {s.contactPerson && <span>تماس: {s.contactPerson}</span>}
-                      {s.phone && <span dir="ltr">{s.phone}</span>}
-                      {s.email && <span dir="ltr">{s.email}</span>}
+                      {s.contactPersons && s.contactPersons.length > 0 && (
+                        <span>تماس: {s.contactPersons[0].name}</span>
+                      )}
+                      {s.phones && s.phones.length > 0 && (
+                        <span dir="ltr">{s.phones[0]}</span>
+                      )}
                     </div>
                   </div>
 
@@ -286,13 +289,13 @@ export const SupplyPage: React.FC = () => {
                         <button
                           onClick={() => toggleSupplierActive(s)}
                           className={`p-1.5 rounded-lg transition-colors ${
-                            s.is_active === false
+                            s.isActive === false
                               ? 'text-stone-500 hover:text-emerald-600 hover:bg-emerald-500/10'
                               : 'text-stone-500 hover:text-rose-600 hover:bg-rose-500/10'
                           }`}
-                          title={s.is_active === false ? 'فعال کنید' : 'غیرفعال کنید'}
+                          title={s.isActive === false ? 'فعال کنید' : 'غیرفعال کنید'}
                         >
-                          {s.is_active === false ? <Check className="w-4 h-4" /> : <XIcon className="w-4 h-4" />}
+                          {s.isActive === false ? <Check className="w-4 h-4" /> : <XIcon className="w-4 h-4" />}
                         </button>
                         <button
                           onClick={() => handleDeleteSupplier(s)}
@@ -360,7 +363,7 @@ export const SupplyPage: React.FC = () => {
                     <div className="flex items-center justify-between gap-2">
                       <div className="text-[11px] text-stone-500 dark:text-stone-400">
                         تأمین‌کننده: <span className="font-medium text-stone-600 dark:text-stone-300">
-                          {supplier?.name ?? o.supplierId?.slice(0, 8) ?? '—'}
+                          {supplier?.shopName ?? o.supplierId?.slice(0, 8) ?? '—'}
                         </span>
                         {' · '}
                         {o.items?.length ?? 0} کالا
