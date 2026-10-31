@@ -31,6 +31,7 @@ import GalleryPage from '@/modules/workshop/pages/GalleryPage';
 import SupplyPage from '@/modules/workshop/supply/SupplyPage';
 import SuppliersPage from '@/modules/workshop/supply/SuppliersPage';
 import SupplyOrdersPage from '@/modules/workshop/supply/SupplyOrdersPage';
+import SupplyOrderDetailsPage from '@/modules/workshop/supply/SupplyOrderDetailsPage';
 import SupplierProfilePage from '@/modules/workshop/supply/SupplierProfilePage';
 import ReturnsPage from '@/modules/workshop/returns/ReturnsPage';
 import AnalyticsPage from '@/modules/workshop/analytics/AnalyticsPage';
@@ -117,6 +118,7 @@ function App() {
                         </Route>
                         <Route element={<RequirePermission permission="purchasing.view" />}>
                           <Route path="supply-orders" element={<SupplyOrdersPage />} />
+                          <Route path="supply-orders/:id" element={<SupplyOrderDetailsPage />} />
                         </Route>
                         <Route element={<RequirePermission permission="finances.view" />}>
                           <Route path="finances" element={<FinancesPage />} />

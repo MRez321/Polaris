@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ShoppingCart, Receipt, Tag, Plus, Edit } from 'lucide-react';
 import { supplyApi, getApiErrorMessage } from '@/lib/api';
 import { toast } from 'sonner';
@@ -8,7 +9,7 @@ import { formatToman, toPersianDigits } from '@/utils/persian';
 import { useAuth } from '@/context/AuthContext';
 import { PurchaseOrderFormModal } from './PurchaseOrderFormModal';
 import { SupplierFormModal } from './SupplierFormModal';
-
+import { Pagination } from '@/components/common/Pagination';
 type SupplyOrdersTab = 'orders' | 'receipts' | 'costs';
 
 const STATUS_COLOR: Record<string, string> = {
@@ -60,6 +61,11 @@ export const SupplyOrdersPage: React.FC = () => {
   const [createSupplierModalOpen, setCreateSupplierModalOpen] = useState(false);
 
   const canManage = hasPermission('suppliers.manage') || hasPermission('purchasing.manage');
+  const navigate = useNavigate();
+
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     let cancelled = false;
@@ -88,6 +94,17 @@ export const SupplyOrdersPage: React.FC = () => {
   const pendingReceipts = orders.filter(
     (o) => o.status === 'ordered' || o.status === 'partially_received'
   );
+
+  // --- Pagination (client-side on fetched data) ---
+  const paginatedOrders = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return orders.slice(start, start + pageSize);
+  }, [orders, page, pageSize]);
+
+  const paginatedPendingReceipts = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return pendingReceipts.slice(start, start + pageSize);
+  }, [pendingReceipts, page, pageSize]);
 
   // --- CRUD handlers ---
   const handleCreateOrder = async (data: PurchaseOrderPayload) => {
@@ -203,12 +220,13 @@ export const SupplyOrdersPage: React.FC = () => {
             </div>
           ) : (
             <div className="grid gap-2">
-              {orders.map((o) => {
+              {paginatedOrders.map((o) => {
                 const supplier = suppliers.find((s) => s.id === o.supplierId);
                 return (
                   <div
                     key={o.id}
-                    className="rounded-2xl glass-card p-3 sm:p-4 flex items-center justify-between gap-2 shadow-md"
+                    onClick={() => navigate(`/console/supply-orders/${o.id}`)}
+                    className="rounded-2xl glass-card p-3 sm:p-4 flex items-center justify-between gap-2 shadow-md cursor-pointer hover:border-brand/50 transition-all"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -229,7 +247,7 @@ export const SupplyOrdersPage: React.FC = () => {
                         </span>
                       </div>
                     </div>
-                    <div className="flex gap-1 shrink-0">
+                    <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                       {canManage && (
                         <button
                           onClick={() => { setEditingOrder(o); setPoModalOpen(true); }}
@@ -243,12 +261,24 @@ export const SupplyOrdersPage: React.FC = () => {
                   </div>
                 );
               })}
-              {orders.length === 0 && !loading && (
+              {paginatedOrders.length === 0 && !loading && (
                 <p className="text-xs text-stone-400 text-center py-6">سفارش خریدی یافت نشد</p>
               )}
             </div>
           )}
         </div>
+      )}
+
+
+      {/* Pagination - Orders tab */}
+      {activeTab === 'orders' && !loading && !error && orders.length > 0 && (
+        <Pagination
+          currentPage={page}
+          totalItems={orders.length}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       )}
 
       {/* Receipts — orders awaiting receiving */}
@@ -261,19 +291,20 @@ export const SupplyOrdersPage: React.FC = () => {
                 <div key={i} className="h-16 rounded-2xl glass-card animate-pulse" />
               ))}
             </div>
-          ) : pendingReceipts.length === 0 ? (
+          ) : paginatedPendingReceipts.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-stone-200 dark:border-white/10 glass-card p-8 text-center">
               <Receipt className="w-10 h-10 mx-auto mb-3 opacity-30 text-stone-400" />
-              <p className="text-xs text-stone-400">سفارشی برای دریافت وجود ندارد</p>
+              <p className="text-xs text-stone-400">سفارشی برای دریافت وجدید ندارد</p>
             </div>
           ) : (
             <div className="grid gap-2">
-              {pendingReceipts.map((o) => (
+              {paginatedPendingReceipts.map((o) => (
                 <div
                   key={o.id}
-                  className="rounded-2xl glass-card p-3 sm:p-4 flex items-center justify-between gap-2 shadow-md"
+                  onClick={() => navigate(`/console/supply-orders/${o.id}`)}
+                  className="rounded-2xl glass-card p-3 sm:p-4 flex items-center justify-between gap-2 shadow-md cursor-pointer hover:border-brand/50 transition-all"
                 >
-                  <div className="text-right min-w-0 flex-1">
+                  <div className="text-right min-w-0 flex-1" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-black text-stone-900 dark:text-white" dir="ltr">
                         {o.code}
@@ -299,6 +330,17 @@ export const SupplyOrdersPage: React.FC = () => {
             </div>
           )}
         </div>
+      )}
+
+      {/* Pagination - Receipts tab */}
+      {activeTab === 'receipts' && !loading && !error && pendingReceipts.length > 0 && (
+        <Pagination
+          currentPage={page}
+          totalItems={pendingReceipts.length}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       )}
 
       {/* Costs — managed within purchase order detail */}

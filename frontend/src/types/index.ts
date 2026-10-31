@@ -816,6 +816,8 @@ export interface PurchaseOrderItem {
   receivedQuantity: number;
   unitCost: number;
   unit?: string;
+  remaining?: number;
+  allocated?: number;
 }
 
 export interface PurchaseOrder {
@@ -828,9 +830,13 @@ export interface PurchaseOrder {
   additionalCosts: number;
   totalAmount: number;
   expectedDate?: string;
+  orderDate?: string;
   trackingCode?: string;
   paymentTerms?: string;
   note?: string;
+  actorId?: string;
+  receivedBy?: string | null;
+  receivedAt?: string | null;
   createdAt: string;
   updatedAt: string;
   items: PurchaseOrderItem[];
@@ -855,7 +861,9 @@ export interface PurchaseReceipt {
   purchaseId: string;
   supplierId: string;
   receivedDate: string;
+  receivedBy?: string | null;
   status: string;
+  notes?: string | null;
   items: PurchaseReceiptItem[];
 }
 

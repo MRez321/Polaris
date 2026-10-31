@@ -6,9 +6,10 @@
 :`/console/people` (Permission `people.view`) → PeoplePreviewPage — category count cards for فروشندگان, کارکنان کارگاه, تأمین‌کنندگان, and کاربران
 :`/console/people/sellers` (Permission `people.view`) → PeoplePage (sellers tab via PeopleManager)
 :`/console/people/staff` (Permission `people.view`) → PeoplePage (staff tab via PeopleManager)
-:`/console/people/suppliers` (Permission `suppliers.view`) → SuppliersPage — standalone supplier cards with search/city/category/status filters
+::`/console/suppliers` (Permission `suppliers.view`) → SuppliersPage — standalone supplier cards with search/city/category/status filters
 :`/console/people/users` (Permission `settings.manage`) → UsersPage — user role/ban management (moved from /settings/users)
 :`/console/supply-orders` (Permission `purchasing.view`) → SupplyOrdersPage with tabs: Orders / Receipts / Costs; inline `PurchaseOrderFormModal` for add/edit with searchable supplier input + full `SupplierFormModal` for new supplier creation
+::`/console/supply-orders/:id` (Permission `purchasing.view`) → SupplyOrderDetailsPage — order info, items, receipts, costs, timeline, "Mark as Received" button
 :`/console/notifications` (Permission `settings.manage`) → NotificationsPage — notification settings (moved from /settings/notifications)
 :`/console/gallery` (Permission `settings.manage`) → GalleryPage — image gallery (moved from /settings/gallery)
 
@@ -95,7 +96,7 @@ Desktop sidebar is **non-collapsible** with always-visible section headers. Menu
 | **انبار و موجودی** | انبار و موجودی, سفارشات خرید, مرجوعی و خرابی |
 | **توزیع و فروش** | فروش امانی و حواله‌ها, سفارش‌های فروشگاه |
 | **درحال توسعه** | سفارشات فروش, فروش فروشندگان, مشتریان, کانال‌های فروش, پرداخت‌های فروش |
-| **اشخاص** | افراد (`/console/people` — preview page with counts), کارکنان (`/console/people/staff`), تأمین‌کنندگان (`/console/people/suppliers`), فروشندگان (`/console/people/sellers`), کاربران (`/console/people/users`) |
+| **اشخاص** | افراد (`/console/people` — preview page with counts), کارکنان (`/console/people/staff`), تأمین‌کنندگان (`/console/suppliers`), فروشندگان (`/console/people/sellers`), کاربران (`/console/people/users`) |
 | **مالی و گزارش** | امور مالی, گزارش و تحلیل |
 | **وب‌سایت و فروشگاه** | تنظیمات وب‌سایت, ظاهر وب‌سایت, فروشگاه آنلاین, مدیریت وبلاگ |
 | **مدیریت سیستم** | تنظیمات و مدیریت, اطلاع‌رسانی (`/console/notifications`), گالری تصاویر (`/console/gallery`) |

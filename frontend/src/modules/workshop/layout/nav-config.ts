@@ -118,7 +118,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
     id: 'people',
     label: 'اشخاص',
     items: [
-      { to: '/console/people', label: 'افراد', icon: Users, permission: 'people.view' },
+      { to: '/console/people', label: 'افراد', icon: Users, permission: 'people.view', end: true },
       { to: '/console/people/staff', label: 'کارکنان', icon: Briefcase, permission: 'people.view' },
       { to: '/console/people/suppliers', label: 'تأمین‌کنندگان', icon: Truck, permission: 'suppliers.view' },
       { to: '/console/people/sellers', label: 'فروشندگان', icon: UserCheck, permission: 'people.view' },

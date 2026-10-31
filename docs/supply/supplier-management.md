@@ -10,6 +10,7 @@ The supplier management system in the Polaris console manages **suppliers** (ت�
 |-------|------|-----------|---------|
 | `/console/suppliers` | SuppliersPage | `frontend/src/modules/workshop/supply/SuppliersPage.tsx` | Grid of supplier cards, search, filtering, actions |
 | `/console/supply-orders` | SupplyOrdersPage | `frontend/src/modules/workshop/supply/SupplyOrdersPage.tsx` | Purchase orders, receipts, cost tracking |
+| `/console/supply-orders/:id` | SupplyOrderDetailsPage | `frontend/src/modules/workshop/supply/SupplyOrderDetailsPage.tsx` | Order info, items, receipts, costs, timeline, "Mark as Received" button |
 | `/console/profile/supplier/:id` | SupplierProfilePage | `frontend/src/modules/workshop/supply/SupplierProfilePage.tsx` | Detail view of a single supplier |
 
 ## Domain Model
@@ -134,6 +135,17 @@ A card-based UI component following the SellersManager pattern:
 - **Contact info section**: shop name, city, phones, categories, address
 - **Orders list** with tabs: receipts, costs
 - **Timeline view** of supplier activity
+### SupplyOrderDetailsPage (`SupplyOrderDetailsPage.tsx`)
+
+- **Order header**: code, supplier, status badge, order date, expected date, actor, total amount
+- **Items table**: item name, SKU, quantity, unit, unit cost, received quantity, remaining quantity; client-side pagination (10/page)
+- **Receipts**: receipt list with items, quantities, received date; client-side pagination
+- **Costs**: cost lines (type, description, amount); client-side pagination
+- **Landed cost summary**: subtotal, additional costs, grand total
+- **Timeline**: order status transitions and receipt events
+- **"Mark as Received" button**: POST to receipts API with all remaining quantities; transitions order to `received` or `partially_received`; hidden when order already received
+- **Pagination**: reusable `Pagination` component with Persian digits and page-size selector
+- **Permission gate**: requires `purchasing.view`
 
 ## Permissions Matrix
 
@@ -153,7 +165,7 @@ The desktop sidebar is non-collapsible with always-visible section headers (matc
 | **انبار و موجودی** | انبار و موجودی, سفارشات خرید, مرجوعی و خرابی | `/console/inventory`, `/console/supply-orders`, `/console/returns` | `inventory.view`, `purchasing.view`, `returns.view` |
 | **توزیع و فروش** | فروش امانی و حواله‌ها, سفارش‌های فروشگاه | `/console/consignments`, `/console/orders` | `consignments.view`, `orders.view` |
 | **درحال توسعه** | سفارشات فروش, فروش فروشندگان, مشتریان, کانال‌های فروش, پرداخت‌های فروش | `/console/sales-orders`, `/console/seller-sales`, `/console/customers`, `/console/sales-channels`, `/console/sales-payments` | `sales.view`, `seller-sales.view`, `customers.view`, `channels.view`, `payments.view` |
-| **اشخاص** | افراد (preview page with counts), کارکنان, تأمین‌کنندگان, فروشندگان, کاربران | `/console/people`, `/console/people/staff`, `/console/people/suppliers`, `/console/people/sellers`, `/console/people/users` | `people.view`, `suppliers.view`, `settings.manage` |
+| **اشخاص** | افراد (preview page with counts), کارکنان, تأمین‌کنندگان, فروشندگان, کاربران | `/console/people`, `/console/people/staff`, `/console/suppliers`, `/console/people/sellers`, `/console/people/users` | `people.view`, `suppliers.view`, `settings.manage` |
 | **مالی و گزارش** | امور مالی, گزارش و تحلیل | `/console/finances`, `/console/analytics` | `finances.view`, `analytics.view` |
 | **وب‌سایت و فروشگاه** | تنظیمات وب‌سایت, ظاهر وب‌سایت, فروشگاه آنلاین, مدیریت وبلاگ | `/console/website/*` | `website.manage`, `blog.manage` |
 | **مدیریت سیستم** | تنظیمات و مدیریت, اطلاع‌رسانی, گالری تصاویر | `/console/settings`, `/console/notifications`, `/console/gallery` | `settings.manage` |

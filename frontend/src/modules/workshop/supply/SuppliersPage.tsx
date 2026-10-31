@@ -14,6 +14,7 @@ import { useAuth } from '@/context/AuthContext';
 import { SupplierFormModal } from './SupplierFormModal';
 import { SupplierCard } from './SupplierCard';
 import { SelectMenu } from '@/components/ui/select-menu';
+import { Pagination } from '@/components/common/Pagination';
 
 export const SuppliersPage: React.FC = () => {
   const { hasPermission } = useAuth();
@@ -32,6 +33,10 @@ export const SuppliersPage: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const canManage = hasPermission('suppliers.manage') || hasPermission('purchasing.manage');
 
   useEffect(() => {
@@ -40,7 +45,9 @@ export const SuppliersPage: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await supplyApi.listSuppliers({ limit: 100 }).catch(() => ({ rows: [], total: 0 }));
+        const res = await supplyApi
+          .listSuppliers({ limit: 100, search: searchQuery || undefined, city: cityFilter !== 'all' ? cityFilter : undefined, isActive: statusFilter !== 'all' ? statusFilter === 'active' : false })
+          .catch(() => ({ rows: [], total: 0 }));
         if (!cancelled) {
           setSuppliers(res.rows);
         }
@@ -52,7 +59,8 @@ export const SuppliersPage: React.FC = () => {
     }
     void load();
     return () => { cancelled = true; };
-  }, []);
+  }, [searchQuery, cityFilter, statusFilter]);
+
 
   // --- Derived data for filters ---
   const availableCities = useMemo(() => {
@@ -98,6 +106,16 @@ export const SuppliersPage: React.FC = () => {
       return true;
     });
   }, [suppliers, searchQuery, cityFilter, categoryFilter, statusFilter]);
+
+  // Reset to page 1 when filters change
+  React.useEffect(() => {
+    setPage(1);
+  }, [searchQuery, cityFilter, categoryFilter, statusFilter]);
+
+  const paginatedSuppliers = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredSuppliers.slice(start, start + pageSize);
+  }, [filteredSuppliers, page, pageSize]);
 
   // --- CRUD handlers ---
   const handleCreateSupplier = async (data: SupplierPayload) => {
@@ -307,7 +325,7 @@ export const SuppliersPage: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredSuppliers.map((s) => (
+          {paginatedSuppliers.map((s) => (
             <SupplierCard
               key={s.id}
               supplier={s}
@@ -317,12 +335,23 @@ export const SuppliersPage: React.FC = () => {
               onToggleActive={toggleSupplierActive}
             />
           ))}
-          {filteredSuppliers.length === 0 && !loading && !error && (
+          {paginatedSuppliers.length === 0 && !loading && !error && (
             <p className="text-xs text-stone-400 text-center py-10 col-span-full">
               {hasActiveFilters ? 'تأمین‌کننده‌ای با این فیلترها یافت نشد' : 'هنوز تأمین‌کننده‌ای ثبت نشده است'}
             </p>
           )}
         </div>
+      )}
+
+      {/* Pagination */}
+      {!loading && !error && filteredSuppliers.length > 0 && (
+        <Pagination
+          currentPage={page}
+          totalItems={filteredSuppliers.length}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       )}
 
       {/* Supplier Form Modal */}

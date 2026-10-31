@@ -562,6 +562,8 @@ export const supplyApi = {
   updateOrder: (id: string, input: Partial<PurchaseOrderPayload>) =>
     api.patch<PurchaseOrder>(`${S}/purchase-orders/${encodeURIComponent(id)}`, input).then((r) => r.data),
   cancelOrder: (id: string) => api.put<PurchaseOrder>(`${S}/purchase-orders/${encodeURIComponent(id)}/cancel`, {}).then((r) => r.data),
+  markOrderReceived: (id: string, items: { purchaseItemId: string; quantity: number }[]) =>
+    api.post<PurchaseReceipt>(`${S}/purchase-orders/${encodeURIComponent(id)}/receipts`, { items }).then((r) => r.data),
   getLandedCost: (id: string) =>
     api.get<{ purchaseId: string; landedCost: LandedCostLine[] }>(`${S}/purchase-orders/${encodeURIComponent(id)}/landed-cost`).then((r) => r.data),
 

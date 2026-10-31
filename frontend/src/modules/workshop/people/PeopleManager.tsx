@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Users, Briefcase } from 'lucide-react';
+import React from 'react';
+
 import type {
   Seller,
   Consignment,
@@ -11,8 +10,13 @@ import type {
 } from '@/types';
 import { SellersManager } from '../sellers/SellersManager';
 import { StaffManager } from '../staff/StaffManager';
-import { toPersianDigits } from '@/utils/persian';
 
+/**
+ * PeopleManager — renders either the SellersManager or StaffManager based on
+ * the initialSubTab prop. Used by PeoplePage for /console/people/sellers and
+ * /console/people/staff routes. The tabbed navigation was removed: each
+ * category now has its own dedicated route and sidebar menu item.
+ */
 interface PeopleManagerProps {
   sellers: Seller[];
   consignments: Consignment[];
@@ -52,78 +56,9 @@ export const PeopleManager: React.FC<PeopleManagerProps> = ({
   onDeleteStaff,
   initialSubTab = 'sellers',
 }) => {
-  const navigate = useNavigate();
-  const [activeSubTab, setActiveSubTab] = useState<'sellers' | 'staff'>(initialSubTab);
-  const TAB_ROUTES: Record<'sellers' | 'staff', string> = {
-    sellers: '/console/people/sellers',
-    staff: '/console/people/staff',
-  };
-  const subTabs = [
-    {
-      id: 'sellers' as const,
-      label: 'فروشندگان',
-      icon: Users,
-      badge: sellers.length > 0 ? toPersianDigits(sellers.length) : undefined,
-    },
-    {
-      id: 'staff' as const,
-      label: 'کارکنان کارگاه',
-      icon: Briefcase,
-      badge: staff.length + owners.length > 0 ? toPersianDigits(staff.length + owners.length) : undefined,
-    },
-  ];
-
   return (
     <div className="space-y-6" dir="rtl">
-      {/* People Hub Unified Navigation Bar */}
-      <div className="glass-panel p-2.5 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-lg border border-black/5 dark:border-white/10">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand to-brand-hover text-brand-on flex items-center justify-center font-black shadow-md shrink-0">
-            <Users className="w-4 h-4" />
-          </div>
-          <div>
-            <h3 className="text-xs sm:text-sm font-black text-stone-900 dark:text-white">
-              مرکز مدیریت اشخاص، فروشندگان و پرسنل کارگاه
-            </h3>
-            <p className="text-[10px] text-stone-500 dark:text-gray-400 hidden sm:block">
-              پرونده فروشندگان راسته بازار، حساب‌های بانکی، پرسنل دوزندگی و شرکای کارگاه
-            </p>
-          </div>
-        </div>
-
-        {/* Tab Switcher Pills */}
-        <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-stone-100/80 dark:bg-black/40 border border-black/5 dark:border-white/5">
-          {subTabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeSubTab === tab.id;
-
-            return (
-              <button
-                key={tab.id}
-                onClick={() => { setActiveSubTab(tab.id); navigate(TAB_ROUTES[tab.id]); }}
-                className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
-                  isActive
-                    ? 'bg-brand text-brand-on shadow-md font-black'
-                    : 'text-stone-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-stone-200/60 dark:hover:bg-white/5'
-                }`}
-              >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-brand-on' : 'text-brand-ink'}`} />
-                <span>{tab.label}</span>
-                {tab.badge && (
-                  <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-bold ${
-                    isActive ? 'bg-black/20 text-brand-on' : 'bg-stone-200 dark:bg-white/10 text-stone-600 dark:text-stone-300'
-                  }`}>
-                    {tab.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Tab Content Display */}
-      {activeSubTab === 'sellers' && (
+      {initialSubTab === 'sellers' && (
         <SellersManager
           sellers={sellers}
           consignments={consignments}
@@ -138,7 +73,7 @@ export const PeopleManager: React.FC<PeopleManagerProps> = ({
         />
       )}
 
-      {activeSubTab === 'staff' && (
+      {initialSubTab === 'staff' && (
         <StaffManager
           owners={owners}
           staff={staff}
