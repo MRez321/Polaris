@@ -627,6 +627,43 @@ export async function markDelivered(id: string, actorName: string, actorId?: str
     return updated;
 }
 
+/**
+ * «تمدید سررسید»: pushes an unpaid consignment's deadline forward by `days`.
+ * The new deadline is measured from the current one when it is still in the
+ * future, and from "now" when it already passed — so one preset click always
+ * clears the overdue alert instead of producing a still-overdue date.
+ */
+export async function extendConsignmentDueDate(id: string, days: number) {
+    if (!Number.isInteger(days) || days < 1 || days > 30) {
+        throw badRequest('مدت تمدید باید بین ۱ تا ۳۰ روز باشد');
+    }
+
+    const updated = await db.transaction(async (tx) => {
+        const rows = await tx
+            .select()
+            .from(consignments)
+            .where(and(eq(consignments.id, id), eq(consignments.isDeleted, false)))
+            .for('update');
+        const existing = rows[0];
+        if (!existing) throw notFound('واگذاری یافت نشد');
+        if (existing.remainingAmount <= 0) throw badRequest('این واگذاری تسویه شده است');
+
+        const now = new Date();
+        const base = existing.dueDate.getTime() > now.getTime() ? existing.dueDate : now;
+        const dueDate = new Date(base.getTime() + days * 24 * 60 * 60 * 1000);
+
+        await tx
+            .update(consignments)
+            .set({ dueDate, updatedAt: now })
+            .where(eq(consignments.id, id));
+
+        const created = await tx.select().from(consignments).where(eq(consignments.id, id));
+        return created[0]!;
+    });
+    emitDataChanged('consignment', 'update');
+    return updated;
+}
+
 
 // ---------------------------------------------------------------------------
 // Returns

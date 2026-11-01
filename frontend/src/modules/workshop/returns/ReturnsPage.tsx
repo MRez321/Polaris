@@ -20,6 +20,7 @@ import { damageApi, itemsApi, returnsApi, getApiErrorMessage } from '@/lib/api';
 import { Modal } from '@/components/common/Modal';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { SelectMenu } from '@/components/ui/select-menu';
+import { Pagination } from '@/components/common/Pagination';
 import { toPersianDigits, toJalaliDate, formatToman } from '@/utils/persian';
 
 type SourceTab = 'all' | 'seller' | 'customer' | 'provider' | 'process' | 'consignment';
@@ -76,6 +77,12 @@ export const ReturnsPage: React.FC = () => {
   const [fixBy, setFixBy] = useState('');
   const [disposeTarget, setDisposeTarget] = useState<DamageRecord | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DamageRecord | null>(null);
+
+  // Client-side pagination for the two return lists.
+  const [damagePage, setDamagePage] = useState(1);
+  const [damagePageSize, setDamagePageSize] = useState(10);
+  const [consignmentPage, setConsignmentPage] = useState(1);
+  const [consignmentPageSize, setConsignmentPageSize] = useState(10);
 
   const load = useCallback(async () => {
     try {
@@ -205,6 +212,26 @@ export const ReturnsPage: React.FC = () => {
     );
   }, [consignmentReturns, activeTab, search]);
 
+  // Paginated slices (client-side).
+  const pagedDamage = useMemo(
+    () => filtered.slice((damagePage - 1) * damagePageSize, damagePage * damagePageSize),
+    [filtered, damagePage, damagePageSize]
+  );
+  const pagedReturns = useMemo(
+    () =>
+      filteredReturns.slice(
+        (consignmentPage - 1) * consignmentPageSize,
+        consignmentPage * consignmentPageSize
+      ),
+    [filteredReturns, consignmentPage, consignmentPageSize]
+  );
+
+  // Reset to the first page whenever the filters shrink the result set.
+  useEffect(() => {
+    setDamagePage(1);
+    setConsignmentPage(1);
+  }, [activeTab, search]);
+
   const tabs: { key: SourceTab; label: string; count: number }[] = [
     { key: 'all', label: 'همه', count: records.length + consignmentReturns.length },
     { key: 'seller', label: 'دست‌فروش', count: records.filter((r) => r.source === 'seller').length },
@@ -322,7 +349,7 @@ export const ReturnsPage: React.FC = () => {
               رکوردی یافت نشد
             </div>
           ) : (
-            filtered.map((r) => (
+            pagedDamage.map((r) => (
               <div key={r.id} className="glass-panel p-4 rounded-2xl space-y-3">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div className="space-y-1">
@@ -390,6 +417,18 @@ export const ReturnsPage: React.FC = () => {
               </div>
             ))
           )}
+          {!isLoading && filtered.length > 0 && (
+            <Pagination
+              currentPage={damagePage}
+              totalItems={filtered.length}
+              pageSize={damagePageSize}
+              onPageChange={setDamagePage}
+              onPageSizeChange={(size) => {
+                setDamagePageSize(size);
+                setDamagePage(1);
+              }}
+            />
+          )}
         </div>
       )}
 
@@ -399,7 +438,7 @@ export const ReturnsPage: React.FC = () => {
           {activeTab === 'all' && filteredReturns.length > 0 && (
             <h3 className="text-xs font-black text-stone-400 pt-2">مرجوعی‌های امانی (تحویل دست‌فروش):</h3>
           )}
-          {filteredReturns.map((r) => (
+          {pagedReturns.map((r) => (
             <div key={r.id} className="glass-panel p-4 rounded-2xl space-y-2 border-r-4 border-r-sky-500/40">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="space-y-1">
@@ -433,6 +472,18 @@ export const ReturnsPage: React.FC = () => {
               </div>
             </div>
           ))}
+          {filteredReturns.length > 0 && (
+            <Pagination
+              currentPage={consignmentPage}
+              totalItems={filteredReturns.length}
+              pageSize={consignmentPageSize}
+              onPageChange={setConsignmentPage}
+              onPageSizeChange={(size) => {
+                setConsignmentPageSize(size);
+                setConsignmentPage(1);
+              }}
+            />
+          )}
         </div>
       )}
 

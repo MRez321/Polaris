@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users,
@@ -22,6 +22,7 @@ import { SellerProfileDrawer } from './SellerProfileDrawer';
 import { SelectMenu } from '@/components/ui/select-menu';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { SafeImage } from '@/components/common/SafeImage';
+import { Pagination } from '@/components/common/Pagination';
 interface SellersManagerProps {
   sellers: Seller[];
   consignments: Consignment[];
@@ -57,6 +58,9 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
   const [selectedProfileSeller, setSelectedProfileSeller] = useState<Seller | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Seller | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  // Client-side pagination for the seller grid.
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
 
   const handleCopy = (text: string, key: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -88,6 +92,17 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
       if (sortBy === 'turnover') return (b.totalHandoversValue || 0) - (a.totalHandoversValue || 0);
       return 0;
     });
+
+  // Paginated slice of the filtered seller grid (client-side).
+  const pagedSellers = useMemo(
+    () => filteredSellers.slice((page - 1) * pageSize, page * pageSize),
+    [filteredSellers, page, pageSize]
+  );
+
+  // Jump back to page 1 whenever the search, status or sort changes.
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter, sortBy]);
 
   const totalDebts = safeSellers.reduce((sum, s) => sum + (s.currentDebt || 0), 0);
   const totalPaidSum = safeSellers.reduce((sum, s) => sum + (s.totalPaid || 0), 0);
@@ -235,7 +250,9 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
 
       {/* Sellers Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredSellers.map((seller, index) => {
+        {pagedSellers.map((seller, index) => {
+          // Global rank so paginated pages keep the sorted-by-paid position.
+          const globalRank = (page - 1) * pageSize + index + 1;
           const debtPercentage = Math.min(
             100,
             Math.round(((seller.currentDebt || 0) / (seller.creditLimit || 1)) * 100)
@@ -254,12 +271,12 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
                     {sortBy === 'top_paid' && (
                       <div
                         className={`w-6 h-6 rounded-lg flex items-center justify-center font-black text-xs shrink-0 ${
-                          index === 0
+                          globalRank === 1
                             ? 'bg-brand text-brand-on shadow-md'
                             : 'bg-stone-200 dark:bg-black/50 text-stone-700 dark:text-stone-300'
                         }`}
                       >
-                        {toPersianDigits(index + 1)}
+                        {toPersianDigits(globalRank)}
                       </div>
                     )}
 
@@ -469,6 +486,20 @@ export const SellersManager: React.FC<SellersManagerProps> = ({
           );
         })}
       </div>
+
+      {filteredSellers.length > 0 && (
+        <Pagination
+          currentPage={page}
+          totalItems={filteredSellers.length}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+          pageSizeOptions={[12, 24, 48, 96]}
+        />
+      )}
 
       {/* Seller Form Modal */}
       <SellerFormModal

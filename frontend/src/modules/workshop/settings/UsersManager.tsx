@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Users as UsersIcon, UserPlus, Loader2, Ban, CircleCheck, Trash2, Search } from 'lucide-react';
 import { authClient } from '@/lib/auth';
@@ -7,6 +7,7 @@ import { toJalaliDate, toPersianDigits } from '@/utils/persian';
 import { Modal } from '@/components/common/Modal';
 import { SelectMenu } from '@/components/ui/select-menu';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { Pagination } from '@/components/common/Pagination';
 
 interface ManagedUser {
   id: string;
@@ -49,6 +50,9 @@ export const UsersManager: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [removeTarget, setRemoveTarget] = useState<ManagedUser | null>(null);
+  // Client-side pagination for the user list.
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
@@ -171,6 +175,17 @@ export const UsersManager: React.FC = () => {
     return matchesQuery && matchesRole;
   });
 
+  // Paginated slice of the filtered user list (client-side).
+  const pagedUsers = useMemo(
+    () => filteredUsers.slice((page - 1) * pageSize, page * pageSize),
+    [filteredUsers, page, pageSize]
+  );
+
+  // Jump back to page 1 whenever the search or role filter changes.
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, roleFilter]);
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto text-stone-900 dark:text-white">
       {/* Header */}
@@ -239,7 +254,7 @@ export const UsersManager: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-3">
-          {filteredUsers.map((user) => {
+          {pagedUsers.map((user) => {
             const isSelf = currentUser?.id === user.id;
             return (
               <div
@@ -334,6 +349,18 @@ export const UsersManager: React.FC = () => {
               </div>
             );
           })}
+              {filteredUsers.length > 0 && (
+                <Pagination
+                  currentPage={page}
+                  totalItems={filteredUsers.length}
+                  pageSize={pageSize}
+                  onPageChange={setPage}
+                  onPageSizeChange={(size) => {
+                    setPageSize(size);
+                    setPage(1);
+                  }}
+                />
+              )}
             </div>
           )}
         </div>

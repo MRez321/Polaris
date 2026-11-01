@@ -26,6 +26,10 @@ const handoverSchema = z.object({
         .min(1),
 });
 
+const extendDueDateSchema = z.object({
+    days: z.number().int().min(1).max(30),
+});
+
 const returnSchema = z.object({
     consignmentId: z.string().min(1),
     returnItems: z
@@ -100,6 +104,27 @@ export async function deliverConsignment(req: Request, res: Response): Promise<v
         entityId: row.id,
         link: '/workshop/consignments',
     });
+    res.json(toConsignmentDto(row));
+}
+
+/**
+ * «تمدید سررسید»: moves an unpaid handover's deadline forward so the overdue
+ * alert can be resolved without touching the debt itself.
+ */
+export async function extendDueDate(req: Request, res: Response): Promise<void> {
+    const id = pathParam(req, 'id', 'شناسه واگذاری');
+    const { days } = extendDueDateSchema.parse(req.body);
+    const row = await svc.extendConsignmentDueDate(id, days);
+    recordAudit({
+        actor: req.auth ?? null,
+        action: 'update',
+        entityType: 'consignment',
+        entityId: row.id,
+        details: `سررسید واگذاری ${row.code} برای ${row.sellerName} به مدت ${days} روز تمدید شد`,
+        ip: req.ip,
+        userAgent: requestUserAgent(req),
+    });
+
     res.json(toConsignmentDto(row));
 }
 

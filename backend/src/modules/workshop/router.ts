@@ -138,6 +138,8 @@ router.put('/notifications/:id/read', inAppNotifications.readWorkshopNotificatio
 
 // Scheduled delivery: mark a pending handover as physically delivered.
 router.post('/consignments/:id/deliver', consignments.deliverConsignment);
+// Extend an unpaid handover's deadline (dashboard overdue alert presets).
+router.put('/consignments/:id/due-date', consignments.extendDueDate);
 // ---------------------------------------------------------------------------
 // P0-D: Unified Sales — orders, seller sales, payments, customers, channels
 // ---------------------------------------------------------------------------

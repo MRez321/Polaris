@@ -3,6 +3,7 @@ import { MapPin, TrendingUp } from 'lucide-react';
 import type { Seller } from '@/types';
 import { formatToman, toPersianDigits } from '@/utils/persian';
 import { SafeImage } from '@/components/common/SafeImage';
+import { Pagination } from '@/components/common/Pagination';
 interface TopSellersCardProps {
   sellers: Seller[];
   onSelectSeller: (seller: Seller) => void;
@@ -16,6 +17,14 @@ export const TopSellersCard: React.FC<TopSellersCardProps> = ({
 }) => {
   // Sort sellers by total paid (best performance)
   const sortedSellers = [...(sellers || [])].sort((a, b) => (b.totalPaid || 0) - (a.totalPaid || 0));
+  const PAGE_SIZE = 6;
+  const [page, setPage] = React.useState(1);
+  const totalPages = Math.max(1, Math.ceil(sortedSellers.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  React.useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+  const pageRows = sortedSellers.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
     <div className="glass-panel p-5 rounded-2xl shadow-xl transition-all">
@@ -38,8 +47,10 @@ export const TopSellersCard: React.FC<TopSellersCardProps> = ({
             داده‌ای برای نمایش وجود ندارد
           </div>
         ) : (
+      <>
       <div className="space-y-3">
-        {sortedSellers.slice(0, 5).map((seller, index) => {
+        {pageRows.map((seller, index) => {
+          const globalIndex = (safePage - 1) * PAGE_SIZE + index;
           const debtPercentage = Math.min(
             100,
             Math.round(((seller.currentDebt || 0) / (seller.creditLimit || 1)) * 100)
@@ -56,14 +67,14 @@ export const TopSellersCard: React.FC<TopSellersCardProps> = ({
                   {/* Rank Badge */}
                   <div
                     className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 shadow-sm ${
-                      index === 0
+                      globalIndex === 0
                         ? 'bg-brand text-brand-on ring-2 ring-brand/30 font-black'
-                        : index === 1
+                        : globalIndex === 1
                         ? 'bg-stone-300 dark:bg-[#252525] text-stone-800 dark:text-stone-200 border border-black/10 dark:border-white/10'
                         : 'bg-stone-200 dark:bg-[#1E1E1E] text-stone-600 dark:text-gray-400'
                     }`}
                   >
-                    {toPersianDigits(index + 1)}
+                    {toPersianDigits(globalIndex + 1)}
                   </div>
 
                   {/* Avatar thumbnail */}
@@ -148,6 +159,15 @@ export const TopSellersCard: React.FC<TopSellersCardProps> = ({
           );
         })}
       </div>
+        {sortedSellers.length > PAGE_SIZE && (
+          <Pagination
+            currentPage={safePage}
+            totalItems={sortedSellers.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
+        )}
+      </>
         )}
     </div>
   );

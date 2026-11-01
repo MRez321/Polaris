@@ -96,23 +96,6 @@ export const NAV_GROUPS: NavGroupConfig[] = [
       { to: '/console/orders', label: 'سفارش‌های فروشگاه', icon: ShoppingBag, permission: 'orders.view' },
     ],
   },
-  // === درحال توسعه ===
-  {
-    id: 'development',
-    label: 'درحال توسعه',
-    items: [
-      { to: '/console/sales-orders', label: 'سفارشات فروش', icon: ShoppingBag, permission: 'sales.view' },
-      { to: '/console/seller-sales', label: 'فروش فروشندگان', icon: Users, permission: 'seller-sales.view' },
-      { to: '/console/customers', label: 'مشتریان', icon: UserCheck, permission: 'customers.view' },
-      { to: '/console/sales-channels', label: 'کانال‌های فروش', icon: Globe, permission: 'channels.view' },
-      {
-        to: '/console/sales-payments',
-        label: 'پرداخت‌های فروش',
-        icon: CreditCard,
-        permission: 'payments.view',
-      },
-    ],
-  },
   // === اشخاص ===
   {
     id: 'people',
@@ -132,6 +115,16 @@ export const NAV_GROUPS: NavGroupConfig[] = [
     items: [
       { to: '/console/finances', label: 'امور مالی', icon: CreditCard, permission: 'finances.view' },
       { to: '/console/analytics', label: 'گزارش و تحلیل', icon: BarChart3, permission: 'analytics.view' },
+      { to: '/console/sales-orders', label: 'سفارشات فروش', icon: ShoppingBag, permission: 'sales.view' },
+      { to: '/console/seller-sales', label: 'فروش فروشندگان', icon: Users, permission: 'seller-sales.view' },
+      { to: '/console/customers', label: 'مشتریان', icon: UserCheck, permission: 'customers.view' },
+      { to: '/console/sales-channels', label: 'کانال‌های فروش', icon: Globe, permission: 'channels.view' },
+      {
+        to: '/console/sales-payments',
+        label: 'پرداخت‌های فروش',
+        icon: CreditCard,
+        permission: 'payments.view',
+      },
     ],
   },
   // === وب‌سایت و فروشگاه ===

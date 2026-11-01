@@ -21,6 +21,7 @@ import { SelectMenu } from '@/components/ui/select-menu';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { analyticsApi } from '@/lib/api';
 import { ItemFormModal } from './ItemFormModal';
+import { Pagination } from '@/components/common/Pagination';
 
 interface InventoryManagerProps {
   items: GarmentItem[];
@@ -82,6 +83,9 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
   const [deleteTarget, setDeleteTarget] = useState<GarmentItem | null>(null);
   // sold counts from analytics: itemId -> { total, seller, shop }
   const [soldStats, setSoldStats] = useState<Map<string, { total: number; seller: number; shop: number }>>(new Map());
+  // Client-side pagination for the item grid.
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
 
   const displayCategories = [
     { id: 'all', label: 'همه دسته‌ها' },
@@ -144,6 +148,17 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
     }
     return list;
   }, [safeItems, search, selectedCategory, showLowStockOnly, channel, sortBy, soldStats]);
+
+  // Paginated slice of the filtered grid (client-side).
+  const pagedItems = useMemo(
+    () => filteredItems.slice((page - 1) * pageSize, page * pageSize),
+    [filteredItems, page, pageSize]
+  );
+
+  // Jump back to page 1 whenever a filter narrows the result set.
+  React.useEffect(() => {
+    setPage(1);
+  }, [search, selectedCategory, showLowStockOnly, channel, sortBy]);
 
   const lowStockCount = safeItems.filter(
     (i) => (i.stockQuantity || 0) <= (i.minStockThreshold || 0)
@@ -290,7 +305,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
 
       {/* Items Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredItems.map((item) => {
+        {pagedItems.map((item) => {
           const isLowStock = item.stockQuantity <= item.minStockThreshold;
           const sold = soldStats.get(item.id);
 
@@ -445,6 +460,20 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
           );
         })}
       </div>
+
+      {filteredItems.length > 0 && (
+        <Pagination
+          currentPage={page}
+          totalItems={filteredItems.length}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+          pageSizeOptions={[12, 24, 48, 96]}
+        />
+      )}
 
       {/* Item add/edit modal */}
       <ItemFormModal

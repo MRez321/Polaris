@@ -6,14 +6,14 @@ import { useData } from '@/modules/workshop/context/DataContext';
 import { useUI } from '@/modules/workshop/context/UIContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useComputedStats } from '@/modules/workshop/hooks/useComputedStats';
-import { companyApi, getApiErrorMessage, ordersApi, analyticsApi } from '@/lib/api';
+import { companyApi, consignmentsApi, getApiErrorMessage, ordersApi, analyticsApi } from '@/lib/api';
 import type { AnalyticsResult } from '@/lib/api';
 import type { DashboardLayout, Order } from '@/types';
 import { normalizeLayout } from '@/modules/workshop/dashboard/dashboardLayout';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { sellers, consignments, payments, items, returns, workshopInfo, setWorkshopInfo } = useData();
+  const { sellers, consignments, payments, items, returns, workshopInfo, setWorkshopInfo, fetchData } = useData();
   const { openQuickHandover, openQuickPayment, setSelectedConsignment } = useUI();
   const { isDarkMode } = useTheme();
   const stats = useComputedStats();
@@ -44,6 +44,18 @@ const DashboardPage: React.FC = () => {
       .catch((err) =>
         toast.error(getApiErrorMessage(err, 'ذخیره تنظیمات نمایش داشبورد ناموفق بود'))
       );
+  };
+
+  // «تمدید سررسید» from the overdue alert: persist the new deadline, then
+  // pull the whole dashboard dataset so the KPI + alert widgets re-derive.
+  const handleExtendDueDate = async (consignmentId: string, days: number) => {
+    try {
+      const updated = await consignmentsApi.extendDueDate(consignmentId, days);
+      toast.success(`سررسید واگذاری ${updated.code} با موفقیت تمدید شد`);
+      await fetchData();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'تمدید سررسید ناموفق بود'));
+    }
   };
 
   return (
@@ -79,6 +91,7 @@ const DashboardPage: React.FC = () => {
       }}
       dashboardPrefs={normalizeLayout(workshopInfo.dashboardPrefs)}
       onDashboardPrefsChange={handlePrefsChange}
+      onExtendDueDate={handleExtendDueDate}
     />
   );
 };

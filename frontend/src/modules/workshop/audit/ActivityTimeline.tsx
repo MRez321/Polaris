@@ -17,6 +17,7 @@ import { auditApi, getApiErrorMessage } from '@/lib/api';
 import type { AuditLog } from '@/types';
 import { toJalaliDateTime, toPersianDigits } from '@/utils/persian';
 import { Badge } from '@/components/common/Badge';
+import { Pagination } from '@/components/common/Pagination';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   getActionLabel,
@@ -56,6 +57,15 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
   const [total, setTotal] = React.useState<number>(0);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string | null>(null);
+
+  const PAGE_SIZE = 6;
+  const [page, setPage] = React.useState(1);
+  const totalPages = Math.max(1, Math.ceil(logs.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+
+  React.useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   React.useEffect(() => {
     let active = true;
@@ -106,8 +116,9 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
           هیچ فعالیتی ثبت نشده است.
         </div>
       ) : (
+        <>
         <div className="space-y-3.5">
-          {logs.map((log) => {
+          {logs.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE).map((log) => {
             const sev = getSeverity(log);
             return (
               <div key={log.id} className="flex items-start gap-3">
@@ -149,6 +160,15 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
             );
           })}
         </div>
+        {logs.length > PAGE_SIZE && (
+          <Pagination
+            currentPage={safePage}
+            totalItems={logs.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
+        )}
+        </>
       )}
 
       {!hideFooter && (

@@ -26,7 +26,7 @@ export const Sidebar: React.FC = () => {
 
   return (
     <aside className="w-64 shrink-0 hidden md:block">
-      <div className="sticky top-20 flex flex-col glass-panel rounded-2xl p-2 shadow-xl transition-all">
+      <div className="sticky top-20 flex flex-col max-h-[calc(100vh-4rem)] overflow-y-auto glass-panel rounded-2xl p-2 shadow-xl transition-all">
         {/* Scrollable nav so the sidebar never overflows on shorter viewports. */}
         <nav className="flex-1 overflow-y-auto min-h-0 space-y-1">
           {visibleGroups.map((group) => {

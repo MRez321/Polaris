@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Users,
   CreditCard,
@@ -39,6 +39,7 @@ import { OwnerFormModal } from '../settings/OwnerFormModal';
 import { SelectMenu } from '@/components/ui/select-menu';
 import { ImagePicker } from '@/components/common/ImagePicker';
 import { SafeImage } from '@/components/common/SafeImage';
+import { Pagination } from '@/components/common/Pagination';
 
 interface StaffManagerProps {
   owners: Owner[];
@@ -66,6 +67,9 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>('all');
+  // Client-side pagination for the staff grid.
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
 
   // Owner Form Modal State
   const [isOwnerModalOpen, setIsOwnerModalOpen] = useState(false);
@@ -317,6 +321,17 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
     return matchesSearch && matchesRole;
   });
 
+  // Paginated slice of the filtered staff grid (client-side).
+  const pagedStaff = useMemo(
+    () => filteredStaff.slice((page - 1) * pageSize, page * pageSize),
+    [filteredStaff, page, pageSize]
+  );
+
+  // Jump back to page 1 whenever the search or role filter changes.
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, selectedRoleFilter]);
+
   return (
     <div className="space-y-8 max-w-6xl mx-auto text-stone-900 dark:text-white">
       {/* Header */}
@@ -429,7 +444,7 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
 
         {/* Staff Members Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredStaff.map((stf) => {
+          {pagedStaff.map((stf) => {
             return (
               <div
                 key={stf.id}
@@ -627,6 +642,19 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
             );
           })}
         </div>
+        {filteredStaff.length > 0 && (
+          <Pagination
+            currentPage={page}
+            totalItems={filteredStaff.length}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPage(1);
+            }}
+            pageSizeOptions={[12, 24, 48, 96]}
+          />
+        )}
       </div>
 
       {/* Modal for Adding / Editing Staff Member */}

@@ -46,7 +46,7 @@ export const SuppliersPage: React.FC = () => {
       setError(null);
       try {
         const res = await supplyApi
-          .listSuppliers({ limit: 100, search: searchQuery || undefined, city: cityFilter !== 'all' ? cityFilter : undefined, isActive: statusFilter !== 'all' ? statusFilter === 'active' : false })
+          .listSuppliers({ limit: 100, search: searchQuery || undefined, city: cityFilter !== 'all' ? cityFilter : undefined, ...(statusFilter !== 'all' ? { isActive: statusFilter === 'active' } : {}) })
           .catch(() => ({ rows: [], total: 0 }));
         if (!cancelled) {
           setSuppliers(res.rows);

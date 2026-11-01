@@ -14,6 +14,7 @@ import { CreditCard, Package, ShoppingBag, TrendingUp } from 'lucide-react';
 import type { Consignment, GarmentItem, Order, OrderStatus } from '@/types';
 import { Badge } from '@/components/common/Badge';
 import { formatToman, toJalaliDate, toPersianDigits } from '@/utils/persian';
+import { WidgetList } from './WidgetList';
 
 export interface ManagerActionCenterProps {
   overdueConsignments: Consignment[];
@@ -46,7 +47,7 @@ export const ManagerActionCenter: React.FC<ManagerActionCenterProps> = ({
   const sortedOverdue = React.useMemo(
     () =>
       [...overdueConsignments].sort(
-        (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
+        (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
       ),
     [overdueConsignments]
   );
@@ -104,20 +105,29 @@ export const ManagerActionCenter: React.FC<ManagerActionCenterProps> = ({
                 </button>
               </div>
 
-              <div className="space-y-1.5">
-                {g.id === 'overdue' &&
-                  sortedOverdue.slice(0, 5).map((c) => (
+              {g.id === 'overdue' && (
+                <WidgetList
+                  items={sortedOverdue}
+                  className="space-y-1.5"
+                  renderItem={(c) => (
                     <OverdueRow key={c.id} c={c} onSelect={onSelectConsignment} />
-                  ))}
-                {g.id === 'lowStock' &&
-                  sortedLowStock.slice(0, 5).map((item) => (
-                    <LowStockRow key={item.id} item={item} />
-                  ))}
-                {g.id === 'orders' &&
-                  sortedPending.slice(0, 5).map((o) => (
-                    <OrderRow key={o.id} order={o} onSelect={onSelectOrder} />
-                  ))}
-              </div>
+                  )}
+                />
+              )}
+              {g.id === 'lowStock' && (
+                <WidgetList
+                  items={sortedLowStock}
+                  className="space-y-1.5"
+                  renderItem={(item) => <LowStockRow key={item.id} item={item} />}
+                />
+              )}
+              {g.id === 'orders' && (
+                <WidgetList
+                  items={sortedPending}
+                  className="space-y-1.5"
+                  renderItem={(o) => <OrderRow key={o.id} order={o} onSelect={onSelectOrder} />}
+                />
+              )}
             </div>
           );
         })

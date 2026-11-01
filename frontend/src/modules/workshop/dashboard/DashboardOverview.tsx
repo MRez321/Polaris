@@ -15,7 +15,6 @@ import {
 import type {
   DashboardStats,
   DashboardLayout,
-  DashboardWidgetCols,
   Consignment,
   Seller,
   PaymentRecord,
@@ -33,7 +32,6 @@ import {
   DASHBOARD_WIDGETS,
   defaultLayout,
   normalizeLayout,
-  spanClass,
 } from './dashboardLayout';
 import { formatToman, toJalaliDate, toJalaliDateTime, toPersianDigits } from '@/utils/persian';
 import { Badge } from '@/components/common/Badge';
@@ -42,6 +40,7 @@ import { Switch } from '@/components/ui/switch';
 import { ORDER_STATUS_META } from '@/lib/orderStatus';
 import { ActivityTimeline } from '@/modules/workshop/audit/ActivityTimeline';
 import { ManagerActionCenter } from '@/modules/workshop/dashboard/ManagerActionCenter';
+import { WidgetList } from './WidgetList';
 
 interface DashboardOverviewProps {
   stats: DashboardStats;
@@ -58,6 +57,8 @@ interface DashboardOverviewProps {
   onSelectSeller?: (seller: Seller) => void;
   onSelectConsignment?: (c: Consignment) => void;
   onGoToTab?: (tab: string) => void;
+  /** Persists an overdue handover's deadline extension, then refreshes data. */
+  onExtendDueDate?: (consignmentId: string, days: number) => Promise<void> | void;
   dashboardPrefs?: DashboardLayout;
   onDashboardPrefsChange?: (prefs: DashboardLayout) => void;
 }
@@ -66,12 +67,11 @@ interface DashboardOverviewProps {
 const WidgetShell: React.FC<{
   title: string;
   icon?: React.ReactNode;
-  cols?: DashboardWidgetCols;
   collapsed: boolean;
   onToggleCollapse: () => void;
   children: React.ReactNode;
-}> = ({ title, icon, cols, collapsed, onToggleCollapse, children }) => (
-  <div className={`glass-panel rounded-2xl border border-stone-200 dark:border-white/5 shadow-xl overflow-hidden ${spanClass(cols)}`}>
+}> = ({ title, icon, collapsed, onToggleCollapse, children }) => (
+  <div className="glass-panel rounded-2xl border border-stone-200 dark:border-white/5 shadow-xl overflow-hidden">
     <Collapsible open={!collapsed} onOpenChange={onToggleCollapse}>
       <button
         type="button"
@@ -109,6 +109,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   onSelectSeller = (_seller: Seller) => {},
   onSelectConsignment = (_c: Consignment) => {},
   onGoToTab = (_tab: string) => {},
+  onExtendDueDate,
   dashboardPrefs,
   onDashboardPrefsChange = () => {},
 }) => {
@@ -218,17 +219,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       </div>
     ),
 
-    overdueAlerts: (
-      <OverdueAlertBanner
-        overdueConsignments={overdueConsignments}
-        sellers={safeSellers}
-        onSelectConsignment={onSelectConsignment}
-        onRecordPaymentForSeller={() => {
-          onOpenPayment();
-        }}
-      />
-    ),
-
     kpiCards: (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
@@ -288,8 +278,9 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     ),
 
     recentHandovers: (
-      <div className="space-y-2.5">
-        {safeConsignments.slice(0, 4).map((c) => {
+      <WidgetList
+        items={safeConsignments}
+        renderItem={(c) => {
           const itemCount = (c.items || []).reduce((s, i) => s + (i.quantity || 0), 0);
           return (
             <div
@@ -332,13 +323,14 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               </div>
             </div>
           );
-        })}
-      </div>
+        }}
+      />
     ),
 
     recentPayments: (
-      <div className="space-y-2.5">
-        {safePayments.slice(0, 4).map((p) => (
+      <WidgetList
+        items={safePayments}
+        renderItem={(p) => (
           <div
             key={p.id}
             className="p-3.5 rounded-xl glass-card flex items-center justify-between gap-3"
@@ -364,174 +356,161 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               <span className="text-[10px] text-stone-400 font-mono">{p.code}</span>
             </div>
           </div>
-        ))}
-      </div>
+        )}
+      />
     ),
 
     latestShopSales: (
-      <div>
-        {safeOrders.length === 0 ? (
+      <WidgetList
+        items={safeOrders}
+        empty={
           <p className="text-xs text-stone-500 dark:text-gray-400 py-4 text-center">هنوز سفارشی از فروشگاه ثبت نشده است</p>
-        ) : (
-          <div className="space-y-2.5">
-            {safeOrders.slice(0, 4).map((o) => {
-              const meta = ORDER_STATUS_META[o.status];
-              return (
-                <div
-                  key={o.id}
-                  onClick={() => onGoToTab('orders')}
-                  className="p-3.5 rounded-xl glass-card hover:border-brand/50 flex items-center justify-between gap-3 cursor-pointer transition-all active:scale-[0.99]"
-                >
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-black text-xs sm:text-sm text-stone-900 dark:text-white">{o.customerName}</span>
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${meta.badge}`}>{meta.label}</span>
-                    </div>
-                    <p className="text-[11px] text-stone-500 dark:text-gray-400 mt-1">
-                      {toPersianDigits(o.items.reduce((s, l) => s + l.quantity, 0))} قلم • {toJalaliDateTime(o.createdAt)}
-                    </p>
-                  </div>
-                  <span className="text-xs sm:text-sm font-black text-stone-900 dark:text-white font-mono">
-                    {formatToman(o.total)}
-                  </span>
+        }
+        renderItem={(o) => {
+          const meta = ORDER_STATUS_META[o.status];
+          return (
+            <div
+              key={o.id}
+              onClick={() => onGoToTab('orders')}
+              className="p-3.5 rounded-xl glass-card hover:border-brand/50 flex items-center justify-between gap-3 cursor-pointer transition-all active:scale-[0.99]"
+            >
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-black text-xs sm:text-sm text-stone-900 dark:text-white">{o.customerName}</span>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${meta.badge}`}>{meta.label}</span>
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                <p className="text-[11px] text-stone-500 dark:text-gray-400 mt-1">
+                  {toPersianDigits(o.items.reduce((s, l) => s + l.quantity, 0))} قلم • {toJalaliDateTime(o.createdAt)}
+                </p>
+              </div>
+              <span className="text-xs sm:text-sm font-black text-stone-900 dark:text-white font-mono">
+                {formatToman(o.total)}
+              </span>
+            </div>
+          );
+        }}
+      />
     ),
 
     latestSellerIncome: (
-      <div>
-        {safeSellers.length === 0 ? (
-          <p className="text-xs text-stone-500 dark:text-gray-400 py-4 text-center">هنوز دست‌فروشی ثبت نشده است</p>
-        ) : (
-          <div className="space-y-2.5">
-            {safeSellers
-              .map((s) => ({ seller: s, income: s.totalHandoversValue || 0 }))
-              .filter((r) => r.income > 0)
-              .sort((a, b) => b.income - a.income)
-              .slice(0, 4)
-              .map(({ seller, income }) => (
-                <div
-                  key={seller.id}
-                  onClick={() => onSelectSeller(seller)}
-                  className="p-3.5 rounded-xl glass-card hover:border-brand/50 flex items-center justify-between gap-3 cursor-pointer transition-all active:scale-[0.99]"
-                >
-                  <span className="font-black text-xs sm:text-sm text-stone-900 dark:text-white">{seller.name}</span>
-                  <span className="text-xs sm:text-sm font-black text-emerald-600 dark:text-green-400 font-mono">
-                    {formatToman(income)}
-                  </span>
-                </div>
-              ))}
-            {safeSellers.every((s) => (s.totalHandoversValue || 0) === 0) && (
-              <p className="text-xs text-stone-500 dark:text-gray-400 py-4 text-center">هنوز درآمدی ثبت نشده است</p>
-            )}
+      <WidgetList
+        items={safeSellers
+          .map((s) => ({ seller: s, income: s.totalHandoversValue || 0 }))
+          .filter((r) => r.income > 0)
+          .sort((a, b) => b.income - a.income)}
+        empty={
+          <p className="text-xs text-stone-500 dark:text-gray-400 py-4 text-center">
+            {safeSellers.length === 0 ? 'هنوز دست‌فروشی ثبت نشده است' : 'هنوز درآمدی ثبت نشده است'}
+          </p>
+        }
+        renderItem={({ seller, income }) => (
+          <div
+            key={seller.id}
+            onClick={() => onSelectSeller(seller)}
+            className="p-3.5 rounded-xl glass-card hover:border-brand/50 flex items-center justify-between gap-3 cursor-pointer transition-all active:scale-[0.99]"
+          >
+            <span className="font-black text-xs sm:text-sm text-stone-900 dark:text-white">{seller.name}</span>
+            <span className="text-xs sm:text-sm font-black text-emerald-600 dark:text-green-400 font-mono">
+              {formatToman(income)}
+            </span>
           </div>
         )}
-      </div>
+      />
     ),
 
     latestReturns: (
-      <div>
-        {safeReturns.length === 0 ? (
+      <WidgetList
+        items={safeReturns}
+        empty={
           <p className="text-xs text-stone-500 dark:text-gray-400 py-4 text-center">مرجوعی‌ای ثبت نشده است</p>
-        ) : (
-          <div className="space-y-2.5">
-            {safeReturns.slice(0, 4).map((r) => (
-              <div
-                key={r.id}
-                className="p-3.5 rounded-xl glass-card flex items-center justify-between gap-3"
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-black text-xs sm:text-sm text-stone-900 dark:text-white">{r.sellerName}</span>
-                    <Badge variant="danger" size="sm">
-                      {toPersianDigits(r.items.reduce((s, i) => s + i.quantity, 0))} قلم مرجوعی
-                    </Badge>
-                  </div>
-                  <p className="text-[11px] text-stone-500 dark:text-gray-400 mt-1">
-                    {toJalaliDateTime(r.date)} • فاکتور {r.consignmentCode}
-                  </p>
-                </div>
-                <span className="text-xs sm:text-sm font-black text-rose-600 dark:text-red-400 font-mono">
-                  {formatToman(r.totalReturnAmount)}
-                </span>
+        }
+        renderItem={(r) => (
+          <div
+            key={r.id}
+            className="p-3.5 rounded-xl glass-card flex items-center justify-between gap-3"
+          >
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-black text-xs sm:text-sm text-stone-900 dark:text-white">{r.sellerName}</span>
+                <Badge variant="danger" size="sm">
+                  {toPersianDigits(r.items.reduce((s, i) => s + i.quantity, 0))} قلم مرجوعی
+                </Badge>
               </div>
-            ))}
+              <p className="text-[11px] text-stone-500 dark:text-gray-400 mt-1">
+                {toJalaliDateTime(r.date)} • فاکتور {r.consignmentCode}
+              </p>
+            </div>
+            <span className="text-xs sm:text-sm font-black text-rose-600 dark:text-red-400 font-mono">
+              {formatToman(r.totalReturnAmount)}
+            </span>
           </div>
         )}
-      </div>
+      />
     ),
 
     topItems: (
-      <div>
-        {!analytics || analytics.topItems.length === 0 ? (
+      <WidgetList
+        items={analytics?.topItems ?? []}
+        empty={
           <p className="text-xs text-stone-500 dark:text-gray-400 py-4 text-center">هنوز فروشی ثبت نشده است</p>
-        ) : (
-          <div className="space-y-2.5">
-            {analytics.topItems.slice(0, 5).map((t, idx) => (
-              <div
-                key={t.itemId}
-                className="p-3.5 rounded-xl glass-card flex items-center justify-between gap-3"
+        }
+        renderItem={(t, idx) => (
+          <div
+            key={t.itemId}
+            className="p-3.5 rounded-xl glass-card flex items-center justify-between gap-3"
+          >
+            <div className="flex items-center gap-2.5">
+              <span
+                className={`w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-black shrink-0 ${
+                  idx === 0
+                    ? 'bg-brand text-brand-on'
+                    : 'bg-stone-100 dark:bg-white/10 text-stone-700 dark:text-gray-300'
+                }`}
               >
-                <div className="flex items-center gap-2.5">
-                  <span
-                    className={`w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-black shrink-0 ${
-                      idx === 0
-                        ? 'bg-brand text-brand-on'
-                        : 'bg-stone-100 dark:bg-white/10 text-stone-700 dark:text-gray-300'
-                    }`}
-                  >
-                    {toPersianDigits(idx + 1)}
-                  </span>
-                  <div>
-                    <span className="font-black text-xs sm:text-sm text-stone-900 dark:text-white block">{t.itemName}</span>
-                    <span className="text-[10px] text-stone-500 dark:text-gray-400 font-mono">
-                      فروشگاه {toPersianDigits(t.shopSold)} • دست‌فروش {toPersianDigits(t.sellerSold)}
-                    </span>
-                  </div>
-                </div>
-                <span className="text-xs sm:text-sm font-black text-brand-ink dark:text-brand font-mono">
-                  {toPersianDigits(t.totalSold)} عدد
+                {toPersianDigits(idx + 1)}
+              </span>
+              <div>
+                <span className="font-black text-xs sm:text-sm text-stone-900 dark:text-white block">{t.itemName}</span>
+                <span className="text-[10px] text-stone-500 dark:text-gray-400 font-mono">
+                  فروشگاه {toPersianDigits(t.shopSold)} • دست‌فروش {toPersianDigits(t.sellerSold)}
                 </span>
               </div>
-            ))}
+            </div>
+            <span className="text-xs sm:text-sm font-black text-brand-ink dark:text-brand font-mono">
+              {toPersianDigits(t.totalSold)} عدد
+            </span>
           </div>
         )}
-      </div>
+      />
     ),
 
     scheduledDeliveries: (
-      <div>
-        {pendingDeliveries.length === 0 ? (
+      <WidgetList
+        items={pendingDeliveries}
+        empty={
           <p className="text-xs text-stone-500 dark:text-gray-400 py-4 text-center">حواله‌ای در انتظار تحویل نیست</p>
-        ) : (
-          <div className="space-y-2.5">
-            {pendingDeliveries.slice(0, 5).map((c) => (
-              <div
-                key={c.id}
-                onClick={() => onSelectConsignment(c)}
-                className="p-3.5 rounded-xl glass-card hover:border-brand/50 flex items-center justify-between gap-3 cursor-pointer transition-all active:scale-[0.99]"
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-black text-xs sm:text-sm text-stone-900 dark:text-white">{c.sellerName}</span>
-                    <Badge variant="orange" size="sm">در انتظار تحویل</Badge>
-                  </div>
-                  <p className="text-[11px] text-stone-500 dark:text-gray-400 mt-1">
-                    موعد تحویل: {c.deliveryDate ? toJalaliDate(c.deliveryDate) : 'نامشخص'} • ثبت: {toJalaliDateTime(c.date)}
-                  </p>
-                </div>
-                <span className="text-xs sm:text-sm font-black text-stone-900 dark:text-white font-mono">
-                  {formatToman(c.totalAmount)}
-                </span>
+        }
+        renderItem={(c) => (
+          <div
+            key={c.id}
+            onClick={() => onSelectConsignment(c)}
+            className="p-3.5 rounded-xl glass-card hover:border-brand/50 flex items-center justify-between gap-3 cursor-pointer transition-all active:scale-[0.99]"
+          >
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-black text-xs sm:text-sm text-stone-900 dark:text-white">{c.sellerName}</span>
+                <Badge variant="orange" size="sm">در انتظار تحویل</Badge>
               </div>
-            ))}
+              <p className="text-[11px] text-stone-500 dark:text-gray-400 mt-1">
+                موعد تحویل: {c.deliveryDate ? toJalaliDate(c.deliveryDate) : 'نامشخص'} • ثبت: {toJalaliDateTime(c.date)}
+              </p>
+            </div>
+            <span className="text-xs sm:text-sm font-black text-stone-900 dark:text-white font-mono">
+              {formatToman(c.totalAmount)}
+            </span>
           </div>
         )}
-      </div>
+      />
     ),
 
 
@@ -655,17 +634,16 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         </Collapsible>
       </div>
 
-      {/* Unified master grid: every visible widget is one grid item. */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+      {/* Full-width stack: every visible widget owns its own row. */}
+      <div className="grid grid-cols-1 gap-6 items-start">
         {layout.order.map((id) => {
           if (!isVisible(id)) return null;
           const def = DASHBOARD_WIDGETS.find((w) => w.id === id);
           if (!def) return null;
-          const cols = def.cols;
 
           if (id === 'todoWidget') {
             return (
-              <div key={id} className={spanClass(cols)}>
+              <div key={id}>
                 <TodoWidget
                   collapsed={isCollapsed(id)}
                   onToggleCollapse={() => toggleCollapsed(id)}
@@ -676,10 +654,9 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           if (id === 'overdueAlerts') {
             if (overdueConsignments.length === 0) return null;
             return (
-              <div key={id} className={spanClass(cols)}>
+              <div key={id}>
                 <WidgetShell
                   title="هشدار سرسیدهای گذشته"
-                  cols={cols}
                   collapsed={isCollapsed(id)}
                   onToggleCollapse={() => toggleCollapsed(id)}
                   icon={<AlertOctagon className="w-4 h-4 text-rose-600 dark:text-red-400" />}
@@ -687,10 +664,10 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                   <OverdueAlertBanner
                     overdueConsignments={overdueConsignments}
                     sellers={safeSellers}
-                    onSelectConsignment={onSelectConsignment}
                     onRecordPaymentForSeller={() => {
                       onOpenPayment();
                     }}
+                    {...(onExtendDueDate ? { onExtendDueDate } : {})}
                   />
                 </WidgetShell>
               </div>
@@ -700,7 +677,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             <WidgetShell
               key={id}
               title={def.label}
-              cols={cols}
               collapsed={isCollapsed(id)}
               onToggleCollapse={() => toggleCollapsed(id)}
             >

@@ -15,7 +15,7 @@ import type {
 export interface DashboardWidgetDef {
   id: string;
   label: string;
-  /** Default desktop span in the 3-column grid. */
+  /** Legacy desktop span value, kept in the persisted layout for v1 readers. */
   cols: DashboardWidgetCols;
 }
 
@@ -124,9 +124,3 @@ export function applyPreset(layout: DashboardLayout, preset: DashboardPreset): D
   return { ...merged, presets: layout.presets };
 }
 
-/** Tailwind span class for a widget in the 3-col desktop grid. */
-export function spanClass(cols: DashboardWidgetCols | undefined): string {
-  if (cols === 2) return 'lg:col-span-2';
-  if (cols === 3) return 'lg:col-span-3';
-  return 'lg:col-span-1';
-}

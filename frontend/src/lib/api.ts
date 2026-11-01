@@ -215,6 +215,9 @@ export const consignmentsApi = {
   remove: (id: string) => api.delete(`${W}/consignments/${id}`).then((r) => r.data),
   /** Mark a scheduled handover as physically delivered (debt applies). */
   deliver: (id: string) => api.post<Consignment>(`${W}/consignments/${id}/deliver`).then((r) => r.data),
+  /** Push an unpaid handover's deadline forward by 1..30 days. */
+  extendDueDate: (id: string, days: number) =>
+    api.put<Consignment>(`${W}/consignments/${id}/due-date`, { days }).then((r) => r.data),
   submitReturn: (data: ReturnPayload) =>
     api
       .post<{ message: string; returnRecord: ConsignmentReturn; updatedConsignment: Consignment }>(

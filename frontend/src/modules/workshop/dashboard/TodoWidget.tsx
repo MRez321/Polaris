@@ -1,5 +1,15 @@
 /**
  * Dashboard todo widget: a colorful task list backed by /api/workshop/todos.
+ *
+ * Revamped task surface:
+ *  - every task can carry a date AND time deadline (`dueDate` is a datetime),
+ *  - free-form text with inline editing of both text and deadline,
+ *  - per-task browser reminder (bell) that fires a Notification once the
+ *    deadline passes while the dashboard is open; reminder keys are kept in
+ *    localStorage so a fired reminder never repeats,
+ *  - the list is ordered by urgency (open before done, earliest deadline
+ *    first) and pages 6 rows at a time.
+ *
  * Self-fetching (mount + refetch after every mutation) because the workshop
  * frontend has no socket.io client wired for the 'todo' channel yet.
  * Priority color language: low=sky, medium=amber, high=rose, urgent=red —
@@ -8,16 +18,20 @@
 import React from 'react';
 import { toast } from 'sonner';
 import {
+  Bell,
+  BellOff,
   Check,
   ClipboardList,
-  GripVertical,
+  Pencil,
   Plus,
   Trash2,
+  X,
 } from 'lucide-react';
 import { todoApi, getApiErrorMessage } from '@/lib/api';
 import type { TodoPriority, WorkshopTodo } from '@/types';
-import { toJalaliDate, toPersianDigits } from '@/utils/persian';
+import { toJalaliDateTime, toPersianDigits } from '@/utils/persian';
 import { SelectMenu } from '@/components/ui/select-menu';
+import { Pagination } from '@/components/common/Pagination';
 import {
   Collapsible,
   CollapsibleContent,
@@ -34,32 +48,69 @@ const PRIORITY_OPTIONS = [
 /** Priority → tailwind classes for the row accent + select tint. */
 const PRIORITY_STYLE: Record<
   TodoPriority,
-  { dot: string; label: string; badge: string; border: string }
+  { label: string; badge: string; border: string }
 > = {
   low: {
-    dot: 'bg-sky-500',
     label: 'text-sky-700 dark:text-sky-300',
     badge: 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/20',
     border: 'border-s-2 border-sky-500',
   },
   medium: {
-    dot: 'bg-amber-500',
     label: 'text-amber-700 dark:text-amber-300',
     badge: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20',
     border: 'border-s-2 border-amber-500',
   },
   high: {
-    dot: 'bg-rose-500',
     label: 'text-rose-700 dark:text-rose-300',
     badge: 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20',
     border: 'border-s-2 border-rose-500',
   },
   urgent: {
-    dot: 'bg-red-600',
     label: 'text-red-700 dark:text-red-300',
     badge: 'bg-red-500/10 text-red-700 dark:text-red-300 border-red-500/25',
     border: 'border-s-2 border-red-600',
   },
+};
+
+const PAGE_SIZE = 6;
+const REMINDER_STORAGE_KEY = 'polaris.todo.reminders';
+
+/** Stable reminder identity: one per task per deadline. */
+const reminderKey = (t: WorkshopTodo): string => `${t.id}:${t.dueDate}`;
+
+const readReminderKeys = (): string[] => {
+  try {
+    const raw = window.localStorage.getItem(REMINDER_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? parsed.filter((value): value is string => typeof value === 'string')
+      : [];
+  } catch {
+    return [];
+  }
+};
+
+/** `datetime-local` input value for an ISO timestamp. */
+const toLocalInputValue = (iso: string): string => {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  const pad = (value: number): string => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
+    date.getHours()
+  )}:${pad(date.getMinutes())}`;
+};
+
+/** Deadline state used for badges: past, today, or plain. */
+type DeadlineState = 'overdue' | 'today' | 'upcoming' | 'none';
+
+const deadlineState = (t: WorkshopTodo): DeadlineState => {
+  if (!t.dueDate) return 'none';
+  const due = new Date(t.dueDate).getTime();
+  if (Number.isNaN(due)) return 'none';
+  const now = new Date();
+  if (due < now.getTime()) return 'overdue';
+  return due - now.getTime() <= 24 * 60 * 60 * 1000 ? 'today' : 'upcoming';
 };
 
 interface TodoWidgetProps {
@@ -77,6 +128,12 @@ export const TodoWidget: React.FC<TodoWidgetProps> = ({
   const [dueDate, setDueDate] = React.useState('');
   const [busy, setBusy] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
+  const [page, setPage] = React.useState(1);
+  const [reminders, setReminders] = React.useState<string[]>(readReminderKeys);
+  const [editingId, setEditingId] = React.useState<string | null>(null);
+  const [editText, setEditText] = React.useState('');
+  const [editDue, setEditDue] = React.useState('');
+  const [editPriority, setEditPriority] = React.useState<TodoPriority>('medium');
 
   const refetch = React.useCallback(() => {
     todoApi
@@ -89,6 +146,15 @@ export const TodoWidget: React.FC<TodoWidgetProps> = ({
   React.useEffect(() => {
     refetch();
   }, [refetch]);
+
+  const persistReminders = (next: string[]) => {
+    setReminders(next);
+    try {
+      window.localStorage.setItem(REMINDER_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      // Storage disabled/full: reminders still work for this session.
+    }
+  };
 
   const add = async () => {
     const trimmed = text.trim();
@@ -126,8 +192,36 @@ export const TodoWidget: React.FC<TodoWidgetProps> = ({
     try {
       await todoApi.remove(id);
       setTodos((prev) => prev.filter((t) => t.id !== id));
+      if (editingId === id) setEditingId(null);
     } catch (err) {
       toast.error(getApiErrorMessage(err, 'حذف کار ناموفق بود'));
+    }
+  };
+
+  const startEdit = (t: WorkshopTodo) => {
+    setEditingId(t.id);
+    setEditText(t.text);
+    setEditDue(t.dueDate ? toLocalInputValue(t.dueDate) : '');
+    setEditPriority(t.priority);
+  };
+
+  const saveEdit = async () => {
+    if (!editingId) return;
+    const trimmed = editText.trim();
+    if (!trimmed) {
+      toast.error('متن کار را بنویسید');
+      return;
+    }
+    try {
+      const updated = await todoApi.update(editingId, {
+        text: trimmed,
+        priority: editPriority,
+        dueDate: editDue ? new Date(editDue).toISOString() : '',
+      });
+      setTodos((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+      setEditingId(null);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'ویرایش کار ناموفق بود'));
     }
   };
 
@@ -145,19 +239,86 @@ export const TodoWidget: React.FC<TodoWidgetProps> = ({
     }
   };
 
+  const toggleReminder = async (t: WorkshopTodo) => {
+    const key = reminderKey(t);
+    if (reminders.includes(key)) {
+      persistReminders(reminders.filter((entry) => entry !== key));
+      return;
+    }
+    if (!t.dueDate) {
+      toast.error('برای یادآور ابتدا سررسید تعیین کنید');
+      return;
+    }
+    if (typeof Notification === 'undefined') {
+      toast.error('مرورگر شما از یادآور پشتیبانی نمی‌کند');
+      return;
+    }
+    if (Notification.permission !== 'granted') {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        toast.error('اجازه نمایش اعلان داده نشد');
+        return;
+      }
+    }
+    persistReminders([...reminders, key]);
+    toast.success('یادآور برای این سررسید فعال شد');
+  };
+
+  // Fires due reminders while the dashboard stays open. A fired reminder is
+  // dropped from storage so it never repeats for the same deadline.
+  React.useEffect(() => {
+    if (reminders.length === 0 || todos.length === 0) return;
+    const check = () => {
+      const now = Date.now();
+      const fired: string[] = [];
+      for (const t of todos) {
+        const key = reminderKey(t);
+        if (!reminders.includes(key) || t.done || !t.dueDate) continue;
+        if (new Date(t.dueDate).getTime() > now) continue;
+        fired.push(key);
+        try {
+          new Notification('یادآور کار کارگاه', { body: t.text });
+        } catch {
+          // Notification constructor unavailable: keep the list intact.
+        }
+      }
+      if (fired.length > 0) {
+        persistReminders(reminders.filter((entry) => !fired.includes(entry)));
+      }
+    };
+    check();
+    const timer = window.setInterval(check, 60_000);
+    return () => window.clearInterval(timer);
+  }, [reminders, todos]);
+
+  const sortedTodos = React.useMemo(() => {
+    const dueTime = (t: WorkshopTodo): number =>
+      t.dueDate ? new Date(t.dueDate).getTime() : Number.POSITIVE_INFINITY;
+    return [...todos].sort((a, b) => {
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      const delta = dueTime(a) - dueTime(b);
+      if (delta !== 0) return delta;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, [todos]);
+
   const doneCount = todos.filter((t) => t.done).length;
   const totalCount = todos.length;
   const progressPct = totalCount === 0 ? 0 : Math.round((doneCount / totalCount) * 100);
+  const overdueOpen = todos.filter((t) => deadlineState(t) === 'overdue' && !t.done);
 
-  const overdueOpen = todos.filter(
-    (t) => !t.done && t.dueDate && new Date(t.dueDate).getTime() < Date.now(),
-  );
+  const totalPages = Math.max(1, Math.ceil(sortedTodos.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  React.useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+  const pageTodos = sortedTodos.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
     <div className="glass-panel rounded-2xl border border-stone-200 dark:border-white/5 shadow-xl overflow-hidden">
       <Collapsible open={!collapsed} onOpenChange={onToggleCollapse}>
         <div className="flex items-center justify-between p-4 border-b border-black/5 dark:border-white/5">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <ClipboardList className="w-4 h-4 text-brand" />
             <h4 className="font-black text-stone-900 dark:text-white text-sm">
               فهرست کارهای کارگاه
@@ -169,15 +330,12 @@ export const TodoWidget: React.FC<TodoWidgetProps> = ({
             )}
             {overdueOpen.length > 0 && (
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/20">
-                {toPersianDigits(overdueOpen.length)} سرسید گذشته
+                {toPersianDigits(overdueOpen.length)} سررسید گذشته
               </span>
             )}
           </div>
           <CollapsibleTrigger className="p-1.5 rounded-lg text-stone-500 dark:text-gray-400 hover:text-stone-900 dark:hover:text-white transition-colors">
-            <Chevron
-              className="w-4 h-4 transition-transform"
-              rotated={collapsed}
-            />
+            <Chevron className="w-4 h-4 transition-transform" rotated={collapsed} />
           </CollapsibleTrigger>
         </div>
 
@@ -202,7 +360,7 @@ export const TodoWidget: React.FC<TodoWidgetProps> = ({
             )}
 
             {/* Add form */}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <input
                 value={text}
                 onChange={(e) => setText(e.target.value)}
@@ -210,7 +368,7 @@ export const TodoWidget: React.FC<TodoWidgetProps> = ({
                   if (e.key === 'Enter') void add();
                 }}
                 placeholder="کار جدید... (Enter برای ثبت)"
-                className="flex-1 min-w-0 text-xs font-bold px-3 py-2 rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-brand/50"
+                className="flex-1 min-w-[160px] text-xs font-bold px-3 py-2 rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-brand/50"
               />
               <SelectMenu
                 value={priority}
@@ -219,11 +377,11 @@ export const TodoWidget: React.FC<TodoWidgetProps> = ({
                 className="w-24 shrink-0"
               />
               <input
-                type="date"
+                type="datetime-local"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                title="سررسید (اختیاری)"
-                className="w-32 shrink-0 text-[11px] font-bold px-2 py-2 rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 text-stone-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand/50"
+                title="تاریخ و ساعت سررسید (اختیاری)"
+                className="w-44 shrink-0 text-[11px] font-bold px-2 py-2 rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 text-stone-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand/50"
               />
               <button
                 onClick={() => void add()}
@@ -240,16 +398,65 @@ export const TodoWidget: React.FC<TodoWidgetProps> = ({
               <p className="text-xs text-stone-500 dark:text-gray-400 text-center py-4">
                 در حال دریافت کارها...
               </p>
-            ) : todos.length === 0 ? (
+            ) : sortedTodos.length === 0 ? (
               <p className="text-xs text-stone-500 dark:text-gray-400 text-center py-4">
                 هنوز کاری ثبت نشده است — اولین کار کارگاه را اضافه کنید
               </p>
             ) : (
-              <div className="space-y-2 max-h-72 overflow-y-auto ps-1">
-                {todos.map((t) => {
+              <div className="space-y-2">
+                {pageTodos.map((t) => {
                   const style = PRIORITY_STYLE[t.priority] ?? PRIORITY_STYLE.medium;
-                  const isOverdue =
-                    !t.done && t.dueDate && new Date(t.dueDate).getTime() < Date.now();
+                  const state = t.done ? 'none' : deadlineState(t);
+                  const reminded = reminders.includes(reminderKey(t));
+
+                  if (editingId === t.id) {
+                    return (
+                      <div
+                        key={t.id}
+                        className={`p-2.5 rounded-xl glass-card space-y-2 ${style.border}`}
+                      >
+                        <input
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') void saveEdit();
+                            if (e.key === 'Escape') setEditingId(null);
+                          }}
+                          className="w-full text-xs font-bold px-3 py-2 rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 text-stone-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand/50"
+                        />
+                        <div className="flex flex-wrap items-center gap-2">
+                          <SelectMenu
+                            value={editPriority}
+                            onChange={(v: string) => setEditPriority(v as TodoPriority)}
+                            options={[...PRIORITY_OPTIONS]}
+                            className="w-24 shrink-0"
+                          />
+                          <input
+                            type="datetime-local"
+                            value={editDue}
+                            onChange={(e) => setEditDue(e.target.value)}
+                            title="تاریخ و ساعت سررسید"
+                            className="w-44 shrink-0 text-[11px] font-bold px-2 py-2 rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 text-stone-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand/50"
+                          />
+                          <button
+                            onClick={() => void saveEdit()}
+                            className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-2 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            ذخیره
+                          </button>
+                          <button
+                            onClick={() => setEditingId(null)}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-2 rounded-xl border border-black/10 dark:border-white/10 text-stone-600 dark:text-gray-300 hover:bg-stone-100 dark:hover:bg-white/5 transition-colors"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            انصراف
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }
+
                   return (
                     <div
                       key={t.id}
@@ -281,34 +488,79 @@ export const TodoWidget: React.FC<TodoWidgetProps> = ({
                             <span
                               className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${style.badge}`}
                             >
-                              {PRIORITY_OPTIONS.find((p) => p.value === t.priority)?.label ?? 'متوسط'}
+                              {PRIORITY_OPTIONS.find((p) => p.value === t.priority)?.label ??
+                                'متوسط'}
                             </span>
                             {t.dueDate && (
                               <span
                                 className={`text-[9px] font-bold ${
-                                  isOverdue
+                                  state === 'overdue'
                                     ? 'text-rose-600 dark:text-red-400'
+                                    : state === 'today'
+                                    ? 'text-amber-600 dark:text-amber-400'
                                     : 'text-stone-500 dark:text-gray-400'
                                 }`}
                               >
-                                {isOverdue ? 'سررسید گذشته: ' : 'سررسید: '}
-                                {toJalaliDate(t.dueDate)}
+                                {state === 'overdue'
+                                  ? 'سررسید گذشته: '
+                                  : state === 'today'
+                                  ? 'امروز: '
+                                  : 'سررسید: '}
+                                {toJalaliDateTime(t.dueDate)}
+                              </span>
+                            )}
+                            {reminded && !t.done && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-brand/10 text-brand border-brand/20">
+                                یادآور فعال
                               </span>
                             )}
                           </div>
                         </div>
                       </div>
-                      <button
-                        onClick={() => void remove(t.id)}
-                        className="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 dark:hover:text-red-400 hover:bg-rose-500/10 transition-colors shrink-0"
-                        title="حذف کار"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        <button
+                          onClick={() => void toggleReminder(t)}
+                          className={`p-1.5 rounded-lg transition-colors ${
+                            reminded
+                              ? 'text-brand hover:bg-brand/10'
+                              : 'text-stone-400 hover:text-brand hover:bg-brand/10'
+                          }`}
+                          title={reminded ? 'حذف یادآور' : 'فعال‌کردن یادآور'}
+                        >
+                          {reminded ? (
+                            <Bell className="w-3.5 h-3.5" />
+                          ) : (
+                            <BellOff className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => startEdit(t)}
+                          className="p-1.5 rounded-lg text-stone-400 hover:text-brand hover:bg-brand/10 transition-colors"
+                          title="ویرایش کار"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => void remove(t.id)}
+                          className="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 dark:hover:text-red-400 hover:bg-rose-500/10 transition-colors"
+                          title="حذف کار"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
               </div>
+            )}
+
+            {sortedTodos.length > PAGE_SIZE && (
+              <Pagination
+                currentPage={safePage}
+                totalItems={sortedTodos.length}
+                pageSize={PAGE_SIZE}
+                onPageChange={setPage}
+              />
             )}
 
             {/* Footer actions */}
@@ -333,14 +585,12 @@ const Chevron: React.FC<{ className?: string; rotated?: boolean }> = ({ classNam
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="2.5"
+    strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
-    className={`${className ?? ''} ${rotated ? '-rotate-90' : ''}`}
+    className={`${className ?? ''} ${rotated ? 'rotate-180' : ''}`}
+    aria-hidden="true"
   >
     <path d="m6 9 6 6 6-6" />
   </svg>
 );
-
-// Grip icon reserved for future drag-reorder of individual todos.
-void GripVertical;

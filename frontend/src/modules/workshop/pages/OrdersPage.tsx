@@ -16,6 +16,7 @@ import { formatToman, toJalaliDateTime, toPersianDigits } from '@/utils/persian'
 import { SafeImage } from '@/components/common/SafeImage';
 import { SelectMenu } from '@/components/ui/select-menu';
 import { cn } from '@/lib/utils';
+import { Pagination } from '@/components/common/Pagination';
 
 import { ORDER_STATUS_META as STATUS_META } from '@/lib/orderStatus';
 
@@ -38,6 +39,9 @@ export const OrdersPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<StatusFilter>('all');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  // Client-side pagination for the order cards.
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const load = useCallback(() => {
     setError(null);
@@ -56,6 +60,17 @@ export const OrdersPage: React.FC = () => {
     () => (orders ?? []).filter((o) => filter === 'all' || o.status === filter),
     [orders, filter]
   );
+
+  // Paginated slice of the filtered orders (client-side).
+  const pagedOrders = useMemo(
+    () => filtered.slice((page - 1) * pageSize, page * pageSize),
+    [filtered, page, pageSize]
+  );
+
+  // Jump back to page 1 when the status filter changes.
+  useEffect(() => {
+    setPage(1);
+  }, [filter]);
 
   const counts = useMemo(() => {
     const base: Record<StatusFilter, number> = {
@@ -171,7 +186,7 @@ export const OrdersPage: React.FC = () => {
       )}
 
       <div className="space-y-4">
-        {filtered.map((order) => {
+        {pagedOrders.map((order) => {
           const status = STATUS_META[order.status];
           const payment = PAYMENT_META[order.paymentMethod];
           return (
@@ -283,6 +298,19 @@ export const OrdersPage: React.FC = () => {
           );
         })}
       </div>
+
+      {filtered.length > 0 && (
+        <Pagination
+          currentPage={page}
+          totalItems={filtered.length}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+        />
+      )}
     </div>
   );
 };

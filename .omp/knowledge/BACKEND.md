@@ -49,7 +49,7 @@ GET/PUT /orders, PUT /orders/:id          (status transitions)
 GET/POST/PUT/DELETE /items, PUT /items/:id/shop-allocation (row-locked: concurrent handovers/orders can never over-allocate; websiteQuantity only moves via this endpoint, never via PUT /items/:id), POST /items/:id/mark-ready → 410 retired (production flow removed P0-B)
 GET/POST /categories
 GET/POST/PUT/DELETE /sellers (+GET /sellers/:id)
-GET/POST/DELETE /consignments, POST /consignments/return, POST /consignments/:id/deliver (scheduled → delivered: stamps deliveredAt, applies seller debt/due), GET /consignments/returns
+GET/POST/DELETE /consignments, POST /consignments/return, POST /consignments/:id/deliver (scheduled → delivered: stamps deliveredAt, applies seller debt/due), PUT /consignments/:id/due-date (`{days: 1..30}` — extends from max(dueDate, now), rejects settled rows with remainingAmount <= 0, audit `consignment/update`), GET /consignments/returns
 GET/POST /payments
 GET/POST/PUT/DELETE /staff, GET/PUT /owners
 GET/POST/PUT/DELETE /expenses, GET/POST /profit-distribution
@@ -59,6 +59,7 @@ GET/PUT /notifications/settings, POST /notifications/test/{telegram,sms}
 GET /notifications/feed (+ ?limit), POST /notifications/feed/read (one), POST /notifications/feed/read-all  (workshop notifications center: derived + event notifications, per-item read marks)
 GET/POST/PUT/DELETE /todos (workshop todo list: id, text, priority low|medium|high|urgent, dueDate, done, doneAt), POST /todos/clear-done (returns {cleared: n})
 ```
+- Due-date extension details: `docs/sales/consignment-due-date-extension.md`.
 
 ## P0-D: Unified Sales routes (backend/src/modules/workshop/router.ts)
 ```
